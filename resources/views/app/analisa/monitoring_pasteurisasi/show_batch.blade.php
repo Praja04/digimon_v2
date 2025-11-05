@@ -1,0 +1,412 @@
+@extends('layouts.component.main')
+@section('title', 'Analisa Pasteurisasi')
+@section('content')
+    <div class="page-content">
+        <div class="container-fluid">
+            <!-- start page title -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                        <h4 class="mb-sm-0">@yield('title')</h4>
+
+                        <div class="page-title-right">
+                            <ol class="breadcrumb m-0">
+                                <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
+                                <li class="breadcrumb-item"><a
+                                        href="{{ route('analisa.monitoring-pasteurisasi.index') }}">Analisa
+                                        Monitoring Pasteurisasi</a></li>
+                                <li class="breadcrumb-item active">@yield('title')</li>
+                            </ol>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row gx-lg-5">
+                                <div class="col-xl-12">
+                                    <div class="mt-xl-0 mt-5">
+                                        <div class="d-flex">
+                                            <div class="flex-grow-1">
+                                                <h4>{{ $blending->productionBatch->po_number }} (Nomor PO)</h4>
+                                                <div class="hstack gap-3 flex-wrap">
+                                                    <div><a href="#"
+                                                            class="text-primary d-block">{{ Session::get('username') }}</a>
+                                                    </div>
+                                                    <div class="vr"></div>
+
+                                                    <div class="text-muted">Tanggal Produksi : <span
+                                                            class="text-body fw-medium">{{ $blending->productionBatch->date }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mt-4">
+                                            <div class="col-lg-6 col-sm-6">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-drop-fill"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Variant :</p>
+                                                            <h5 class="mb-0">{{ $blending->productionBatch->variant }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- end col -->
+                                            <div class="col-lg-6 col-sm-6">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-arrow-left-right-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Batch Range :</p>
+                                                            <h5 class="mb-0">{{ $blending->productionBatch->batch_range }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- end row -->
+
+                                        <div class="mt-4 text-muted">
+                                            <h5 class="fs-14">Description :</h5>
+                                            <p>{{ $blending->productionBatch->description ?? '-' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+                            </div>
+                            <!-- end row -->
+                        </div>
+                        <!-- end card body -->
+                    </div>
+                    <!-- end card -->
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <!--end card-body-->
+                            <div class="card-body">
+                                <form id="form">
+                                    <div class="row g-3">
+                                        <div class="col-lg-4">
+                                            <input type="hidden" name="id" id="id" value="{{ $blending->id }}">
+                                            <label class="form-label">BRIX <span style="color: red">*</span></label>
+                                            <input type="text" name="brix" id="brix"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorBrix"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">NACL <span style="color: red">*</span></label>
+                                            <input type="text" name="nacl" id="nacl"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorNacl"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Bj <span style="color: red">*</span></label>
+                                            <input type="text" name="bj" id="bj"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorBj"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Visco <span style="color: red">*</span></label>
+                                            <input type="text" name="visco" id="visco"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorVisco"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Aw <span style="color: red">*</span></label>
+                                            <input type="text" name="aw" id="aw"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorAw"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">pH</label>
+                                            <input type="text" name="ph" id="ph"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorPh"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Buih</label>
+                                            <input type="text" name="buih" id="buih"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorBuih"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                                            <input type="text" name="organo" id="organo" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();">
+                                            <small class="text-danger errorOrgano"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Endapan</label>
+                                            <input type="text" name="endapan" id="endapan" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();">
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="form-label">Warna <span style="color: red">*</span></label>
+                                            <select name="color" id="color" class="select2 form-control">
+                                                <option value="">-- Pilih Warna --</option>
+                                                @foreach ($colors as $color)
+                                                    <option value="{{ $color->id }}">
+                                                        {{ $color->name }} ({{ $color->code }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-danger errorColor"></small>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="form-label">Status <span style="color: red">*</span></label>
+                                            <select name="status_disposition" id="status_disposition"
+                                                class="form-control disposition-select">
+                                                <option value="">-- Pilih Status --</option>
+                                                <option value="OK">OK</option>
+                                                <option value="NOT OK">NOT OK</option>
+                                                <option value="Adjustment">Adjustment</option>
+                                            </select>
+                                            <small class="text-danger errorStatusDisposition"></small>
+                                        </div>
+                                        @if (auth()->user()->role == 'Foreman')
+                                            <div class="col-lg-12">
+                                                <label class="form-label">Disposition</label>
+                                                <select name="disposition" class="form-control disposition-select">
+                                                    <option value="">-- Pilih Disposition --</option>
+                                                    <option value="Release">Release</option>
+                                                    <option value="Release Bersyarat">Release Bersyarat</option>
+                                                    <option value="Resampling">Resampling</option>
+                                                    <option value="Reject">Reject</option>
+                                                    <option value="Repro">Repro</option>
+                                                    <option value="Jalan Bareng">Jalan Bareng</option>
+                                                    <option value="Leveling">Leveling</option>
+                                                </select>
+                                            </div>
+                                        @endif
+                                        <div class="col-lg-12">
+                                            <label class="form-label">Remarks</label>
+                                            <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
+                                                placeholder="Isi remarks jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
+                                        </div>
+
+                                        <div class="mb-3 d-none adjustment-qty-wrapper">
+                                            <h6 class="form-label fw-bold">Adjustment Qty</h6>
+                                            <div class="row g-3">
+                                                <div class="col-lg-4">
+                                                    <label class="form-label">Air (Liter)</label>
+                                                    <input type="text" name="adjustment_qty_air"
+                                                        class="form-control adjustment-qty comma-input"
+                                                        placeholder="0,00">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="form-label">Gula (Kg)</label>
+                                                    <input type="text" name="adjustment_qty_gula"
+                                                        class="form-control adjustment-qty comma-input"
+                                                        placeholder="0,00">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="form-label">Garam (Kg)</label>
+                                                    <input type="text" name="adjustment_qty_garam"
+                                                        class="form-control adjustment-qty comma-input"
+                                                        placeholder="0,00">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+    <script>
+        $('.select2').select2();
+
+        $(document).ready(function() {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            document.querySelectorAll('.comma-input').forEach(function(el) {
+                el.addEventListener('input', function() {
+                    const value = this.value;
+                    if (value.includes('.')) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Format Salah!',
+                            text: 'Gunakan tanda koma (,) untuk desimal, bukan titik (.)',
+                            confirmButtonText: 'Mengerti',
+                            confirmButtonColor: '#3085d6'
+                        });
+                        this.value = value.replace(/\./g, ',');
+                    }
+                });
+            });
+
+            function toggleAdjustmentFields(status, showOnly = false) {
+                const qtyWrapper = $('.adjustment-qty-wrapper');
+                const qtyInput = $('.adjustment-qty');
+
+                if (status === 'Adjustment') {
+                    qtyWrapper.removeClass('d-none');
+                    qtyInput.prop('required', true);
+                } else {
+                    qtyWrapper.addClass('d-none');
+                    qtyInput.prop('required', false);
+
+                    if (!showOnly) {
+                        qtyInput.val('');
+                    }
+                }
+            }
+
+            $('#status_disposition').on('change', function() {
+                const selected = $(this).val();
+                toggleAdjustmentFields(selected);
+            });
+
+            $('#form').submit(function(e) {
+                e.preventDefault();
+
+                $.ajax({
+                    data: $(this).serialize(),
+                    url: "{{ route('analisa.monitoring-pasteurisasi.update') }}",
+                    type: "POST",
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#save').prop('disabled', true).html(
+                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
+                        );
+
+                        $('.form-control').removeClass('is-invalid');
+                        $('.text-danger').html('');
+                    },
+                    complete: function() {
+                        $('#save').prop('disabled', false).text('Simpan');
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sukses',
+                            text: response.message,
+                        }).then(() => {
+                            window.location.href =
+                                "{{ route('analisa.monitoring-pasteurisasi.show', '') }}/" +
+                                {{ $blending->productionBatch->id }};
+                        });
+                    },
+                    error: function(xhr) {
+                        let response = xhr.responseJSON;
+
+                        if (xhr.status === 409 && response && response.message) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Gagal Disimpan',
+                                text: response.message,
+                            });
+                            return;
+                        }
+
+                        if (xhr.status === 403 && response && response.message) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Akses Ditolak',
+                                text: response.message,
+                            });
+                            return;
+                        }
+
+                        if (xhr.status === 422 && response && response.errors) {
+                            let errors = response.errors;
+
+                            if (errors.brix) {
+                                $('#brix').addClass('is-invalid');
+                                $('.errorBrix').html(errors.brix.join('<br>'));
+                            }
+                            if (errors.nacl) {
+                                $('#nacl').addClass('is-invalid');
+                                $('.errorNacl').html(errors.nacl.join('<br>'));
+                            }
+                            if (errors.bj) {
+                                $('#bj').addClass('is-invalid');
+                                $('.errorBj').html(errors.bj.join('<br>'));
+                            }
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
+                            }
+                            if (errors.aw) {
+                                $('#aw').addClass('is-invalid');
+                                $('.errorAw').html(errors.aw.join('<br>'));
+                            }
+                            if (errors.organo) {
+                                $('#organo').addClass('is-invalid');
+                                $('.errorOrgano').html(errors.organo.join('<br>'));
+                            }
+                            if (errors.buih) {
+                                $('#buih').addClass('is-invalid');
+                                $('.errorBuih').html(errors.buih.join('<br>'));
+                            }
+                            if (errors.ph) {
+                                $('#ph').addClass('is-invalid');
+                                $('.errorPh').html(errors.ph.join('<br>'));
+                            }
+                            if (errors.color) {
+                                $('#color').addClass('is-invalid');
+                                $('.errorColor').html(errors.color.join('<br>'));
+                            }
+                            if (errors.status_disposition) {
+                                $('#status_disposition').addClass('is-invalid');
+                                $('.errorStatusDisposition').html(errors.status_disposition
+                                    .join('<br>'));
+                            }
+                            if (errors.disposition) {
+                                $('#disposition').addClass('is-invalid');
+                                $('.errorDisposition').html(errors.disposition.join('<br>'));
+                            }
+                            if (errors.adjustment_qty_air) {
+                                $('input[name="adjustment_qty_air"]').addClass('is-invalid');
+                            }
+                            if (errors.adjustment_qty_gula) {
+                                $('input[name="adjustment_qty_gula"]').addClass('is-invalid');
+                            }
+                            if (errors.adjustment_qty_garam) {
+                                $('input[name="adjustment_qty_garam"]').addClass('is-invalid');
+                            }
+
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kesalahan',
+                            text: 'Terjadi kesalahan, silakan coba lagi.',
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+@endsection
