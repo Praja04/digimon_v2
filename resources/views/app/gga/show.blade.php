@@ -138,7 +138,17 @@
                                                 @endphp
                                                 <tr class="{{ $rowClass }}">
                                                     <td>
-                                                        {{ $gga->batch_number }}
+                                                        @if ($gga->revisi != null)
+                                                            {{ $gga->batch_number }} ❗
+                                                        @else
+                                                            {{ $gga->batch_number }}
+                                                        @endif
+
+                                                        @if ($gga->additional_batch_info)
+                                                            @foreach ($gga->additional_batch_info as $relasi)
+                                                                <span class="badge bg-info">{{ $relasi->batch }}</span>
+                                                            @endforeach
+                                                        @endif
                                                     </td>
                                                     <td>{{ $gga->dissolver_number }}</td>
                                                     <td>{{ $gga->brix ?? '-' }}</td>

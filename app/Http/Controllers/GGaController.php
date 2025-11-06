@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Events\ProcessOutsideDisposition;
 use App\Http\Requests\GgaRequest;
-use App\Http\Requests\GgaUpdateDispositionRequest;
 use App\Models\Color;
 use App\Models\GGA;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
 class GGaController extends Controller
@@ -17,7 +17,7 @@ class GGaController extends Controller
     {
         return view('app.GgaGgas.menu');
     }
-    
+
     public function index(Request $request)
     {
         if ($request->ajax()) {
@@ -118,6 +118,7 @@ class GGaController extends Controller
 
     public function update(GgaRequest $request)
     {
+        DB::beginTransaction();
         try {
             $gga = GGA::findOrFail($request->id);
             $isUpdate = !is_null($gga->status_disposition);
@@ -125,6 +126,7 @@ class GGaController extends Controller
 
             // Validasi akses untuk update
             if ($isUpdate && $userRole === 'Produksi') {
+                DB::rollBack();
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Anda tidak memiliki akses untuk mengubah data yang sudah ada disposisi.'
@@ -136,6 +138,7 @@ class GGaController extends Controller
 
             // Validasi remarks wajib untuk status tertentu
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
+                DB::rollBack();
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.'
@@ -208,6 +211,51 @@ class GGaController extends Controller
 
             $gga->update($updateData);
 
+            // Build remark text for API payload
+            if ($remark !== null && $remark !== '-' && $disposition !== 'Adjustment') {
+                $remarkText = $remark;
+            } elseif ($disposition === 'Adjustment') {
+                $remarkText = sprintf(
+                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
+                    $request->adjustment_qty_air ?? 0,
+                    $request->adjustment_qty_garam ?? 0,
+                    $request->adjustment_qty_gula ?? 0
+                );
+            } elseif ($updateData['not_standard'] ?? false) {
+                $remarkText = 'Adjustment';
+            } else {
+                $remarkText = '-';
+            }
+
+            // Prepare payload for external API
+            $apiPayload = [
+                'disposition' => $disposition,
+                'revisi' => $request->revisi ?? null,
+                'not_standard' => $updateData['not_standard'] ?? false,
+                'status' => $status_disposition,
+                'disposition_remark' => $remarkText,
+            ];
+
+            // Call external API
+            $client = new \GuzzleHttp\Client();
+            $apiResponse = $client->request('POST', env('PRODUCTION_URL') . "api/gga/{$gga->id}", [
+                'json' => $apiPayload,
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            if ($apiResponse->getStatusCode() !== 200) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal update data ke API eksternal.',
+                ], 500);
+            }
+
+            DB::commit();
+
             $message = $isUpdate
                 ? 'Data GGA berhasil diperbarui.'
                 : 'Data GGA berhasil disimpan.';
@@ -219,7 +267,7 @@ class GGaController extends Controller
                     $gga->production_batch_id,
                     'GGA',
                     $status_disposition,
-                    $remark,
+                    $remarkText,
                 ));
             }
 
@@ -228,6 +276,7 @@ class GGaController extends Controller
                 'message' => $message,
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Error occurred, please try again.',

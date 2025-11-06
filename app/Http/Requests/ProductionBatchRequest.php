@@ -14,6 +14,7 @@ class ProductionBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => 'required',
             'po_number' => 'required|string|max:255',
             'variant' =>  'required|string|max:255',
             'date' => 'required|date',
@@ -25,6 +26,7 @@ class ProductionBatchRequest extends FormRequest
     public function attributes()
     {
         return [
+            'id' => 'Id',
             'po_number' => 'Nomor PO',
             'variant' => 'Varian',
             'date' => 'Tanggal',

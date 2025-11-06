@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('gga', function (Blueprint $table) {
-            $table->id();
+            $table->unsignedBigInteger('id')->primary();
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->string('batch_number', 50);
             $table->string('dissolver_number', 50);

@@ -8,6 +8,7 @@ use App\Models\Color;
 use App\Models\GGAS;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
 class GgasController extends Controller
@@ -112,6 +113,7 @@ class GgasController extends Controller
 
     public function update(GgasRequest $request)
     {
+        DB::beginTransaction();
         try {
             $ggas = GGAS::findOrFail($request->id);
             $isUpdate = !is_null($ggas->status_disposition);
@@ -119,6 +121,7 @@ class GgasController extends Controller
 
             // Validasi akses untuk update
             if ($isUpdate && $userRole === 'Produksi') {
+                DB::rollBack();
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Anda tidak memiliki akses untuk mengubah data yang sudah ada disposisi.'
@@ -130,6 +133,7 @@ class GgasController extends Controller
 
             // Validasi remarks wajib untuk status tertentu
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
+                DB::rollBack();
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.'
@@ -201,6 +205,49 @@ class GgasController extends Controller
             }
 
             $ggas->update($updateData);
+
+            // Build remark text for API payload
+            if ($remark !== null && $remark !== '-' && $disposition !== 'Adjustment') {
+                $remarkText = $remark;
+            } elseif ($disposition === 'Adjustment') {
+                $remarkText = sprintf(
+                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
+                    $request->adjustment_qty_air ?? 0,
+                    $request->adjustment_qty_garam ?? 0,
+                    $request->adjustment_qty_gula ?? 0
+                );
+            } elseif ($updateData['not_standard'] ?? false) {
+                $remarkText = 'Adjustment';
+            } else {
+                $remarkText = '-';
+            }
+
+            $apiPayload = [
+                'disposition' => $disposition,
+                'revisi' => $request->revisi ?? null,
+                'not_standard' => $updateData['not_standard'] ?? false,
+                'status' => $status_disposition,
+                'disposition_remark' => $remarkText,
+            ];
+
+            $client = new \GuzzleHttp\Client();
+            $apiResponse = $client->request('POST', env('PRODUCTION_URL') . "api/ggas/{$ggas->id}", [
+                'json' => $apiPayload,
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            if ($apiResponse->getStatusCode() !== 200) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal update data ke API eksternal.',
+                ], 500);
+            }
+
+            DB::commit();
 
             $message = $isUpdate
                 ? 'Data GGAS berhasil diperbarui.'
