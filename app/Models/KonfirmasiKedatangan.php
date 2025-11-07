@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\IdentitasRM;
+use App\Models\User;
 
 class KonfirmasiKedatangan extends Model
 {

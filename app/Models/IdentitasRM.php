@@ -3,6 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\AnalisaGaramGula;
+use App\Models\AnalisaLongTerm;
+use App\Models\AnalisaShortTerm;
+use App\Models\SamplingDokumen;
+use App\Models\SamplingFisikKemasan;
+use App\Models\SamplingFisikRaw;
+use App\Models\SamplingKondisiMobil;
+use App\Models\KonfirmasiKedatangan;
 
 class IdentitasRM extends Model
 {

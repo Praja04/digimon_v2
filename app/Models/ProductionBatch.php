@@ -3,6 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Notification;
+use App\Models\GGA;
+use App\Models\GGAS;
+use App\Models\BlendingAwal;
+use App\Models\BlendingAfterAdjustMikro;
+use App\Models\MonitoringTurunBlending;
+use App\Models\MonitoringPasteurisasi;
+use App\Models\MonitoringStorageKimia;
+use App\Models\MonitoringStorageMikro;
 
 class ProductionBatch extends Model
 {

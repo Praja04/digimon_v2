@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\IdentitasRM;
+use App\Models\User;
 
 class AnalisaGaramGula extends Model
 {
@@ -12,7 +14,7 @@ class AnalisaGaramGula extends Model
 
     public function identitas()
     {
-        return $this->belongsTo(IdentitasRm::class, 'id_identitas');
+        return $this->belongsTo(IdentitasRM::class, 'id_identitas');
     }
 
     public function user()

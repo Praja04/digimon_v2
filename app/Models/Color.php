@@ -3,6 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\GGA;
+use App\Models\GGAS;
+use App\Models\BlendingAwal;
+use App\Models\MonitoringTurunBlending;
+use App\Models\MonitoringStorageKimia;
+use App\Models\MonitoringDailyTank;
 
 class Color extends Model
 {

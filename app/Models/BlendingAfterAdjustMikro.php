@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ProductionBatch;
+use App\Models\KonfirmasiBlendingAfterAdjustMikro;
 
 class BlendingAfterAdjustMikro extends Model
 {

@@ -8,6 +8,22 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Notification;
+use App\Models\GGA;
+use App\Models\GGAS;
+use App\Models\BlendingAwal;
+use App\Models\MonitoringTurunBlending;
+use App\Models\MonitoringPasteurisasi;
+use App\Models\MonitoringStorageKimia;
+use App\Models\MonitoringStorageMikro;
+use App\Models\KonfirmasiMonitoringStorageMikro;
+use App\Models\BlendingAfterAdjustMikro;
+use App\Models\KonfirmasiBlendingAfterAdjustMikro;
+use App\Models\MonitoringDailyTank;
+use App\Models\AnalisaGaramGula;
+use App\Models\AnalisaLongTerm;
+use App\Models\AnalisaShortTerm;
+use App\Models\KonfirmasiKedatangan;
 
 class User extends Authenticatable
 {

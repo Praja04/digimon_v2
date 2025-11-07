@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ProductionBatch;
+use App\Models\MonitoringStorageKimiaRelation;
+use App\Models\Color;
+use App\Models\User;
 
 class MonitoringStorageKimia extends Model
 {
