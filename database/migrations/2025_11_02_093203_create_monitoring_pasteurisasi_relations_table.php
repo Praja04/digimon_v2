@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('monitoring_pasteurisasi_relations', function (Blueprint $table) {
-            $table->id();
+            $table->unsignedBigInteger('id')->primary();
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->unsignedBigInteger('monitoring_pasteurisasi_id');
             $table->foreign('monitoring_pasteurisasi_id', 'mp_relation_fk')

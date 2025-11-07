@@ -209,6 +209,12 @@ class GGaController extends Controller
                 $updateData['status'] = 'OK';
             }
 
+            if ($request->filled('revisi')) {
+                $updateData['revisi'] = $request->revisi;
+            } else {
+                $updateData['revisi'] = $gga->revisi;
+            }
+
             $gga->update($updateData);
 
             // Build remark text for API payload
@@ -230,7 +236,7 @@ class GGaController extends Controller
             // Prepare payload for external API
             $apiPayload = [
                 'disposition' => $disposition,
-                'revisi' => $request->revisi ?? null,
+                'revisi' => $updateData['revisi'] ?? null,
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
                 'disposition_remark' => $remarkText,

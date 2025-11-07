@@ -204,6 +204,12 @@ class GgasController extends Controller
                 $updateData['status'] = 'OK';
             }
 
+            if ($request->filled('revisi')) {
+                $updateData['revisi'] = $request->revisi;
+            } else {
+                $updateData['revisi'] = $ggas->revisi;
+            }
+
             $ggas->update($updateData);
 
             // Build remark text for API payload

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('blending_awal', function (Blueprint $table) {
-            $table->id();
+            $table->unsignedBigInteger('id')->primary();
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->string('batch_range')->nullable();
             $table->integer('nomor_blending')->nullable();

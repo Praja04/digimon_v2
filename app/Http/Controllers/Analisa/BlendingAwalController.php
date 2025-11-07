@@ -9,6 +9,8 @@ use App\Models\BlendingAwal;
 use App\Models\Color;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
 
 class BlendingAwalController extends Controller
@@ -136,6 +138,7 @@ class BlendingAwalController extends Controller
 
     public function update(BlendingAwalUpdateRequest $request)
     {
+        DB::beginTransaction();
         try {
             $id = $request->id;
 
@@ -156,6 +159,7 @@ class BlendingAwalController extends Controller
 
             // Validasi remarks wajib untuk status tertentu
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
+                DB::rollBack();
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.'
@@ -240,7 +244,24 @@ class BlendingAwalController extends Controller
                 $updateData['not_standard'] = true;
             }
 
+            if ($request->filled('revisi')) {
+                $updateData['revisi'] = $request->revisi;
+            } else {
+                $updateData['revisi'] = $blending->revisi;
+            }
+
             $blending->update($updateData);
+
+            Http::post(env('PRODUCTION_URL') . 'api/blending-awal/' . $blending->id, [
+                'disposition' => $disposition,
+                'disposition_remark' => $remark,
+                'revisi' => $updateData['revisi'],
+                'is_adjustment' => $status_disposition === 'Adjustment',
+                'not_standard' => $updateData['not_standard'] ?? false,
+                'status' => $status_disposition,
+            ]);
+
+            DB::commit();
 
             $message = $isUpdate
                 ? 'Data berhasil diperbarui.'
@@ -262,6 +283,7 @@ class BlendingAwalController extends Controller
                 'message' => $message,
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan, silakan coba lagi.',
