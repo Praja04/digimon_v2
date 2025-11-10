@@ -14,6 +14,16 @@ Routes berdasarkan Role Access
 --------------------------------------------*/
 
 Route::middleware(['auth'])->group(function () {
+    // Dashboard - Analisis GGA GGAS
+    Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
+    Route::get('/dashboard/gga-ggas/analisa', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'analisaGgaGgas'])->name('dashboard.gga-ggas.analisa');
+    Route::get('/dashboard/gga-ggas/analisa/disposisi', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'analisaDisposisi'])->name('dashboard.gga-ggas.analisa.disposisi');
+
+    // Dahboard - Blending Awal
+    Route::get('/dashboard/blending-awal', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'index'])->name('dashboard.blending-awal.index');
+    Route::get('/dashboard/blending-awal/analisa', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'analisaBlendingAwal'])->name('dashboard.blending-awal.analisa');
+    Route::get('/dashboard/blending-awal/analisa/disposisi', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'analisaDisposisi'])->name('dashboard.blending-awal.analisa.disposisi');
+
     /*------------------------------------------
     RMPM
     Roles: Supervisor, Foreman, Analis RM

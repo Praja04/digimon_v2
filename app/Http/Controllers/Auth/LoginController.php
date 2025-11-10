@@ -70,7 +70,7 @@ class LoginController extends Controller
                 case 'Analis RM':
                     return response()->json(['redirect' => route('users.index')]);
                 case 'Analis Field':
-                    return response()->json(['redirect' => route('analisa.monitoring-turun-blending.menu')]);
+                    return response()->json(['redirect' => route('analisa.blending-awal.menu')]);
                 case 'Operator':
                     return response()->json(['redirect' => route('productionbatch.index')]);
                 default:

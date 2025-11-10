@@ -19,6 +19,7 @@ Route::post('/ggas', [App\Http\Controllers\Api\GgasController::class, 'store'])-
 Route::post('/ggas/revisi', [App\Http\Controllers\Api\GgasController::class, 'update_revisi'])->name('api.ggas.update_revisi');
 
 // Blending Awal
+Route::get('/blending-awal/{id}', [App\Http\Controllers\Api\BlendingAwalController::class, 'show'])->name('api.blending.awal.show');
 Route::post('/blending-awal', [App\Http\Controllers\Api\BlendingAwalController::class, 'store'])->name('api.blending.awal.store');
 Route::post('/blending-awal/revisi', [App\Http\Controllers\Api\BlendingAwalController::class, 'update_revisi'])->name('api.blending.awal.update_revisi');
 
@@ -26,14 +27,17 @@ Route::post('/blending-awal/revisi', [App\Http\Controllers\Api\BlendingAwalContr
 Route::post('/blending-after-adjust-mikro', [App\Http\Controllers\Api\BlendingAwalMikroController::class, 'store'])->name('api.blending.after.adjust.mikro.store');
 
 // Monitoring Turun Blending
+Route::get('/monitoring-turun-blending/{id}', [App\Http\Controllers\Api\MonitoringTurunBlendingController::class, 'show'])->name('api.monitoring.turun.blending.show');
 Route::post('/monitoring-turun-blending', [App\Http\Controllers\Api\MonitoringTurunBlendingController::class, 'store'])->name('api.monitoring.turun.blending.store');
 Route::post('/monitoring-turun-blending/revisi', [App\Http\Controllers\Api\MonitoringTurunBlendingController::class, 'update_revisi'])->name('api.monitoring.turun.blending.update_revisi');
 
 // Monitoring Pasteurisasi
+Route::get('/monitoring-pasteurisasi/{id}', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'show'])->name('api.monitoring.pasteurisasi.show');
 Route::post('/monitoring-pasteurisasi', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'store'])->name('api.monitoring.pasteurisasi.store');
 Route::post('/monitoring-pasteurisasi/revisi', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'update_revisi'])->name('api.monitoring.pasteurisasi.update_revisi');
 
 // Monitoring Storage Kimia
+Route::get('/monitoring-storage-kimia/{id}', [App\Http\Controllers\Api\MonitoringStorageKimiaController::class, 'show'])->name('api.monitoring.storage.kimia.show');
 Route::post('/monitoring-storage-kimia', [App\Http\Controllers\Api\MonitoringStorageKimiaController::class, 'store'])->name('api.monitoring.storage.kimia.store');
 Route::post('/monitoring-storage-kimia/revisi', [App\Http\Controllers\Api\MonitoringStorageKimiaController::class, 'update_revisi'])->name('api.monitoring.storage.kimia.update_revisi');
 

@@ -112,7 +112,9 @@
                                                 <th>TPC</th>
                                                 <th>YM</th>
                                                 <th>Hasil</th>
-                                                <th>Aksi</th>
+                                                @if (auth()->user()->role == 'Analis Mikro')
+                                                    <th>Aksi</th>
+                                                @endif
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -136,16 +138,19 @@
                                                             <span class="badge bg-secondary">-</span>
                                                         @endif
                                                     </td>
-                                                    <td>
-                                                        @if (is_null($blending->ym))
-                                                            <button class="btn btn-sm btn-primary" id="btnAnalisa"
-                                                                blending-id="{{ $blending->id }}">Input Analisa</button>
-                                                        @else
-                                                            <span class="badge bg-success-subtle text-success">
-                                                                <i class="ri-check-line"></i> Lengkap
-                                                            </span>
-                                                        @endif
-                                                    </td>
+                                                    @if (auth()->user()->role == 'Analis Mikro')
+                                                        <td>
+                                                            @if (is_null($blending->ym))
+                                                                <button class="btn btn-sm btn-primary" id="btnAnalisa"
+                                                                    blending-id="{{ $blending->id }}">Input
+                                                                    Analisa</button>
+                                                            @else
+                                                                <span class="badge bg-success-subtle text-success">
+                                                                    <i class="ri-check-line"></i> Lengkap
+                                                                </span>
+                                                            @endif
+                                                        </td>
+                                                    @endif
                                                 </tr>
                                             @empty
                                                 <tr>

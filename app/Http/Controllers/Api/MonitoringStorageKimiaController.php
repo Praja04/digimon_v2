@@ -12,6 +12,29 @@ use Symfony\Component\HttpFoundation\Response;
 
 class MonitoringStorageKimiaController extends Controller
 {
+    public function show($id)
+    {
+        try {
+            $monitoringStorageKimia = MonitoringStorageKimia::with([
+                'productionBatch:id,po_number,variant',
+                'color:id,name,code',
+                'user:id,name,email'
+            ])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data retrieved successfully',
+                'data' => $monitoringStorageKimia
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
     public function store(Request $request): JsonResponse
     {
         MonitoringStorageKimia::create([

@@ -12,6 +12,29 @@ use Symfony\Component\HttpFoundation\Response;
 
 class MonitoringPasteurisasiController extends Controller
 {
+    public function show($id)
+    {
+        try {
+            $monitoringPasteurisasi = MonitoringPasteurisasi::with([
+                'productionBatch:id,po_number,variant',
+                'color:id,name,code',
+                'user:id,name,email'
+            ])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data retrieved successfully',
+                'data' => $monitoringPasteurisasi
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
     public function store(Request $request): JsonResponse
     {
         MonitoringPasteurisasi::create([

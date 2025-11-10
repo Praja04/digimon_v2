@@ -41,19 +41,23 @@
                     <li class="menu-title"><span data-key="t-menu">Dashboard</span></li>
 
                     <li class="nav-item">
-                        <a class="nav-link menu-link" href="#Dashboards" data-bs-toggle="collapse" role="button"
-                            aria-expanded="false" aria-controls="Dashboards">
+                        <a class="nav-link menu-link {{ request()->routeIs('dashboard.*') ? 'active' : '' }}"
+                            href="#Dashboards" data-bs-toggle="collapse" role="button" aria-expanded="false"
+                            aria-controls="Dashboards">
                             <i class="mdi mdi-monitor-dashboard"></i> <span data-key="t-dashboards">Dashboard</span>
                         </a>
-                        <div class="collapse menu-dropdown" id="Dashboards">
+                        <div class="collapse menu-dropdown {{ request()->routeIs('dashboard.*') ? 'show' : '' }}"
+                            id="Dashboards">
                             <ul class="nav nav-sm flex-column">
-                                <li class="nav-item"><a href="{{ url('dashboard/gga-ggas') }}" class="nav-link"><i
+                                <li class="nav-item"><a href="{{ route('dashboard.gga-ggas.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.gga-ggas.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-flask"></i> Analisis GGA & GGAS</a></li>
-                                <li class="nav-item"><a href="{{ url('dashboard/blending/awal') }}" class="nav-link"><i
+                                <li class="nav-item"><a href="{{ route('dashboard.blending-awal.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.blending-awal.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-blender"></i> Analisis Blending Awal</a>
                                 </li>
-                                <li class="nav-item"><a href="{{ url('dashboard/blending/after') }}" class="nav-link"><i
-                                            class="mdi mdi-blender-outline"></i> Analisis Blending
+                                <li class="nav-item"><a href="{{ url('dashboard/blending/after') }}"
+                                        class="nav-link"><i class="mdi mdi-blender-outline"></i> Analisis Blending
                                         After Adjust</a></li>
                                 <li class="nav-item"><a href="{{ url('dashboard/monitoring/turun') }}"
                                         class="nav-link"><i class="mdi mdi-chart-line"></i> Monitoring Turun
@@ -119,7 +123,7 @@
                     @endif
 
                     {{-- Blending Menu --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia', 'Analis Mikro']))
+                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia', 'Analis Mikro', 'Analis Field']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['analisa.blending-awal.menu', 'analisa.blending-awal.index', 'analisa.blending-awal.show', 'analisa.blending-awal.show_batch', 'analisa.blending-awal-mikro.index', 'analisa.blending-awal-mikro.show', 'analisa.blending-awal-mikro.show_batch']) ? 'active' : '' }}"
                                 href="{{ route('analisa.blending-awal.menu') }}">

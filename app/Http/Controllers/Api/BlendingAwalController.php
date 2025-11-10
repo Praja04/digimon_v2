@@ -11,6 +11,29 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BlendingAwalController extends Controller
 {
+    public function show($id)
+    {
+        try {
+            $blendingAwal = BlendingAwal::with([
+                'productionBatch:id,po_number,variant',
+                'color:id,name,code',
+                'user:id,name,email'
+            ])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data retrieved successfully',
+                'data' => $blendingAwal
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
     public function store(Request $request): JsonResponse
     {
         BlendingAwal::create([

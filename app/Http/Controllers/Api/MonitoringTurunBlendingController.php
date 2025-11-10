@@ -12,6 +12,29 @@ use Symfony\Component\HttpFoundation\Response;
 
 class MonitoringTurunBlendingController extends Controller
 {
+    public function show($id)
+    {
+        try {
+            $monitoringTurunBlending = MonitoringTurunBlending::with([
+                'productionBatch:id,po_number,variant',
+                'color:id,name,code',
+                'user:id,name,email'
+            ])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data retrieved successfully',
+                'data' => $monitoringTurunBlending
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
     public function store(Request $request): JsonResponse
     {
         MonitoringTurunBlending::create([
@@ -52,7 +75,7 @@ class MonitoringTurunBlendingController extends Controller
                     'disposition_remark' => null,
                     'is_adjustment' => $request->is_adjustment ?? 0,
                     'not_standard' => $request->not_standard ?? 0,
-                    'status' => null, 
+                    'status' => null,
                 ]
             );
 

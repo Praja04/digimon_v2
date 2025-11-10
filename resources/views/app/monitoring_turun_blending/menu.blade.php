@@ -100,7 +100,9 @@
                             </div>
                         </div>
                     </div>
+                @endif
 
+                @if (auth()->user()->role == 'Analis Field' || auth()->user()->role == 'Foreman')
                     {{-- Storage Before Use --}}
                     <div class="col-12 col-sm-6 col-lg-4 col-xl-6">
                         <div class="card ribbon-box right overflow-hidden">

@@ -46,7 +46,9 @@
                     </div>
                 @endif
 
-                @if (auth()->user()->role == 'Analis Mikro' || auth()->user()->role == 'Foreman')
+                @if (auth()->user()->role == 'Analis Mikro' ||
+                        auth()->user()->role == 'Analis Field' ||
+                        auth()->user()->role == 'Foreman')
                     <div class="col-xl-6 col-lg-4">
                         <div class="card ribbon-box right overflow-hidden">
                             <div class="card-body text-center p-4">
