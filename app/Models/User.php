@@ -160,4 +160,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(KonfirmasiKedatangan::class, 'dianalisa_by');
     }
+
+    public function monitoringOnGoingKimia()
+    {
+        return $this->hasMany(MonitoringOnGoingKimia::class, 'analis_id');
+    }
 }

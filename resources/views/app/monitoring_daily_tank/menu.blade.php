@@ -28,7 +28,7 @@
                         <div class="card-body text-center p-4">
                             <div class="ribbon ribbon-info ribbon-shape trending-ribbon">
                                 <i class="ri-hand-heart-fill text-white align-bottom"></i>
-                                <span class="trending-ribbon-text">Monitoring Storage</span>
+                                <span class="trending-ribbon-text">Monitoring</span>
                             </div>
                             <img src="{{ asset('assets/images/blending_awal.png') }}" alt="gambar" height="100">
                             <h5 class="mb-1 mt-4"><a href="" class="link-primary">Daily Tank</a></h5>
@@ -41,6 +41,31 @@
 
                             <div class="mt-4">
                                 <a href="{{ route('monitoring-daily-tank.index') }}" class="btn btn-light w-100">Lihat
+                                    Detail</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- On Going --}}
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-6">
+                    <div class="card ribbon-box right overflow-hidden">
+                        <div class="card-body text-center p-4">
+                            <div class="ribbon ribbon-info ribbon-shape trending-ribbon">
+                                <i class="ri-hand-heart-fill text-white align-bottom"></i>
+                                <span class="trending-ribbon-text">Monitoring</span>
+                            </div>
+                            <img src="{{ asset('assets/images/blending_awal.png') }}" alt="gambar" height="100">
+                            <h5 class="mb-1 mt-4"><a href="" class="link-primary">On Going</a></h5>
+                            <p class="text-muted mb-4">Monitoring On Going - Kimia</p>
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8">
+                                    <div id="chart-gga" data-colors='["--vz-danger"]'></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <a href="{{ route('monitoring-ongoing-kimia.index') }}" class="btn btn-light w-100">Lihat
                                     Detail</a>
                             </div>
                         </div>

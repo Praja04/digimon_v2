@@ -24,6 +24,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/blending-awal/analisa', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'analisaBlendingAwal'])->name('dashboard.blending-awal.analisa');
     Route::get('/dashboard/blending-awal/analisa/disposisi', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'analisaDisposisi'])->name('dashboard.blending-awal.analisa.disposisi');
 
+    // Monitoring - On Going Kimia
+    Route::get('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'index'])->name('monitoring-ongoing-kimia.index');
+    Route::get('/monitoring-ongoing-kimia/edit/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'edit'])->name('monitoring-ongoing-kimia.edit');
+    Route::get('/monitoring-ongoing-kimia/show/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'show'])->name('monitoring-ongoing-kimia.show');
+    Route::get('/analisa/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'analisa'])->name('monitoring-ongoing-kimia.analisa');
+    Route::post('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'store'])->name('monitoring-ongoing-kimia.store');
+    Route::post('/monitoring-ongoing-kimia/analisa', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'storeAnalisa'])->name('monitoring-ongoing-kimia.store.analisa');
+    Route::delete('/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'destroy'])->name('monitoring-ongoing-kimia.destroy');
+
     /*------------------------------------------
     RMPM
     Roles: Supervisor, Foreman, Analis RM

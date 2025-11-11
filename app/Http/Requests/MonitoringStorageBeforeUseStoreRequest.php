@@ -11,6 +11,7 @@ class MonitoringStorageBeforeUseStoreRequest extends FormRequest
     {
         return [
             'storage' => 'required',
+            'variant' => 'required',
             'jenis_sample' => 'required',
             'waktu_selesai_pemakaian' => 'required',
             'estimasi_kadaluarsa' => 'required',
@@ -21,6 +22,7 @@ class MonitoringStorageBeforeUseStoreRequest extends FormRequest
     {
         return [
             'storage' => 'Storage',
+            'variant' => 'Variant',
             'jenis_sample' => 'Jenis sample',
             'waktu_selesai_pemakaian' => 'Waktu selesai pemakaian',
             'estimasi_kadaluarsa' => 'Estimasi kadaluarsa'

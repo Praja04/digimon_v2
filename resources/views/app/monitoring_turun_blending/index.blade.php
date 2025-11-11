@@ -106,7 +106,6 @@
                                 <option value="BB">BB</option>
                                 <option value="MSD NR1">MSD NR1</option>
                                 <option value="MSD NR2">MSD NR2</option>
-                                <option value="JB">JB</option>
                             </select>
                             <small class="text-danger errorVariant"></small>
                         </div>

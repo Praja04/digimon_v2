@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('monitoring_storage_before_uses', function (Blueprint $table) {
             $table->id();
             $table->string('storage')->nullable();
-            $table->enum('jenis_sample', ['Before Tiban', 'Flushing'])->nullable();
+            $table->string('variant')->nullable();
+            $table->enum('jenis_sample', ['Before Tiban', 'Flushing', 'Level 0'])->nullable();
+            $table->string('tahap_flushing')->nullable();
             $table->dateTime('waktu_selesai_pemakaian')->nullable();
             $table->dateTime('estimasi_kadaluarsa')->nullable();
             $table->float('visco')->nullable();

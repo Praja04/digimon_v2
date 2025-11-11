@@ -134,7 +134,6 @@
                                     style="color: red;">*</span></label>
                             <select id="sampling_point" name="sampling_point" class="form-control">
                                 <option value="">-- Pilih Sampling Point --</option>
-                                <option value="DT">DT</option>
                                 <option value="DTP1">DTP1</option>
                                 <option value="DTP2">DTP2</option>
                                 <option value="DTP3">DTP3</option>
@@ -420,16 +419,16 @@
                     text: 'Sample Tengah'
                 },
                 {
-                    value: 'Sample Awal Trf',
-                    text: 'Sample Awal Trf'
+                    value: 'Sample Awal Transfer',
+                    text: 'Sample Awal Transfer'
                 },
                 {
-                    value: 'Sample Per Trf',
-                    text: 'Sample Per Trf'
+                    value: 'Sample Per Transfer',
+                    text: 'Sample Per Transfer'
                 },
                 {
-                    value: 'Awal Trf',
-                    text: 'Awal Trf'
+                    value: 'Awal Transfer',
+                    text: 'Awal Transfer'
                 }
             ];
 
@@ -444,16 +443,16 @@
                 $jenisSample.append('<option value="">-- Pilih Jenis Sample --</option>');
 
                 if (selectedAnalisa === 'Kimia') {
-                    // Tambahkan semua sample kecuali 'Awal Trf'
+                    // Tambahkan semua sample kecuali 'Awal Transfer'
                     allSamples.forEach(sample => {
-                        if (sample.value !== 'Awal Trf') {
+                        if (sample.value !== 'Awal Transfer') {
                             $jenisSample.append(
                                 `<option value="${sample.value}">${sample.text}</option>`);
                         }
                     });
                 } else if (selectedAnalisa === 'Mikro') {
-                    // Tampilkan hanya 'Awal Trf'
-                    $jenisSample.append('<option value="Awal Trf">Awal Trf</option>');
+                    // Tampilkan hanya 'Awal Transfer'
+                    $jenisSample.append('<option value="Awal Transfer">Awal Transfer</option>');
                 } else {
                     // Jika belum pilih analisa, tampilkan default placeholder saja
                     $jenisSample.append('<option value="">-- Pilih Jenis Sample --</option>');

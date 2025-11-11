@@ -43,4 +43,9 @@ class Color extends Model
     {
         return $this->hasMany(MonitoringDailyTank::class);
     }
+
+    public function monitoringOnGoingKimia()
+    {
+        return $this->hasMany(MonitoringOnGoingKimia::class);
+    }
 }

@@ -62,7 +62,9 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Storage</th>
+                                            <th>Variant</th>
                                             <th>Jenis Sample</th>
+                                            <th>Tahap Flushing</th>
                                             <th>Waktu Selesai</th>
                                             <th>Estimasi Kadaluarsa</th>
                                             <th>Hasil</th>
@@ -127,14 +129,30 @@
                             </select>
                             <small class="text-danger errorStorage"></small>
                         </div>
-
+                        <div class="col-lg-12">
+                            <label for="variant" class="form-label">Varian <span style="color: red">*</span></label>
+                            <select id="variant" name="variant" class="select2 form-control">
+                                <option value="">-- Pilih Varian --</option>
+                                <option value="SS1">SS1</option>
+                                <option value="SS2">SS2</option>
+                                <option value="BB">BB</option>
+                                <option value="MSD NR1">MSD NR1</option>
+                                <option value="MSD NR2">MSD NR2</option>
+                                <option value="JB">JB</option>
+                            </select>
+                            <small class="text-danger errorVariant"></small>
+                        </div>
                         <div class="col-lg-12">
                             <label for="jenis_sample" class="form-label">Jenis
                                 Sample <span style="color: red;">*</span></label>
                             <select id="jenis_sample" name="jenis_sample" id="jenis_sample" class="form-select">
                                 <option value="">-- Pilih Jenis Sample --</option>
-                                <option value="Before Tiban">Before Tiban</option>
-                                <option value="Flushing">Flushing</option>
+                                @if (auth()->user()->role == 'Analis Field')
+                                    <option value="Before Tiban">Before Tiban</option>
+                                    <option value="Flushing">Flushing</option>
+                                @else
+                                    <option value="Level 0">Level 0</option>
+                                @endif
                             </select>
                             <small class="text-danger errorJenisSample"></small>
                         </div>
@@ -359,8 +377,16 @@
                         name: 'storage'
                     },
                     {
+                        data: 'variant',
+                        name: 'variant'
+                    },
+                    {
                         data: 'jenis_sample',
                         name: 'jenis_sample'
+                    },
+                    {
+                        data: 'tahap_flushing',
+                        name: 'tahap_flushing'
                     },
                     {
                         data: 'waktu_selesai_pemakaian',
@@ -570,18 +596,23 @@
                                 $('.errorStorage').html(errors.storage.join('<br>'));
                             }
 
+                            if (errors.variant) {
+                                $('#variant').addClass('is-invalid');
+                                $('.errorVariant').html(errors.variant.join('<br>'));
+                            }
+
                             if (errors.jenis_sample) {
                                 $('#jenis_sample').addClass('is-invalid');
                                 $('.errorJenisSample').html(errors.jenis_sample.join('<br>'));
                             }
 
-                            if (errors.jenis_sample) {
+                            if (errors.waktu_selesai_pemakaian) {
                                 $('#waktu_selesai_pemakaian').addClass('is-invalid');
                                 $('.errorWaktuSelesaiPemakaian').html(errors
                                     .waktu_selesai_pemakaian.join('<br>'));
                             }
 
-                            if (errors.jenis_sample) {
+                            if (errors.estimasi_kadaluarsa) {
                                 $('#estimasi_kadaluarsa').addClass('is-invalid');
                                 $('.errorEstimasiKadaluarsa').html(errors
                                     .estimasi_kadaluarsa.join('<br>'));

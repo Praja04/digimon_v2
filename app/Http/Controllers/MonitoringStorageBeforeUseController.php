@@ -28,6 +28,12 @@ class MonitoringStorageBeforeUseController extends Controller
 
             return DataTables::of($monitoringStorageBeforeUse)
                 ->addIndexColumn()
+                ->addColumn('tahap_flushing', function ($data) {
+                    if ($data->tahap_flushing) {
+                        return '<span class="badge bg-info">' . $data->tahap_flushing . '</span>';
+                    }
+                    return '-';
+                })
                 ->editColumn('waktu_selesai_pemakaian', function ($data) {
                     if (!$data->waktu_selesai_pemakaian) {
                         return '-';
@@ -86,7 +92,7 @@ class MonitoringStorageBeforeUseController extends Controller
 
                     return $html;
                 })
-                ->rawColumns(['waktu_selesai_pemakaian', 'estimasi_kadaluarsa', 'hasil', 'detail', 'action'])
+                ->rawColumns(['waktu_selesai_pemakaian', 'estimasi_kadaluarsa', 'hasil', 'detail', 'action', 'tahap_flushing'])
                 ->make(true);
         }
         return view('app.monitoring_storage_before_use.index');
@@ -95,22 +101,51 @@ class MonitoringStorageBeforeUseController extends Controller
     public function store(MonitoringStorageBeforeUseStoreRequest $request)
     {
         try {
-            $data = [
-                'storage'  => $request->storage,
-                'jenis_sample' => $request->jenis_sample,
-                'waktu_selesai_pemakaian' => $request->waktu_selesai_pemakaian,
-                'estimasi_kadaluarsa' => $request->estimasi_kadaluarsa,
-            ];
+            if (strtolower($request->jenis_sample) === 'flushing') {
+                $tahapFlushing = [
+                    'Before Inlate',
+                    'Before Outlate',
+                    'After Inlate',
+                    'After Outlate'
+                ];
 
-            MonitoringStorageBeforeUse::updateOrCreate(
-                ['id' => $request->id],
-                $data
-            );
+                foreach ($tahapFlushing as $tahap) {
+                    $data = [
+                        'storage' => $request->storage,
+                        'variant' => $request->variant,
+                        'jenis_sample' => $request->jenis_sample,
+                        'tahap_flushing' => $tahap,
+                        'waktu_selesai_pemakaian' => $request->waktu_selesai_pemakaian,
+                        'estimasi_kadaluarsa' => $request->estimasi_kadaluarsa,
+                    ];
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data berhasil disimpan.',
-            ], 201);
+                    MonitoringStorageBeforeUse::create($data);
+                }
+
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Data flushing berhasil disimpan (4 tahap dibuat).',
+                ], 201);
+            } else {
+                $data = [
+                    'storage'  => $request->storage,
+                    'variant' => $request->variant,
+                    'jenis_sample' => $request->jenis_sample,
+                    'tahap_flushing' => null,
+                    'waktu_selesai_pemakaian' => $request->waktu_selesai_pemakaian,
+                    'estimasi_kadaluarsa' => $request->estimasi_kadaluarsa,
+                ];
+
+                MonitoringStorageBeforeUse::updateOrCreate(
+                    ['id' => $request->id],
+                    $data
+                );
+
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Data berhasil disimpan.',
+                ], 201);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
@@ -132,26 +167,128 @@ class MonitoringStorageBeforeUseController extends Controller
                 ], 404);
             }
 
-            $visco  = $request->visco;
+            $visco = $request->visco;
             $brix = $request->brix;
-            $aw  = $request->aw;
+            $aw = $request->aw;
+            $variant = $data->variant;
 
-            // Standar
-            $standard_visco = 10;
-            $standard_brix = 0;
-            $standard_aw = 0;
+            // Standar berdasarkan varian
+            $standards = [
+                'MSD NR1' => [
+                    'brix_min' => 74,
+                    'brix_max' => 76,
+                    'visco_min' => 7.00,
+                    'visco_max' => 10.00,
+                    'aw_max' => 0.6800
+                ],
+                'MSD NR2' => [
+                    'brix_min' => 74,
+                    'brix_max' => 76,
+                    'visco_min' => 7.00,
+                    'visco_max' => 10.00,
+                    'aw_max' => 0.6800
+                ],
+                'JB' => [
+                    'brix_min' => 76,
+                    'brix_max' => null,
+                    'visco_min' => 16.00,
+                    'visco_max' => 25.00,
+                    'aw_max' => 0.7100
+                ],
+                'SS1' => [
+                    'brix_min' => 75,
+                    'brix_max' => null,
+                    'visco_min' => 14.00,
+                    'visco_max' => 22.00,
+                    'aw_max' => 0.7100
+                ],
+                'SS2' => [
+                    'brix_min' => 75,
+                    'brix_max' => null,
+                    'visco_min' => 16.00,
+                    'visco_max' => 24.00,
+                    'aw_max' => 0.7100
+                ],
+                'BB' => [
+                    'brix_min' => 77,
+                    'brix_max' => null,
+                    'visco_min' => 17.00,
+                    'visco_max' => 28.00,
+                    'aw_max' => 0.7100
+                ],
+            ];
 
-            // Hitung status
-            if (
-                ($visco !== null && $visco > $standard_visco) ||
-                ($brix !== null && $brix > $standard_brix) ||
-                ($aw !== null && $aw > $standard_aw)
-            ) {
-                $hasil = 'NOT OK';
-            } elseif ($visco === null || $brix === null || $aw === null) {
-                $hasil = 'PENDING'; // menunggu parameter lain
+            // Default jika variant tidak ditemukan
+            if (!isset($standards[$variant])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Varian tidak valid.',
+                ], 400);
+            }
+
+            $std = $standards[$variant];
+
+            // Cek apakah semua parameter sudah diisi
+            if ($visco === null || $brix === null || $aw === null) {
+                $hasil = 'PENDING';
+                $validation_details = [
+                    'visco' => ['status' => 'pending', 'message' => 'Belum diisi'],
+                    'brix' => ['status' => 'pending', 'message' => 'Belum diisi'],
+                    'aw' => ['status' => 'pending', 'message' => 'Belum diisi']
+                ];
             } else {
-                $hasil = 'OK';
+                // Array untuk menyimpan detail validasi
+                $validation_details = [];
+
+                // Validasi Viskositas
+                $isViscoValid = ($visco >= $std['visco_min'] && $visco <= $std['visco_max']);
+                $validation_details['visco'] = [
+                    'value' => $visco,
+                    'standard' => $std['visco_min'] . ' - ' . $std['visco_max'],
+                    'status' => $isViscoValid ? 'OK' : 'NOT OK',
+                    'message' => $isViscoValid
+                        ? "Viskositas OK ({$visco} dalam range {$std['visco_min']}-{$std['visco_max']})"
+                        : "Viskositas NOT OK ({$visco} diluar range {$std['visco_min']}-{$std['visco_max']})"
+                ];
+
+                // Validasi Brix
+                $isBrixValid = ($brix >= $std['brix_min']);
+                if ($std['brix_max'] !== null) {
+                    $isBrixValid = $isBrixValid && ($brix <= $std['brix_max']);
+                    $brixStandard = $std['brix_min'] . ' - ' . $std['brix_max'];
+                    $brixMessage = $isBrixValid
+                        ? "Brix OK ({$brix} dalam range {$std['brix_min']}-{$std['brix_max']})"
+                        : "Brix NOT OK ({$brix} diluar range {$std['brix_min']}-{$std['brix_max']})";
+                } else {
+                    $brixStandard = 'Min ' . $std['brix_min'];
+                    $brixMessage = $isBrixValid
+                        ? "Brix OK ({$brix} >= {$std['brix_min']})"
+                        : "Brix NOT OK ({$brix} < {$std['brix_min']})";
+                }
+                $validation_details['brix'] = [
+                    'value' => $brix,
+                    'standard' => $brixStandard,
+                    'status' => $isBrixValid ? 'OK' : 'NOT OK',
+                    'message' => $brixMessage
+                ];
+
+                // Validasi AW
+                $isAwValid = ($aw < $std['aw_max']);
+                $validation_details['aw'] = [
+                    'value' => $aw,
+                    'standard' => '< ' . $std['aw_max'],
+                    'status' => $isAwValid ? 'OK' : 'NOT OK',
+                    'message' => $isAwValid
+                        ? "AW OK ({$aw} < {$std['aw_max']})"
+                        : "AW NOT OK ({$aw} >= {$std['aw_max']})"
+                ];
+
+                // Tentukan hasil akhir
+                if ($isViscoValid && $isBrixValid && $isAwValid) {
+                    $hasil = 'OK';
+                } else {
+                    $hasil = 'NOT OK';
+                }
             }
 
             $data->update([
@@ -164,6 +301,10 @@ class MonitoringStorageBeforeUseController extends Controller
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Data berhasil disimpan.',
+                'hasil' => $hasil,
+                'variant' => $variant,
+                'standard' => $std,
+                'validation_details' => $validation_details
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
