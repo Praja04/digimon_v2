@@ -67,6 +67,11 @@ class ProductionBatch extends Model
         return $this->hasMany(MonitoringOnGoingKimia::class);
     }
 
+    public function monitoringOnGoingMikro()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class);
+    }
+
     public function getBatchRangeArrayAttribute()
     {
         if (preg_match('/(\d+)\s*-\s*(\d+)/', $this->batch_range, $matches)) {

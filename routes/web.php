@@ -33,6 +33,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/monitoring-ongoing-kimia/analisa', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'storeAnalisa'])->name('monitoring-ongoing-kimia.store.analisa');
     Route::delete('/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'destroy'])->name('monitoring-ongoing-kimia.destroy');
 
+    // Monitoring - On Going Mikro
+    Route::get('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'index'])->name('monitoring-ongoing-mikro.index');
+    Route::get('/monitoring-ongoing-mikro/edit/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'edit'])->name('monitoring-ongoing-mikro.edit');
+    Route::get('/monitoring-ongoing-mikro/show/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'show'])->name('monitoring-ongoing-mikro.show');
+    Route::get('/analisa/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'analisa'])->name('monitoring-ongoing-mikro.analisa');
+    Route::post('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'store'])->name('monitoring-ongoing-mikro.store');
+    Route::post('/monitoring-ongoing-mikro/analisa/mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaMikro'])->name('monitoring-ongoing-mikro.analisa.mikro');
+    Route::post('/monitoring-ongoing-mikro/analisa/kimia', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaKimia'])->name('monitoring-ongoing-mikro.analisa.kimia');    
+    Route::delete('/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'destroy'])->name('monitoring-ongoing-mikro.destroy');
+
     /*------------------------------------------
     RMPM
     Roles: Supervisor, Foreman, Analis RM

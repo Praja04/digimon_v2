@@ -165,4 +165,29 @@ class User extends Authenticatable
     {
         return $this->hasMany(MonitoringOnGoingKimia::class, 'analis_id');
     }
+
+    public function monitoringOnGoingMikro()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_id');
+    }
+
+    public function monitoringOnGoingMikroEb()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_eb');
+    }
+
+    public function monitoringOnGoingMikroTpc()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_tpc');
+    }
+
+    public function monitoringOnGoingMikroYm()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_ym');
+    }
+
+    public function monitoringOnGoingMikroBendaAsing()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_benda_asing');
+    }
 }

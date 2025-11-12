@@ -40,9 +40,9 @@ class MonitoringOnGoingKimiaController extends Controller
                     if (!$data->filling_date) {
                         return '-';
                     }
-                    return \Carbon\Carbon::parse($data->waktu_selesai_pemakaian)
+                    return \Carbon\Carbon::parse($data->filling_date)
                         ->locale('id')
-                        ->translatedFormat('d F Y, H:i');
+                        ->translatedFormat('d F Y');
                 })
                 ->addColumn('detail', function ($data) {
                     return '
@@ -260,16 +260,16 @@ class MonitoringOnGoingKimiaController extends Controller
             $monitoring->organo = $request->organo;
             $monitoring->status = $request->status_disposition;
             $monitoring->disposition = $request->status_disposition === 'OK' ? 'Release' : 'Hold';
-            $monitoring->remarks = $request->catatan;
+            $monitoring->remarks = $request->remark;
             $monitoring->save();
 
             if (in_array($request->status_disposition, ['NOT OK'])) {
                 event(new ProcessOutsideDisposition(
-                    "Monitoring On Going - Batch " . $monitoring->productionBatch->batch_number,
+                    "Monitoring On Going - Kimia - Batch " . $monitoring->productionBatch->batch_number,
                     $monitoring->productionBatch->id,
-                    'Monitoring On Going',
+                    'Monitoring On Going - Kimia',
                     $request->status_disposition,
-                    $request->catatan,
+                    $request->remark,
                 ));
             }
 

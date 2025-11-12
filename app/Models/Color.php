@@ -48,4 +48,9 @@ class Color extends Model
     {
         return $this->hasMany(MonitoringOnGoingKimia::class);
     }
+
+    public function monitoringOnGoingMikro()
+    {
+        return $this->hasMany(MonitoringOnGoingMikro::class);
+    }
 }
