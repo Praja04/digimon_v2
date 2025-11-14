@@ -352,7 +352,7 @@
                 showLoading("#chart-disposition-blending");
 
                 try {
-                    const url = "{{ route('dashboard.blending-awal.analisa.disposisi') }}?" + getParams();
+                    const url = "{{ route('api.dashboard.blending-awal.analisa.disposisi') }}?" + getParams();
                     console.log('Fetching disposition from:', url);
 
                     const res = await fetch(url);
@@ -606,7 +606,7 @@
                 });
 
                 try {
-                    const url = "{{ route('dashboard.blending-awal.analisa') }}?" + getParams();
+                    const url = "{{ route('api.dashboard.blending-awal.analisa') }}?" + getParams();
                     console.log('Fetching parameters from:', url);
 
                     const res = await fetch(url);

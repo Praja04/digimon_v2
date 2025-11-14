@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\BlendingAwal;
+use App\Models\BlendingAfterAdjustMikro;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class BlendingAwalController extends Controller
+class BlendingAfterAdjustController extends Controller
 {
     public function index()
     {
-        return view('dashboard.blending-awal.index');
+        return view('dashboard.blending-after-adjust.index');
     }
 }

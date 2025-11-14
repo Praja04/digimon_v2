@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\BlendingAwal;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class BlendingAwalController extends Controller
+class MonitoringTurunBlendingController extends Controller
 {
     public function index()
     {
-        return view('dashboard.blending-awal.index');
+        return view('dashboard.monitoring-turun-blending.index');
     }
 }

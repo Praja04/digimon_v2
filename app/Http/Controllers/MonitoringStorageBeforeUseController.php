@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ProcessOutsideDisposition;
 use App\Http\Requests\Analisa\MonitoringStorageBeforeUseStoreRequest as AnalisaMonitoringStorageBeforeUseStoreRequest;
 use App\Http\Requests\MonitoringStorageBeforeUseStoreRequest;
 use App\Models\MonitoringStorageBeforeUse;
@@ -297,6 +298,16 @@ class MonitoringStorageBeforeUseController extends Controller
                 'aw' => $request->aw,
                 'hasil' => $hasil,
             ]);
+
+            if (in_array($hasil, ['NOT OK'])) {
+                event(new ProcessOutsideDisposition(
+                    "Monitoring Before Use - Storage " . $data->storage . ' (' . $data->variant . ')',
+                    'Monitoring Before Use',
+                    $hasil,
+                    "Hasil Analisa: $hasil",
+                ));
+            }
+
 
             return response()->json([
                 'status'  => 'success',

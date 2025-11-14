@@ -223,7 +223,7 @@ class MonitoringOnGoingKimiaController extends Controller
     public function storeAnalisa(AnalisaMonitoringOngoingKimiaRequest $request)
     {
         try {
-            $monitoring = MonitoringOnGoingKimia::find($request->id);
+            $monitoring = MonitoringOnGoingKimia::with('productionBatch')->find($request->id);
 
             if (!$monitoring) {
                 return response()->json([

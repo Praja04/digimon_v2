@@ -56,11 +56,13 @@
                                         class="nav-link {{ request()->routeIs('dashboard.blending-awal.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-blender"></i> Analisis Blending Awal</a>
                                 </li>
-                                <li class="nav-item"><a href="{{ url('dashboard/blending/after') }}"
-                                        class="nav-link"><i class="mdi mdi-blender-outline"></i> Analisis Blending
+                                <li class="nav-item"><a href="{{ route('dashboard.blending-after-adjust.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.blending-after-adjust.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-blender-outline"></i> Analisis Blending
                                         After Adjust</a></li>
-                                <li class="nav-item"><a href="{{ url('dashboard/monitoring/turun') }}"
-                                        class="nav-link"><i class="mdi mdi-chart-line"></i> Monitoring Turun
+                                <li class="nav-item"><a href="{{ route('dashboard.monitoring-turun-blending.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.monitoring-turun-blending.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-chart-line"></i> Monitoring Turun
                                         Blending</a></li>
                                 <li class="nav-item"><a href="{{ url('dashboard/monitoring/storage') }}"
                                         class="nav-link"><i class="mdi mdi-database"></i> Monitoring Storage</a></li>
@@ -143,7 +145,7 @@
 
                         {{-- Monitoring Filling Menu --}}
                         <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-daily-tank.menu', 'monitoring-daily-tank.index', 'monitoring-daily-tank.show', 'analisa.monitoring-daily-tank-mikro.show', 'analisa.monitoring-daily-tank-kimia.show', 'monitoring-ongoing-kimia.index','monitoring-ongoing-mikro.index']) ? 'active' : '' }}"
+                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-daily-tank.menu', 'monitoring-daily-tank.index', 'monitoring-daily-tank.show', 'analisa.monitoring-daily-tank-mikro.show', 'analisa.monitoring-daily-tank-kimia.show', 'monitoring-ongoing-kimia.index', 'monitoring-ongoing-mikro.index', 'monitoring-ongoing-kimia.show', 'monitoring-ongoing-mikro.show']) ? 'active' : '' }}"
                                 href="{{ route('monitoring-daily-tank.menu') }}">
                                 <i class="mdi mdi-bottle-wine"></i> <span>Monitoring Filling</span>
                             </a>

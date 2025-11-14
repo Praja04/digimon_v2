@@ -148,7 +148,9 @@
                                                         {{ $notif->title }}
                                                     </span>
                                                     <span class="notif-po-badge">
-                                                        No. PO: {{ $notif->productionBatch->po_number }}
+                                                        @if ($notif->productionBatch && $notif->productionBatch->po_number)
+                                                            No. PO: {{ $notif->productionBatch->po_number }}
+                                                        @endif
                                                     </span>
                                                 </div>
 

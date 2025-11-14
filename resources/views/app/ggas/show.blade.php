@@ -147,7 +147,9 @@
                                                     <td>{{ $ggas->dissolver_number }}</td>
                                                     <td>{{ $ggas->brix ?? '-' }}</td>
                                                     <td>{{ $ggas->nacl ?? '-' }}</td>
-                                                    <td>{{ $ggas->color->name ?? '-' }}</td>
+                                                    <td>{{ $ggas->color->name ?? '-' }} <small
+                                                            class="text-muted">({{ $ggas->color->code ?? '-' }})</small>
+                                                    </td>
                                                     <td>{{ $ggas->user->name ?? '-' }}</td>
                                                     <td>{{ $ggas->status ?? '-' }}</td>
                                                     <td>{{ $ggas->disposition ?? '-' }}</td>

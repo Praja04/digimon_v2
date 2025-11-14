@@ -377,7 +377,7 @@
 
             // Fetch chart data function
             function fetchChartData(type, startDate = null, endDate = null, variant = null) {
-                let url = "{{ route('dashboard.gga-ggas.analisa') }}";
+                let url = "{{ route('api.dashboard.gga-ggas.analisa') }}";
                 let params = [];
 
                 if (startDate && endDate) {
@@ -558,7 +558,7 @@
 
             // Fetch disposition data function
             function fetchDispositionData(type, startDate = null, endDate = null, variant = null) {
-                let url = "{{ route('dashboard.gga-ggas.analisa.disposisi') }}";
+                let url = "{{ route('api.dashboard.gga-ggas.analisa.disposisi') }}";
                 let params = [];
 
                 if (startDate && endDate) {

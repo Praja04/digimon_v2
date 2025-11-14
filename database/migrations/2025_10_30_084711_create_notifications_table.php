@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
-            $table->string('process');
-            $table->string('title');
-            $table->string('status_disposition');
-            $table->text('message');
+            $table->foreignId('production_batch_id')->nullable()->constrained('production_batches')->onDelete('cascade');
+            $table->string('process')->nullable();
+            $table->string('title')->nullable();
+            $table->string('status_disposition')->nullable();
+            $table->text('message')->nullable();
             $table->enum('status', ['unread', 'read'])->default('unread');
             $table->timestamps();
         });

@@ -16,13 +16,15 @@ Routes berdasarkan Role Access
 Route::middleware(['auth'])->group(function () {
     // Dashboard - Analisis GGA GGAS
     Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
-    Route::get('/dashboard/gga-ggas/analisa', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'analisaGgaGgas'])->name('dashboard.gga-ggas.analisa');
-    Route::get('/dashboard/gga-ggas/analisa/disposisi', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'analisaDisposisi'])->name('dashboard.gga-ggas.analisa.disposisi');
 
     // Dahboard - Blending Awal
     Route::get('/dashboard/blending-awal', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'index'])->name('dashboard.blending-awal.index');
-    Route::get('/dashboard/blending-awal/analisa', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'analisaBlendingAwal'])->name('dashboard.blending-awal.analisa');
-    Route::get('/dashboard/blending-awal/analisa/disposisi', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'analisaDisposisi'])->name('dashboard.blending-awal.analisa.disposisi');
+
+    // Dashboard - Blending After Adjust
+    Route::get('/dashboard/blending-after-adjust', [App\Http\Controllers\Dashboard\BlendingAfterAdjustController::class, 'index'])->name('dashboard.blending-after-adjust.index');
+
+    // Monitoring - Turun Blending
+    Route::get('/dashboard/monitoring-turun-blending', [App\Http\Controllers\Dashboard\MonitoringTurunBlendingController::class, 'index'])->name('dashboard.monitoring-turun-blending.index');
 
     // Monitoring - On Going Kimia
     Route::get('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'index'])->name('monitoring-ongoing-kimia.index');
@@ -40,7 +42,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/analisa/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'analisa'])->name('monitoring-ongoing-mikro.analisa');
     Route::post('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'store'])->name('monitoring-ongoing-mikro.store');
     Route::post('/monitoring-ongoing-mikro/analisa/mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaMikro'])->name('monitoring-ongoing-mikro.analisa.mikro');
-    Route::post('/monitoring-ongoing-mikro/analisa/kimia', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaKimia'])->name('monitoring-ongoing-mikro.analisa.kimia');    
+    Route::post('/monitoring-ongoing-mikro/analisa/kimia', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaKimia'])->name('monitoring-ongoing-mikro.analisa.kimia');
     Route::delete('/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'destroy'])->name('monitoring-ongoing-mikro.destroy');
 
     /*------------------------------------------

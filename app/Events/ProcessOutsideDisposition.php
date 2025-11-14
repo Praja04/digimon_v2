@@ -15,11 +15,16 @@ class ProcessOutsideDisposition
     public $production_batch_id;
     public $message;
 
-    public function __construct($title, $production_batch_id, $process, $status_disposition, $message)
-    {
+    public function __construct(
+        $title = null,
+        $production_batch_id = null,
+        $process  = null,
+        $status_disposition = null,
+        $message = null,
+    ) {
         $this->title = $title;
-        $this->process = $process;
         $this->production_batch_id = $production_batch_id;
+        $this->process = $process;
         $this->status_disposition = $status_disposition;
         $this->message = $message;
     }

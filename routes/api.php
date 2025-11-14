@@ -3,6 +3,18 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Dashboard - GGA GGAS
+Route::get('/dashboard/gga-ggas/analisa', [App\Http\Controllers\Api\Dashboard\GgaGgasController::class, 'analisaGgaGgas'])->name('api.dashboard.gga-ggas.analisa');
+Route::get('/dashboard/gga-ggas/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\GgaGgasController::class, 'analisaDisposisi'])->name('api.dashboard.gga-ggas.analisa.disposisi');
+
+// Dashboard - Blending Awal
+Route::get('/dashboard/blending-awal/analisa', [App\Http\Controllers\Api\Dashboard\BlendingAwalController::class, 'analisaBlendingAwal'])->name('api.dashboard.blending-awal.analisa');
+Route::get('/dashboard/blending-awal/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\BlendingAwalController::class, 'analisaDisposisi'])->name('api.dashboard.blending-awal.analisa.disposisi');
+
+// Dashboard - Blending After Adjust
+Route::get('/dashboard/blending-after-adjust/analisa', [App\Http\Controllers\Api\Dashboard\BlendingAfterAdjustController::class, 'analisaBlendingAfterAdjust'])->name('api.dashboard.blending-after-adjust.analisa');
+Route::get('/dashboard/blending-after-adjust/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\BlendingAfterAdjustController::class, 'analisaDisposisi'])->name('api.dashboard.blending-after-adjust.analisa.disposisi');
+
 // Production Batch
 Route::get('/persiapan-masak', [App\Http\Controllers\Api\ProductionBatchController::class, 'index'])->name('api.production.batch.index');
 Route::get('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'show'])->name('api.production.batch.show');
