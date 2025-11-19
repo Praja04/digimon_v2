@@ -240,6 +240,7 @@ class GGaController extends Controller
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
                 'disposition_remark' => $remarkText,
+                'jam_selesai_gga' => now()->format('Y-m-d H:i:s'),
             ];
 
             // Call external API

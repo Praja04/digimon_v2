@@ -230,10 +230,11 @@ class GgasController extends Controller
 
             $apiPayload = [
                 'disposition' => $disposition,
-                'revisi' => $request->revisi ?? null,
+                'revisi' => $updateData['revisi'] ?? null,
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
                 'disposition_remark' => $remarkText,
+                'jam_selesai_ggas' => now()->format('Y-m-d H:i:s'),
             ];
 
             $client = new \GuzzleHttp\Client();
