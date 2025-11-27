@@ -14,7 +14,9 @@ class MonitoringDailyTankStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'tanggal_produksi' => 'required|date',
             'storage' => 'required|string',
+            'nomor_po' => 'required|string',
             'sampling_point' => 'required|string',
             'jenis_analisa' => 'required|string',
             'jenis_sample' => 'required|string',
@@ -24,7 +26,9 @@ class MonitoringDailyTankStoreRequest extends FormRequest
     public function attributes()
     {
         return [
+            'tanggal_produksi' => 'Tanggal Produksi',
             'storage' => 'Storage',
+            'nomor_po' => 'Nomor PO',
             'sampling_point' => 'Sampling Point',
             'jenis_analisa' => 'Jenis Analisa',
             'jenis_sample' => 'Jenis Sample',

@@ -7,6 +7,7 @@ use App\Http\Requests\Analisa\MonitoringStorageBeforeUseStoreRequest as AnalisaM
 use App\Http\Requests\MonitoringStorageBeforeUseStoreRequest;
 use App\Models\MonitoringStorageBeforeUse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Milon\Barcode\Facades\DNS2DFacade;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -35,35 +36,20 @@ class MonitoringStorageBeforeUseController extends Controller
                     }
                     return '-';
                 })
-                ->editColumn('waktu_selesai_pemakaian', function ($data) {
-                    if (!$data->waktu_selesai_pemakaian) {
-                        return '-';
-                    }
-                    return \Carbon\Carbon::parse($data->waktu_selesai_pemakaian)
-                        ->locale('id')
-                        ->translatedFormat('d F Y, H:i');
-                })
-                ->editColumn('estimasi_kadaluarsa', function ($data) {
-                    if (!$data->estimasi_kadaluarsa) {
-                        return '-';
-                    }
-                    return \Carbon\Carbon::parse($data->estimasi_kadaluarsa)
-                        ->locale('id')
-                        ->translatedFormat('d F Y, H:i');
-                })
                 ->addColumn('hasil', function ($data) {
                     if (!$data->hasil) {
                         return '<span class="badge bg-secondary">Belum Ada</span>';
                     }
 
-                    $badgeClass = match (strtoupper($data->hasil)) {
-                        'OK' => 'bg-success',
-                        'NOT OK' => 'bg-danger',
-                        'PENDING' => 'bg-warning text-dark',
+                    $hasilUpper = strtoupper($data->hasil);
+                    $badgeClass = match (true) {
+                        str_contains($hasilUpper, 'OK') && !str_contains($hasilUpper, 'NOT') => 'bg-success',
+                        $hasilUpper === 'NOT OK' => 'bg-danger',
+                        $hasilUpper === 'PENDING' => 'bg-warning text-dark',
                         default => 'bg-secondary'
                     };
 
-                    return '<span class="badge ' . $badgeClass . '">' . strtoupper($data->hasil) . '</span>';
+                    return '<span class="badge ' . $badgeClass . '">' . $hasilUpper . '</span>';
                 })
                 ->addColumn('detail', function ($data) {
                     return '
@@ -72,31 +58,61 @@ class MonitoringStorageBeforeUseController extends Controller
                         </button>
                     ';
                 })
+                ->addColumn('status_approval', function ($data) {
+                    if ($data->status_approval === 'waiting_approval') {
+                        return '<span class="badge bg-warning"><i class="mdi mdi-clock-outline"></i> Menunggu Approval</span>';
+                    } elseif ($data->status_approval === 'approved') {
+                        return '<span class="badge bg-success"><i class="mdi mdi-check"></i> Disetujui</span>';
+                    } elseif ($data->status_approval === 'rejected') {
+                        return '<span class="badge bg-danger"><i class="mdi mdi-close"></i> Ditolak</span>';
+                    }
+                    return '-';
+                })
                 ->addColumn('action', function ($data) {
                     $html = '';
 
-                    if (auth()->check() && auth()->user()->role === 'Analis Kimia') {
-                        $html .= '
-                        <button class="btn btn-sm btn-primary me-1" id="btnAnalisa" data-id="' . $data->id . '">
-                           <span class="mdi mdi-test-tube"></span> Analisa
-                        </button>';
-                    } else {
-                        $html .= '
-                        <button class="btn btn-sm btn-warning me-1" id="btnEdit" data-id="' . $data->id . '">
-                        <span class="mdi mdi-pencil"></span> Edit
-                        </button>
-                        <button class="btn btn-sm btn-danger" id="btnDelete" data-id="' . $data->id . '">
-                            <span class="mdi mdi-trash-can"></span> Hapus
-                        </button>
-                        ';
+                    if (auth()->check()) {
+                        if (auth()->user()->role === 'Analis Kimia') {
+                            $html .= '
+                                <button class="btn btn-sm btn-primary me-1" id="btnAnalisa" data-id="' . $data->id . '">
+                                <span class="mdi mdi-test-tube"></span> Analisa
+                                </button>';
+                        } elseif (auth()->user()->role === 'Foreman') {
+                            if ($data->hasil === 'NOT OK' && $data->status_approval === 'waiting_approval') {
+                                $html .= '
+                                <button class="btn btn-sm btn-success me-1" id="btnApprove" data-id="' . $data->id . '" data-status="approve">
+                                    <span class="mdi mdi-check"></span> Disetujui
+                                </button>
+                                <button class="btn btn-sm btn-danger me-1" id="btnReject" data-id="' . $data->id . '" data-status="rejected">
+                                    <span class="mdi mdi-close"></span> Ditolak
+                                </button>';
+                            } elseif (auth()->user()->role === 'Foreman' || auth()->user()->role === 'Analis Field') {
+                                $html .= '
+                                <button class="btn btn-sm btn-warning me-1" id="btnEdit" data-id="' . $data->id . '">
+                                <span class="mdi mdi-pencil"></span> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" id="btnDelete" data-id="' . $data->id . '">
+                                    <span class="mdi mdi-trash-can"></span> Hapus
+                                </button>';
+                            }
+                        } else {
+                            if ($data->hasil === 'NOT OK' && $data->status_approval === 'approved') {
+                                $html .= '
+                                <button class="btn btn-sm btn-info me-1" id="btnFlushing" data-id="' . $data->id . '">
+                                    <span class="mdi mdi-autorenew"></span> Flushing
+                                </button>';
+                            }
+                        }
                     }
 
                     return $html;
                 })
-                ->rawColumns(['waktu_selesai_pemakaian', 'estimasi_kadaluarsa', 'hasil', 'detail', 'action', 'tahap_flushing'])
+                ->rawColumns(['waktu_selesai_pemakaian', 'estimasi_kadaluarsa', 'hasil', 'detail', 'action', 'tahap_flushing', 'status_approval'])
                 ->make(true);
         }
-        return view('app.monitoring_storage_before_use.index');
+        $variantKecap = Http::get(env('PRODUCTION_URL') . 'api/varian/kecap')->json()['data'];
+
+        return view('app.monitoring_storage_before_use.index', compact('variantKecap'));
     }
 
     public function store(MonitoringStorageBeforeUseStoreRequest $request)
@@ -104,10 +120,10 @@ class MonitoringStorageBeforeUseController extends Controller
         try {
             if (strtolower($request->jenis_sample) === 'flushing') {
                 $tahapFlushing = [
-                    'Before Inlate',
-                    'Before Outlate',
-                    'After Inlate',
-                    'After Outlate'
+                    'Before Inlet',
+                    'Before Outlet',
+                    'After Inlet',
+                    'After Outlet'
                 ];
 
                 foreach ($tahapFlushing as $tahap) {
@@ -154,6 +170,103 @@ class MonitoringStorageBeforeUseController extends Controller
                 'error'   => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function edit($id)
+    {
+        try {
+            $data = MonitoringStorageBeforeUse::find($id);
+
+            if (!$data) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan.',
+                ], 404);
+            }
+
+            return response()->json($data);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan, silakan coba lagi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $data = MonitoringStorageBeforeUse::find($id);
+
+            if (!$data) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan.',
+                ], 404);
+            }
+
+            // Generate QR Code
+            $qrText = route('monitoring-storage-before-use.analisa', $data->id);
+            $qrCode = DNS2DFacade::getBarcodePNG($qrText, 'QRCODE');
+
+            return response()->json([
+                'id' => $data->id,
+                'storage' => $data->storage,
+                'jenis_sample' => $data->jenis_sample,
+                'waktu_selesai_pemakaian' => $data->waktu_selesai_pemakaian,
+                'waktu_selesai_pemakaian_formatted' => $data->waktu_selesai_pemakaian
+                    ? \Carbon\Carbon::parse($data->waktu_selesai_pemakaian)->locale('id')->translatedFormat('d F Y, H:i')
+                    : null,
+                'estimasi_kadaluarsa' => $data->estimasi_kadaluarsa,
+                'estimasi_kadaluarsa_formatted' => $data->estimasi_kadaluarsa
+                    ? \Carbon\Carbon::parse($data->estimasi_kadaluarsa)->locale('id')->translatedFormat('d F Y, H:i')
+                    : null,
+                'visco' => $data->visco,
+                'brix' => $data->brix,
+                'aw' => $data->aw,
+                'hasil' => $data->hasil,
+                'created_at_formatted' => $data->created_at
+                    ? \Carbon\Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y, H:i')
+                    : null,
+                'qr_code' => $qrCode,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan, silakan coba lagi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy(Request $request)
+    {
+        try {
+            $data = MonitoringStorageBeforeUse::find($request->id);
+
+            if ($data) {
+                $data->delete();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Data berhasil dihapus.',
+                ], 201);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error occurred, please try againrred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function analisa($id)
+    {
+        $monitoringStorageBeforeUse = MonitoringStorageBeforeUse::find($id);
+
+        return view('app.monitoring_storage_before_use.analisa', compact('monitoringStorageBeforeUse'));
     }
 
     public function storeAnalisa(AnalisaMonitoringStorageBeforeUseStoreRequest $request)
@@ -287,32 +400,49 @@ class MonitoringStorageBeforeUseController extends Controller
                 // Tentukan hasil akhir
                 if ($isViscoValid && $isBrixValid && $isAwValid) {
                     $hasil = 'OK';
+                    $statusApproval = null;
                 } else {
                     $hasil = 'NOT OK';
+                    $statusApproval = 'waiting_approval';
                 }
             }
 
-            $data->update([
+            $updateData = [
                 'visco' => $request->visco,
                 'brix' => $request->brix,
                 'aw' => $request->aw,
                 'hasil' => $hasil,
-            ]);
+            ];
 
-            if (in_array($hasil, ['NOT OK'])) {
-                event(new ProcessOutsideDisposition(
-                    "Monitoring Before Use - Storage " . $data->storage . ' (' . $data->variant . ')',
-                    'Monitoring Before Use',
-                    $hasil,
-                    "Hasil Analisa: $hasil",
-                ));
+            // Jika NOT OK, set status approval
+            if ($hasil === 'NOT OK') {
+                $updateData['status_approval'] = 'waiting_approval';
+                $updateData['final_status'] = null;
+            } else if ($hasil === 'OK') {
+                $updateData['status_approval'] = null;
+                $updateData['final_status'] = 'released';
             }
+
+            $data->update($updateData);
+
+            event(new ProcessOutsideDisposition(
+                title: "Monitoring Before Use - Storage " . $data->storage . ' (' . $data->variant . ')',
+                production_batch_id: null,
+                process: "Monitoring",
+                status_disposition: $hasil === 'NOT OK' ? 'Waiting Approval' : $hasil,
+                message: $hasil === 'NOT OK'
+                    ? "Hasil Analisa: $hasil - Menunggu persetujuan Foreman"
+                    : "Hasil Analisa: $hasil",
+            ));
 
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Data berhasil disimpan.',
+                'message' => $hasil === 'NOT OK'
+                    ? 'Data berhasil disimpan. Menunggu persetujuan Foreman untuk hasil NOT OK.'
+                    : 'Data berhasil disimpan.',
                 'hasil' => $hasil,
+                'status_approval' => $statusApproval ?? null,
                 'variant' => $variant,
                 'standard' => $std,
                 'validation_details' => $validation_details
@@ -326,7 +456,7 @@ class MonitoringStorageBeforeUseController extends Controller
         }
     }
 
-    public function edit($id)
+    public function approve(Request $request, $id)
     {
         try {
             $data = MonitoringStorageBeforeUse::find($id);
@@ -338,52 +468,56 @@ class MonitoringStorageBeforeUseController extends Controller
                 ], 404);
             }
 
-            return response()->json($data);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan, silakan coba lagi.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function show($id)
-    {
-        try {
-            $data = MonitoringStorageBeforeUse::find($id);
-
-            if (!$data) {
+            // Cek apakah user adalah Foreman
+            if (auth()->user()->role !== 'Foreman') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Data tidak ditemukan.',
-                ], 404);
+                    'message' => 'Anda tidak memiliki akses untuk approve.',
+                ], 403);
             }
 
-            // Generate QR Code
-            $qrText = route('monitoring-storage-before-use.analisa', $data->id);
-            $qrCode = DNS2DFacade::getBarcodePNG($qrText, 'QRCODE');
+            // Cek apakah masih waiting approval
+            if ($data->status_approval !== 'waiting_approval') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data tidak dalam status menunggu approval.',
+                ], 400);
+            }
+
+            $action = $request->action;
+
+            // Jika rejected, ubah hasil menjadi OK
+            if ($action === 'approve') {
+                $data->update([
+                    'hasil' => 'NOT OK',
+                    'status_approval' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'final_status' => 'need_flushing'
+                ]);
+
+                $message = 'Sample dikonfirmasi NOT OK dan perlu dilakukan FLUSHING.';
+                // $dispositionMessage = "Foreman menyetujui hasil NOT OK - Sample perlu FLUSHING";
+            } else {
+                // REJECT = Tidak setuju NOT OK, OVERRIDE menjadi OK
+                $data->update([
+                    'hasil' => 'OK (Override by Foreman)',
+                    'status_approval' => 'rejected',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'final_status' => 'released'
+                ]);
+
+                $message = 'Sample di-OVERRIDE menjadi OK oleh Foreman dan dirilis untuk digunakan.';
+                // $dispositionMessage = "Foreman meng-override hasil NOT OK menjadi OK - Sample RELEASED";
+            }
 
             return response()->json([
-                'id' => $data->id,
-                'storage' => $data->storage,
-                'jenis_sample' => $data->jenis_sample,
-                'waktu_selesai_pemakaian' => $data->waktu_selesai_pemakaian,
-                'waktu_selesai_pemakaian_formatted' => $data->waktu_selesai_pemakaian
-                    ? \Carbon\Carbon::parse($data->waktu_selesai_pemakaian)->locale('id')->translatedFormat('d F Y, H:i')
-                    : null,
-                'estimasi_kadaluarsa' => $data->estimasi_kadaluarsa,
-                'estimasi_kadaluarsa_formatted' => $data->estimasi_kadaluarsa
-                    ? \Carbon\Carbon::parse($data->estimasi_kadaluarsa)->locale('id')->translatedFormat('d F Y, H:i')
-                    : null,
-                'visco' => $data->visco,
-                'brix' => $data->brix,
-                'aw' => $data->aw,
-                'hasil' => $data->hasil,
-                'created_at_formatted' => $data->created_at
-                    ? \Carbon\Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y, H:i')
-                    : null,
-                'qr_code' => $qrCode,
+                'status' => 'success',
+                'message' => $message,
+                'action' => $action,
+                'final_status' => $data->final_status,
+                'hasil' => $data->hasil
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -394,32 +528,48 @@ class MonitoringStorageBeforeUseController extends Controller
         }
     }
 
-    public function destroy(Request $request)
+    public function flushing($id)
     {
         try {
-            $data = MonitoringStorageBeforeUse::find($request->id);
+            $record = MonitoringStorageBeforeUse::find($id);
 
-            if ($data) {
-                $data->delete();
-
+            if (!$record) {
                 return response()->json([
-                    'status' => 'success',
-                    'message' => 'Data berhasil dihapus.',
-                ], 201);
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan.',
+                ], 404);
             }
+
+            $tahapFlushing = [
+                'Before Inlet',
+                'Before Outlet',
+                'After Inlet',
+                'After Outlet'
+            ];
+
+            foreach ($tahapFlushing as $tahap) {
+                $data = [
+                    'storage' => $record->storage,
+                    'variant' => $record->variant,
+                    'jenis_sample' => $record->jenis_sample,
+                    'tahap_flushing' => $tahap,
+                    'waktu_selesai_pemakaian' => $record->waktu_selesai_pemakaian,
+                    'estimasi_kadaluarsa' => $record->estimasi_kadaluarsa,
+                ];
+
+                MonitoringStorageBeforeUse::create($data);
+            }
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data flushing berhasil disimpan (4 tahap dibuat).',
+            ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error occurred, please try againrred',
+                'message' => 'Terjadi kesalahan, silakan coba lagi.',
                 'error' => $e->getMessage()
             ], 500);
         }
-    }
-
-    public function analisa($id)
-    {
-        $monitoringStorageBeforeUse = MonitoringStorageBeforeUse::find($id);
-
-        return view('app.monitoring_storage_before_use.analisa', compact('monitoringStorageBeforeUse'));
     }
 }

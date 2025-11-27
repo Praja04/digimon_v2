@@ -42,7 +42,6 @@ class BlendingAwalController extends Controller
             'batch_range' => $request->batch_range,
             'nomor_blending' => $request->nomor_blending,
             'volume' => $request->volume,
-            'storage' => $request->storage,
         ]);
 
         return response()->json([

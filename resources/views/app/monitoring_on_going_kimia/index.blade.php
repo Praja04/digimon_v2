@@ -65,7 +65,6 @@
                                             <th>Nomor PO</th>
                                             <th>Variant</th>
                                             <th>Tanggal Filling</th>
-                                            <th>Jenis Sample</th>
                                             <th>Status</th>
                                             <th>Detail</th>
                                             <th>Analisa</th>
@@ -93,8 +92,14 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <input type="hidden" name="id" id="id">
+                            <label for="tanggal_produksi" class="form-label">Tanggal Produksi <span
+                                    style="color: red;">*</span></label>
+                            <input type="date" name="tanggal_produksi" id="tanggal_produksi" class="form-control">
+                            <small class="errorTanggalProduksi text-danger"></small>
+                        </div>
+                        <div class="col-lg-6">
                             <label for="storage" class="form-label">Storage <span style="color: red;">*</span></label>
                             <select name="storage" id="storage" class="form-control">
                                 <option value="">-- Pilih Storage --</option>
@@ -134,9 +139,6 @@
                             <label for="nomor_po" class="form-label">Nomor PO <span style="color: red;">*</span></label>
                             <select id="nomor_po" name="nomor_po" class="select2 form-control">
                                 <option value="">-- Pilih Nomor PO --</option>
-                                @foreach ($passedPoNumbers as $id => $poNumber)
-                                    <option value="{{ $id }}">{{ $poNumber }}</option>
-                                @endforeach
                             </select>
                             <small class="text-danger errorNomorPO"></small>
                         </div>
@@ -145,22 +147,6 @@
                             <label for="variant" class="form-label">Variant <span style="color: red;">*</span></label>
                             <select id="variant" name="variant" class="select2 form-control">
                                 <option value="">-- Pilih Variant --</option>
-                                <option value="Pouch 77 gram - SS2">Pouch 77 gram - SS2</option>
-                                <option value="Pouch 250 gram - JB">Pouch 250 gram - JB</option>
-                                <option value="Pouch 550 gram - JB">Pouch 550 gram - JB</option>
-                                <option value="Pouch 700 gram - JB">Pouch 700 gram - JB</option>
-                                <option value="Pouch 1000 gram - JB">Pouch 1000 gram - JB</option>
-                                <option value="BB 40 gram - BB">BB 40 gram - BB</option>
-                                <option value="BB 77 gram - BB">BB 77 gram - BB</option>
-                                <option value="BB 725 gram - BB">BB 725 gram - BB</option>
-                                <option value="BB 270 gram - BB">BB 270 gram - BB</option>
-                                <option value="Sachet 20 gram - SS1">Sachet 20 gram - SS1</option>
-                                <option value="Sachet 12,5 gram - SS1">Sachet 12,5 gram - SS1</option>
-                                <option value="Jeriken 6 kg - JB">Jeriken 6 kg - JB</option>
-                                <option value="Jeriken 25 kg MSD - MSD">Jeriken 25 kg MSD - MSD</option>
-                                <option value="Jeriken 25 kg - JB">Jeriken 25 kg - JB</option>
-                                <option value="Kempu (Lokal) - MSD Lokal">Kempu (Lokal) - MSD Lokal</option>
-                                <option value="Kempu (NR2) - NR2">Kempu (NR2) - NR2</option>
                             </select>
                             <small class="text-danger errorVariant"></small>
                         </div>
@@ -177,52 +163,13 @@
                             <small class="text-danger errorJamKoding"></small>
                         </div>
                         <div class="col-lg-12">
-                            <label for="jenis_sampel" class="form-label">Jenis Sampel <span
-                                    style="color: red;">*</span></label>
-                            <select id="jenis_sampel" name="jenis_sampel" class="select2 form-control">
-                                <option value="">-- Pilih Jenis Sampel --</option>
-                                <option value="Sampel Jam 00:00">Sampel Jam 00:00</option>
-                                <option value="Sampel Jam 01:00">Sampel Jam 01:00</option>
-                                <option value="Sampel Jam 02:00">Sampel Jam 02:00</option>
-                                <option value="Sampel Jam 03:00">Sampel Jam 03:00</option>
-                                <option value="Sampel Jam 04:00">Sampel Jam 04:00</option>
-                                <option value="Sampel Jam 05:00">Sampel Jam 05:00</option>
-                                <option value="Sampel Jam 06:00">Sampel Jam 06:00</option>
-                                <option value="Sampel Jam 07:00">Sampel Jam 07:00</option>
-                                <option value="Sampel Jam 08:00">Sampel Jam 08:00</option>
-                                <option value="Sampel Jam 09:00">Sampel Jam 09:00</option>
-                                <option value="Sampel Jam 10:00">Sampel Jam 10:00</option>
-                                <option value="Sampel Jam 11:00">Sampel Jam 11:00</option>
-                                <option value="Sampel Jam 12:00">Sampel Jam 12:00</option>
-                                <option value="Sampel Jam 13:00">Sampel Jam 13:00</option>
-                                <option value="Sampel Jam 14:00">Sampel Jam 14:00</option>
-                                <option value="Sampel Jam 15:00">Sampel Jam 15:00</option>
-                                <option value="Sampel Jam 16:00">Sampel Jam 16:00</option>
-                                <option value="Sampel Jam 17:00">Sampel Jam 17:00</option>
-                                <option value="Sampel Jam 18:00">Sampel Jam 18:00</option>
-                                <option value="Sampel Jam 19:00">Sampel Jam 19:00</option>
-                                <option value="Sampel Jam 20:00">Sampel Jam 20:00</option>
-                                <option value="Sampel Jam 21:00">Sampel Jam 21:00</option>
-                                <option value="Sampel Jam 22:00">Sampel Jam 22:00</option>
-                                <option value="Sampel Jam 23:00">Sampel Jam 23:00</option>
-                                <option value="Sampel Jam 24:00">Sampel Jam 24:00</option>
-                                <option value="Awal Filling">Awal Filling</option>
-                                <option value="Akhir Filling">Akhir Filling</option>
-                                <option value="Awal Storage">Awal Storage</option>
-                                <option value="Akhir Storage">Akhir Storage</option>
-                                <option value="Awal PO">Awal PO</option>
-                                <option value="Akhir PO">Akhir PO</option>
-                                <option value="After Downtime">After Downtime</option>
-                                <option value="Pergantian Roll">Pergantian Roll</option>
-                                <option value="Gagal Filling Heater">Gagal Filling Heater</option>
-                                <option value="Gagal Filling UV">Gagal Filling UV</option>
-                                <option value="Jeriken">Jeriken</option>
-                            </select>
-                            <small class="text-danger errorJenisSampel"></small>
+                            <label for="koding" class="form-label">Koding <span style="color: red;">*</span></label>
+                            <input type="text" name="koding" id="koding" class="form-control">
+                            <small class="text-danger errorKoding"></small>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success" id="save">Simpan</button>
+                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
                     </div>
                 </div>
             </form>
@@ -267,20 +214,14 @@
                         </div>
                         <div class="col-6 col-md-4">
                             <div class="mb-2">
-                                <span class="text-muted d-block">Formulasi</span>
-                                <strong id="detail_formulation">-</strong>
+                                <span class="text-muted d-block">Koding</span>
+                                <strong id="detail_koding">-</strong>
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
                             <div class="mb-2">
                                 <span class="text-muted d-block">Variant</span>
                                 <strong id="detail_variant">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Jenis Sampel</span>
-                                <strong id="detail_jenis_sampel">-</strong>
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
@@ -429,6 +370,67 @@
             dropdownParent: $('#modal')
         });
 
+        function loadVariantByPo(production_batch_id) {
+            const $variant = $('#variant');
+
+            // Reset variant dropdown
+            $variant.empty().append('<option value="">-- Pilih Variant --</option>');
+            $('.errorVariant').html('');
+
+            if (production_batch_id) {
+                $.ajax({
+                    url: "{{ route('monitoring-ongoing-kimia.get-variant') }}",
+                    type: "POST",
+                    data: {
+                        production_batch_id: production_batch_id
+                    },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $variant.prop('disabled', true);
+                        $variant.empty().append('<option value="">Memuat variant...</option>');
+                    },
+                    success: function(response) {
+                        $variant.prop('disabled', false);
+
+                        if (response.status === 'success' && response.count > 0) {
+                            $variant.empty().append(
+                                '<option value="">-- Pilih Variant --</option>');
+
+                            response.variant_list.forEach(item => {
+                                $variant.append(
+                                    `<option value="${item.display_name}">${item.display_name}</option>`
+                                );
+                            });
+
+                            // Auto-select jika hanya ada 1 variant
+                            if (response.count === 1) {
+                                $variant.val(response.variant_list[0].display_name).trigger(
+                                    'change');
+                            }
+                        } else {
+                            $variant.empty().append(
+                                '<option value="">-- Tidak Ada Variant --</option>');
+                            $('.errorVariant').html(
+                                '<small class="text-danger">Tidak ada variant yang tersedia untuk PO ini.</small>'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        $variant.prop('disabled', false);
+                        $variant.empty().append(
+                            '<option value="">-- Gagal mengambil data --</option>');
+                        $('.errorVariant').html(
+                            '<small class="text-danger">Terjadi kesalahan saat mengambil data variant.</small>'
+                        );
+
+                        console.error('Error:', xhr.responseJSON);
+                    }
+                });
+            } else {
+                $variant.prop('disabled', true);
+            }
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -468,10 +470,6 @@
                     {
                         data: 'filling_date',
                         name: 'filling_date'
-                    },
-                    {
-                        data: 'jenis_sampel',
-                        name: 'jenis_sampel'
                     },
                     {
                         data: 'status',
@@ -524,9 +522,8 @@
                 $('#id').val('');
 
                 $('#storage').val('').trigger('change');
-                $('#nomor_po').val('').trigger('change');
-                $('#variant').val('').trigger('change');
-                $('#jenis_sampel').val('').trigger('change');
+                $('#nomor_po').val('').trigger('change').prop('disabled', true);
+                $('#variant').val('').trigger('change').prop('disabled', true);
 
                 $('.form-control').removeClass('is-invalid');
                 $('.text-danger').html('');
@@ -546,9 +543,8 @@
                         $('#id').val('');
 
                         $('#storage').val('').trigger('change');
-                        $('#nomor_po').val('').trigger('change');
-                        $('#variant').val('').trigger('change');
-                        $('#jenis_sampel').val('').trigger('change');
+                        $('#nomor_po').val('').trigger('change').prop('disabled', true);
+                        $('#variant').val('').trigger('change').prop('disabled', true);
 
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
@@ -559,7 +555,6 @@
                         $('#variant').val(response.variant).trigger('change');
                         $('#filling_date').val(response.filling_date);
                         $('#jam_koding').val(response.jam_koding);
-                        $('#jenis_sampel').val(response.jenis_sampel).trigger('change');
 
                         $('#modal').modal('show');
                     }
@@ -575,7 +570,7 @@
                     dataType: "json",
                     beforeSend: function() {
                         // Reset semua field ke default
-                        $('#detail_storage, #detail_po_number, #detail_formulation, #detail_variant, #detail_jenis_sampel, #detail_filling_date, #detail_jam_koding, #detail_created_at')
+                        $('#detail_storage, #detail_po_number, #detail_koding, #detail_variant, #detail_filling_date, #detail_jam_koding, #detail_created_at')
                             .text('-');
                         $('#detail_analis, #detail_shift, #detail_received_at').text('-');
                         $('#detail_berat_jenis, #detail_visco, #detail_brix, #detail_aw, #detail_nacl, #detail_ph, #detail_color, #detail_organo')
@@ -591,7 +586,7 @@
                             $('#qr_code_container').html('<img src="data:image/png;base64,' +
                                 response.qr_code +
                                 '" alt="QR Code" style="max-width: 150px;">');
-                            let qrText = 'Kimia_' + response.jenis_sampel;
+                            let qrText = 'Kimia';
                             $('#qr_code_text').text(qrText);
                         } else {
                             $('#qr_code_container').html(
@@ -602,9 +597,8 @@
                         // Informasi Dasar
                         $('#detail_storage').text(response.storage || '-');
                         $('#detail_po_number').text(response.po_number || '-');
-                        $('#detail_formulation').text(response.formulation || '-');
+                        $('#detail_koding').text(response.koding || '-');
                         $('#detail_variant').text(response.variant || '-');
-                        $('#detail_jenis_sampel').text(response.jenis_sampel || '-');
                         $('#detail_filling_date').text(response.filling_date_formatted || '-');
                         $('#detail_jam_koding').text(response.jam_koding || '-');
                         $('#detail_created_at').text(response.created_at_formatted || '-');
@@ -680,6 +674,11 @@
                     error: function(xhr) {
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
+                            if (errors.tanggal_produksi) {
+                                $('#tanggal_produksi').addClass('is-invalid');
+                                $('.errorTanggalProduksi').html(errors.tanggal_produksi.join(
+                                    '<br>'));
+                            }
                             if (errors.storage) {
                                 $('#storage').addClass('is-invalid');
                                 $('.errorStorage').html(errors.storage.join('<br>'));
@@ -704,9 +703,9 @@
                                 $('.errorJamKoding').html(errors.jam_koding.join('<br>'));
                             }
 
-                            if (errors.jenis_sampel) {
-                                $('#jenis_sampel').addClass('is-invalid');
-                                $('.errorJenisSampel').html(errors.jenis_sampel.join('<br>'));
+                            if (errors.koding) {
+                                $('#koding').addClass('is-invalid');
+                                $('.errorKoding').html(errors.koding.join('<br>'));
                             }
                         } else {
                             Swal.fire({
@@ -747,6 +746,69 @@
                     }
                 })
             })
+
+            $('#nomor_po').on('change', function() {
+                const production_batch_id = $(this).val();
+                loadVariantByPo(production_batch_id);
+            });
+
+            $('#tanggal_produksi, #storage').on('change', function() {
+                const tanggal_produksi = $('#tanggal_produksi').val();
+                const storage = $('#storage').val();
+                const $nomorPO = $('#nomor_po');
+
+                $nomorPO.empty().append('<option value="">-- Pilih Nomor PO --</option>');
+                $('.errorNomorPO').html('');
+
+                if (tanggal_produksi && storage) {
+                    $.ajax({
+                        url: "{{ route('monitoring-ongoing-kimia.get-po') }}",
+                        type: "POST",
+                        data: {
+                            tanggal_produksi: tanggal_produksi,
+                            storage: storage
+                        },
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $nomorPO.prop('disabled', true);
+                        },
+                        success: function(response) {
+                            $nomorPO.prop('disabled', false);
+
+                            if (response.status === 'success' && response.count > 0) {
+
+                                response.po_list.forEach(item => {
+                                    $nomorPO.append(
+                                        `<option value="${item.id}">${item.po_number}</option>`
+                                    );
+                                });
+
+                                if (response.count === 1) {
+                                    $nomorPO.val(response.selected_id).trigger('change');
+                                    loadVariantByPo(response.selected_id);
+                                } else if (response.count > 1) {
+                                    $nomorPO.val('').trigger('change');
+                                }
+                            } else {
+                                $nomorPO.empty().append(
+                                        '<option value="">-- Tidak Ada PO Release --</option>')
+                                    .val('');
+                                $('.errorNomorPO').html(
+                                    '<small class="text-danger">Tidak ada Nomor PO yang Release.</small>'
+                                );
+                            }
+                        },
+                        error: function() {
+                            $nomorPO.prop('disabled', false);
+                            $nomorPO.empty().append(
+                                '<option value="">-- Gagal mengambil data --</option>');
+                            $('.errorNomorPO').html(
+                                '<small class="text-danger">Terjadi kesalahan saat mengambil data PO.</small>'
+                            );
+                        }
+                    });
+                }
+            });
         });
     </script>
 @endsection

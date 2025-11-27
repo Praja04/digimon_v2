@@ -14,12 +14,13 @@ class MonitoringOngoingKimiaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'tanggal_produksi' => 'required|date',
             'storage' => 'required|string',
             'nomor_po' => 'required|string',
             'variant' => 'required|string',
             'filling_date' => 'required|date',
             'jam_koding' => 'required',
-            'jenis_sampel' => 'required|string',
+            'koding' => 'required|max:5',
         ];
     }
 
@@ -31,7 +32,7 @@ class MonitoringOngoingKimiaRequest extends FormRequest
             'variant' => 'Variant',
             'filling_date' => 'Tanggal Filling',
             'jam_koding' => 'Jam Koding',
-            'jenis_sampel' => 'Jenis Sampel',
+            'koding' => 'Koding',
         ];
     }
 }

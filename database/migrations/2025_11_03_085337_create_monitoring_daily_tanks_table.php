@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('monitoring_daily_tank', function (Blueprint $table) {
             $table->id();
             // Identitas Sampel
+            $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->string('storage', 100)->nullable();
             $table->dateTime('tanggal_sampling')->nullable();
             $table->string('sampling_point', 50)->nullable(); // DT, DTP1, DTP2, dst.
@@ -48,16 +49,15 @@ return new class extends Migration
             $table->string('organo')->nullable();
             $table->string('endapan')->nullable();
             $table->foreignId('color_id')->nullable()->constrained('colors')->onDelete('restrict');
-            $table->enum('status_parameter', ['OK', 'NOT OK'])->nullable();
+            $table->enum('status', ['OK', 'NOT OK'])->nullable();
 
             // Hasil Analisa & Catatan
             $table->text('catatan_analis')->nullable();
             $table->dateTime('tanggal_input_hasil')->nullable();
 
             // Disposisi / Keputusan Akhir
-            $table->enum('status_disposisi', ['RELEASE', 'RELEASE BERSYARAT', 'TIDAK STD'])->nullable();
+            $table->enum('disposisi', ['Release', 'Release Bersyarat', 'Drain'])->nullable();
             $table->text('alasan_disposisi')->nullable();
-            $table->enum('tindakan_lanjutan', ['Release Bersyarat', 'Drain', 'Rework'])->nullable();
             $table->timestamps();
         });
     }

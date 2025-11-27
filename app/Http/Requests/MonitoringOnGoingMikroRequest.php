@@ -13,22 +13,38 @@ class MonitoringOnGoingMikroRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
+            'tanggal_produksi' => 'required|date',
             'storage' => 'required|string',
             'nomor_po' => 'required|string',
             'variant' => 'required|string',
-            'no_filler' => 'required|string',
-            'no_kempu_jeriken' => 'required|string',
-            'koding' => 'required|string',
+            'no_filler' => 'required|integer',
+            'koding' => 'nullable|max:5',
             'jam_koding' => 'required',
             'jenis_sampel_1' => 'required|string',
             'filling_date' => 'required|date',
         ];
+
+        if ($this->variant) {
+            $isKempuOrJeriken = stripos($this->variant, 'kempu') !== false ||
+                stripos($this->variant, 'jeriken') !== false;
+
+            if ($isKempuOrJeriken) {
+                $rules['no_kempu_jeriken'] = 'required|integer';
+            } else {
+                $rules['no_kempu_jeriken'] = 'nullable|integer';
+            }
+        } else {
+            $rules['no_kempu_jeriken'] = 'nullable|integer';
+        }
+
+        return $rules;
     }
 
     public function attributes(): array
     {
         return [
+            'tanggal_produksi' => 'Tanggal Produksi',
             'storage' => 'Storage',
             'nomor_po' => 'Nomor PO',
             'variant' => 'Variant',

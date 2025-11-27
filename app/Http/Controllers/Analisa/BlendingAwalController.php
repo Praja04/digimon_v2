@@ -171,7 +171,6 @@ class BlendingAwalController extends Controller
 
             // Tentukan disposition
             if ($statusChanged) {
-                // Status berubah, hitung ulang disposition
                 if ($status_disposition === 'OK') {
                     $disposition = 'Release';
                 } elseif ($userRole === 'Foreman' && $request->filled('disposition')) {
@@ -186,10 +185,8 @@ class BlendingAwalController extends Controller
             } else {
                 // Status tidak berubah
                 if ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    // Foreman boleh update disposisi manual
                     $disposition = $request->disposition;
                 } else {
-                    // Pertahankan disposition yang sudah ada
                     $disposition = $blending->disposition;
                 }
             }
@@ -252,13 +249,34 @@ class BlendingAwalController extends Controller
 
             $blending->update($updateData);
 
+            // Build remark text for API payload
+            if ($remark !== null && $remark !== '-' && $disposition !== 'Adjustment') {
+                $remarkText = $remark;
+            } elseif ($disposition === 'Adjustment') {
+                $remarkText = sprintf(
+                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
+                    $request->adjustment_qty_air ?? 0,
+                    $request->adjustment_qty_garam ?? 0,
+                    $request->adjustment_qty_gula ?? 0
+                );
+            } elseif ($updateData['not_standard'] ?? false) {
+                $remarkText = 'Adjustment';
+            } else {
+                $remarkText = '-';
+            }
+
+            $jamSelesaiBlending = ($status_disposition === 'OK')
+                ? now()->format('Y-m-d H:i:s')
+                : null;
+
             Http::post(env('PRODUCTION_URL') . 'api/blending-awal/' . $blending->id, [
                 'disposition' => $disposition,
-                'disposition_remark' => $remark,
+                'disposition_remark' => $remarkText,
                 'revisi' => $updateData['revisi'],
                 'is_adjustment' => $status_disposition === 'Adjustment',
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
+                'jam_selesai_blending' => $jamSelesaiBlending
             ]);
 
             DB::commit();

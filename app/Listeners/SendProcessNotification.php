@@ -24,12 +24,13 @@ class SendProcessNotification
         foreach ($users as $user) {
             Notification::create([
                 'user_id' => $user->id,
-                'production_batch_id' => $event->production_batch_id,
+                'production_batch_id' => $event->production_batch_id ?? null,
                 'title' => $event->title,
                 'process' => $event->process,
                 'status_disposition' => $event->status_disposition,
                 'message' => $event->message,
                 'status' => 'unread',
+                'redirect' => $event->redirect,
             ]);
         }
     }

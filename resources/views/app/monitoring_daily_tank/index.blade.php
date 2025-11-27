@@ -61,6 +61,7 @@
                                     <thead>
                                         <tr>
                                             <th>#</th>
+                                            <th>Nomor PO</th>
                                             <th>Storage</th>
                                             <th>Tanggal Sampling</th>
                                             <th>Sampling Point</th>
@@ -92,8 +93,15 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <input type="hidden" name="id" id="id">
+                            <label for="tanggal_produksi" class="form-label">Tanggal Produksi <span
+                                    style="color: red;">*</span></label>
+                            <input type="date" name="tanggal_produksi" id="tanggal_produksi" class="form-control">
+                            <small class="errorTanggalProduksi text-danger"></small>
+                        </div>
+
+                        <div class="col-lg-6">
                             <label for="storage" class="form-label">Storage <span style="color: red;">*</span></label>
                             <select name="storage" id="storage" class="form-control">
                                 <option value="">-- Pilih Storage --</option>
@@ -129,7 +137,15 @@
                             <small class="text-danger errorStorage"></small>
                         </div>
 
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
+                            <label for="nomor_po" class="form-label">Nomor PO <span style="color: red;">*</span></label>
+                            <select name="nomor_po" id="nomor_po" class="form-control">
+                                <option value="">-- Pilih Nomor PO --</option>
+                            </select>
+                            <small class="text-danger errorNomorPO"></small>
+                        </div>
+
+                        <div class="col-lg-6">
                             <label for="sampling_point" class="form-label">Sampling Point <span
                                     style="color: red;">*</span></label>
                             <select id="sampling_point" name="sampling_point" class="form-control">
@@ -145,7 +161,8 @@
                             </select>
                             <small class="text-danger errorSamplingPoint"></small>
                         </div>
-                        <div class="col-lg-12">
+
+                        <div class="col-lg-6">
                             <label for="jenis_analisa" class="form-label">Jenis Analisa <span
                                     style="color: red;">*</span></label>
                             <select id="jenis_analisa" name="jenis_analisa" class="form-control">
@@ -155,7 +172,8 @@
                             </select>
                             <small class="text-danger errorJenisAnalisa"></small>
                         </div>
-                        <div class="col-lg-12">
+
+                        <div class="col-lg-6">
                             <label for="jenis_sample" class="form-label">Jenis Sample <span
                                     style="color: red;">*</span></label>
                             <select id="jenis_sample" name="jenis_sample" class="form-control">
@@ -451,8 +469,9 @@
                         }
                     });
                 } else if (selectedAnalisa === 'Mikro') {
-                    // Tampilkan hanya 'Awal Transfer'
                     $jenisSample.append('<option value="Awal Transfer">Awal Transfer</option>');
+                    $jenisSample.append('<option value="Tengah PO">Tengah PO</option>');
+                    $jenisSample.append('<option value="Akhir PO">Akhir PO</option>');
                 } else {
                     // Jika belum pilih analisa, tampilkan default placeholder saja
                     $jenisSample.append('<option value="">-- Pilih Jenis Sample --</option>');
@@ -475,6 +494,10 @@
                         name: 'DT_RowIndex',
                         orderable: false,
                         searchable: false
+                    },
+                    {
+                        data: 'nomor_po',
+                        name: 'nomor_po'
                     },
                     {
                         data: 'storage',
@@ -507,7 +530,7 @@
                         name: 'analisa',
                         orderable: false,
                         searchable: false,
-                        visible: {{ in_array(auth()->user()->role, ['Analis Kimia', 'Analis Mikro']) ? 'true' : 'false' }}
+                        visible: {{ in_array(auth()->user()->role, ['Analis Kimia', 'Analis Mikro', 'Foreman']) ? 'true' : 'false' }}
                     },
                     {
                         data: 'action',
@@ -531,7 +554,6 @@
                 table.ajax.reload();
             });
 
-            // Filter otomatis saat tekan Enter pada input tanggal
             $('#start_date, #end_date').on('keypress', function(e) {
                 if (e.which == 13) {
                     table.ajax.reload();
@@ -689,11 +711,11 @@
 
                                 // Status Parameter untuk Kimia
                                 let statusParamHtml = '-';
-                                if (response.status_parameter) {
-                                    if (response.status_parameter === 'OK') {
+                                if (response.status) {
+                                    if (response.status === 'OK') {
                                         statusParamHtml =
                                             '<span class="badge bg-success">OK</span>';
-                                    } else if (response.status_parameter === 'NOT OK') {
+                                    } else if (response.status === 'NOT OK') {
                                         statusParamHtml =
                                             '<span class="badge bg-danger">NOT OK</span>';
                                     }
@@ -703,16 +725,16 @@
 
                             // Status Disposisi (sama untuk Mikro dan Kimia)
                             let disposisiHtml = '-';
-                            if (response.status_disposisi) {
-                                if (response.status_disposisi === 'RELEASE') {
+                            if (response.disposisi) {
+                                if (response.disposisi === 'Release') {
                                     disposisiHtml =
-                                        '<span class="badge bg-success">RELEASE</span>';
-                                } else if (response.status_disposisi === 'TIDAK STD') {
+                                        '<span class="badge bg-success">Release</span>';
+                                } else if (response.disposisi === 'Drain') {
                                     disposisiHtml =
-                                        '<span class="badge bg-danger">TIDAK STD</span>';
+                                        '<span class="badge bg-danger">Drain</span>';
                                 } else {
                                     disposisiHtml =
-                                        '<span class="badge bg-warning text-dark">RELEASE BERSYARAT</span>';
+                                        '<span class="badge bg-success">Release Bersyarat</span>';
                                 }
                             }
                             $('#detail_status_disposisi').html(disposisiHtml);
@@ -806,16 +828,24 @@
                     error: function(xhr) {
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
+                            if (errors.tanggal_produksi) {
+                                $('#tanggal_produksi').addClass('is-invalid');
+                                $('.errorTanggalProduksi').html(errors.tanggal_produksi.join(
+                                    '<br>'));
+                            }
                             if (errors.storage) {
                                 $('#storage').addClass('is-invalid');
                                 $('.errorStorage').html(errors.storage.join('<br>'));
                             }
-                            if (errors.storage) {
+                            if (errors.nomor_po) {
+                                $('#nomor_po').addClass('is-invalid');
+                                $('.errorNomorPO').html(errors.nomor_po.join('<br>'));
+                            }
+                            if (errors.sampling_point) {
                                 $('#sampling_point').addClass('is-invalid');
                                 $('.errorSamplingPoint').html(errors.sampling_point.join(
                                     '<br>'));
                             }
-
                             if (errors.jenis_analisa) {
                                 $('#jenis_analisa').addClass('is-invalid');
                                 $('.errorJenisAnalisa').html(errors.jenis_analisa.join('<br>'));
@@ -864,6 +894,63 @@
                     }
                 })
             })
+
+            $('#tanggal_produksi, #storage').on('change', function() {
+                const tanggal_produksi = $('#tanggal_produksi').val();
+                const storage = $('#storage').val();
+                const $nomorPO = $('#nomor_po');
+
+                $nomorPO.empty().append('<option value="">-- Pilih Nomor PO --</option>');
+                $('.errorNomorPO').html('');
+
+                if (tanggal_produksi && storage) {
+                    $.ajax({
+                        url: "{{ route('monitoring-daily-tank.get-po') }}",
+                        type: "POST",
+                        data: {
+                            tanggal_produksi: tanggal_produksi,
+                            storage: storage
+                        },
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $nomorPO.prop('disabled', true);
+                        },
+                        success: function(response) {
+                            $nomorPO.prop('disabled', false);
+
+                            if (response.status === 'success' && response.count > 0) {
+
+                                response.po_list.forEach(item => { // Iterasi melalui 'po_list'
+                                    $nomorPO.append(
+                                        `<option value="${item.id}">${item.po_number}</option>`
+                                    ); // Value: ID, Text: Nomor PO
+                                });
+
+                                if (response.count === 1) {
+                                    $nomorPO.val(response.selected_id).trigger('change');
+                                } else if (response.count > 1) {
+                                    $nomorPO.val('').trigger('change');
+                                }
+                            } else {
+                                $nomorPO.empty().append(
+                                        '<option value="">-- Tidak Ada PO Release --</option>')
+                                    .val('');
+                                $('.errorNomorPO').html(
+                                    '<small class="text-danger">Tidak ada Nomor PO yang Release.</small>'
+                                );
+                            }
+                        },
+                        error: function() {
+                            $nomorPO.prop('disabled', false);
+                            $nomorPO.empty().append(
+                                '<option value="">-- Gagal mengambil data --</option>');
+                            $('.errorNomorPO').html(
+                                '<small class="text-danger">Terjadi kesalahan saat mengambil data PO.</small>'
+                            );
+                        }
+                    });
+                }
+            });
         });
     </script>
 @endsection

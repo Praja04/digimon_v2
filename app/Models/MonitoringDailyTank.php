@@ -26,4 +26,9 @@ class MonitoringDailyTank extends Model
     {
         return $this->belongsTo(Color::class, 'color_id');
     }
+
+    public function productionBatch()
+    {
+        return $this->belongsTo(ProductionBatch::class, 'production_batch_id');
+    }
 }

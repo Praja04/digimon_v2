@@ -72,6 +72,11 @@ class ProductionBatch extends Model
         return $this->hasMany(MonitoringOnGoingMikro::class);
     }
 
+    public function monitoringDailyTank()
+    {
+        return $this->hasMany(MonitoringDailyTank::class);
+    }
+
     public function getBatchRangeArrayAttribute()
     {
         if (preg_match('/(\d+)\s*-\s*(\d+)/', $this->batch_range, $matches)) {

@@ -6,9 +6,11 @@ use App\Events\ProcessOutsideDisposition;
 use App\Http\Requests\Analisa\MonitoringOngoingKimiaRequest as AnalisaMonitoringOngoingKimiaRequest;
 use App\Http\Requests\MonitoringOngoingKimiaRequest;
 use App\Models\Color;
+use App\Models\MonitoringDailyTank;
 use App\Models\MonitoringOnGoingKimia;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Milon\Barcode\Facades\DNS2DFacade;
 use Yajra\DataTables\DataTables;
 
@@ -92,9 +94,9 @@ class MonitoringOnGoingKimiaController extends Controller
                     'storage' => $request->storage,
                     'production_batch_id' => $request->nomor_po,
                     'variant' => $request->variant,
-                    'jenis_sampel' => $request->jenis_sampel,
                     'filling_date' => $request->filling_date,
                     'jam_koding' => $request->jam_koding,
+                    'koding' => $request->koding,
                 ]
             );
 
@@ -151,9 +153,8 @@ class MonitoringOnGoingKimiaController extends Controller
                 'id' => $monitoring->id,
                 'storage' => $monitoring->storage,
                 'po_number' => $monitoring->productionBatch->po_number ?? '-',
-                'formulation' => $monitoring->formulation,
+                'koding' => $monitoring->koding,
                 'variant' => $monitoring->variant,
-                'jenis_sampel' => $monitoring->jenis_sampel,
                 'filling_date' => $monitoring->filling_date,
                 'filling_date_formatted' => $monitoring->filling_date ?
                     \Carbon\Carbon::parse($monitoring->filling_date)->locale('id')->translatedFormat('d F Y') : '-',
@@ -281,6 +282,133 @@ class MonitoringOnGoingKimiaController extends Controller
             return response()->json([
                 'message' => 'Gagal menyimpan data analisa',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getPoByDateAndStorage(Request $request)
+    {
+        $tanggal_produksi = $request->input('tanggal_produksi');
+        $storage = $request->input('storage');
+
+        if (!$tanggal_produksi || !$storage) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tanggal Produksi dan Storage harus diisi.',
+                'data' => []
+            ]);
+        }
+
+        $data_release = MonitoringDailyTank::query()
+            ->where('storage', $storage)
+            ->whereIn('disposisi', ['Release', 'Release Bersyarat'])
+            ->whereHas('productionBatch', function ($query) use ($tanggal_produksi) {
+                $query->whereDate('date', $tanggal_produksi);
+            })
+            ->join('production_batches', 'monitoring_daily_tank.production_batch_id', '=', 'production_batches.id')
+            ->select('production_batches.po_number', 'production_batches.id')
+            ->distinct()
+            ->get();
+
+        $po_data = $data_release->unique('po_number')->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'po_number' => $item->po_number
+            ];
+        })->values();
+
+        $count = $po_data->count();
+
+        $response = [
+            'status' => 'success',
+            'count' => $count,
+            'po_list' => $po_data,
+            'selected_id' => null
+        ];
+
+        if ($count === 1) {
+            $response['selected_id'] = $po_data->first()['id'];
+        }
+
+        return response()->json($response);
+    }
+
+    public function getVariantByPo(Request $request)
+    {
+        try {
+            $production_batch_id = $request->input('production_batch_id');
+
+            if (!$production_batch_id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Production batch ID harus diisi.',
+                    'data' => []
+                ]);
+            }
+
+            $productionBatch = ProductionBatch::find($production_batch_id);
+
+            if (!$productionBatch) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data production batch tidak ditemukan.',
+                    'data' => []
+                ]);
+            }
+
+            $variantKecapCode = $productionBatch->variant;
+
+            if (!$variantKecapCode) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Variant kecap tidak ditemukan pada production batch ini.',
+                    'data' => []
+                ]);
+            }
+
+            $response = Http::timeout(10)->get(env('PRODUCTION_URL') . 'api/varian/kecap');
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal mengambil data variant dari API Production.',
+                    'data' => []
+                ], 500);
+            }
+
+            $variantKecapFromAPI = $response->json()['data'] ?? [];
+
+            if (empty($variantKecapFromAPI)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data variant tidak tersedia dari API.',
+                    'data' => []
+                ]);
+            }
+
+            $filteredVariants = collect($variantKecapFromAPI)->filter(function ($item) use ($variantKecapCode) {
+                return isset($item['variant_kecap']['code']) &&
+                    $item['variant_kecap']['code'] === $variantKecapCode;
+            })->map(function ($item) {
+                return [
+                    'id' => $item['id'],
+                    'display_name' => $item['variant_fg']['name'] . ' - ' . $item['variant_kecap']['code'],
+                    'variant_fg_name' => $item['variant_fg']['name'],
+                    'variant_kecap_code' => $item['variant_kecap']['code']
+                ];
+            })->values();
+
+            return response()->json([
+                'status' => 'success',
+                'count' => $filteredVariants->count(),
+                'variant_list' => $filteredVariants,
+                'variant_kecap_code' => $variantKecapCode
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'data' => []
             ], 500);
         }
     }

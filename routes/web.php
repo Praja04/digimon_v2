@@ -34,6 +34,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'store'])->name('monitoring-ongoing-kimia.store');
     Route::post('/monitoring-ongoing-kimia/analisa', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'storeAnalisa'])->name('monitoring-ongoing-kimia.store.analisa');
     Route::delete('/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'destroy'])->name('monitoring-ongoing-kimia.destroy');
+    Route::post('/monitoring-ongoing-kimia/get-po', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-kimia.get-po');
+    Route::post('/monitoring-ongoing-kimia/get-variant', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'getVariantByPo'])->name('monitoring-ongoing-kimia.get-variant');
 
     // Monitoring - On Going Mikro
     Route::get('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'index'])->name('monitoring-ongoing-mikro.index');
@@ -44,6 +46,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/monitoring-ongoing-mikro/analisa/mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaMikro'])->name('monitoring-ongoing-mikro.analisa.mikro');
     Route::post('/monitoring-ongoing-mikro/analisa/kimia', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaKimia'])->name('monitoring-ongoing-mikro.analisa.kimia');
     Route::delete('/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'destroy'])->name('monitoring-ongoing-mikro.destroy');
+    Route::post('/monitoring-ongoing-mikro/get-po', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-mikro.get-po');
+    Route::post('/monitoring-ongoing-mikro/get-variant', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getVariantByPo'])->name('monitoring-ongoing-mikro.get-variant');
 
     /*------------------------------------------
     RMPM
@@ -239,6 +243,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/monitoring-storage-before-use/edit/{id}', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'edit'])->name('monitoring-storage-before-use.edit');
         Route::post('/monitoring-storage-before-use', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'store'])->name('monitoring-storage-before-use.store');
         Route::delete('/monitoring-storage-before-use/{id}', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'destroy'])->name('monitoring-storage-before-use.destroy');
+        Route::post('monitoring-storage-before-use/{id}/approve', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'approve'])->name('monitoring-storage-before-use.approve');
+        Route::post('monitoring-storage-before-use/{id}/flushing', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'flushing'])->name('monitoring-storage-before-use.flushing');
 
         // Monitoring Daily Tank
         Route::get('/monitoring-daily-tank/menu', [App\Http\Controllers\MonitoringDailyTankController::class, 'menu'])->name('monitoring-daily-tank.menu');
@@ -247,6 +253,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/monitoring-daily-tank/show/{id}', [App\Http\Controllers\MonitoringDailyTankController::class, 'show'])->name('monitoring-daily-tank.show');
         Route::get('/monitoring-daily-tank/edit/{id}', [App\Http\Controllers\MonitoringDailyTankController::class, 'edit'])->name('monitoring-daily-tank.edit');
         Route::delete('/monitoring-daily-tank/{id}', [App\Http\Controllers\MonitoringDailyTankController::class, 'destroy'])->name('monitoring-daily-tank.destroy');
+        Route::post('/monitoring-daily-tank/get-po', [App\Http\Controllers\MonitoringDailyTankController::class, 'getPoByDateAndStorage'])->name('monitoring-daily-tank.get-po');
 
         // Analisa - Monitoring Daily Tank - Kimia
         Route::get('/analisa/monitoring-daily-tank/kimia/get-data', [App\Http\Controllers\Analisa\MonitoringDailyTankKimiaController::class, 'getData'])->name('analisa.monitoring-daily-tank-kimia.getData');

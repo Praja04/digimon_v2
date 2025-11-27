@@ -14,7 +14,6 @@ class MonitoringDailyTankKimiaUpdateRequest extends FormRequest
             'bj',
             'visco',
             'aw',
-            'buih',
             'ph',
         ];
 
@@ -44,14 +43,13 @@ class MonitoringDailyTankKimiaUpdateRequest extends FormRequest
             'bj' => 'required|string',
             'visco' => 'required|string',
             'aw' => 'required|string',
-            'ph' => 'nullable|string',
+            'ph' => 'required|string',
             'buih' => 'nullable|string',
             'organo' => 'required|string|max:255',
             'endapan' => 'nullable|string|max:255',
-            'color' => 'required|exists:colors,id',
+            'color' => 'nullable|exists:colors,id',
             'status_parameter' => 'required|in:OK,NOT OK',
-            'status_disposisi' => 'required|in:RELEASE,RELEASE BERSYARAT,TIDAK STD',
-            'tindakan_lanjutan' => 'nullable|in:Drain,Release Bersyarat',
+            'status_disposisi' => 'nullable|in:Release,Release Bersyarat,Drain',
             'alasan_disposisi' => 'nullable|string',
         ];
     }

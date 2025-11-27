@@ -30,7 +30,7 @@
 
                             <div class="row g-3 text-dark">
                                 <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Tanggal Sampling</label>
+                                    <label class="d-block small text-muted mb-1">Tanggal Sample</label>
                                     <span class="fw-medium">{{ $monitoringDailyTank->tanggal_sampling ?? '-' }}</span>
                                 </div>
 
@@ -106,7 +106,7 @@
                                         <small class="text-danger errorAw"></small>
                                     </div>
                                     <div class="col-lg-6">
-                                        <label class="form-label">pH</label>
+                                        <label class="form-label">pH <span style="color: red">*</span></label>
                                         <input type="text" name="ph" id="ph"
                                             class="form-control comma-input" placeholder="Contoh: 0,00"
                                             value="{{ $monitoringDailyTank->ph ?? '' }}">
@@ -133,7 +133,7 @@
                                             value="{{ $monitoringDailyTank->endapan ?? '' }}">
                                     </div>
                                     <div class="col-lg-6">
-                                        <label class="form-label">Warna <span style="color: red">*</span></label>
+                                        <label class="form-label">Warna</label>
                                         <select name="color" id="color" class="select2 form-control">
                                             <option value="">-- Pilih Warna --</option>
                                             @foreach ($colors as $color)
@@ -145,53 +145,56 @@
                                         </select>
                                         <small class="text-danger errorColor"></small>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <label class="form-label">Status <span style="color: red">*</span></label>
-                                        <select name="status_parameter" id="status_parameter" class="form-control">
-                                            <option value="">-- Pilih Status --</option>
-                                            <option value="OK"
-                                                {{ $monitoringDailyTank->status_parameter == 'OK' ? 'selected' : '' }}>OK
-                                            </option>
-                                            <option value="NOT OK"
-                                                {{ $monitoringDailyTank->status_parameter == 'NOT OK' ? 'selected' : '' }}>
-                                                NOT OK</option>
-                                        </select>
-                                        <small class="text-danger errorStatusParameter"></small>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <label class="form-label">Disposisi <span style="color: red">*</span></label>
-                                        <select name="status_disposisi" id="status_disposisi" class="form-control">
-                                            <option value="">-- Pilih Disposisi --</option>
-                                            <option value="RELEASE"
-                                                {{ $monitoringDailyTank->status_disposisi == 'RELEASE' ? 'selected' : '' }}>
-                                                RELEASE</option>
-                                            <option value="RELEASE BERSYARAT"
-                                                {{ $monitoringDailyTank->status_disposisi == 'RELEASE BERSYARAT' ? 'selected' : '' }}>
-                                                RELEASE BERSYARAT</option>
-                                            <option value="TIDAK STD"
-                                                {{ $monitoringDailyTank->status_disposisi == 'TIDAK STD' ? 'selected' : '' }}>
-                                                TIDAK STD</option>
-                                        </select>
-                                        <small class="text-danger errorStatusDisposisi"></small>
-                                    </div>
-                                    <div class="col-lg-12 d-none">
-                                        <label class="form-label">Tindakan Lanjutan (TIDAK STD)</label>
-                                        <select name="tindakan_lanjutan" id="tindakan_lanjutan" class="form-control">
-                                            <option value="">-- Pilih Tindakan Lanjutan --</option>
-                                            <option value="Drain"
-                                                {{ $monitoringDailyTank->tindakan_lanjutan == 'Drain' ? 'selected' : '' }}>
-                                                Drain</option>
-                                            <option value="Release Bersyarat"
-                                                {{ $monitoringDailyTank->tindakan_lanjutan == 'Release Bersyarat' ? 'selected' : '' }}>
-                                                Release Bersyarat</option>
-                                        </select>
-                                        <small class="text-danger errorStatusParameter"></small>
-                                    </div>
+                                    @if (auth()->user()->role == 'Analis Kimia')
+                                        <div class="col-lg-12">
+                                            <label class="form-label">Status <span style="color: red">*</span></label>
+                                            <select name="status_parameter" id="status_parameter" class="form-control">
+                                                <option value="">-- Pilih Status --</option>
+                                                <option value="OK"
+                                                    {{ $monitoringDailyTank->status_parameter == 'OK' ? 'selected' : '' }}>
+                                                    OK
+                                                </option>
+                                                <option value="NOT OK"
+                                                    {{ $monitoringDailyTank->status_parameter == 'NOT OK' ? 'selected' : '' }}>
+                                                    NOT OK</option>
+                                            </select>
+                                            <small class="text-danger errorStatusParameter"></small>
+                                        </div>
+                                    @else
+                                        <div class="col-lg-12">
+                                            <label class="form-label">Status <span style="color: red">*</span></label>
+                                            <input type="text" name="status_parameter" id="status_parameter"
+                                                class="form-control" value="{{ $monitoringDailyTank->status ?? '' }}"
+                                                readonly>
+                                            <small class="text-danger errorStatusParameter"></small>
+                                        </div>
+                                    @endif
+                                    @if (auth()->user()->role == 'Foreman')
+                                        <div class="col-lg-12">
+                                            <label class="form-label">Disposisi <span style="color: red">*</span></label>
+                                            <select name="status_disposisi" id="status_disposisi" class="form-control"
+                                                required>
+                                                <option value="">-- Pilih Disposisi --</option>
+                                                @if ($monitoringDailyTank->status_parameter == 'OK')
+                                                    <option value="Release"
+                                                        {{ $monitoringDailyTank->status_disposisi == 'Release' ? 'selected' : '' }}>
+                                                        Release</option>
+                                                @else
+                                                    <option value="Release Bersyarat"
+                                                        {{ $monitoringDailyTank->status_disposisi == 'Release Bersyarat' ? 'selected' : '' }}>
+                                                        Release Bersyarat</option>
+                                                    <option value="Drain"
+                                                        {{ $monitoringDailyTank->status_disposisi == 'Drain' ? 'selected' : '' }}>
+                                                        Drain</option>
+                                                @endif
+                                            </select>
+                                            <small class="text-danger errorStatusDisposisi"></small>
+                                        </div>
+                                    @endif
                                     <div class="col-lg-12">
                                         <label class="form-label">Alasan Disposisi</label>
                                         <textarea name="alasan_disposisi" id="alasan_disposisi" class="form-control" rows="3"
-                                            placeholder="Isi alasan disposisi jika diperlukan..." oninput="this.value = this.value.toUpperCase();">
-                                            {{ $monitoringDailyTank->alasan_disposisi }}</textarea>
+                                            placeholder="Isi alasan disposisi jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $monitoringDailyTank->alasan_disposisi }}</textarea>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-end mt-3">
@@ -216,70 +219,6 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
-
-            // Event handler untuk perubahan status parameter
-            $('#status_parameter').on('change', function() {
-                const status = $(this).val();
-                const disposisiSelect = $('#status_disposisi');
-
-                // Reset disposisi
-                disposisiSelect.val('').trigger('change');
-
-                if (status === 'OK') {
-                    // Jika OK, set disposisi ke RELEASE dan disable
-                    disposisiSelect.html('<option value="RELEASE">RELEASE</option>');
-                    disposisiSelect.val('RELEASE').prop('readonly', true).css({
-                        'background-color': '#e9ecef',
-                        'pointer-events': 'none'
-                    });
-
-                    // Sembunyikan tindakan lanjutan
-                    $('#tindakan_lanjutan').closest('.col-lg-12').removeClass('d-block').addClass('d-none');
-                    $('#tindakan_lanjutan').val('');
-
-                } else if (status === 'NOT OK') {
-                    // Jika NOT OK, tampilkan hanya 2 pilihan
-                    disposisiSelect.html(`
-                <option value="">-- Pilih Disposisi --</option>
-                <option value="RELEASE BERSYARAT">RELEASE BERSYARAT</option>
-                <option value="TIDAK STD">TIDAK STD</option>
-            `);
-                    disposisiSelect.prop('disabled', false);
-
-                } else {
-                    // Jika belum memilih status, kembalikan ke semua pilihan
-                    disposisiSelect.html(`
-                <option value="">-- Pilih Disposisi --</option>
-                <option value="RELEASE">RELEASE</option>
-                <option value="RELEASE BERSYARAT">RELEASE BERSYARAT</option>
-                <option value="TIDAK STD">TIDAK STD</option>
-            `);
-                    disposisiSelect.prop('disabled', false);
-
-                    // Sembunyikan tindakan lanjutan
-                    $('#tindakan_lanjutan').closest('.col-lg-12').removeClass('d-block').addClass('d-none');
-                    $('#tindakan_lanjutan').val('');
-                }
-            });
-
-            // Event handler untuk perubahan disposisi
-            $('#status_disposisi').on('change', function() {
-                const disposisi = $(this).val();
-
-                if (disposisi === 'TIDAK STD') {
-                    // Tampilkan field tindakan lanjutan
-                    $('#tindakan_lanjutan').closest('.col-lg-12').removeClass('d-none').addClass('d-block');
-                } else {
-                    // Sembunyikan field tindakan lanjutan
-                    $('#tindakan_lanjutan').closest('.col-lg-12').removeClass('d-block').addClass('d-none');
-                    $('#tindakan_lanjutan').val('');
-                }
-            });
-
-            // Inisialisasi saat halaman dimuat (jika ada nilai default)
-            if ($('#status_parameter').val()) {
-                $('#status_parameter').trigger('change');
-            }
 
             document.querySelectorAll('.comma-input').forEach(function(el) {
                 el.addEventListener('input', function() {

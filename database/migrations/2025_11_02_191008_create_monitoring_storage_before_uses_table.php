@@ -19,10 +19,18 @@ return new class extends Migration
             $table->string('tahap_flushing')->nullable();
             $table->dateTime('waktu_selesai_pemakaian')->nullable();
             $table->dateTime('estimasi_kadaluarsa')->nullable();
+
             $table->float('visco')->nullable();
             $table->float('brix')->nullable();
             $table->float('aw')->nullable();
-            $table->string('hasil')->nullable();
+            $table->string('hasil')->nullable(); // 'OK', 'NOT OK', 'PENDING'
+
+            $table->string('status_approval')->nullable(); // 'waiting_approval', 'approved', 'rejected'
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->dateTime('approved_at')->nullable();
+
+            $table->string('final_status')->nullable(); // 'released', 'need_flushing', 'rejected'
+
             $table->timestamps();
         });
     }

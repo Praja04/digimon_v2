@@ -91,8 +91,15 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <input type="hidden" name="id" id="id">
+                            <label for="tanggal_produksi" class="form-label">Tanggal Produksi <span
+                                    style="color: red;">*</span></label>
+                            <input type="date" name="tanggal_produksi" id="tanggal_produksi" class="form-control">
+                            <small class="errorTanggalProduksi text-danger"></small>
+                        </div>
+
+                        <div class="col-lg-6">
                             <label for="storage" class="form-label">Storage <span style="color: red;">*</span></label>
                             <select name="storage" id="storage" class="form-control">
                                 <option value="">-- Pilih Storage --</option>
@@ -132,9 +139,6 @@
                             <label for="nomor_po" class="form-label">Nomor PO <span style="color: red;">*</span></label>
                             <select id="nomor_po" name="nomor_po" class="select2 form-control">
                                 <option value="">-- Pilih Nomor PO --</option>
-                                @foreach ($passedPoNumbers as $id => $poNumber)
-                                    <option value="{{ $id }}">{{ $poNumber }}</option>
-                                @endforeach
                             </select>
                             <small class="text-danger errorNomorPO"></small>
                         </div>
@@ -143,42 +147,24 @@
                             <label for="variant" class="form-label">Variant <span style="color: red;">*</span></label>
                             <select id="variant" name="variant" class="select2 form-control">
                                 <option value="">-- Pilih Variant --</option>
-                                <option value="Pouch 77 gram - SS2">Pouch 77 gram - SS2</option>
-                                <option value="Pouch 250 gram - JB">Pouch 250 gram - JB</option>
-                                <option value="Pouch 550 gram - JB">Pouch 550 gram - JB</option>
-                                <option value="Pouch 700 gram - JB">Pouch 700 gram - JB</option>
-                                <option value="Pouch 1000 gram - JB">Pouch 1000 gram - JB</option>
-                                <option value="BB 40 gram - BB">BB 40 gram - BB</option>
-                                <option value="BB 77 gram - BB">BB 77 gram - BB</option>
-                                <option value="BB 725 gram - BB">BB 725 gram - BB</option>
-                                <option value="BB 270 gram - BB">BB 270 gram - BB</option>
-                                <option value="Sachet 20 gram - SS1">Sachet 20 gram - SS1</option>
-                                <option value="Sachet 12,5 gram - SS1">Sachet 12,5 gram - SS1</option>
-                                <option value="Jeriken 6 kg - JB">Jeriken 6 kg - JB</option>
-                                <option value="Jeriken 25 kg MSD - MSD">Jeriken 25 kg MSD - MSD</option>
-                                <option value="Jeriken 25 kg - JB">Jeriken 25 kg - JB</option>
-                                <option value="Kempu (Lokal) - MSD Lokal">Kempu (Lokal) - MSD Lokal</option>
-                                <option value="Kempu (NR2) - NR2">Kempu (NR2) - NR2</option>
                             </select>
                             <small class="text-danger errorVariant"></small>
                         </div>
                         <!-- No Filler -->
-                        <div class="col-lg-6">
-                            <label for="no_filler" class="form-label">No Filler <span
-                                    style="color: red;">*</span></label>
+                        <div class="col-lg-6" id="no_filler_wrapper"> <label for="no_filler" class="form-label">No
+                                Filler / Mesin <span style="color: red;">*</span></label>
                             <input type="number" name="no_filler" id="no_filler" class="form-control">
                             <small class="text-danger errorNoFiller"></small>
                         </div>
 
-                        <div class="col-lg-6">
-                            <label for="no_kempu_jeriken" class="form-label">No Kempu / Jeriken <span
-                                    style="color: red;">*</span></label>
+                        <div class="col-lg-6" id="no_kempu_jeriken_wrapper"> <label for="no_kempu_jeriken"
+                                class="form-label">No Kempu / Jeriken <span style="color: red;">*</span></label>
                             <input type="number" name="no_kempu_jeriken" id="no_kempu_jeriken" class="form-control">
                             <small class="text-danger errorNoKempuJeriken"></small>
                         </div>
 
                         <div class="col-lg-6">
-                            <label for="koding" class="form-label">Koding <span style="color: red;">*</span></label>
+                            <label for="koding" class="form-label">Koding</label>
                             <input type="text" name="koding" id="koding" class="form-control">
                             <small class="text-danger errorKoding"></small>
                         </div>
@@ -220,7 +206,6 @@
                                 <option value="Sampel Jam 21:00">Sampel Jam 21:00</option>
                                 <option value="Sampel Jam 22:00">Sampel Jam 22:00</option>
                                 <option value="Sampel Jam 23:00">Sampel Jam 23:00</option>
-                                <option value="Sampel Jam 24:00">Sampel Jam 24:00</option>
                                 <option value="Awal Filling">Awal Filling</option>
                                 <option value="Akhir Filling">Akhir Filling</option>
                                 <option value="Awal Storage">Awal Storage</option>
@@ -235,6 +220,7 @@
                             </select>
                             <small class="text-danger errorJenisSampel1"></small>
                         </div>
+
                         <div class="col-lg-4">
                             <label for="jenis_sampel_2" class="form-label">Jenis Sampel 2</label>
                             <select id="jenis_sampel_2" name="jenis_sampel_2" class="select2 form-control">
@@ -263,7 +249,6 @@
                                 <option value="Sampel Jam 21:00">Sampel Jam 21:00</option>
                                 <option value="Sampel Jam 22:00">Sampel Jam 22:00</option>
                                 <option value="Sampel Jam 23:00">Sampel Jam 23:00</option>
-                                <option value="Sampel Jam 24:00">Sampel Jam 24:00</option>
                                 <option value="Awal Filling">Awal Filling</option>
                                 <option value="Akhir Filling">Akhir Filling</option>
                                 <option value="Awal Storage">Awal Storage</option>
@@ -278,6 +263,7 @@
                             </select>
                             <small class="text-danger errorJenisSampel2"></small>
                         </div>
+
                         <div class="col-lg-4">
                             <label for="jenis_sampel_3" class="form-label">Jenis Sampel 3</label>
                             <select id="jenis_sampel_3" name="jenis_sampel_3" class="select2 form-control">
@@ -306,7 +292,6 @@
                                 <option value="Sampel Jam 21:00">Sampel Jam 21:00</option>
                                 <option value="Sampel Jam 22:00">Sampel Jam 22:00</option>
                                 <option value="Sampel Jam 23:00">Sampel Jam 23:00</option>
-                                <option value="Sampel Jam 24:00">Sampel Jam 24:00</option>
                                 <option value="Awal Filling">Awal Filling</option>
                                 <option value="Akhir Filling">Akhir Filling</option>
                                 <option value="Awal Storage">Awal Storage</option>
@@ -562,6 +547,93 @@
             dropdownParent: $('#modal')
         });
 
+        function checkVariantType(variantName) {
+            const isKempuOrJeriken = variantName.toLowerCase().includes('kempu') ||
+                variantName.toLowerCase().includes('jeriken');
+
+            const $noKempuJerikenWrapper = $('#no_kempu_jeriken_wrapper');
+            const $noFillerWrapper = $('#no_filler_wrapper');
+
+            if (isKempuOrJeriken) {
+                $noKempuJerikenWrapper.show();
+
+                $noFillerWrapper.removeClass('col-lg-12').addClass('col-lg-6');
+                $noKempuJerikenWrapper.removeClass('col-lg-12').addClass('col-lg-6');
+
+            } else {
+                $noKempuJerikenWrapper.hide();
+                $('.errorNoKempuJeriken').html('');
+                $('#no_kempu_jeriken').removeClass('is-invalid');
+
+                $noFillerWrapper.removeClass('col-lg-6').addClass('col-lg-12');
+            }
+        }
+
+        function loadVariantByPo(production_batch_id) {
+            const $variant = $('#variant');
+
+            // Reset variant dropdown
+            $variant.empty().append('<option value="">-- Pilih Variant --</option>');
+            $('.errorVariant').html('');
+
+            $('#no_kempu_jeriken_wrapper').hide();
+            $('#no_filler_wrapper').removeClass('col-lg-6').addClass('col-lg-12');
+
+            if (production_batch_id) {
+                $.ajax({
+                    url: "{{ route('monitoring-ongoing-mikro.get-variant') }}",
+                    type: "POST",
+                    data: {
+                        production_batch_id: production_batch_id
+                    },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $variant.prop('disabled', true);
+                        $variant.empty().append('<option value="">Memuat variant...</option>');
+                    },
+                    success: function(response) {
+                        $variant.prop('disabled', false);
+
+                        if (response.status === 'success' && response.count > 0) {
+                            $variant.empty().append(
+                                '<option value="">-- Pilih Variant --</option>');
+
+                            response.variant_list.forEach(item => {
+                                $variant.append(
+                                    `<option value="${item.display_name}">${item.display_name}</option>`
+                                );
+                            });
+
+                            // Auto-select jika hanya ada 1 variant
+                            if (response.count === 1) {
+                                $variant.val(response.variant_list[0].display_name).trigger(
+                                    'change');
+                                checkVariantType(response.variant_list[0].display_name);
+                            }
+                        } else {
+                            $variant.empty().append(
+                                '<option value="">-- Tidak Ada Variant --</option>');
+                            $('.errorVariant').html(
+                                '<small class="text-danger">Tidak ada variant yang tersedia untuk PO ini.</small>'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        $variant.prop('disabled', false);
+                        $variant.empty().append(
+                            '<option value="">-- Gagal mengambil data --</option>');
+                        $('.errorVariant').html(
+                            '<small class="text-danger">Terjadi kesalahan saat mengambil data variant.</small>'
+                        );
+
+                        console.error('Error:', xhr.responseJSON);
+                    }
+                });
+            } else {
+                $variant.prop('disabled', true);
+            }
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -665,11 +737,14 @@
                 $('#id').val('');
 
                 $('#storage').val('').trigger('change');
-                $('#nomor_po').val('').trigger('change');
-                $('#variant').val('').trigger('change');
+                $('#nomor_po').val('').trigger('change').prop('disabled', true);
+                $('#variant').val('').trigger('change').prop('disabled', true);
                 $('#jenis_sampel_1').val('').trigger('change');
                 $('#jenis_sampel_2').val('').trigger('change');
                 $('#jenis_sampel_3').val('').trigger('change');
+
+                $('#no_kempu_jeriken_wrapper').hide();
+                $('#no_filler_wrapper').removeClass('col-lg-6').addClass('col-lg-12');
 
                 $('.form-control').removeClass('is-invalid');
                 $('.text-danger').html('');
@@ -699,6 +774,13 @@
                         $('#id').val(response.id);
                         $('#storage').val(response.storage).trigger('change');
                         $('#nomor_po').val(response.production_batch_id).trigger('change');
+                        loadVariantByPo(response.production_batch_id);
+                        setTimeout(function() {
+                            $('#variant').val(response.variant).trigger('change');
+
+                            checkVariantType(response.variant);
+                            $('#no_kempu_jeriken').val(response.no_kempu_jeriken);
+                        }, 500);
                         $('#variant').val(response.variant).trigger('change');
                         $('#no_filler').val(response.no_filler);
                         $('#no_kempu_jeriken').val(response.no_kempu_jeriken);
@@ -741,7 +823,8 @@
                         $('#qr_code_container').html(
                             `<img src="data:image/png;base64,${response.qr_code}" alt="QR Code" style="width: 150px; height: 150px;">`
                         );
-                        $('#qr_code_text').text(`Mikro_${response.variant}_${response.jenis_sampel}`);
+                        $('#qr_code_text').text(
+                            `Mikro_${response.variant}_${response.jenis_sampel}`);
 
                         // Informasi Dasar
                         $('#detail_storage').text(response.storage);
@@ -827,6 +910,12 @@
                     error: function(xhr) {
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
+                            if (errors.tanggal_produksi) {
+                                $('#tanggal_produksi').addClass('is-invalid');
+                                $('.errorTanggalProduksi').html(errors.tanggal_produksi.join(
+                                    '<br>'));
+                            }
+
                             if (errors.storage) {
                                 $('#storage').addClass('is-invalid');
                                 $('.errorStorage').html(errors.storage.join('<br>'));
@@ -911,6 +1000,76 @@
                     }
                 })
             })
+
+            $('#variant').on('change', function() {
+                const selectedVariant = $(this).val();
+                if (selectedVariant) {
+                    checkVariantType(selectedVariant);
+                }
+            });
+
+            $('#nomor_po').on('change', function() {
+                const production_batch_id = $(this).val();
+                loadVariantByPo(production_batch_id);
+            });
+
+            $('#tanggal_produksi, #storage').on('change', function() {
+                const tanggal_produksi = $('#tanggal_produksi').val();
+                const storage = $('#storage').val();
+                const $nomorPO = $('#nomor_po');
+
+                $nomorPO.empty().append('<option value="">-- Pilih Nomor PO --</option>');
+                $('.errorNomorPO').html('');
+
+                if (tanggal_produksi && storage) {
+                    $.ajax({
+                        url: "{{ route('monitoring-ongoing-mikro.get-po') }}",
+                        type: "POST",
+                        data: {
+                            tanggal_produksi: tanggal_produksi,
+                            storage: storage
+                        },
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $nomorPO.prop('disabled', true);
+                        },
+                        success: function(response) {
+                            $nomorPO.prop('disabled', false);
+
+                            if (response.status === 'success' && response.count > 0) {
+
+                                response.po_list.forEach(item => {
+                                    $nomorPO.append(
+                                        `<option value="${item.id}">${item.po_number}</option>`
+                                    );
+                                });
+
+                                if (response.count === 1) {
+                                    $nomorPO.val(response.selected_id).trigger('change');
+                                    loadVariantByPo(response.selected_id);
+                                } else if (response.count > 1) {
+                                    $nomorPO.val('').trigger('change');
+                                }
+                            } else {
+                                $nomorPO.empty().append(
+                                        '<option value="">-- Tidak Ada PO Release --</option>')
+                                    .val('');
+                                $('.errorNomorPO').html(
+                                    '<small class="text-danger">Tidak ada Nomor PO yang Release.</small>'
+                                );
+                            }
+                        },
+                        error: function() {
+                            $nomorPO.prop('disabled', false);
+                            $nomorPO.empty().append(
+                                '<option value="">-- Gagal mengambil data --</option>');
+                            $('.errorNomorPO').html(
+                                '<small class="text-danger">Terjadi kesalahan saat mengambil data PO.</small>'
+                            );
+                        }
+                    });
+                }
+            });
         });
     </script>
 @endsection

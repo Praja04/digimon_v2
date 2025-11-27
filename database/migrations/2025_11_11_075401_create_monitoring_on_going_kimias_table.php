@@ -15,9 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('storage'); // storage yang dipakai untuk filling
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
-            $table->string('formulation')->nullable(); // bila lebih dari 1 PO dalam 1 storage
             $table->string('variant');
-            $table->string('jenis_sampel');
+            $table->string('koding');
             $table->date('filling_date');
             $table->time('jam_koding');
 

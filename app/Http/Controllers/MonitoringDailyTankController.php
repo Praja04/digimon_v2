@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\MonitoringDailyTankStoreRequest;
 use App\Models\MonitoringDailyTank;
+use App\Models\MonitoringStorageKimia;
 use Illuminate\Http\Request;
 use Milon\Barcode\Facades\DNS2DFacade;
 use Yajra\DataTables\DataTables;
@@ -54,6 +55,9 @@ class MonitoringDailyTankController extends Controller
                         </button>
                     ';
                 })
+                ->editColumn('nomor_po', function ($data) {
+                    return $data->productionBatch->po_number ?? '-';
+                })
                 ->addColumn('analisa', function ($data) {
                     $html = '';
                     if ($data->jenis_analisa == 'Mikro' && auth()->user()->role == 'Analis Mikro') {
@@ -62,7 +66,7 @@ class MonitoringDailyTankController extends Controller
                            <span class="mdi mdi-test-tube"></span>
                         </a>
                         ';
-                    } elseif ($data->jenis_analisa == 'Kimia' && auth()->user()->role == 'Analis Kimia') {
+                    } elseif ($data->jenis_analisa == 'Kimia' && in_array(auth()->user()->role, ['Analis Kimia', 'Foreman'])) {
                         $html .= '
                         <a class="btn btn-sm btn-primary me-1" id="btnAnalisa" href="' . route('analisa.monitoring-daily-tank-kimia.show', $data->id) . '">
                            <span class="mdi mdi-test-tube"></span>
@@ -77,7 +81,7 @@ class MonitoringDailyTankController extends Controller
                         return $data->hasil ?? '-';
                     }
                     if ($data->jenis_analisa == 'Kimia') {
-                        return $data->status_disposisi ?? '-';
+                        return $data->disposisi ?? '-';
                     }
                     return '-';
                 })
@@ -101,6 +105,7 @@ class MonitoringDailyTankController extends Controller
     {
         try {
             $data = [
+                'production_batch_id' => $request->nomor_po,
                 'storage'  => $request->storage,
                 'tanggal_sampling' => now(),
                 'sampling_point' => $request->sampling_point,
@@ -209,14 +214,14 @@ class MonitoringDailyTankController extends Controller
                 'organo' => $data->organo,
                 'endapan' => $data->endapan,
                 'color_name' => $data->color ? $data->color->name . ' (' . $data->color->code . ')' : null,
-                'status_parameter' => $data->status_parameter,
+                'status' => $data->status,
 
                 // Hasil & Catatan
                 'catatan_analis' => $data->catatan_analis,
                 'tanggal_input_hasil' => $data->tanggal_input_hasil ? \Carbon\Carbon::parse($data->tanggal_input_hasil)->locale('id')->translatedFormat('d F Y, H:i') : null,
 
                 // Disposisi
-                'status_disposisi' => $data->status_disposisi,
+                'disposisi' => $data->disposisi,
                 'alasan_disposisi' => $data->alasan_disposisi,
                 'tindakan_lanjutan' => $data->tindakan_lanjutan,
 
@@ -254,5 +259,52 @@ class MonitoringDailyTankController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getPoByDateAndStorage(Request $request)
+    {
+        $tanggal_produksi = $request->input('tanggal_produksi');
+        $storage = $request->input('storage');
+
+        if (!$tanggal_produksi || !$storage) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tanggal Produksi dan Storage harus diisi.',
+                'data' => []
+            ]);
+        }
+
+        $data_release = MonitoringStorageKimia::query()
+            ->where('storage', $storage)
+            ->whereIn('disposition', ['Release', 'Release Bersyarat'])
+            ->whereHas('productionBatch', function ($query) use ($tanggal_produksi) {
+                $query->whereDate('date', $tanggal_produksi);
+            })
+            ->join('production_batches', 'monitoring_storage_kimia.production_batch_id', '=', 'production_batches.id')
+            ->select('production_batches.po_number', 'production_batches.id')
+            ->distinct()
+            ->get();
+
+        $po_data = $data_release->unique('po_number')->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'po_number' => $item->po_number
+            ];
+        })->values();
+
+        $count = $po_data->count();
+
+        $response = [
+            'status' => 'success',
+            'count' => $count,
+            'po_list' => $po_data,
+            'selected_id' => null
+        ];
+
+        if ($count === 1) {
+            $response['selected_id'] = $po_data->first()['id'];
+        }
+
+        return response()->json($response);
     }
 }

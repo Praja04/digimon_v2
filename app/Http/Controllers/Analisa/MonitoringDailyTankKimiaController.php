@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Analisa;
 
+use App\Events\ProcessOutsideDisposition;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Analisa\MonitoringDailyTankKimiaUpdateRequest;
 use App\Models\Color;
@@ -25,8 +26,8 @@ class MonitoringDailyTankKimiaController extends Controller
             $statusDisposisi = $request->status_disposisi;
             $alasanDisposisi = $request->alasan_disposisi;
 
-            // Jika bukan OK + RELEASE, maka alasan disposisi wajib diisi
-            if (!($statusParameter === 'OK' && $statusDisposisi === 'RELEASE')) {
+            // Jika bukan OK + Release, maka alasan disposisi wajib diisi
+            if (!($statusParameter === 'OK' && $statusDisposisi === 'Release')) {
                 if (empty($alasanDisposisi)) {
                     return response()->json([
                         'status' => 'error',
@@ -36,10 +37,10 @@ class MonitoringDailyTankKimiaController extends Controller
             }
 
             // Cari data monitoring
-            $monitoringDailyTank = MonitoringDailyTank::findOrFail($request->id);
+            $monitoringDailyTank = MonitoringDailyTank::with('productionBatch')->findOrFail($request->id);
 
             // Cek apakah data sudah pernah dianalisa
-            if ($monitoringDailyTank->tanggal_analisa !== null) {
+            if ($monitoringDailyTank->tanggal_analisa !== null && $monitoringDailyTank->disposisi !== null) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Data ini sudah pernah dianalisa dan tidak dapat diubah!'
@@ -66,15 +67,24 @@ class MonitoringDailyTankKimiaController extends Controller
                 'organo' => strtoupper($request->organo),
                 'endapan' => $request->endapan ? strtoupper($request->endapan) : null,
                 'color_id' => $request->color,
-                'status_parameter' => $request->status_parameter,
-                'status_disposisi' => $request->status_disposisi,
-                'tindakan_lanjutan' => $request->tindakan_lanjutan,
+                'status' => $request->status_parameter,
+                'disposisi' => $request->status_disposisi,
                 'alasan_disposisi' => $request->alasan_disposisi ? strtoupper($request->alasan_disposisi) : null,
                 'qc_analisa' => auth()->id(),
                 'tanggal_analisa' => now(),
                 'shift_analisa' => $shift,
                 'tanggal_input_hasil' => now(),
             ]);
+
+            if ($request->status_parameter == 'NOT OK') {
+                event(new ProcessOutsideDisposition(
+                    "Monitoring Daily Tank Kimia - Batch " . $monitoringDailyTank->productionBatch->batch_number,
+                    $monitoringDailyTank->productionBatch->id,
+                    'Monitoring Daily Tank Kimia',
+                    $request->status_disposisi,
+                    $request->alasan_disposisi,
+                ));
+            }
 
             return response()->json([
                 'status' => 'success',
