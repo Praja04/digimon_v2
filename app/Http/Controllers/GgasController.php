@@ -76,17 +76,14 @@ class GgasController extends Controller
     public function show($id)
     {
         $productionBatch = ProductionBatch::with('ggas')->findOrFail($id);
-        $colors = Color::orderBy('name', 'asc')->get();
 
-        return view('app.ggas.show', compact(['productionBatch', 'colors']));
+        return view('app.ggas.show', compact(['productionBatch']));
     }
 
     public function show_batch($id)
     {
         $ggas = GGAS::with('productionBatch')->findOrFail($id);
-        $colors = Color::orderBy('name', 'asc')->get();
-
-        return view('app.ggas.show_batch', compact(['ggas', 'colors']));
+        return view('app.ggas.show_batch', compact(['ggas']));
     }
 
     public function edit($id)
@@ -119,20 +116,28 @@ class GgasController extends Controller
             $isUpdate = !is_null($ggas->status_disposition);
             $userRole = auth()->user()->role;
 
-            // Validasi akses untuk update
-            if ($isUpdate && $userRole === 'Produksi') {
-                DB::rollBack();
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Anda tidak memiliki akses untuk mengubah data yang sudah ada disposisi.'
-                ], 403);
+            if ($userRole === 'Analis Kimia') {
+                if (!is_null($ggas->disposition)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data sudah di disposisi oleh Foreman. Tidak dapat diubah.'
+                    ], 403);
+                }
+            } elseif ($userRole === 'Foreman') {
+                if (is_null($ggas->status)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
+                    ], 403);
+                }
             }
 
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
-            // Validasi remarks wajib untuk status tertentu
-            if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
+            if (in_array($status_disposition, ['NOT OK']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
                     'status' => 'error',
@@ -140,68 +145,45 @@ class GgasController extends Controller
                 ], 409);
             }
 
-            // Cek apakah status_disposition berubah
-            $statusChanged = ($ggas->status !== $status_disposition);
-
-            // Tentukan disposition
-            if ($statusChanged) {
-                // Status berubah, hitung ulang disposition
-                if ($status_disposition === 'OK') {
-                    $disposition = 'Release';
-                } elseif ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    $disposition = $request->disposition;
-                } else {
-                    $disposition = match ($status_disposition) {
-                        'NOT OK' => null,
-                        'Adjustment' => 'Adjustment',
-                        default => null,
-                    };
-                }
-            } else {
-                // Status tidak berubah
-                if ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    // Foreman boleh update disposisi manual
-                    $disposition = $request->disposition;
-                } else {
-                    // Pertahankan disposition yang sudah ada
-                    $disposition = $ggas->disposition;
-                }
-            }
+            $status_disposition = $request->status_disposition;
+            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
                 'nacl' => $request->nacl,
-                'color_id' => $request->color,
-                'disposition' => $disposition,
+                'organo' => $request->organo,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,
             ];
 
-            if (!$isUpdate) {
-                $updateData['created_by'] = auth()->user()->id;
-            }
+            if ($userRole === 'Analis Kimia') {
+                $updateData['disposition'] = null;
 
-            // Handle Adjustment
-            if ($status_disposition === 'Adjustment') {
-                $updateData['adjustment_qty_air'] = $request->adjustment_qty_air;
-                $updateData['adjustment_qty_garam'] = $request->adjustment_qty_garam;
-                $updateData['adjustment_qty_gula'] = $request->adjustment_qty_gula;
-                $updateData['not_standard'] = true;
-            } else {
-                // Jika status bukan Adjustment lagi, clear adjustment data
-                if ($statusChanged) {
-                    $updateData['adjustment_qty_air'] = null;
-                    $updateData['adjustment_qty_garam'] = null;
-                    $updateData['adjustment_qty_gula'] = null;
+                if (!$isUpdate) {
+                    $updateData['created_by'] = auth()->user()->id;
                 }
+            } elseif ($userRole === 'Foreman') {
+                if (!$request->filled('disposition')) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Foreman wajib memilih disposisi.'
+                    ], 422);
+                }
+
+                $disposition = $request->disposition;
+                $dispositionChanged = ($ggas->disposition !== $disposition);
+                $updateData['disposition'] = $disposition;
             }
 
-            // Handle Resampling
-            if ($disposition === 'Resampling') {
-                $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
-                $updateData['not_standard'] = true;
-            } elseif ($disposition === 'Release Bersyarat') {
-                $updateData['status'] = 'OK';
+            // Handle Resampling (hanya untuk Foreman)
+            if ($userRole === 'Foreman') {
+                if ($updateData['disposition'] === 'Resampling') {
+                    $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
+                    $updateData['not_standard'] = true;
+                } elseif ($updateData['disposition'] === 'Release Bersyarat') {
+                    $updateData['status'] = 'OK';
+                }
             }
 
             if ($request->filled('revisi')) {
@@ -213,28 +195,25 @@ class GgasController extends Controller
             $ggas->update($updateData);
 
             // Build remark text for API payload
-            if ($remark !== null && $remark !== '-' && $disposition !== 'Adjustment') {
+            if ($remark !== null && $remark !== '-') {
                 $remarkText = $remark;
-            } elseif ($disposition === 'Adjustment') {
-                $remarkText = sprintf(
-                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
-                    $request->adjustment_qty_air ?? 0,
-                    $request->adjustment_qty_garam ?? 0,
-                    $request->adjustment_qty_gula ?? 0
-                );
             } elseif ($updateData['not_standard'] ?? false) {
                 $remarkText = 'Adjustment';
             } else {
                 $remarkText = '-';
             }
 
+            $jamSelesaiGgas = ($status_disposition === 'OK')
+                ? now()->format('Y-m-d H:i:s')
+                : null;
+
             $apiPayload = [
-                'disposition' => $disposition,
+                'disposition' => $updateData['disposition'] ?? null,
                 'revisi' => $updateData['revisi'] ?? null,
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
                 'disposition_remark' => $remarkText,
-                'jam_selesai_ggas' => now()->format('Y-m-d H:i:s'),
+                'jam_selesai_ggas' => $jamSelesaiGgas,
             ];
 
             $client = new \GuzzleHttp\Client();
@@ -256,19 +235,38 @@ class GgasController extends Controller
 
             DB::commit();
 
-            $message = $isUpdate
-                ? 'Data GGAS berhasil diperbarui.'
-                : 'Data GGAS berhasil disimpan.';
+            // Kirim notifikasi berdasarkan kondisi
+            $shouldSendNotification = false;
+            $notificationTitle = "GGAS - Batch " . $ggas->batch_number;
 
-            // Trigger event hanya jika status berubah ke NOT OK atau Adjustment
-            if ($statusChanged && in_array($status_disposition, ['NOT OK', 'Adjustment'])) {
+            if ($userRole === 'Analis Kimia') {
+                $shouldSendNotification = true;
+                $notificationTitle .= " - Menunggu Review Foreman";
+            } elseif ($userRole === 'Foreman' && $dispositionChanged) {
+                $shouldSendNotification = true;
+                $notificationTitle .= " - Disposition: " . ($updateData['disposition'] ?? '-');
+            }
+
+            if ($shouldSendNotification) {
                 event(new ProcessOutsideDisposition(
-                    "GGAS - Batch " . $ggas->batch_number,
+                    $notificationTitle,
                     $ggas->production_batch_id,
                     'GGAS',
                     $status_disposition,
-                    $remark
+                    $remarkText,
+                    route('ggas.show', $ggas->production_batch_id)
                 ));
+            }
+
+            // Pesan response berdasarkan role
+            if ($userRole === 'Analis Kimia') {
+                $message = $isUpdate
+                    ? 'Data GGAS berhasil diperbarui.'
+                    : 'Data GGAS berhasil disimpan.';
+            } elseif ($userRole === 'Foreman') {
+                $message = 'Disposisi berhasil diberikan.';
+            } else {
+                $message = 'Data berhasil disimpan.';
             }
 
             return response()->json([
@@ -276,6 +274,8 @@ class GgasController extends Controller
                 'message' => $message,
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
+
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Error occurred, please try again.',

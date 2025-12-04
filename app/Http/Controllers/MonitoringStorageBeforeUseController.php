@@ -110,7 +110,7 @@ class MonitoringStorageBeforeUseController extends Controller
                 ->rawColumns(['waktu_selesai_pemakaian', 'estimasi_kadaluarsa', 'hasil', 'detail', 'action', 'tahap_flushing', 'status_approval'])
                 ->make(true);
         }
-        $variantKecap = Http::get(env('PRODUCTION_URL') . 'api/varian/kecap')->json()['data'];
+        $variantKecap = Http::get(env('PRODUCTION_URL') . 'api/varian/kecap/all')->json()['data'];
 
         return view('app.monitoring_storage_before_use.index', compact('variantKecap'));
     }
@@ -221,6 +221,9 @@ class MonitoringStorageBeforeUseController extends Controller
                 'estimasi_kadaluarsa' => $data->estimasi_kadaluarsa,
                 'estimasi_kadaluarsa_formatted' => $data->estimasi_kadaluarsa
                     ? \Carbon\Carbon::parse($data->estimasi_kadaluarsa)->locale('id')->translatedFormat('d F Y, H:i')
+                    : null,
+                'scan_formatted' => $data->scanned_at
+                    ? \Carbon\Carbon::parse($data->scanned_at)->locale('id')->translatedFormat('d F Y, H:i')
                     : null,
                 'visco' => $data->visco,
                 'brix' => $data->brix,

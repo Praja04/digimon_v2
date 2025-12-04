@@ -18,11 +18,6 @@ class GGAS extends Model
         return $this->belongsTo(ProductionBatch::class);
     }
 
-    public function color()
-    {
-        return $this->belongsTo(Color::class);
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class, 'created_by');

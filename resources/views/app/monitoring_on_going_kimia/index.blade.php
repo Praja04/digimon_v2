@@ -603,7 +603,8 @@
                         $('#detail_jam_koding').text(response.jam_koding || '-');
                         $('#detail_created_at').text(response.created_at_formatted || '-');
                         $('#detail_analis').text(response.analis_name || '-');
-                        $('#detail_shift').text("Shift " + response.shift || '-');
+                        $('#detail_shift').text(response.shift ? "Shift " + response.shift :
+                            '-');
                         $('#detail_received_at').text(response
                             .received_at_formatted || '-');
 

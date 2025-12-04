@@ -49,6 +49,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/monitoring-ongoing-mikro/get-po', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-mikro.get-po');
     Route::post('/monitoring-ongoing-mikro/get-variant', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getVariantByPo'])->name('monitoring-ongoing-mikro.get-variant');
 
+    // Scan
+    Route::get('/scan', [App\Http\Controllers\ScanController::class, 'index'])->name('scan.index');
+    Route::post('/scan', [App\Http\Controllers\ScanController::class, 'store'])->name('scan.store');
     /*------------------------------------------
     RMPM
     Roles: Supervisor, Foreman, Analis RM
@@ -166,9 +169,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/gga/menu', [App\Http\Controllers\GGaController::class, 'menu'])->name('gga.menu');
         Route::get('/gga', [App\Http\Controllers\GGaController::class, 'index'])->name('gga.index');
         Route::get('/gga/{id}', [App\Http\Controllers\GGaController::class, 'show'])->name('gga.show');
-        Route::get('/gga/batch/{id}', [App\Http\Controllers\GGaController::class, 'show_batch'])->name('gga.show_batch');
         Route::get('/gga/edit/{id}', [App\Http\Controllers\GGaController::class, 'edit'])->name('gga.edit');
         Route::post('/gga', [App\Http\Controllers\GGaController::class, 'update'])->name('gga.update');
+        Route::get('/scan/batch/gga/{id}', [App\Http\Controllers\GGaController::class, 'show_batch'])->name('gga.show_batch');
 
         // Analisa - GGAS
         Route::get('/ggas', [App\Http\Controllers\GgasController::class, 'index'])->name('ggas.index');
@@ -176,37 +179,38 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/ggas/batch/{id}', [App\Http\Controllers\GgasController::class, 'show_batch'])->name('ggas.show_batch');
         Route::get('/ggas/edit/{id}', [App\Http\Controllers\GgasController::class, 'edit'])->name('ggas.edit');
         Route::post('/ggas', [App\Http\Controllers\GgasController::class, 'update'])->name('ggas.update');
+        Route::get('/scan/batch/ggas/{id}', [App\Http\Controllers\GgasController::class, 'show_batch'])->name('ggas.show_batch');
 
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/edit/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'edit'])->name('analisa.blending-awal.edit');
         Route::get('/analisa/blending-awal/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show'])->name('analisa.blending-awal.show');
-        Route::get('/analisa/blending-awal/batch/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show_batch'])->name('analisa.blending-awal.show_batch');
         Route::post('/analisa/blending-awal/update', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'update'])->name('analisa.blending-awal.update');
+        Route::get('scan/batch/blending-awal/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show_batch'])->name('analisa.blending-awal.show_batch');
 
         // Analisa - Monitoring Turun Blending
         Route::get('/analisa/monitoring-turun-blending', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'index'])->name('analisa.monitoring-turun-blending.index');
         Route::get('/analisa/monitoring-turun-blending/edit/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'edit'])->name('analisa.monitoring-turun-blending.edit');
         Route::get('/analisa/monitoring-turun-blending/show/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show'])->name('analisa.monitoring-turun-blending.show');
-        Route::get('/analisa/monitoring-turun-blending/batch/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show_batch'])->name('analisa.monitoring-turun-blending.show_batch');
         Route::post('/analisa/monitoring-turun-blending/update', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'update'])->name('analisa.monitoring-turun-blending.update');
-
-        // Analisa - Monitoring Storage Kimia
-        Route::get('/analisa/monitoring-storage-kimia', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'index'])->name('analisa.monitoring-storage-kimia.index');
-        Route::get('/analisa/monitoring-storage-kimia/edit/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'edit'])->name('analisa.monitoring-storage-kimia.edit');
-        Route::get('/analisa/monitoring-storage-kimia/show/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'show'])->name('analisa.monitoring-storage-kimia.show');
-        Route::get('/analisa/monitoring-storage-kimia/batch/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'show_batch'])->name('analisa.monitoring-storage-kimia.show_batch');
-        Route::post('/analisa/monitoring-storage-kimia/update', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'update'])->name('analisa.monitoring-storage-kimia.update');
+        Route::get('/scan/batch/monitoring-turun-blending/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show_batch'])->name('analisa.monitoring-turun-blending.show_batch');
 
         // Analisa - Monitoring Pasteurisasi
         Route::get('/analisa/monitoring-pasteurisasi', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'index'])->name('analisa.monitoring-pasteurisasi.index');
         Route::get('/analisa/monitoring-pasteurisasi/edit/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'edit'])->name('analisa.monitoring-pasteurisasi.edit');
         Route::get('/analisa/monitoring-pasteurisasi/show/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show'])->name('analisa.monitoring-pasteurisasi.show');
-        Route::get('/analisa/monitoring-pasteurisasi/batch/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show_batch'])->name('analisa.monitoring-pasteurisasi.show_batch');
         Route::post('/analisa/monitoring-pasteurisasi/update', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'update'])->name('analisa.monitoring-pasteurisasi.update');
+        Route::get('/scan/batch/monitoring-pasteurisasi/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show_batch'])->name('analisa.monitoring-pasteurisasi.show_batch');
+
+        // Analisa - Monitoring Storage Kimia
+        Route::get('/analisa/monitoring-storage-kimia', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'index'])->name('analisa.monitoring-storage-kimia.index');
+        Route::get('/analisa/monitoring-storage-kimia/edit/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'edit'])->name('analisa.monitoring-storage-kimia.edit');
+        Route::get('/analisa/monitoring-storage-kimia/show/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'show'])->name('analisa.monitoring-storage-kimia.show');
+        Route::post('/analisa/monitoring-storage-kimia/update', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'update'])->name('analisa.monitoring-storage-kimia.update');
+        Route::get('/scan/batch/monitoring-storage-kimia/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'show_batch'])->name('analisa.monitoring-storage-kimia.show_batch');
 
         // Analis - Monitoring Before Use
-        Route::get('/analisa/monitoring-storage-before-use/{id}', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'analisa'])->name('monitoring-storage-before-use.analisa');
+        Route::get('/scan/monitoring-storage-before-use/{id}', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'analisa'])->name('monitoring-storage-before-use.analisa');
         Route::post('/analisa/monitoring-storage-before-use', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'storeAnalisa'])->name('monitoring-storage-before-use.storeAnalisa');
     });
 
@@ -234,8 +238,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/blending-awal/mikro/get-blending-data', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'getBlendingData'])->name('analisa.blending-awal-mikro.getBlendingData');
         Route::get('/analisa/blending-awal/mikro/edit/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'edit'])->name('analisa.blending-awal-mikro.edit');
         Route::get('/analisa/blending-awal/mikro/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show'])->name('analisa.blending-awal-mikro.show');
-        Route::get('/analisa/blending-awal/mikro/batch/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show_batch'])->name('analisa.blending-awal-mikro.show_batch');
         Route::post('/analisa/blending-awal/mikro/update', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'update'])->name('analisa.blending-awal-mikro.update');
+        Route::get('/scan/batch/blending-awal-mikro/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show_batch'])->name('analisa.blending-awal-mikro.show_batch');
 
         // Monitoring Storage Before Use
         Route::get('/monitoring-storage-before-use', [App\Http\Controllers\MonitoringStorageBeforeUseController::class, 'index'])->name('monitoring-storage-before-use.index');
@@ -257,12 +261,12 @@ Route::middleware(['auth'])->group(function () {
 
         // Analisa - Monitoring Daily Tank - Kimia
         Route::get('/analisa/monitoring-daily-tank/kimia/get-data', [App\Http\Controllers\Analisa\MonitoringDailyTankKimiaController::class, 'getData'])->name('analisa.monitoring-daily-tank-kimia.getData');
-        Route::get('/analisa/monitoring-daily-tank/kimia/{id}', [App\Http\Controllers\Analisa\MonitoringDailyTankKimiaController::class, 'show'])->name('analisa.monitoring-daily-tank-kimia.show');
+        Route::get('/analisa/monitoring-daily-tank-kimia/{id}', [App\Http\Controllers\Analisa\MonitoringDailyTankKimiaController::class, 'show'])->name('analisa.monitoring-daily-tank-kimia.show');
         Route::post('/analisa/monitoring-daily-tank/kimia/update', [App\Http\Controllers\Analisa\MonitoringDailyTankKimiaController::class, 'update'])->name('analisa.monitoring-daily-tank-kimia.update');
 
         // Analisa - Monitoring Daily Tank - Mikro
         Route::get('/analisa/monitoring-daily-tank/mikro/get-data', [App\Http\Controllers\Analisa\MonitoringDailyTankMikroController::class, 'getData'])->name('analisa.monitoring-daily-tank-mikro.getData');
-        Route::get('/analisa/monitoring-daily-tank/mikro/{id}', [App\Http\Controllers\Analisa\MonitoringDailyTankMikroController::class, 'show'])->name('analisa.monitoring-daily-tank-mikro.show');
+        Route::get('/analisa/monitoring-daily-tank-mikro/{id}', [App\Http\Controllers\Analisa\MonitoringDailyTankMikroController::class, 'show'])->name('analisa.monitoring-daily-tank-mikro.show');
         Route::post('/analisa/monitoring-daily-tank/mikro/update', [App\Http\Controllers\Analisa\MonitoringDailyTankMikroController::class, 'update'])->name('analisa.monitoring-daily-tank-mikro.update');
     });
 

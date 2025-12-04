@@ -21,17 +21,14 @@ class MonitoringDailyTankKimiaController extends Controller
     public function update(MonitoringDailyTankKimiaUpdateRequest $request)
     {
         try {
-            // Validasi tambahan untuk alasan disposisi
             $statusParameter = $request->status_parameter;
-            $statusDisposisi = $request->status_disposisi;
             $alasanDisposisi = $request->alasan_disposisi;
 
-            // Jika bukan OK + Release, maka alasan disposisi wajib diisi
-            if (!($statusParameter === 'OK' && $statusDisposisi === 'Release')) {
+            if ($statusParameter === 'NOT OK') {
                 if (empty($alasanDisposisi)) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Alasan disposisi wajib diisi untuk status dan disposisi yang dipilih!'
+                        'message' => 'Alasan disposisi wajib diisi untuk status NOT OK!'
                     ], 409);
                 }
             }
@@ -76,15 +73,25 @@ class MonitoringDailyTankKimiaController extends Controller
                 'tanggal_input_hasil' => now(),
             ]);
 
-            if ($request->status_parameter == 'NOT OK') {
-                event(new ProcessOutsideDisposition(
-                    "Monitoring Daily Tank Kimia - Batch " . $monitoringDailyTank->productionBatch->batch_number,
-                    $monitoringDailyTank->productionBatch->id,
-                    'Monitoring Daily Tank Kimia',
-                    $request->status_disposisi,
-                    $request->alasan_disposisi,
-                ));
+            // Kirim notifikasi untuk semua status (OK maupun NOT OK)
+            $notificationTitle = "Monitoring Daily Tank Kimia - Batch " . $monitoringDailyTank->productionBatch->batch_number;
+
+            // Buat message yang sesuai dengan status
+            if ($request->status_parameter === 'OK') {
+                $message = "Status: OK";
+            } else {
+                $message = "Status: NOT OK - Disposisi: " . ($request->status_disposisi ?? '-') .
+                    ($alasanDisposisi ? " - Alasan: " . strtoupper($alasanDisposisi) : '');
             }
+
+            event(new ProcessOutsideDisposition(
+                $notificationTitle,
+                $monitoringDailyTank->productionBatch->id,
+                'Monitoring Daily Tank Kimia',
+                $request->status_parameter, // OK atau NOT OK
+                $message,
+                route('analisa.monitoring-daily-tank-kimia.show', $monitoringDailyTank->productionBatch->id) // tambahkan route jika ada
+            ));
 
             return response()->json([
                 'status' => 'success',

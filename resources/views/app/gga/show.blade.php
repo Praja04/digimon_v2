@@ -110,8 +110,9 @@
                                                 <th>Dissolver</th>
                                                 <th>BRIX</th>
                                                 <th>NACL</th>
-                                                <th>Warna</th>
+                                                <th>Organo</th>
                                                 <th>Dibuat Oleh</th>
+                                                <th>Waktu Scan</th>
                                                 <th>Status</th>
                                                 <th>Disposisi</th>
                                                 <th>Keterangan</th>
@@ -138,10 +139,12 @@
                                                 @endphp
                                                 <tr class="{{ $rowClass }}">
                                                     <td>
+                                                        {{ $gga->batch_number }}
                                                         @if ($gga->revisi != null)
-                                                            {{ $gga->batch_number }} ❗
-                                                        @else
-                                                            {{ $gga->batch_number }}
+                                                            <span class="badge bg-secondary ms-1"
+                                                                title="Revisi ke-{{ $gga->revisi }}">
+                                                                Rev. {{ $gga->revisi }}
+                                                            </span>
                                                         @endif
 
                                                         @if ($gga->additional_batch_info)
@@ -153,11 +156,25 @@
                                                     <td>{{ $gga->dissolver_number }}</td>
                                                     <td>{{ $gga->brix ?? '-' }}</td>
                                                     <td>{{ $gga->nacl ?? '-' }}</td>
-                                                    <td>{{ $gga->color->name ?? '-' }} <small
-                                                            class="text-muted">({{ $gga->color->code ?? '-' }})</small>
-                                                    </td>
+                                                    <td>{{ $gga->organo ?? '-' }}</td>
                                                     <td>{{ $gga->user->name ?? '-' }}</td>
-                                                    <td>{{ $gga->status ?? '-' }}</td>
+                                                    <td>{{ $gga->scanned_at ? \Carbon\Carbon::parse($gga->scanned_at)->format('d/m/Y H:i:s') : '-' }}
+                                                    </td>
+                                                    <td>
+                                                        @if ($gga->status)
+                                                            <span
+                                                                class="badge {{ match (strtoupper($gga->status)) {
+                                                                    'OK' => 'bg-success',
+                                                                    'NOT OK' => 'bg-danger',
+                                                                    'ADJUSTMENT' => 'bg-warning text-dark',
+                                                                    default => 'bg-secondary',
+                                                                } }}">
+                                                                {{ $gga->status }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $gga->disposition ?? '-' }}</td>
 
                                                     <td>
@@ -170,14 +187,14 @@
                                                         @if (is_null($gga->status))
                                                             <button class="btn btn-sm btn-primary open-gga-modal"
                                                                 data-id="{{ $gga->id }}">
-                                                                Input GGA
+                                                                Input Data
                                                             </button>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-warning open-gga-modal-edit"
                                                                     data-id="{{ $gga->id }}">
-                                                                    Edit GGA
+                                                                    Edit Data
                                                                 </button>
                                                             @else
                                                                 <span class="badge bg-success-subtle text-success">
@@ -217,30 +234,24 @@
                     </div>
                     <div class="modal-body row g-3">
                         <div class="alert alert-danger d-none error-alert"></div>
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <input type="hidden" name="id" id="id">
                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                             <input type="text" name="brix" id="brix" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorBrix"></small>
                         </div>
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <label class="form-label">NACL <span style="color: red">*</span></label>
                             <input type="text" name="nacl" id="nacl" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorNacl"></small>
                         </div>
                         <div class="col-lg-6">
-                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                            <select name="color" id="color" class="select2 form-control">
-                                <option value="">-- Pilih Warna --</option>
-                                @foreach ($colors as $color)
-                                    <option value="{{ $color->id }}">
-                                        {{ $color->name . ' - ' . $color->code }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="text-danger errorColor"></small>
+                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                            <input type="text" name="organo" id="organo" class="form-control"
+                                oninput="this.value = this.value.toUpperCase();">
+                            <small class="text-danger errorOrgano"></small>
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label">Status <span style="color: red">*</span></label>
@@ -261,6 +272,7 @@
                                     <option value="Release">Release</option>
                                     <option value="Release Bersyarat">Release Bersyarat</option>
                                     <option value="Resampling">Resampling</option>
+                                    <option value="Adjustment">Adjustment</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
                                 </select>
@@ -276,20 +288,17 @@
                         <div class="col-lg-12 d-none adjustment-qty-wrapper">
                             <h6 class="form-label fw-bold">Adjustment Qty</h6>
                             <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Air (Liter)</label>
-                                    <input type="text" name="adjustment_qty_air"
-                                        class="form-control adjustment-qty comma-input" placeholder="Contoh: 0,00">
+                                <div class="col-md-6">
+                                    <label class="form-label">Gula Tebu (Kg)</label>
+                                    <input type="text" name="adjustment_qty_gula_tebu"
+                                        class="form-control adjustment-qty comma-input" value="0"
+                                        placeholder="Contoh: 0,00">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Gula (Kg)</label>
-                                    <input type="text" name="adjustment_qty_gula"
-                                        class="form-control adjustment-qty comma-input" placeholder="Contoh: 0,00">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Garam (Kg)</label>
-                                    <input type="text" name="adjustment_qty_garam"
-                                        class="form-control adjustment-qty comma-input" placeholder="Contoh: 0,00">
+                                <div class="col-md-6">
+                                    <label class="form-label">Gula Kelapa (Kg)</label>
+                                    <input type="text" name="adjustment_qty_gula_kelapa"
+                                        class="form-control adjustment-qty comma-input" value="0"
+                                        placeholder="Contoh: 0,00">
                                 </div>
                             </div>
                         </div>
@@ -387,56 +396,15 @@
                 $('.modal-title').text('Input Data GGA');
                 $('#id').val(id);
 
-                $('#color').val('').trigger('change');
-                $('#status_disposition').val('').trigger('change');
                 $('#disposition').val('').trigger('change');
+                
+                $('#status_disposition').val('').trigger('change');
+                $('#status_disposition').prop('disabled', false);
 
                 $('.adjustment-qty-wrapper').addClass('d-none');
                 $('.adjustment-qty').prop('required', false).val('');
 
                 $('#modal').modal('show');
-            });
-
-            $('body').on('click', '#btnDetail', function() {
-                const id = $(this).data('id');
-
-                $.ajax({
-                    type: "GET",
-                    url: "{{ route('gga.edit', '') }}/" + id,
-                    dataType: "json",
-                    beforeSend: function() {
-                        $('#form')[0].reset();
-                        $('.text-danger').html('');
-                        $('.form-control').removeClass('is-invalid');
-                    },
-                    success: function(response) {
-                        let remarkText = '';
-
-                        if (response.disposition_remark != null &&
-                            response.disposition_remark != '-' &&
-                            response.disposition != 'Adjustment') {
-                            remarkText = response.disposition_remark;
-                        } else if (response.disposition == 'Adjustment') {
-                            remarkText =
-                                `Adjustment Air: ${response.adjustment_qty_air || 0} Liter, Garam: ${response.adjustment_qty_garam || 0} Kg, Gula: ${response.adjustment_qty_gula || 0} Kg`;
-                        } else if (response.is_adjustment == true) {
-                            remarkText = 'Adjustment';
-                        } else {
-                            remarkText = '-';
-                        }
-
-                        $('#disposition_remark_detail').val(remarkText);
-
-                        $('#detailModal').modal('show');
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: 'Gagal memuat data. Silakan coba lagi.',
-                        });
-                    }
-                });
             });
 
             $('body').on('click', '.open-gga-modal-edit', function() {
@@ -452,25 +420,34 @@
                         $('.form-control').removeClass('is-invalid');
                     },
                     success: function(response) {
+                        const userRole = "{{ auth()->user()->role }}";
+
                         $('.modal-title').text('Edit Data GGA');
 
                         $('#id').val(response.id);
                         $('#brix').val(response.brix);
                         $('#nacl').val(response.nacl);
-                        $('#color').val(response.color_id).trigger('change');
+                        $('#organo').val(response.organo || '');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
-                        $('#status_disposition').val(response.status);
+                        // Jika role Foreman, field Status menjadi readonly (tidak bisa diedit)
+                        if (userRole === 'Foreman') {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', true);
+                        } else {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', false);
+                        }
+
                         $('#disposition').val(response.disposition || '');
 
+                        // Tampilkan adjustment qty jika ada
                         if (response.status === 'Adjustment') {
                             $('.adjustment-qty-wrapper').removeClass('d-none');
-                            $('input[name="adjustment_qty_air"]').val(response
-                                .adjustment_qty_air || '');
-                            $('input[name="adjustment_qty_gula"]').val(response
-                                .adjustment_qty_gula || '');
-                            $('input[name="adjustment_qty_garam"]').val(response
-                                .adjustment_qty_garam || '');
+                            $('input[name="adjustment_qty_gula_tebu"]').val(response
+                                .adjustment_qty_gula_tebu || '');
+                            $('input[name="adjustment_qty_gula_kelapa"]').val(response
+                                .adjustment_qty_gula_kelapa || '');
 
                             $('.adjustment-qty').prop('required', true);
                         } else {
@@ -490,8 +467,67 @@
                 });
             });
 
+            $('body').on('click', '#btnDetail', function() {
+                const id = $(this).data('id');
+
+                $.ajax({
+                    type: "GET",
+                    url: "{{ route('gga.edit', '') }}/" + id,
+                    dataType: "json",
+                    beforeSend: function() {
+                        $('#form')[0].reset();
+                        $('.text-danger').html('');
+                        $('.form-control').removeClass('is-invalid');
+                    },
+                    success: function(response) {
+                        let remarkText = '';
+
+                        const hasAdjustment = hasAdjustmentQty(
+                            response.adjustment_qty_gula_tebu,
+                            response.adjustment_qty_gula_kelapa
+                        );
+
+                        if (response.disposition_remark != null &&
+                            response.disposition_remark != '-' &&
+                            response.disposition != 'Adjustment') {
+                            remarkText = response.disposition_remark;
+                        } else if (response.status === 'Adjustment' || hasAdjustment) {
+                            const tebu = parseFloat(response.adjustment_qty_gula_tebu) || 0;
+                            const kelapa = parseFloat(response.adjustment_qty_gula_kelapa) || 0;
+
+                            remarkText =
+                                `Adjustment:\n- Gula Tebu: ${tebu} Kg\n- Gula Kelapa: ${kelapa} Kg`;
+
+                            if (response.disposition_remark && response.disposition_remark !==
+                                '-') {
+                                remarkText += `\n\nCatatan: ${response.disposition_remark}`;
+                            }
+                        } else {
+                            remarkText = '-';
+                        }
+
+                        $('#disposition_remark_detail').val(remarkText);
+
+                        $('#detailModal').modal('show');
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal memuat data. Silakan coba lagi.',
+                        });
+                    }
+                });
+            });
+
             $('#form').submit(function(e) {
                 e.preventDefault();
+
+                // Re-enable status_disposition sebelum submit agar nilainya ikut terkirim
+                const wasDisabled = $('#status_disposition').prop('disabled');
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', false);
+                }
 
                 $.ajax({
                     data: $(this).serialize(),
@@ -508,6 +544,11 @@
                     },
                     complete: function() {
                         $('#save').prop('disabled', false).text('Simpan');
+
+                        // Kembalikan disabled state jika diperlukan
+                        if (wasDisabled) {
+                            $('#status_disposition').prop('disabled', true);
+                        }
                     },
                     success: function(response) {
                         $('#modal').modal('hide');
@@ -553,9 +594,9 @@
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
+                            if (errors.organo) {
+                                $('#organo').addClass('is-invalid');
+                                $('.errorOrgano').html(errors.organo.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');
@@ -566,14 +607,13 @@
                                 $('#disposition').addClass('is-invalid');
                                 $('.errorDisposition').html(errors.disposition.join('<br>'));
                             }
-                            if (errors.adjustment_qty_air) {
-                                $('input[name="adjustment_qty_air"]').addClass('is-invalid');
+                            if (errors.adjustment_qty_gula_tebu) {
+                                $('input[name="adjustment_qty_gula_tebu"]').addClass(
+                                    'is-invalid');
                             }
-                            if (errors.adjustment_qty_gula) {
-                                $('input[name="adjustment_qty_gula"]').addClass('is-invalid');
-                            }
-                            if (errors.adjustment_qty_garam) {
-                                $('input[name="adjustment_qty_garam"]').addClass('is-invalid');
+                            if (errors.adjustment_qty_gula_kelapa) {
+                                $('input[name="adjustment_qty_gula_kelapa"]').addClass(
+                                    'is-invalid');
                             }
 
                             return;
@@ -587,6 +627,11 @@
                     }
                 });
             });
+
+            // Helper function untuk cek adjustment qty
+            function hasAdjustmentQty(tebu, kelapa) {
+                return (tebu && parseFloat(tebu) > 0) || (kelapa && parseFloat(kelapa) > 0);
+            }
         });
     </script>
 @endsection

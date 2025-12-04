@@ -11,9 +11,6 @@ class GgasRequest extends FormRequest
         $numericFields = [
             'brix',
             'nacl',
-            'adjustment_qty_air',
-            'adjustment_qty_garam',
-            'adjustment_qty_gula'
         ];
 
         $preparedData = [];
@@ -33,12 +30,9 @@ class GgasRequest extends FormRequest
         return [
             'brix' => 'required|numeric|min:0|max:100',
             'nacl' => 'nullable|numeric|min:0|max:100',
-            'color' => 'required|string|max:20',
+            'organo' => 'required|string|max:20',
             'status_disposition' => 'required',
             'disposition_remaks' => 'nullable|string|max:255',
-            'adjustment_qty_air' => 'nullable|numeric',
-            'adjustment_qty_garam' => 'nullable|numeric',
-            'adjustment_qty_gula' => 'nullable|numeric',
         ];
     }
 
@@ -47,7 +41,7 @@ class GgasRequest extends FormRequest
         return  [
             'brix' => 'Brix',
             'nacl' => 'NACL',
-            'color' => 'Warna',
+            'organo' => 'Organo',
             'status_disposition' => 'Status',
             'disposition_remaks' => 'Catatan disposisi',
         ];

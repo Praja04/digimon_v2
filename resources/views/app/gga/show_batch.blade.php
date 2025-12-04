@@ -105,30 +105,24 @@
                             <div class="card-body">
                                 <form id="form">
                                     <div class="row g-3">
-                                        <div class="col-lg-12">
+                                        <div class="col-lg-6">
                                             <input type="hidden" name="id" id="id" value="{{ $gga->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
-                                        <div class="col-lg-12">
+                                        <div class="col-lg-6">
                                             <label class="form-label">NACL <span style="color: red">*</span></label>
                                             <input type="text" name="nacl" id="nacl"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00">
                                             <small class="text-danger errorNacl"></small>
                                         </div>
                                         <div class="col-lg-6">
-                                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                                            <select name="color" id="color" class="select2 form-control">
-                                                <option value="">-- Pilih Warna --</option>
-                                                @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}">
-                                                        {{ $color->name . ' - ' . $color->code }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-danger errorColor"></small>
+                                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                                            <input type="text" name="organo" id="organo" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();">
+                                            <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
@@ -165,22 +159,16 @@
                                         <div class="col-lg-12 d-none adjustment-qty-wrapper">
                                             <h6 class="form-label fw-bold">Adjustment Qty</h6>
                                             <div class="row g-3">
-                                                <div class="col-md-4">
-                                                    <label class="form-label">Air (Liter)</label>
-                                                    <input type="text" name="adjustment_qty_air"
-                                                        class="form-control adjustment-qty comma-input"
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Gula Tebu (Kg)</label>
+                                                    <input type="text" name="adjustment_qty_gula_tebu"
+                                                        class="form-control adjustment-qty comma-input" value="0"
                                                         placeholder="Contoh: 0,00">
                                                 </div>
-                                                <div class="col-md-4">
-                                                    <label class="form-label">Gula (Kg)</label>
-                                                    <input type="text" name="adjustment_qty_gula"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="Contoh: 0,00">
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label class="form-label">Garam (Kg)</label>
-                                                    <input type="text" name="adjustment_qty_garam"
-                                                        class="form-control adjustment-qty comma-input"
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Gula Kelapa (Kg)</label>
+                                                    <input type="text" name="adjustment_qty_gula_kelapa"
+                                                        class="form-control adjustment-qty comma-input" value="0"
                                                         placeholder="Contoh: 0,00">
                                                 </div>
                                             </div>
@@ -325,9 +313,9 @@
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
+                            if (errors.organo) {
+                                $('#organo').addClass('is-invalid');
+                                $('.errorOrgano').html(errors.organo.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');
@@ -338,14 +326,11 @@
                                 $('#disposition').addClass('is-invalid');
                                 $('.errorDisposition').html(errors.disposition.join('<br>'));
                             }
-                            if (errors.adjustment_qty_air) {
-                                $('input[name="adjustment_qty_air"]').addClass('is-invalid');
+                            if (errors.adjustment_qty_gula_tebu) {
+                                $('input[name="adjustment_qty_gula_tebu"]').addClass('is-invalid');
                             }
-                            if (errors.adjustment_qty_gula) {
-                                $('input[name="adjustment_qty_gula"]').addClass('is-invalid');
-                            }
-                            if (errors.adjustment_qty_garam) {
-                                $('input[name="adjustment_qty_garam"]').addClass('is-invalid');
+                            if (errors.adjustment_qty_gula_kelapa) {
+                                $('input[name="adjustment_qty_gula_kelapa"]').addClass('is-invalid');
                             }
 
                             return;

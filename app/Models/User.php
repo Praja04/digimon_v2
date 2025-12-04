@@ -190,4 +190,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_benda_asing');
     }
+
+    public function qrScanLogs()
+    {
+        return $this->hasMany(QRScanLog::class, 'user_id');
+    }
 }

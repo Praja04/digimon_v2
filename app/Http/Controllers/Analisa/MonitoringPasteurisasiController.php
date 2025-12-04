@@ -136,19 +136,31 @@ class MonitoringPasteurisasiController extends Controller
         try {
             $id = $request->id;
 
-            $blending = MonitoringPasteurisasi::findOrFail($id);
-            $isUpdate = !is_null($blending->status_disposition);
+            $pasteurisasi = MonitoringPasteurisasi::findOrFail($id);
+            $isUpdate = !is_null($pasteurisasi->status);
             $userRole = auth()->user()->role;
 
-            if ($blending->disposition) {
-                DB::rollBack();
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Data dengan ID ini sudah memiliki disposisi.'
-                ], 409);
+            // Validasi akses berdasarkan role
+            if ($userRole === 'Analis Kimia') {
+                // Analis hanya bisa input/update jika belum ada disposition
+                if (!is_null($pasteurisasi->disposition)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data sudah di-dispose oleh Foreman. Tidak dapat diubah.'
+                    ], 403);
+                }
+            } elseif ($userRole === 'Foreman') {
+                // Foreman hanya bisa update disposition jika sudah ada status dari Analis
+                if (is_null($pasteurisasi->status)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
+                    ], 403);
+                }
             }
 
-            $disposition = $request->disposition;
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
@@ -161,6 +173,7 @@ class MonitoringPasteurisasiController extends Controller
                 ], 409);
             }
 
+            // Hitung shift otomatis
             $currentHour = (int) now()->format('H');
             if ($currentHour >= 6 && $currentHour < 14) {
                 $shift = 1;
@@ -170,62 +183,9 @@ class MonitoringPasteurisasiController extends Controller
                 $shift = 3;
             }
 
-            // Cek apakah sudah ada data di shift ini dengan disposisi yang sama
-            $existingShift = MonitoringPasteurisasi::where('production_batch_id', $blending->production_batch_id)
-                ->where('batch_range', $blending->batch_range)
-                ->where('shift', $shift)
-                ->where('disposition', $disposition)
-                ->where('id', '!=', $id)
-                ->first();
-
-            if ($existingShift) {
-                DB::rollBack();
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
-                ], 409);
-            }
-            $totalShifts = MonitoringPasteurisasi::where('production_batch_id', $blending->production_batch_id)
-                ->where('batch_range', $blending->batch_range)
-                ->where('id', '!=', $id)
-                ->distinct('shift')
-                ->count('shift');
-
-            if ($totalShifts >= 3) {
-                DB::rollBack();
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Data sudah mencapai maksimal 3 shift.'
-                ], 409);
-            }
-
-            // Cek apakah status_disposition berubah
-            $statusChanged = ($blending->status !== $status_disposition);
-
-            // Tentukan disposition
-            if ($statusChanged) {
-                // Status berubah, hitung ulang disposition
-                if ($status_disposition === 'OK') {
-                    $disposition = 'Release';
-                } elseif ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    $disposition = $request->disposition;
-                } else {
-                    $disposition = match ($status_disposition) {
-                        'NOT OK' => null,
-                        'Adjustment' => 'Adjustment',
-                        default => null,
-                    };
-                }
-            } else {
-                // Status tidak berubah
-                if ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    // Foreman boleh update disposisi manual
-                    $disposition = $request->disposition;
-                } else {
-                    // Pertahankan disposition yang sudah ada
-                    $disposition = $blending->disposition;
-                }
-            }
+            // Cek apakah status berubah
+            $statusChanged = ($pasteurisasi->status !== $status_disposition);
+            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
@@ -238,20 +198,101 @@ class MonitoringPasteurisasiController extends Controller
                 'organo' => $request->organo,
                 'endapan' => $request->endapan,
                 'color_id' => $request->color,
-                'disposition' => $disposition,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,
                 'shift' => $shift,
             ];
 
-            if (!$isUpdate) {
-                $updateData['created_by'] = auth()->user()->id;
+            // PERBAIKAN: Logic berdasarkan Role
+            if ($userRole === 'Analis Kimia') {
+                // Analis hanya update status, disposition tetap null (menunggu Foreman)
+                $updateData['disposition'] = null;
+
+                if (!$isUpdate) {
+                    $updateData['created_by'] = auth()->user()->id;
+                }
+
+                // Validasi shift untuk Analis (hanya saat create/update status)
+                $existingShift = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
+                    ->where('batch_range', $pasteurisasi->batch_range)
+                    ->where('shift', $shift)
+                    ->where('id', '!=', $id)
+                    ->whereNotNull('status') // Yang sudah ada status dari analis
+                    ->first();
+
+                if ($existingShift) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data untuk shift ' . $shift . ' sudah ada. Silakan tunggu shift berikutnya.'
+                    ], 409);
+                }
+
+                // Validasi maksimal 3 shift
+                $totalShifts = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
+                    ->where('batch_range', $pasteurisasi->batch_range)
+                    ->where('id', '!=', $id)
+                    ->whereNotNull('status')
+                    ->distinct('shift')
+                    ->count('shift');
+
+                if ($totalShifts >= 3) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data sudah mencapai maksimal 3 shift.'
+                    ], 409);
+                }
+            } elseif ($userRole === 'Foreman') {
+                // Foreman wajib pilih disposition
+                if (!$request->filled('disposition')) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Foreman wajib memilih disposisi.'
+                    ], 422);
+                }
+
+                $disposition = $request->disposition;
+                $dispositionChanged = ($pasteurisasi->disposition !== $disposition);
+                $updateData['disposition'] = $disposition;
+
+                // Validasi disposition untuk shift yang sama (khusus Foreman)
+                $existingDisposition = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
+                    ->where('batch_range', $pasteurisasi->batch_range)
+                    ->where('shift', $shift)
+                    ->where('disposition', $disposition)
+                    ->where('id', '!=', $id)
+                    ->first();
+
+                if ($existingDisposition) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
+                    ], 409);
+                }
             }
 
+            // Handle Adjustment
+            $adjustmentAir = null;
+            $adjustmentGaram = null;
+            $adjustmentGula = null;
+
             if ($status_disposition === 'Adjustment') {
-                $updateData['adjustment_qty_air'] = $request->adjustment_qty_air;
-                $updateData['adjustment_qty_garam'] = $request->adjustment_qty_garam;
-                $updateData['adjustment_qty_gula'] = $request->adjustment_qty_gula;
+                if (!empty($request->adjustment_qty_air)) {
+                    $adjustmentAir = str_replace(',', '.', $request->adjustment_qty_air);
+                }
+                if (!empty($request->adjustment_qty_garam)) {
+                    $adjustmentGaram = str_replace(',', '.', $request->adjustment_qty_garam);
+                }
+                if (!empty($request->adjustment_qty_gula)) {
+                    $adjustmentGula = str_replace(',', '.', $request->adjustment_qty_gula);
+                }
+
+                $updateData['adjustment_qty_air'] = $adjustmentAir;
+                $updateData['adjustment_qty_garam'] = $adjustmentGaram;
+                $updateData['adjustment_qty_gula'] = $adjustmentGula;
                 $updateData['not_standard'] = true;
             } else {
                 // Jika status bukan Adjustment lagi, clear adjustment data
@@ -259,36 +300,55 @@ class MonitoringPasteurisasiController extends Controller
                     $updateData['adjustment_qty_air'] = null;
                     $updateData['adjustment_qty_garam'] = null;
                     $updateData['adjustment_qty_gula'] = null;
+                    $updateData['not_standard'] = false;
                 }
             }
 
-            // Handle Resampling
-            if ($disposition === 'Resampling') {
-                $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
-                $updateData['not_standard'] = true;
-            } elseif ($disposition === 'Release Bersyarat') {
-                $updateData['status'] = 'OK';
-            }
+            // Handle disposition khusus (hanya untuk Foreman)
+            if ($userRole === 'Foreman') {
+                if ($updateData['disposition'] === 'Resampling') {
+                    $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
+                    $updateData['not_standard'] = true;
+                } elseif ($updateData['disposition'] === 'Release Bersyarat') {
+                    $updateData['status'] = 'OK';
+                }
 
-            if ($disposition === 'Jalan Bareng') {
-                $updateData['not_standard'] = true;
-            }
+                if ($updateData['disposition'] === 'Jalan Bareng') {
+                    $updateData['not_standard'] = true;
+                }
 
-            if ($disposition === 'Leveling') {
-                $updateData['not_standard'] = true;
+                if ($updateData['disposition'] === 'Leveling') {
+                    $updateData['not_standard'] = true;
+                }
             }
 
             if ($request->filled('revisi')) {
                 $updateData['revisi'] = $request->revisi;
             } else {
-                $updateData['revisi'] = $blending->revisi;
+                $updateData['revisi'] = $pasteurisasi->revisi;
             }
 
-            $blending->update($updateData);
+            $pasteurisasi->update($updateData);
 
-            Http::post(env('PRODUCTION_URL') . 'api/monitoring-pasteurisasi/' . $blending->id, [
-                'disposition' => $disposition,
-                'disposition_remark' => $remark,
+            // Build remark text for API payload
+            if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
+                $remarkText = $remark;
+            } elseif ($status_disposition === 'Adjustment') {
+                $remarkText = sprintf(
+                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
+                    $adjustmentAir ?? 0,
+                    $adjustmentGaram ?? 0,
+                    $adjustmentGula ?? 0
+                );
+            } elseif ($updateData['not_standard'] ?? false) {
+                $remarkText = 'Adjustment';
+            } else {
+                $remarkText = '-';
+            }
+
+            Http::post(env('PRODUCTION_URL') . 'api/monitoring-pasteurisasi/' . $pasteurisasi->id, [
+                'disposition' => $updateData['disposition'] ?? null,
+                'disposition_remark' => $remarkText,
                 'revisi' => $updateData['revisi'],
                 'is_adjustment' => $status_disposition === 'Adjustment',
                 'not_standard' => $updateData['not_standard'] ?? false,
@@ -297,19 +357,40 @@ class MonitoringPasteurisasiController extends Controller
 
             DB::commit();
 
-            $message = $isUpdate
-                ? 'Data berhasil diperbarui.'
-                : 'Data berhasil disimpan.';
+            // PERBAIKAN: Kirim notifikasi berdasarkan kondisi
+            $shouldSendNotification = false;
+            $notificationTitle = "Monitoring Pasteurisasi - Batch " . $pasteurisasi->batch_range . " (Shift " . $shift . ")";
 
-            // Trigger event hanya jika status berubah ke NOT OK atau Adjustment
-            if ($statusChanged && in_array($status_disposition, ['NOT OK', 'Adjustment'])) {
+            if ($userRole === 'Analis Kimia') {
+                // Analis input/update status - kirim notif ke Foreman untuk review
+                $shouldSendNotification = true;
+                $notificationTitle .= " - Menunggu Review Foreman";
+            } elseif ($userRole === 'Foreman' && $dispositionChanged) {
+                // Foreman memberi disposition - kirim notif final ke semua
+                $shouldSendNotification = true;
+                $notificationTitle .= " - Disposition: " . ($updateData['disposition'] ?? '-');
+            }
+
+            if ($shouldSendNotification) {
                 event(new ProcessOutsideDisposition(
-                    "Monitoring Pasteurisasi - Batch " . $blending->batch_range,
-                    $blending->production_batch_id,
+                    $notificationTitle,
+                    $pasteurisasi->production_batch_id,
                     'Monitoring Pasteurisasi',
                     $status_disposition,
-                    $remark,
+                    $remarkText,
+                    route('analisa.monitoring-pasteurisasi.show_batch', $pasteurisasi->id)
                 ));
+            }
+
+            // Pesan response berdasarkan role
+            if ($userRole === 'Analis Kimia') {
+                $message = $isUpdate
+                    ? 'Data berhasil diperbarui. Menunggu review dari Foreman.'
+                    : 'Data berhasil disimpan untuk shift ' . $shift . '. Menunggu review dari Foreman.';
+            } elseif ($userRole === 'Foreman') {
+                $message = 'Disposisi berhasil diberikan untuk shift ' . $shift . '.';
+            } else {
+                $message = 'Data berhasil disimpan.';
             }
 
             return response()->json([

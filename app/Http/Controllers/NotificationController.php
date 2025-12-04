@@ -70,16 +70,16 @@ class NotificationController extends Controller
 
     private function getRedirectUrl($notification)
     {
-        $batchId = $notification->production_batch_id;
         $process = $notification->process;
 
         // Map process ke route yang sesuai
         $routeMap = [
-            'GGA' => route('gga.show', $batchId),
-            'GGAS' => route('ggas.show', $batchId),
-            'Blending Awal' => route('analisa.blending-awal.show', $batchId),
-            'Monitoring Turun Blending' => route('analisa.monitoring-turun-blending.show', $batchId),
-            'Monitoring Pasteurisasi' => route('analisa.monitoring-pasteurisasi.show', $batchId),
+            'GGA' => $notification->redirect,
+            'GGAS' => $notification->redirect,
+            'Blending Awal' => $notification->redirect,
+            'Monitoring Turun Blending' => $notification->redirect,
+            'Monitoring Pasteurisasi' => $notification->redirect,
+            'Monitoring Storage Kimia' => $notification->redirect,
         ];
 
         return $routeMap[$process] ?? route('notifications.index');

@@ -133,12 +133,9 @@
                             <label for="variant" class="form-label">Varian <span style="color: red">*</span></label>
                             <select id="variant" name="variant" class="select2 form-control">
                                 <option value="">-- Pilih Varian --</option>
-                                <option value="SS1">SS1</option>
-                                <option value="SS2">SS2</option>
-                                <option value="BB">BB</option>
-                                <option value="MSD NR1">MSD NR1</option>
-                                <option value="MSD NR2">MSD NR2</option>
-                                <option value="JB">JB</option>
+                                @foreach ($variantKecap as $item)
+                                    <option value="{{ $item['code'] }}">{{ $item['code'] }}</option>
+                                @endforeach
                             </select>
                             <small class="text-danger errorVariant"></small>
                         </div>
@@ -268,6 +265,12 @@
                                 <strong id="detail_estimasi">-</strong>
                             </div>
                         </div>
+                        <div class="col-6">
+                            <div class="mb-2">
+                                <span class="text-muted d-block">Waktu Scan</span>
+                                <strong id="detail_waktu_scan">-</strong>
+                            </div>
+                        </div>
                     </div>
 
                     <hr class="my-2">
@@ -317,6 +320,12 @@
 
 @section('scripts')
     <script>
+        $('.select2').select2({
+            placeholder: '-- Pilih Opsi --',
+            dropdownParent: $('#modal')
+        });
+
+
         function printQR(id) {
             const content = document.getElementById(id).innerHTML;
             const win = window.open('', '', 'height=600,width=600');
@@ -508,6 +517,8 @@
                             .waktu_selesai_pemakaian_formatted || '-');
                         $('#detail_estimasi').text(response.estimasi_kadaluarsa_formatted ||
                             '-');
+                        $('#detail_waktu_scan').text(response.scan_formatted ||
+                            '-');
 
                         // Untuk angka, cek null/undefined saja, 0 tetap ditampilkan
                         $('#detail_visco').text(response.visco !== null && response.visco !==
@@ -543,7 +554,7 @@
                         }
 
                         // Format text untuk QR Code
-                        let qrText = 'STORAGE-' + response.storage + '/' + response
+                        let qrText = 'Storage Before Use-' + response.storage + '/' + response
                             .jenis_sample + '/' + response.id;
                         $('#qr_code_text').text(qrText);
 
@@ -710,6 +721,124 @@
                     }
                 })
             })
+
+            $('body').on('click', '#btnApprove', function() {
+                let id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Konfirmasi Approval',
+                    text: "Anda akan menyetujui hasil NOT OK. Sample perlu dilakukan FLUSHING.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Setujui',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            type: "POST",
+                            url: "monitoring-storage-before-use/" + id + "/approve",
+                            data: {
+                                action: 'approve',
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            dataType: "json",
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: 'Memproses...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: response.message,
+                                });
+                                table.ajax.reload();
+                            },
+                            error: function(xhr) {
+                                let errorMessage =
+                                    'Terjadi kesalahan, silakan coba lagi.';
+
+                                if (xhr.status === 422 || xhr.status === 400 || xhr
+                                    .status === 403) {
+                                    errorMessage = xhr.responseJSON.message;
+                                }
+
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Kesalahan',
+                                    text: errorMessage,
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            $('body').on('click', '#btnReject', function() {
+                let id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Override ke OK?',
+                    text: "Anda akan meng-override hasil NOT OK menjadi OK. Sample akan dirilis untuk digunakan.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Override ke OK',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            type: "POST",
+                            url: "monitoring-storage-before-use/" + id + "/approve",
+                            data: {
+                                action: 'reject',
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            dataType: "json",
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: 'Memproses...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: response.message,
+                                });
+                                table.ajax.reload();
+                            },
+                            error: function(xhr) {
+                                let errorMessage =
+                                    'Terjadi kesalahan, silakan coba lagi.';
+
+                                if (xhr.status === 422 || xhr.status === 400 || xhr
+                                    .status === 403) {
+                                    errorMessage = xhr.responseJSON.message;
+                                }
+
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Kesalahan',
+                                    text: errorMessage,
+                                });
+                            }
+                        });
+                    }
+                });
+            });
         });
     </script>
 @endsection

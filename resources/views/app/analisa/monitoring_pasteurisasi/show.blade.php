@@ -107,6 +107,7 @@
                                                 <th>No Blending</th>
                                                 <th>Volume</th>
                                                 <th>Storage</th>
+                                                <th>Waktu Scan</th>
                                                 <th>Status</th>
                                                 <th>Disposisi</th>
                                                 <th>Keterangan</th>
@@ -151,6 +152,8 @@
                                                     <td>{{ $blending->nomor_blending }}</td>
                                                     <td>{{ $blending->volume }}</td>
                                                     <td>{{ $blending->storage ?? '-' }}</td>
+                                                    <td>{{ $blending->scanned_at ? \Carbon\Carbon::parse($blending->scanned_at)->format('d/m/Y H:i:s') : '-' }}
+                                                    </td>
                                                     <td>{{ $blending->status ?? '-' }}</td>
                                                     <td>{{ $blending->disposition ?? '-' }}</td>
                                                     <td>
@@ -589,8 +592,10 @@
                 $('#id').val(id);
 
                 $('#color').val('').trigger('change');
-                $('#status_disposition').val('').trigger('change');
                 $('#disposition').val('').trigger('change');
+
+                $('#status_disposition').prop('disabled', false);
+                $('#status_disposition').val('').trigger('change');
 
                 $('.adjustment-qty-wrapper').addClass('d-none');
                 $('.adjustment-qty').prop('required', false).val('');
@@ -611,6 +616,8 @@
                         $('.form-control').removeClass('is-invalid');
                     },
                     success: function(response) {
+                        const userRole = "{{ auth()->user()->role }}";
+
                         $('#id').val(response.id);
                         $('#brix').val(response.brix);
                         $('#nacl').val(response.nacl);
@@ -625,6 +632,13 @@
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         $('#status_disposition').val(response.status);
+                        if (userRole === 'Foreman') {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', true);
+                        } else {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', false);
+                        }
                         $('#disposition').val(response.disposition);
 
                         if (response.status === 'Adjustment') {
@@ -772,6 +786,11 @@
 
             $('#form').submit(function(e) {
                 e.preventDefault();
+
+                const wasDisabled = $('#status_disposition').prop('disabled');
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', false);
+                }
 
                 $.ajax({
                     data: $(this).serialize(),

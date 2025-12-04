@@ -190,6 +190,14 @@
                     @endif
                 @endif
 
+
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ request()->routeIs(['scan.*']) ? 'active' : '' }}"
+                        href="{{ route('scan.index') }}">
+                        <i class="mdi mdi-barcode-scan"></i> <span data-key="t-scan">Scan</span>
+                    </a>
+                </li>
+
             </ul>
         </div>
         <!-- Sidebar -->

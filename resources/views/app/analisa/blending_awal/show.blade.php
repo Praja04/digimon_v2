@@ -31,11 +31,6 @@
                                             <div class="flex-grow-1">
                                                 <h4>{{ $productionBatch->po_number }} (Nomor PO)</h4>
                                                 <div class="hstack gap-3 flex-wrap">
-                                                    <div><a href="#"
-                                                            class="text-primary d-block">{{ Session::get('username') }}</a>
-                                                    </div>
-                                                    <div class="vr"></div>
-
                                                     <div class="text-muted">Tanggal Produksi : <span
                                                             class="text-body fw-medium">{{ $productionBatch->date }}</span>
                                                     </div>
@@ -106,7 +101,7 @@
                                                 <th>Batch Range</th>
                                                 <th>No Blending</th>
                                                 <th>Volume</th>
-                                                <th>Storage</th>
+                                                <th>Waktu Scan</th>
                                                 <th>Status</th>
                                                 <th>Disposisi</th>
                                                 <th>Keterangan</th>
@@ -150,8 +145,23 @@
                                                     </td>
                                                     <td>{{ $blending->nomor_blending }}</td>
                                                     <td>{{ $blending->volume }}</td>
-                                                    <td>{{ $blending->storage ?? '-' }}</td>
-                                                    <td>{{ $blending->status ?? '-' }}</td>
+                                                    <td>{{ $blending->scanned_at ? \Carbon\Carbon::parse($blending->scanned_at)->format('d/m/Y H:i:s') : '-' }}
+                                                    </td>
+                                                    <td>
+                                                        @if ($blending->status)
+                                                            <span
+                                                                class="badge {{ match (strtoupper($blending->status)) {
+                                                                    'OK' => 'bg-success',
+                                                                    'NOT OK' => 'bg-danger',
+                                                                    'ADJUSTMENT' => 'bg-warning text-dark',
+                                                                    default => 'bg-secondary',
+                                                                } }}">
+                                                                {{ $blending->status }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $blending->disposition ?? '-' }}</td>
                                                     <td>
                                                         <button class="btn btn-sm btn-info" id="btnDetail"
@@ -294,6 +304,7 @@
                                     <option value="Release">Release</option>
                                     <option value="Release Bersyarat">Release Bersyarat</option>
                                     <option value="Resampling">Resampling</option>
+                                    <option value="Adjustment">Adjustment</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
                                     <option value="Jalan Bareng">Jalan Bareng</option>
@@ -585,8 +596,9 @@
                 $('#id').val(id);
 
                 $('#color').val('').trigger('change');
-                $('#status_disposition').val('').trigger('change');
                 $('#disposition').val('').trigger('change');
+                $('#status_disposition').prop('disabled', false);
+                $('#status_disposition').val('').trigger('change');
 
                 $('.adjustment-qty-wrapper').addClass('d-none');
                 $('.adjustment-qty').prop('required', false).val('');
@@ -607,6 +619,8 @@
                         $('.form-control').removeClass('is-invalid');
                     },
                     success: function(response) {
+                        const userRole = "{{ auth()->user()->role }}";
+
                         $('#id').val(response.id);
                         $('#brix').val(response.brix);
                         $('#nacl').val(response.nacl);
@@ -621,6 +635,13 @@
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         $('#status_disposition').val(response.status);
+                        if (userRole === 'Foreman') {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', true);
+                        } else {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', false);
+                        }
                         $('#disposition').val(response.disposition || '');
 
                         if (response.status === 'Adjustment') {
@@ -766,6 +787,11 @@
 
             $('#inputForm').submit(function(e) {
                 e.preventDefault();
+
+                const wasDisabled = $('#status_disposition').prop('disabled');
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', false);
+                }
 
                 $.ajax({
                     data: $(this).serialize(),

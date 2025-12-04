@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Events\ProcessOutsideDisposition;
 use App\Http\Requests\GgaRequest;
-use App\Models\Color;
 use App\Models\GGA;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
@@ -81,17 +80,15 @@ class GGaController extends Controller
     public function show($id)
     {
         $productionBatch = ProductionBatch::with('gga')->findOrFail($id);
-        $colors = Color::orderBy('name', 'asc')->get();
 
-        return view('app.gga.show', compact(['productionBatch', 'colors']));
+        return view('app.gga.show', compact(['productionBatch']));
     }
 
     public function show_batch($id)
     {
         $gga = GGA::with('productionBatch')->findOrFail($id);
-        $colors = Color::orderBy('name', 'asc')->get();
 
-        return view('app.gga.show_batch', compact(['gga', 'colors']));
+        return view('app.gga.show_batch', compact(['gga']));
     }
 
     public function edit($id)
@@ -121,16 +118,26 @@ class GGaController extends Controller
         DB::beginTransaction();
         try {
             $gga = GGA::findOrFail($request->id);
-            $isUpdate = !is_null($gga->status_disposition);
+            $isUpdate = !is_null($gga->status);
             $userRole = auth()->user()->role;
 
-            // Validasi akses untuk update
-            if ($isUpdate && $userRole === 'Produksi') {
-                DB::rollBack();
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Anda tidak memiliki akses untuk mengubah data yang sudah ada disposisi.'
-                ], 403);
+            // Validasi akses berdasarkan role
+            if ($userRole === 'Analis Kimia') {
+                if (!is_null($gga->disposition)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data sudah di disposisi oleh Foreman. Tidak dapat diubah.'
+                    ], 403);
+                }
+            } elseif ($userRole === 'Foreman') {
+                if (is_null($gga->status)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
+                    ], 403);
+                }
             }
 
             $status_disposition = $request->status_disposition;
@@ -145,68 +152,70 @@ class GGaController extends Controller
                 ], 409);
             }
 
-            // Cek apakah status_disposition berubah
+            // Cek apakah status berubah
             $statusChanged = ($gga->status !== $status_disposition);
-
-            // Tentukan disposition
-            if ($statusChanged) {
-                // Status berubah, hitung ulang disposition
-                if ($status_disposition === 'OK') {
-                    $disposition = 'Release';
-                } elseif ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    $disposition = $request->disposition;
-                } else {
-                    $disposition = match ($status_disposition) {
-                        'NOT OK' => null,
-                        'Adjustment' => 'Adjustment',
-                        default => null,
-                    };
-                }
-            } else {
-                // Status tidak berubah
-                if ($userRole === 'Foreman' && $request->filled('disposition')) {
-                    // Foreman boleh update disposisi manual
-                    $disposition = $request->disposition;
-                } else {
-                    // Pertahankan disposition yang sudah ada
-                    $disposition = $gga->disposition;
-                }
-            }
+            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
                 'nacl' => $request->nacl,
-                'color_id' => $request->color,
-                'disposition' => $disposition,
+                'organo' => $request->organo,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,
             ];
 
-            if (!$isUpdate) {
-                $updateData['created_by'] = auth()->user()->id;
+            if ($userRole === 'Analis Kimia') {
+                $updateData['disposition'] = null;
+
+                if (!$isUpdate) {
+                    $updateData['created_by'] = auth()->user()->id;
+                }
+            } elseif ($userRole === 'Foreman') {
+                if (!$request->filled('disposition')) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Foreman wajib memilih disposisi.'
+                    ], 422);
+                }
+
+                $disposition = $request->disposition;
+                $dispositionChanged = ($gga->disposition !== $disposition);
+                $updateData['disposition'] = $disposition;
             }
 
             // Handle Adjustment
+            $adjustmentGulaTebu = null;
+            $adjustmentGulaKelapa = null;
+
             if ($status_disposition === 'Adjustment') {
-                $updateData['adjustment_qty_air'] = $request->adjustment_qty_air;
-                $updateData['adjustment_qty_garam'] = $request->adjustment_qty_garam;
-                $updateData['adjustment_qty_gula'] = $request->adjustment_qty_gula;
+                if (!empty($request->adjustment_qty_gula_tebu)) {
+                    $adjustmentGulaTebu = str_replace(',', '.', $request->adjustment_qty_gula_tebu);
+                }
+                if (!empty($request->adjustment_qty_gula_kelapa)) {
+                    $adjustmentGulaKelapa = str_replace(',', '.', $request->adjustment_qty_gula_kelapa);
+                }
+
+                $updateData['adjustment_qty_gula_tebu'] = $adjustmentGulaTebu;
+                $updateData['adjustment_qty_gula_kelapa'] = $adjustmentGulaKelapa;
                 $updateData['not_standard'] = true;
             } else {
                 // Jika status bukan Adjustment lagi, clear adjustment data
                 if ($statusChanged) {
-                    $updateData['adjustment_qty_air'] = null;
-                    $updateData['adjustment_qty_garam'] = null;
-                    $updateData['adjustment_qty_gula'] = null;
+                    $updateData['adjustment_qty_gula_tebu'] = null;
+                    $updateData['adjustment_qty_gula_kelapa'] = null;
+                    $updateData['not_standard'] = false;
                 }
             }
 
-            // Handle Resampling
-            if ($disposition === 'Resampling') {
-                $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
-                $updateData['not_standard'] = true;
-            } elseif ($disposition === 'Release Bersyarat') {
-                $updateData['status'] = 'OK';
+            // Handle Resampling (hanya untuk Foreman)
+            if ($userRole === 'Foreman') {
+                if ($updateData['disposition'] === 'Resampling') {
+                    $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
+                    $updateData['not_standard'] = true;
+                } elseif ($updateData['disposition'] === 'Release Bersyarat') {
+                    $updateData['status'] = 'OK';
+                }
             }
 
             if ($request->filled('revisi')) {
@@ -218,29 +227,30 @@ class GGaController extends Controller
             $gga->update($updateData);
 
             // Build remark text for API payload
-            if ($remark !== null && $remark !== '-' && $disposition !== 'Adjustment') {
+            if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
                 $remarkText = $remark;
-            } elseif ($disposition === 'Adjustment') {
+            } elseif ($status_disposition === 'Adjustment') {
                 $remarkText = sprintf(
-                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
-                    $request->adjustment_qty_air ?? 0,
-                    $request->adjustment_qty_garam ?? 0,
-                    $request->adjustment_qty_gula ?? 0
+                    'Adjustment Gula Tebu: %s Kg, Gula Kelapa: %s Kg',
+                    $adjustmentGulaTebu ?? 0,
+                    $adjustmentGulaKelapa ?? 0
                 );
-            } elseif ($updateData['not_standard'] ?? false) {
-                $remarkText = 'Adjustment';
             } else {
                 $remarkText = '-';
             }
 
+            $jamSelesaiGga = ($status_disposition === 'OK')
+                ? now()->format('Y-m-d H:i:s')
+                : null;
+
             // Prepare payload for external API
             $apiPayload = [
-                'disposition' => $disposition,
+                'disposition' => $updateData['disposition'] ?? null,
                 'revisi' => $updateData['revisi'] ?? null,
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
                 'disposition_remark' => $remarkText,
-                'jam_selesai_gga' => now()->format('Y-m-d H:i:s'),
+                'jam_selesai_gga' => $jamSelesaiGga,
             ];
 
             // Call external API
@@ -263,19 +273,38 @@ class GGaController extends Controller
 
             DB::commit();
 
-            $message = $isUpdate
-                ? 'Data GGA berhasil diperbarui.'
-                : 'Data GGA berhasil disimpan.';
+            // Kirim notifikasi berdasarkan kondisi
+            $shouldSendNotification = false;
+            $notificationTitle = "GGA - Batch " . $gga->batch_number;
 
-            // Trigger event hanya jika status berubah ke NOT OK atau Adjustment
-            if ($statusChanged && in_array($status_disposition, ['NOT OK', 'Adjustment'])) {
+            if ($userRole === 'Analis Kimia') {
+                $shouldSendNotification = true;
+                $notificationTitle .= " - Menunggu Review Foreman";
+            } elseif ($userRole === 'Foreman' && $dispositionChanged) {
+                $shouldSendNotification = true;
+                $notificationTitle .= " - Disposition: " . ($updateData['disposition'] ?? '-');
+            }
+
+            if ($shouldSendNotification) {
                 event(new ProcessOutsideDisposition(
-                    "GGA - Batch " . $gga->batch_number,
+                    $notificationTitle,
                     $gga->production_batch_id,
                     'GGA',
                     $status_disposition,
                     $remarkText,
+                    route('gga.show', $gga->production_batch_id)
                 ));
+            }
+
+            // Pesan response berdasarkan role
+            if ($userRole === 'Analis Kimia') {
+                $message = $isUpdate
+                    ? 'Data GGA berhasil diperbarui.'
+                    : 'Data GGA berhasil disimpan.';
+            } elseif ($userRole === 'Foreman') {
+                $message = 'Disposisi berhasil diberikan.';
+            } else {
+                $message = 'Data berhasil disimpan.';
             }
 
             return response()->json([

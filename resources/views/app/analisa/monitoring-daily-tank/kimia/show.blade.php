@@ -151,11 +151,11 @@
                                             <select name="status_parameter" id="status_parameter" class="form-control">
                                                 <option value="">-- Pilih Status --</option>
                                                 <option value="OK"
-                                                    {{ $monitoringDailyTank->status_parameter == 'OK' ? 'selected' : '' }}>
+                                                    {{ $monitoringDailyTank->status == 'OK' ? 'selected' : '' }}>
                                                     OK
                                                 </option>
                                                 <option value="NOT OK"
-                                                    {{ $monitoringDailyTank->status_parameter == 'NOT OK' ? 'selected' : '' }}>
+                                                    {{ $monitoringDailyTank->status == 'NOT OK' ? 'selected' : '' }}>
                                                     NOT OK</option>
                                             </select>
                                             <small class="text-danger errorStatusParameter"></small>
@@ -175,16 +175,16 @@
                                             <select name="status_disposisi" id="status_disposisi" class="form-control"
                                                 required>
                                                 <option value="">-- Pilih Disposisi --</option>
-                                                @if ($monitoringDailyTank->status_parameter == 'OK')
+                                                @if ($monitoringDailyTank->status == 'OK')
                                                     <option value="Release"
-                                                        {{ $monitoringDailyTank->status_disposisi == 'Release' ? 'selected' : '' }}>
+                                                        {{ $monitoringDailyTank->disposisi == 'Release' ? 'selected' : '' }}>
                                                         Release</option>
                                                 @else
                                                     <option value="Release Bersyarat"
-                                                        {{ $monitoringDailyTank->status_disposisi == 'Release Bersyarat' ? 'selected' : '' }}>
+                                                        {{ $monitoringDailyTank->disposisi == 'Release Bersyarat' ? 'selected' : '' }}>
                                                         Release Bersyarat</option>
                                                     <option value="Drain"
-                                                        {{ $monitoringDailyTank->status_disposisi == 'Drain' ? 'selected' : '' }}>
+                                                        {{ $monitoringDailyTank->disposisi == 'Drain' ? 'selected' : '' }}>
                                                         Drain</option>
                                                 @endif
                                             </select>
