@@ -166,7 +166,11 @@
                                                     <td>
                                                         <button class="btn btn-sm btn-info" id="btnDetail"
                                                             data-id="{{ $blending->id }}">
-                                                            <i class="ri-eye-line"></i> Lihat
+                                                            <i class="ri-eye-line"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
+                                                            data-id="{{ $blending->id }}">
+                                                            <i class="ri-file-list-line"></i>
                                                         </button>
                                                     </td>
                                                     <td>
@@ -327,8 +331,8 @@
                                         class="form-control adjustment-qty comma-input" placeholder="0,00">
                                 </div>
                                 <div class="col-lg-4">
-                                    <label class="form-label">Gula (Kg)</label>
-                                    <input type="text" name="adjustment_qty_gula"
+                                    <label class="form-label">Caramel (Kg)</label>
+                                    <input type="text" name="adjustment_qty_caramel"
                                         class="form-control adjustment-qty comma-input" placeholder="0,00">
                                 </div>
                                 <div class="col-lg-4">
@@ -532,10 +536,218 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Formulasi Dissolver -->
+    <div class="modal fade" id="formulasiModal" tabindex="-1" aria-labelledby="formulasiModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formulasiModalLabel">Detail Formulasi Dissolver</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="card border mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Informasi Production Batch</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">PO Number</small>
+                                    <p class="mb-2" id="formulasi-po-number">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Variant</small>
+                                    <p class="mb-2" id="formulasi-variant">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Tanggal</small>
+                                    <p class="mb-2" id="formulasi-date">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Batch Range</small>
+                                    <p class="mb-2" id="formulasi-batch-range">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border d-none" id="formulasiSourceInfo">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="ri-information-line fs-4 text-secondary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <small class="mb-0" id="formulasi-source-text">-</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Formulasi Blending Awal</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0" id="formulasiTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center" style="width: 50px;">No</th>
+                                            <th style="width: 80px;">Slot</th>
+                                            <th>Material Type</th>
+                                            <th>Material Group</th>
+                                            <th>SPB Number</th>
+                                            <th>Jenis Premix</th>
+                                            <th class="text-end" style="width: 120px;">Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="formulasiTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                Memuat data...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">Total Items: <span class="fw-semibold"
+                                        id="formulasi-total">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary border-secondary d-none" id="formulasiEmptyState">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-error-warning-line fs-4 me-2"></i>
+                            <div>Data formulasi tidak ditemukan untuk batch ini.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
     <script>
+        function showFormulasiModal(response) {
+            const data = response;
+
+            // Reset semua field terlebih dahulu
+            resetFormulasiModal();
+
+            // Production Batch Info
+            if (data.production_batch) {
+                $('#formulasi-po-number').text(data.production_batch.po_number || '-');
+                $('#formulasi-variant').text(data.production_batch.variant || '-');
+                $('#formulasi-date').text(data.production_batch.date || '-');
+                $('#formulasi-batch-range').text(data.production_batch.batch_range || '-');
+            }
+
+            // Formulasi Source Info (jika ada)
+            if (data.formulasi_source && data.formulasi_source.found) {
+                $('#formulasiSourceInfo').removeClass('d-none');
+                const matchType = data.formulasi_source.matched_by_production_batch ?
+                    'Production Batch ID' : 'Batch Number';
+                const badgeClass = data.formulasi_source.matched_by_production_batch ?
+                    'success' : 'warning';
+                $('#formulasi-source-text').html(
+                    `Formulasi ditemukan dari Blending Awal ID: <strong>${data.formulasi_source.blending_awal_id}</strong> ` +
+                    `<span class="badge bg-${badgeClass} ms-2">Matched by ${matchType}</span>`
+                );
+            }
+
+            // Tabel Formulasi
+            if (data.formulasi && data.formulasi.length > 0) {
+                let sortedFormulasi = sortFormulasi(data.formulasi);
+                let tableRows = '';
+                data.formulasi.forEach((item, index) => {
+                    tableRows += `
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>${item.slot_number}</td>
+                        <td>${item.material_type || '-'}</td>
+                        <td>${item.material_group || '-'}</td>
+                        <td>${item.spb_number || '-'}</td>
+                        <td>${item.jenis_premix || '-'}</td>
+                        <td class="text-end">${parseFloat(item.quantity).toFixed(2)}</td>
+                    </tr>
+                `;
+                });
+
+                $('#formulasiTableBody').html(tableRows);
+                $('#formulasi-total').text(data.formulasi.length);
+
+                // Sembunyikan empty state
+                $('#formulasiEmptyState').addClass('d-none');
+                $('#formulasiTable').closest('.card').removeClass('d-none');
+            } else {
+                // Tampilkan empty state
+                $('#formulasiEmptyState').removeClass('d-none');
+                $('#formulasiTable').closest('.card').addClass('d-none');
+            }
+
+            // Tampilkan modal
+            $('#formulasiModal').modal('show');
+
+            // Simpan data untuk print
+            window.formulasiData = data;
+        }
+
+        function resetFormulasiModal() {
+            $('#formulasi-po-number, #formulasi-variant, #formulasi-date, #formulasi-batch-range').text('-');
+            $('#formulasi-batch-number, #formulasi-dissolver-number, #formulasi-brix, #formulasi-nacl, #formulasi-organo')
+                .text('-');
+            $('#formulasi-status, #formulasi-disposition').text('-');
+            $('#formulasi-prod-dissolver, #formulasi-line, #formulasi-jam-mulai, #formulasi-jam-transfer').text('-');
+
+            // Reset table
+            $('#formulasiTableBody').html(`
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Memuat data...
+                    </td>
+                </tr>
+            `);
+            $('#formulasi-total').text('0');
+
+            // Hide optional sections
+            $('#dissolverInfoCard').addClass('d-none');
+            $('#formulasiSourceInfo').addClass('d-none');
+            $('#formulasiEmptyState').addClass('d-none');
+            $('#formulasiTable').closest('.card').removeClass('d-none');
+        }
+
+        function sortFormulasi(formulasi) {
+            return formulasi.sort((a, b) => {
+                const materialA = (a.material_type || '').toUpperCase();
+                const materialB = (b.material_type || '').toUpperCase();
+
+                if (materialA !== materialB) {
+                    return materialA.localeCompare(materialB);
+                }
+
+                if (a.slot_number && b.slot_number) {
+                    // Pastikan perbandingan dilakukan sebagai angka
+                    return parseInt(a.slot_number) - parseInt(b.slot_number);
+                }
+
+                return 0;
+            });
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -648,8 +860,8 @@
                             $('.adjustment-qty-wrapper').removeClass('d-none');
                             $('input[name="adjustment_qty_air"]').val(response
                                 .adjustment_qty_air || '');
-                            $('input[name="adjustment_qty_gula"]').val(response
-                                .adjustment_qty_gula || '');
+                            $('input[name="adjustment_qty_caramel"]').val(response
+                                .adjustment_qty_caramel || '');
                             $('input[name="adjustment_qty_garam"]').val(response
                                 .adjustment_qty_garam || '');
 
@@ -738,7 +950,7 @@
                             remarkText = response.disposition_remark;
                         } else if (response.disposition == 'Adjustment') {
                             remarkText =
-                                `Adjustment:\n• Air: ${response.adjustment_qty_air || 0} Liter\n• Garam: ${response.adjustment_qty_garam || 0} Kg\n• Gula: ${response.adjustment_qty_gula || 0} Kg`;
+                                `Adjustment:\n• Air: ${response.adjustment_qty_air || 0} Liter\n• Garam: ${response.adjustment_qty_garam || 0} Kg\n• Caramel: ${response.adjustment_qty_caramel || 0} Kg`;
                         } else if (response.is_adjustment == true) {
                             remarkText = 'Adjustment';
                         }
@@ -761,6 +973,41 @@
                             response.updated_at) : '-');
 
                         $('#detailModal').modal('show');
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal memuat data. Silakan coba lagi.',
+                        });
+                    }
+                });
+            });
+
+            $('body').on('click', '#btnFormulasi', function() {
+                const id = $(this).data('id');
+
+                $('#formulasiModal').modal('show');
+
+                $.ajax({
+                    type: "GET",
+                    url: "{{ route('analisa.blending-awal.formulasi') }}",
+                    data: {
+                        id: id,
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            showFormulasiModal(response);
+                        } else {
+                            $('#formulasiModal').modal('hide');
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Tidak Ditemukan',
+                                text: response.message ||
+                                    'Data formulasi tidak ditemukan untuk batch ini',
+                            });
+                        }
                     },
                     error: function(xhr) {
                         Swal.fire({
@@ -893,8 +1140,9 @@
                             if (errors.adjustment_qty_air) {
                                 $('input[name="adjustment_qty_air"]').addClass('is-invalid');
                             }
-                            if (errors.adjustment_qty_gula) {
-                                $('input[name="adjustment_qty_gula"]').addClass('is-invalid');
+                            if (errors.adjustment_qty_caramel) {
+                                $('input[name="adjustment_qty_caramel"]').addClass(
+                                    'is-invalid');
                             }
                             if (errors.adjustment_qty_garam) {
                                 $('input[name="adjustment_qty_garam"]').addClass('is-invalid');

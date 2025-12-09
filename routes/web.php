@@ -168,6 +168,7 @@ Route::middleware(['auth'])->group(function () {
         // Analisa - GGA
         Route::get('/gga/menu', [App\Http\Controllers\GGaController::class, 'menu'])->name('gga.menu');
         Route::get('/gga', [App\Http\Controllers\GGaController::class, 'index'])->name('gga.index');
+        Route::get('/gga/formulasi/', [App\Http\Controllers\GGaController::class, 'formulasi'])->name('gga.formulasi');
         Route::get('/gga/{id}', [App\Http\Controllers\GGaController::class, 'show'])->name('gga.show');
         Route::get('/gga/edit/{id}', [App\Http\Controllers\GGaController::class, 'edit'])->name('gga.edit');
         Route::post('/gga', [App\Http\Controllers\GGaController::class, 'update'])->name('gga.update');
@@ -175,6 +176,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Analisa - GGAS
         Route::get('/ggas', [App\Http\Controllers\GgasController::class, 'index'])->name('ggas.index');
+        Route::get('/ggas/formulasi/', [App\Http\Controllers\GgasController::class, 'formulasi'])->name('ggas.formulasi');
         Route::get('/ggas/{id}', [App\Http\Controllers\GgasController::class, 'show'])->name('ggas.show');
         Route::get('/ggas/batch/{id}', [App\Http\Controllers\GgasController::class, 'show_batch'])->name('ggas.show_batch');
         Route::get('/ggas/edit/{id}', [App\Http\Controllers\GgasController::class, 'edit'])->name('ggas.edit');
@@ -183,6 +185,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
+        Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');
         Route::get('/analisa/blending-awal/edit/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'edit'])->name('analisa.blending-awal.edit');
         Route::get('/analisa/blending-awal/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show'])->name('analisa.blending-awal.show');
         Route::post('/analisa/blending-awal/update', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'update'])->name('analisa.blending-awal.update');

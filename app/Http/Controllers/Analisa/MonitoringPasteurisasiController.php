@@ -309,8 +309,6 @@ class MonitoringPasteurisasiController extends Controller
                 if ($updateData['disposition'] === 'Resampling') {
                     $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
                     $updateData['not_standard'] = true;
-                } elseif ($updateData['disposition'] === 'Release Bersyarat') {
-                    $updateData['status'] = 'OK';
                 }
 
                 if ($updateData['disposition'] === 'Jalan Bareng') {

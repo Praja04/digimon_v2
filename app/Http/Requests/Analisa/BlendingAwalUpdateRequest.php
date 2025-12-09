@@ -18,7 +18,7 @@ class BlendingAwalUpdateRequest extends FormRequest
             'ph',
             'adjustment_qty_air',
             'adjustment_qty_garam',
-            'adjustment_qty_gula'
+            'adjustment_qty_caramel'
         ];
 
         $preparedData = [];
@@ -56,7 +56,7 @@ class BlendingAwalUpdateRequest extends FormRequest
             'disposition_remarks' => 'nullable|string|max:255',
             'adjustment_qty_air' => 'nullable',
             'adjustment_qty_garam' => 'nullable',
-            'adjustment_qty_gula' => 'nullable',
+            'adjustment_qty_caramel' => 'nullable',
         ];
     }
 

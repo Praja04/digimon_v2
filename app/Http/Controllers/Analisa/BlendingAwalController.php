@@ -224,7 +224,7 @@ class BlendingAwalController extends Controller
             // Handle Adjustment
             $adjustmentAir = null;
             $adjustmentGaram = null;
-            $adjustmentGula = null;
+            $adjustmentCaramel = null;
 
             if ($status_disposition === 'Adjustment') {
                 if (!empty($request->adjustment_qty_air)) {
@@ -233,20 +233,20 @@ class BlendingAwalController extends Controller
                 if (!empty($request->adjustment_qty_garam)) {
                     $adjustmentGaram = str_replace(',', '.', $request->adjustment_qty_garam);
                 }
-                if (!empty($request->adjustment_qty_gula)) {
-                    $adjustmentGula = str_replace(',', '.', $request->adjustment_qty_gula);
+                if (!empty($request->adjustment_qty_caramel)) {
+                    $adjustmentCaramel = str_replace(',', '.', $request->adjustment_qty_caramel);
                 }
 
                 $updateData['adjustment_qty_air'] = $adjustmentAir;
                 $updateData['adjustment_qty_garam'] = $adjustmentGaram;
-                $updateData['adjustment_qty_gula'] = $adjustmentGula;
+                $updateData['adjustment_qty_caramel'] = $adjustmentCaramel;
                 $updateData['not_standard'] = true;
             } else {
                 // Jika status bukan Adjustment lagi, clear adjustment data
                 if ($statusChanged) {
                     $updateData['adjustment_qty_air'] = null;
                     $updateData['adjustment_qty_garam'] = null;
-                    $updateData['adjustment_qty_gula'] = null;
+                    $updateData['adjustment_qty_caramel'] = null;
                     $updateData['not_standard'] = false;
                 }
             }
@@ -256,8 +256,6 @@ class BlendingAwalController extends Controller
                 if ($updateData['disposition'] === 'Resampling') {
                     $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
                     $updateData['not_standard'] = true;
-                } elseif ($updateData['disposition'] === 'Release Bersyarat') {
-                    $updateData['status'] = 'OK';
                 }
 
                 if ($updateData['disposition'] === 'Jalan Bareng') {
@@ -282,10 +280,10 @@ class BlendingAwalController extends Controller
                 $remarkText = $remark;
             } elseif ($status_disposition === 'Adjustment') {
                 $remarkText = sprintf(
-                    'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
+                    'Adjustment Air: %s Liter, Garam: %s Kg, Caramel: %s Kg',
                     $adjustmentAir ?? 0,
                     $adjustmentGaram ?? 0,
-                    $adjustmentGula ?? 0
+                    $adjustmentCaramel ?? 0
                 );
             } elseif ($updateData['not_standard'] ?? false) {
                 $remarkText = 'Adjustment';
@@ -354,6 +352,61 @@ class BlendingAwalController extends Controller
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan, silakan coba lagi.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function formulasi(Request $request)
+    {
+        try {
+            // Ambil data Blending Awal berdasarkan ID
+            $blendingAwal = BlendingAwal::with('productionBatch:id,po_number,variant,date,batch_range')
+                ->findOrFail($request->id);
+
+            $apiUrl = url(env('PRODUCTION_URL') . 'api/formulasi/blending-awal');
+
+            $response = Http::get($apiUrl, [
+                'blending_awal_id' => $blendingAwal->id,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if ($data['success']) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Data formulasi berhasil diambil',
+                        'production_batch' => $data['data']['production_batch'] ?? null,
+                        'formulasi' => $data['data']['formulasi'] ?? [],
+                        'dissolver_info' => $data['data']['dissolver_info'] ?? null,
+                        'formulasi_source' => $data['data']['formulasi_source'] ?? null,
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $data['message'] ?? 'Data formulasi tidak ditemukan',
+                        'blending_awal_info' => [
+                            'id' => $blendingAwal->id,
+                            'batch_range' => $blendingAwal->batch_range,
+                            'production_batch_id' => $blendingAwal->production_batch_id,
+                        ],
+                    ], 404);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengambil data dari API',
+                ], 500);
+            }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Blending Awal tidak ditemukan',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
             ], 500);
         }
     }

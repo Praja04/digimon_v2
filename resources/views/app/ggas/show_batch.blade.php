@@ -80,6 +80,39 @@
                                                 </div>
                                             </div>
                                             <!-- end col -->
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-hashtag"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Batch Number :</p>
+                                                            <h5 class="mb-0">{{ $ggas->batch_number }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-user-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Dissolver :</p>
+                                                            <h5 class="mb-0">{{ $ggas->dissolver_number }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
 
@@ -110,19 +143,22 @@
                                             <input type="hidden" name="id" id="id" value="{{ $ggas->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $ggas->brix ?? '') }}">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">NACL</label>
                                             <input type="text" name="nacl" id="nacl"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $ggas->nacl ?? '') }}">
                                             <small class="text-danger errorNacl"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Organo <span style="color: red">*</span></label>
                                             <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $ggas->organo ?? '' }}">
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-6">
@@ -130,8 +166,10 @@
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK">OK</option>
-                                                <option value="NOT OK">NOT OK</option>
+                                                <option value="OK" {{ $ggas->status == 'OK' ? 'selected' : '' }}>OK
+                                                </option>
+                                                <option value="NOT OK" {{ $ggas->status == 'NOT OK' ? 'selected' : '' }}>
+                                                    NOT OK</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
@@ -153,7 +191,7 @@
                                         <div class="col-lg-12">
                                             <label class="form-label">Remarks</label>
                                             <textarea name="disposition_remark" class="form-control" rows="2" placeholder="Isi remarks jika diperlukan..."
-                                                oninput="this.value = this.value.toUpperCase();"></textarea>
+                                                oninput="this.value = this.value.toUpperCase();">{{ $ggas->disposition_remark ?? '' }}</textarea>
                                         </div>
 
                                         <div class="d-flex justify-content-end">

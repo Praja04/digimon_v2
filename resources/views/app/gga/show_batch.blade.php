@@ -61,7 +61,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- end col -->
                                             <div class="col-lg-6 col-sm-6">
                                                 <div class="p-2 border border-dashed rounded">
                                                     <div class="d-flex align-items-center">
@@ -78,8 +77,42 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- end col -->
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-hashtag"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Batch Number :</p>
+                                                            <h5 class="mb-0">{{ $gga->batch_number }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-user-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Dissolver :</p>
+                                                            <h5 class="mb-0">{{ $gga->dissolver_number }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
                                         </div>
+
 
 
                                         <!-- end row -->
@@ -109,19 +142,23 @@
                                             <input type="hidden" name="id" id="id" value="{{ $gga->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $gga->brix ?? '') }}">
+
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">NACL <span style="color: red">*</span></label>
                                             <input type="text" name="nacl" id="nacl"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $gga->nacl ?? '') }}">
                                             <small class="text-danger errorNacl"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Organo <span style="color: red">*</span></label>
                                             <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $gga->organo ?? '' }}">
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-6">
@@ -129,9 +166,14 @@
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK">OK</option>
-                                                <option value="NOT OK">NOT OK</option>
-                                                <option value="Adjustment">Adjustment</option>
+                                                <option value="OK" {{ $gga->status == 'OK' ? 'selected' : '' }}>OK
+                                                </option>
+                                                <option value="NOT OK" {{ $gga->status == 'NOT OK' ? 'selected' : '' }}>
+                                                    NOT OK
+                                                </option>
+                                                <option value="Adjustment"
+                                                    {{ $gga->status == 'Adjustment' ? 'selected' : '' }}>
+                                                    Adjustment</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
@@ -153,7 +195,7 @@
                                         <div class="col-lg-12">
                                             <label class="form-label">Remarks</label>
                                             <textarea name="disposition_remark" class="form-control" rows="2" placeholder="Isi remarks jika diperlukan..."
-                                                oninput="this.value = this.value.toUpperCase();"></textarea>
+                                                oninput="this.value = this.value.toUpperCase();">{{ $gga->disposition_remark ?? '' }}</textarea>
                                         </div>
 
                                         <div class="col-lg-12 d-none adjustment-qty-wrapper">
@@ -163,13 +205,15 @@
                                                     <label class="form-label">Gula Tebu (Kg)</label>
                                                     <input type="text" name="adjustment_qty_gula_tebu"
                                                         class="form-control adjustment-qty comma-input" value="0"
-                                                        placeholder="Contoh: 0,00">
+                                                        placeholder="Contoh: 0,00"
+                                                        value="{{ $gga->adjustment_qty_gula_tebu ?? '' }}">
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Gula Kelapa (Kg)</label>
                                                     <input type="text" name="adjustment_qty_gula_kelapa"
                                                         class="form-control adjustment-qty comma-input" value="0"
-                                                        placeholder="Contoh: 0,00">
+                                                        placeholder="Contoh: 0,00"
+                                                        value="{{ $gga->adjustment_qty_gula_kelapa ?? '' }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -327,10 +371,12 @@
                                 $('.errorDisposition').html(errors.disposition.join('<br>'));
                             }
                             if (errors.adjustment_qty_gula_tebu) {
-                                $('input[name="adjustment_qty_gula_tebu"]').addClass('is-invalid');
+                                $('input[name="adjustment_qty_gula_tebu"]').addClass(
+                                    'is-invalid');
                             }
                             if (errors.adjustment_qty_gula_kelapa) {
-                                $('input[name="adjustment_qty_gula_kelapa"]').addClass('is-invalid');
+                                $('input[name="adjustment_qty_gula_kelapa"]').addClass(
+                                    'is-invalid');
                             }
 
                             return;

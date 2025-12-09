@@ -1,5 +1,97 @@
 @extends('layouts.component.main')
 @section('title', 'GGA')
+@section('styles')
+    <style>
+        /* Custom styles untuk modal formulasi - Lebih Clean & Simple */
+        #formulasiModal .modal-dialog {
+            max-width: 800px;
+        }
+
+        /* Hapus Box Shadow */
+        #formulasiModal .card {
+            box-shadow: none;
+        }
+
+        /* Header Card lebih sederhana */
+        #formulasiModal .card-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            /* Pastikan tidak ada warna latar belakang yang mencolok di header card */
+            background-color: transparent !important;
+        }
+
+        #formulasiModal .table {
+            font-size: 0.875rem;
+        }
+
+        #formulasiModal .table thead th {
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            /* Membuat header tabel lebih netral */
+            background-color: #f8f9fa;
+        }
+
+        #formulasiModal .table tbody td {
+            vertical-align: middle;
+        }
+
+        #formulasiModal small {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        #formulasiModal p {
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: #212529;
+        }
+
+        /* Style untuk Alert Info Source - Lebih Netral */
+        #formulasiSourceInfo {
+            background-color: #f8f9fa;
+            /* Warna latar belakang sangat ringan */
+            color: #212529;
+            border: 1px solid #dee2e6 !important;
+        }
+
+        /* Print styles - Pertahankan */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #formulasiModal,
+            #formulasiModal * {
+                visibility: visible;
+            }
+
+            #formulasiModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            #formulasiModal .modal-footer,
+            #formulasiModal .btn-close {
+                display: none !important;
+            }
+
+            #formulasiModal .modal-dialog {
+                max-width: 100%;
+                margin: 0;
+            }
+
+            #formulasiModal .card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+@endsection
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -180,7 +272,11 @@
                                                     <td>
                                                         <button class="btn btn-sm btn-info" id="btnDetail"
                                                             data-id="{{ $gga->id }}">
-                                                            <i class="ri-eye-line"></i> Lihat
+                                                            <i class="ri-eye-line"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
+                                                            data-id="{{ $gga->id }}">
+                                                            <i class="ri-file-list-line"></i>
                                                         </button>
                                                     </td>
                                                     <td>
@@ -333,10 +429,278 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Formulasi Dissolver -->
+    <div class="modal fade" id="formulasiModal" tabindex="-1" aria-labelledby="formulasiModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formulasiModalLabel">Detail Formulasi Dissolver</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="card border mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Informasi Production Batch</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">PO Number</small>
+                                    <p class="mb-2" id="formulasi-po-number">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Variant</small>
+                                    <p class="mb-2" id="formulasi-variant">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Tanggal</small>
+                                    <p class="mb-2" id="formulasi-date">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Batch Range</small>
+                                    <p class="mb-2" id="formulasi-batch-range">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Informasi GGA</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Batch Number</small>
+                                    <p class="mb-2" id="formulasi-batch-number">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Dissolver Number</small>
+                                    <p class="mb-2" id="formulasi-dissolver-number">-</p>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted d-block">Brix</small>
+                                    <p class="mb-2" id="formulasi-brix">-</p>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted d-block">NaCl</small>
+                                    <p class="mb-2" id="formulasi-nacl">-</p>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted d-block">Organo</small>
+                                    <p class="mb-2" id="formulasi-organo">-</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Status</small>
+                                    <p class="mb-0" id="formulasi-status">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Disposition</small>
+                                    <p class="mb-0" id="formulasi-disposition">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border d-none" id="formulasiSourceInfo">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="ri-information-line fs-4 text-secondary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <small class="mb-0" id="formulasi-source-text">-</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Formulasi Dissolver</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0" id="formulasiTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center" style="width: 50px;">No</th>
+                                            <th style="width: 80px;">Slot</th>
+                                            <th>Material Type</th>
+                                            <th>Material Group</th>
+                                            <th>SPB Number</th>
+                                            <th>Variant</th>
+                                            <th class="text-end" style="width: 120px;">Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="formulasiTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                Memuat data...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">Total Items: <span class="fw-semibold"
+                                        id="formulasi-total">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary border-secondary d-none" id="formulasiEmptyState">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-error-warning-line fs-4 me-2"></i>
+                            <div>Data formulasi tidak ditemukan untuk batch ini.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('scripts')
     <script>
+        function showFormulasiModal(response) {
+            const data = response;
+
+            // Reset semua field terlebih dahulu
+            resetFormulasiModal();
+
+            // Production Batch Info
+            if (data.production_batch) {
+                $('#formulasi-po-number').text(data.production_batch.po_number || '-');
+                $('#formulasi-variant').text(data.production_batch.variant || '-');
+                $('#formulasi-date').text(data.production_batch.date || '-');
+                $('#formulasi-batch-range').text(data.production_batch.batch_range || '-');
+            }
+
+            // GGA Info
+            if (data.gga_info) {
+                const ggaInfo = data.gga_info;
+                $('#formulasi-batch-number').text(ggaInfo.batch_number || '-');
+                $('#formulasi-dissolver-number').text(ggaInfo.dissolver_number || '-');
+                $('#formulasi-brix').text(ggaInfo.brix || '-');
+                $('#formulasi-nacl').text(ggaInfo.nacl || '-');
+                $('#formulasi-organo').text(ggaInfo.organo || '-');
+
+                // Status dengan badge
+                if (ggaInfo.status) {
+                    const statusClass = ggaInfo.status === 'OK' ? 'success' :
+                        ggaInfo.status === 'NOT OK' ? 'danger' : 'warning';
+                    $('#formulasi-status').html(`<span class="badge bg-${statusClass}">${ggaInfo.status}</span>`);
+                } else {
+                    $('#formulasi-status').text('-');
+                }
+
+                $('#formulasi-disposition').text(ggaInfo.disposition || '-');
+            }
+
+            // Formulasi Source Info (jika ada)
+            if (data.formulasi_source && data.formulasi_source.found) {
+                $('#formulasiSourceInfo').removeClass('d-none');
+                const matchType = data.formulasi_source.matched_by_production_batch ?
+                    'Production Batch ID' : 'Batch Number';
+                const badgeClass = data.formulasi_source.matched_by_production_batch ?
+                    'success' : 'warning';
+                $('#formulasi-source-text').html(
+                    `Formulasi ditemukan dari Dissolver ID: <strong>${data.formulasi_source.dissolver_id}</strong> ` +
+                    `<span class="badge bg-${badgeClass} ms-2">Matched by ${matchType}</span>`
+                );
+            }
+
+            // Tabel Formulasi
+            if (data.formulasi && data.formulasi.length > 0) {
+                let sortedFormulasi = sortFormulasi(data.formulasi);
+                let tableRows = '';
+                data.formulasi.forEach((item, index) => {
+                    tableRows += `
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>${item.slot_number}</td>
+                        <td>${item.material_type || '-'}</td>
+                        <td>${item.material_group || '-'}</td>
+                        <td>${item.spb_number || '-'}</td>
+                        <td>${item.variant || '-'}</td>
+                        <td class="text-end">${parseFloat(item.quantity).toFixed(2)}</td>
+                    </tr>
+                `;
+                });
+
+                $('#formulasiTableBody').html(tableRows);
+                $('#formulasi-total').text(data.formulasi.length);
+
+                // Sembunyikan empty state
+                $('#formulasiEmptyState').addClass('d-none');
+                $('#formulasiTable').closest('.card').removeClass('d-none');
+            } else {
+                // Tampilkan empty state
+                $('#formulasiEmptyState').removeClass('d-none');
+                $('#formulasiTable').closest('.card').addClass('d-none');
+            }
+
+            // Tampilkan modal
+            $('#formulasiModal').modal('show');
+
+            // Simpan data untuk print
+            window.formulasiData = data;
+        }
+
+        function resetFormulasiModal() {
+            $('#formulasi-po-number, #formulasi-variant, #formulasi-date, #formulasi-batch-range').text('-');
+            $('#formulasi-batch-number, #formulasi-dissolver-number, #formulasi-brix, #formulasi-nacl, #formulasi-organo')
+                .text('-');
+            $('#formulasi-status, #formulasi-disposition').text('-');
+
+            // Reset table
+            $('#formulasiTableBody').html(`
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Memuat data...
+                    </td>
+                </tr>
+            `);
+            $('#formulasi-total').text('0');
+
+            // Hide optional sections
+            $('#formulasiSourceInfo').addClass('d-none');
+            $('#formulasiEmptyState').addClass('d-none');
+            $('#formulasiTable').closest('.card').removeClass('d-none');
+        }
+
+        function sortFormulasi(formulasi) {
+            return formulasi.sort((a, b) => {
+                const materialA = (a.material_type || '').toUpperCase();
+                const materialB = (b.material_type || '').toUpperCase();
+
+                if (materialA !== materialB) {
+                    return materialA.localeCompare(materialB);
+                }
+
+                if (a.slot_number && b.slot_number) {
+                    // Pastikan perbandingan dilakukan sebagai angka
+                    return parseInt(a.slot_number) - parseInt(b.slot_number);
+                }
+
+                return 0;
+            });
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -397,7 +761,7 @@
                 $('#id').val(id);
 
                 $('#disposition').val('').trigger('change');
-                
+
                 $('#status_disposition').val('').trigger('change');
                 $('#status_disposition').prop('disabled', false);
 
@@ -474,11 +838,6 @@
                     type: "GET",
                     url: "{{ route('gga.edit', '') }}/" + id,
                     dataType: "json",
-                    beforeSend: function() {
-                        $('#form')[0].reset();
-                        $('.text-danger').html('');
-                        $('.form-control').removeClass('is-invalid');
-                    },
                     success: function(response) {
                         let remarkText = '';
 
@@ -509,6 +868,41 @@
                         $('#disposition_remark_detail').val(remarkText);
 
                         $('#detailModal').modal('show');
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal memuat data. Silakan coba lagi.',
+                        });
+                    }
+                });
+            });
+
+            $('body').on('click', '#btnFormulasi', function() {
+                const id = $(this).data('id');
+
+                $('#formulasiModal').modal('show');
+
+                $.ajax({
+                    type: "GET",
+                    url: "{{ route('gga.formulasi') }}",
+                    data: {
+                        id: id,
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            showFormulasiModal(response);
+                        } else {
+                            $('#formulasiModal').modal('hide');
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Tidak Ditemukan',
+                                text: response.message ||
+                                    'Data formulasi tidak ditemukan untuk batch ini',
+                            });
+                        }
                     },
                     error: function(xhr) {
                         Swal.fire({

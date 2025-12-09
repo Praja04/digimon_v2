@@ -9,6 +9,7 @@ use App\Models\GGAS;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
 
 class GgasController extends Controller
@@ -181,8 +182,6 @@ class GgasController extends Controller
                 if ($updateData['disposition'] === 'Resampling') {
                     $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
                     $updateData['not_standard'] = true;
-                } elseif ($updateData['disposition'] === 'Release Bersyarat') {
-                    $updateData['status'] = 'OK';
                 }
             }
 
@@ -280,6 +279,73 @@ class GgasController extends Controller
                 'status'  => 'error',
                 'message' => 'Error occurred, please try again.',
                 'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function formulasi(Request $request)
+    {
+        try {
+            $ggas = Ggas::with('productionBatch:id,po_number,variant,date,batch_range')
+                ->findOrFail($request->id);
+
+            $apiUrl = url(env('PRODUCTION_URL') . 'api/formulasi/dissolver');
+
+            $response = Http::get($apiUrl, [
+                'production_batch_id' => $ggas->production_batch_id,
+                'batch_number' => $ggas->batch_number,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if ($data['success']) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Data formulasi berhasil diambil',
+                        'gga_info' => [
+                            'id' => $ggas->id,
+                            'batch_number' => $ggas->batch_number,
+                            'dissolver_number' => $ggas->dissolver_number,
+                            'production_batch_id' => $ggas->production_batch_id,
+                            'brix' => $ggas->brix,
+                            'nacl' => $ggas->nacl,
+                            'organo' => $ggas->organo,
+                            'disposition' => $ggas->disposition,
+                            'status' => $ggas->status,  
+                        ],
+                        'production_batch' => $data['data']['production_batch'] ?? null,
+                        'formulasi' => $data['data']['formulasi'] ?? [],
+                        'dissolver_info' => $data['data']['dissolver_info'] ?? null,
+                        'formulasi_source' => $data['data']['formulasi_source'] ?? null,
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $data['message'] ?? 'Data formulasi tidak ditemukan',
+                        'gga_info' => [
+                            'id' => $ggas->id,
+                            'batch_number' => $ggas->batch_number,
+                            'dissolver_number' => $ggas->dissolver_number,
+                            'production_batch_id' => $ggas->production_batch_id,
+                        ],
+                    ], 404);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengambil data dari API',
+                ], 500);
+            }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data GGA tidak ditemukan',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
             ], 500);
         }
     }
