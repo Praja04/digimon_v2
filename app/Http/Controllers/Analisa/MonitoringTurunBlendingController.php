@@ -217,37 +217,37 @@ class MonitoringTurunBlendingController extends Controller
                     $updateData['created_by'] = auth()->user()->id;
                 }
 
-                // Validasi shift untuk Analis (hanya saat create/update status)
-                $existingShift = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
-                    ->where('batch_range', $blending->batch_range)
-                    ->where('shift', $shift)
-                    ->where('id', '!=', $id)
-                    ->whereNotNull('status') // Yang sudah ada status dari analis
-                    ->first();
+                // // Validasi shift untuk Analis (hanya saat create/update status)
+                // $existingShift = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
+                //     ->where('batch_range', $blending->batch_range)
+                //     ->where('shift', $shift)
+                //     ->where('id', '!=', $id)
+                //     ->whereNotNull('status') // Yang sudah ada status dari analis
+                //     ->first();
 
-                if ($existingShift) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Data untuk shift ' . $shift . ' sudah ada. Silakan tunggu shift berikutnya.'
-                    ], 409);
-                }
+                // if ($existingShift) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'status' => 'error',
+                //         'message' => 'Data untuk shift ' . $shift . ' sudah ada. Silakan tunggu shift berikutnya.'
+                //     ], 409);
+                // }
 
-                // Validasi maksimal 3 shift
-                $totalShifts = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
-                    ->where('batch_range', $blending->batch_range)
-                    ->where('id', '!=', $id)
-                    ->whereNotNull('status')
-                    ->distinct('shift')
-                    ->count('shift');
+                // // Validasi maksimal 3 shift
+                // $totalShifts = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
+                //     ->where('batch_range', $blending->batch_range)
+                //     ->where('id', '!=', $id)
+                //     ->whereNotNull('status')
+                //     ->distinct('shift')
+                //     ->count('shift');
 
-                if ($totalShifts >= 3) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Data sudah mencapai maksimal 3 shift.'
-                    ], 409);
-                }
+                // if ($totalShifts >= 3) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'status' => 'error',
+                //         'message' => 'Data sudah mencapai maksimal 3 shift.'
+                //     ], 409);
+                // }
             } elseif ($userRole === 'Foreman') {
                 // Foreman wajib pilih disposition
                 if (!$request->filled('disposition')) {
@@ -381,7 +381,7 @@ class MonitoringTurunBlendingController extends Controller
                     'Monitoring Turun Blending',
                     $status_disposition,
                     $remarkText,
-                    route('analisa.monitoring-turun-blending.show_batch', $blending->id)
+                    route('analisa.monitoring-turun-blending.show', $blending->production_batch_id)
                 ));
             }
 

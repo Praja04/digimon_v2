@@ -81,22 +81,55 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <!-- end row -->
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                 <i class="ri-list-ordered"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Batch Number :</p>
+                                                            <h5 class="mb-0">{{ $blending->batch_range }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-hashtag"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Nomor Blending :</p>
+                                                            <h5 class="mb-0">{{ $blending->nomor_blending }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- end row -->
 
-                                        <div class="mt-4 text-muted">
-                                            <h5 class="fs-14">Description :</h5>
-                                            <p>{{ $blending->productionBatch->description ?? '-' }}</p>
+                                            <div class="mt-4 text-muted">
+                                                <h5 class="fs-14">Description :</h5>
+                                                <p>{{ $blending->productionBatch->description ?? '-' }}</p>
+                                            </div>
                                         </div>
                                     </div>
+                                    <!-- end col -->
                                 </div>
-                                <!-- end col -->
+                                <!-- end row -->
                             </div>
-                            <!-- end row -->
+                            <!-- end card body -->
                         </div>
-                        <!-- end card body -->
+                        <!-- end card -->
                     </div>
-                    <!-- end card -->
                     <div class="col-lg-12">
                         <div class="card">
                             <!--end card-body-->

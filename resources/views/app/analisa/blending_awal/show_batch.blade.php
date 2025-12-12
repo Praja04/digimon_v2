@@ -86,7 +86,7 @@
                                                         <div class="avatar-sm me-2">
                                                             <div
                                                                 class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-hashtag"></i>
+                                                                <i class="ri-list-ordered"></i>
                                                             </div>
                                                         </div>
                                                         <div class="flex-grow-1">
@@ -103,7 +103,7 @@
                                                         <div class="avatar-sm me-2">
                                                             <div
                                                                 class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-mix-fill"></i>
+                                                                <i class="ri-hashtag"></i>
                                                             </div>
                                                         </div>
                                                         <div class="flex-grow-1">

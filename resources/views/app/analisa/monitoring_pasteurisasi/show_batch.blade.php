@@ -31,7 +31,7 @@
                                     <div class="mt-xl-0 mt-5">
                                         <div class="d-flex">
                                             <div class="flex-grow-1">
-                                                <h4>{{ $blending->productionBatch->po_number }} (Nomor PO)</h4>
+                                                <h4>{{ $pasteurisasi->productionBatch->po_number }} (Nomor PO)</h4>
                                                 <div class="hstack gap-3 flex-wrap">
                                                     <div><a href="#"
                                                             class="text-primary d-block">{{ Session::get('username') }}</a>
@@ -39,7 +39,7 @@
                                                     <div class="vr"></div>
 
                                                     <div class="text-muted">Tanggal Produksi : <span
-                                                            class="text-body fw-medium">{{ $blending->productionBatch->date }}</span>
+                                                            class="text-body fw-medium">{{ $pasteurisasi->productionBatch->date }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -57,7 +57,7 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Variant :</p>
-                                                            <h5 class="mb-0">{{ $blending->productionBatch->variant }}
+                                                            <h5 class="mb-0">{{ $pasteurisasi->productionBatch->variant }}
                                                             </h5>
                                                         </div>
                                                     </div>
@@ -75,8 +75,42 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Batch Range :</p>
-                                                            <h5 class="mb-0">{{ $blending->productionBatch->batch_range }}
+                                                            <h5 class="mb-0">
+                                                                {{ $pasteurisasi->productionBatch->batch_range }}
                                                             </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-list-ordered"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Batch Number :</p>
+                                                            <h5 class="mb-0">{{ $pasteurisasi->batch_range }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-hashtag"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Nomor Blending :</p>
+                                                            <h5 class="mb-0">{{ $pasteurisasi->nomor_blending }}</h5>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -86,7 +120,7 @@
 
                                         <div class="mt-4 text-muted">
                                             <h5 class="fs-14">Description :</h5>
-                                            <p>{{ $blending->productionBatch->description ?? '-' }}</p>
+                                            <p>{{ $pasteurisasi->productionBatch->description ?? '-' }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -104,7 +138,8 @@
                                 <form id="form">
                                     <div class="row g-3">
                                         <div class="col-lg-4">
-                                            <input type="hidden" name="id" id="id" value="{{ $blending->id }}">
+                                            <input type="hidden" name="id" id="id"
+                                                value="{{ $pasteurisasi->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00">
@@ -314,7 +349,7 @@
                         }).then(() => {
                             window.location.href =
                                 "{{ route('analisa.monitoring-pasteurisasi.show', '') }}/" +
-                                {{ $blending->productionBatch->id }};
+                                {{ $pasteurisasi->productionBatch->id }};
                         });
                     },
                     error: function(xhr) {

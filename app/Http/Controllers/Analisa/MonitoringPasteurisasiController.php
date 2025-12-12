@@ -99,13 +99,13 @@ class MonitoringPasteurisasiController extends Controller
 
     public function show_batch($id)
     {
-        $blending = MonitoringPasteurisasi::with([
+        $pasteurisasi = MonitoringPasteurisasi::with([
             'additionalBatches',
             'productionBatch',
         ])->findOrFail($id);
 
         $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_pasteurisasi.show_batch', compact('colors', 'blending'));
+        return view('app.analisa.monitoring_pasteurisasi.show_batch', compact('colors', 'pasteurisasi'));
     }
 
     public function edit($id)
@@ -212,37 +212,37 @@ class MonitoringPasteurisasiController extends Controller
                     $updateData['created_by'] = auth()->user()->id;
                 }
 
-                // Validasi shift untuk Analis (hanya saat create/update status)
-                $existingShift = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
-                    ->where('batch_range', $pasteurisasi->batch_range)
-                    ->where('shift', $shift)
-                    ->where('id', '!=', $id)
-                    ->whereNotNull('status') // Yang sudah ada status dari analis
-                    ->first();
+                // // Validasi shift untuk Analis (hanya saat create/update status)
+                // $existingShift = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
+                //     ->where('batch_range', $pasteurisasi->batch_range)
+                //     ->where('shift', $shift)
+                //     ->where('id', '!=', $id)
+                //     ->whereNotNull('status') // Yang sudah ada status dari analis
+                //     ->first();
 
-                if ($existingShift) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Data untuk shift ' . $shift . ' sudah ada. Silakan tunggu shift berikutnya.'
-                    ], 409);
-                }
+                // if ($existingShift) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'status' => 'error',
+                //         'message' => 'Data untuk shift ' . $shift . ' sudah ada. Silakan tunggu shift berikutnya.'
+                //     ], 409);
+                // }
 
-                // Validasi maksimal 3 shift
-                $totalShifts = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
-                    ->where('batch_range', $pasteurisasi->batch_range)
-                    ->where('id', '!=', $id)
-                    ->whereNotNull('status')
-                    ->distinct('shift')
-                    ->count('shift');
+                // // Validasi maksimal 3 shift
+                // $totalShifts = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
+                //     ->where('batch_range', $pasteurisasi->batch_range)
+                //     ->where('id', '!=', $id)
+                //     ->whereNotNull('status')
+                //     ->distinct('shift')
+                //     ->count('shift');
 
-                if ($totalShifts >= 3) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Data sudah mencapai maksimal 3 shift.'
-                    ], 409);
-                }
+                // if ($totalShifts >= 3) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'status' => 'error',
+                //         'message' => 'Data sudah mencapai maksimal 3 shift.'
+                //     ], 409);
+                // }
             } elseif ($userRole === 'Foreman') {
                 // Foreman wajib pilih disposition
                 if (!$request->filled('disposition')) {
@@ -376,15 +376,15 @@ class MonitoringPasteurisasiController extends Controller
                     'Monitoring Pasteurisasi',
                     $status_disposition,
                     $remarkText,
-                    route('analisa.monitoring-pasteurisasi.show_batch', $pasteurisasi->id)
+                    route('analisa.monitoring-pasteurisasi.show', $pasteurisasi->production_batch_id)
                 ));
             }
 
             // Pesan response berdasarkan role
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
-                    ? 'Data berhasil diperbarui. Menunggu review dari Foreman.'
-                    : 'Data berhasil disimpan untuk shift ' . $shift . '. Menunggu review dari Foreman.';
+                    ? 'Data berhasil diperbarui.'
+                    : 'Data berhasil disimpan untuk shift ' . $shift . '.';
             } elseif ($userRole === 'Foreman') {
                 $message = 'Disposisi berhasil diberikan untuk shift ' . $shift . '.';
             } else {

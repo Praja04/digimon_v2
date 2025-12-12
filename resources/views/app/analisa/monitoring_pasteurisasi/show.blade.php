@@ -295,6 +295,7 @@
                                     <option value="Release">Release</option>
                                     <option value="Release Bersyarat">Release Bersyarat</option>
                                     <option value="Resampling">Resampling</option>
+                                    <option value="Adjustment">Adjustment</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
                                     <option value="Jalan Bareng">Jalan Bareng</option>

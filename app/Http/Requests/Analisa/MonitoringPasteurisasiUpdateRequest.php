@@ -52,7 +52,7 @@ class MonitoringPasteurisasiUpdateRequest extends FormRequest
             'endapan' => 'nullable|string|max:20',
             'color' => 'required|string|max:20',
             'status_disposition' => 'required',
-            'disposition' => 'nullable|in:Release,Release Bersyarat,Resampling,Reject,Repro,Jalan Bareng,Leveling',
+            'disposition' => 'nullable|in:Release,Release Bersyarat,Adjustment,Resampling,Reject,Repro,Jalan Bareng,Leveling',
             'disposition_remarks' => 'nullable|string|max:255',
             'adjustment_qty_air' => 'nullable',
             'adjustment_qty_garam' => 'nullable',
