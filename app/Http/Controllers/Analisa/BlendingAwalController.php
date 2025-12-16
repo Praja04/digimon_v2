@@ -334,8 +334,8 @@ class BlendingAwalController extends Controller
             // Pesan response berdasarkan role
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
-                    ? 'Data berhasil diperbarui. Menunggu review dari Foreman.'
-                    : 'Data berhasil disimpan. Menunggu review dari Foreman.';
+                    ? 'Data berhasil diperbarui.'
+                    : 'Data berhasil disimpan.';
             } elseif ($userRole === 'Foreman') {
                 $message = 'Disposisi berhasil diberikan.';
             } else {

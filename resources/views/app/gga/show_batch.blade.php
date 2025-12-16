@@ -193,8 +193,8 @@
                                             </div>
                                         @endif
                                         <div class="col-lg-12">
-                                            <label class="form-label">Remarks</label>
-                                            <textarea name="disposition_remark" class="form-control" rows="2" placeholder="Isi remarks jika diperlukan..."
+                                            <label class="form-label">Catatan</label>
+                                            <textarea name="disposition_remark" class="form-control" rows="2" placeholder="Isi catatan jika diperlukan..."
                                                 oninput="this.value = this.value.toUpperCase();">{{ $gga->disposition_remark ?? '' }}</textarea>
                                         </div>
 

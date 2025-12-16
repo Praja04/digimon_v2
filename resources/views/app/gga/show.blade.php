@@ -290,11 +290,11 @@
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-warning open-gga-modal-edit"
                                                                     data-id="{{ $gga->id }}">
-                                                                    Edit Data
+                                                                    Kelola Data
                                                                 </button>
                                                             @else
                                                                 <span class="badge bg-success-subtle text-success">
-                                                                    <i class="ri-check-line"></i> Lengkap
+                                                                    <i class="ri-check-line align-middle"></i> Lengkap
                                                                 </span>
                                                             @endif
                                                         @endif
@@ -376,9 +376,9 @@
                             </div>
                         @endif
                         <div class="col-lg-12">
-                            <label class="form-label">Remarks</label>
+                            <label class="form-label">Catatan</label>
                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                placeholder="Isi remarks jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
+                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
                         </div>
 
                         <div class="col-lg-12 d-none adjustment-qty-wrapper">
@@ -786,7 +786,7 @@
                     success: function(response) {
                         const userRole = "{{ auth()->user()->role }}";
 
-                        $('.modal-title').text('Edit Data GGA');
+                        $('.modal-title').text('Kelola Data GGA');
 
                         $('#id').val(response.id);
                         $('#brix').val(response.brix);

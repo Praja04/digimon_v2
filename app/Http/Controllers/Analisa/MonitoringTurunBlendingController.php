@@ -263,20 +263,20 @@ class MonitoringTurunBlendingController extends Controller
                 $updateData['disposition'] = $disposition;
 
                 // Validasi disposition untuk shift yang sama (khusus Foreman)
-                $existingDisposition = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
-                    ->where('batch_range', $blending->batch_range)
-                    ->where('shift', $shift)
-                    ->where('disposition', $disposition)
-                    ->where('id', '!=', $id)
-                    ->first();
+                // $existingDisposition = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
+                //     ->where('batch_range', $blending->batch_range)
+                //     ->where('shift', $shift)
+                //     ->where('disposition', $disposition)
+                //     ->where('id', '!=', $id)
+                //     ->first();
 
-                if ($existingDisposition) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
-                    ], 409);
-                }
+                // if ($existingDisposition) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'status' => 'error',
+                //         'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
+                //     ], 409);
+                // }
             }
 
             // Handle Adjustment

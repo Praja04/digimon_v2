@@ -142,62 +142,72 @@
                                                 value="{{ $pasteurisasi->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->brix ?? '') }}">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">NACL <span style="color: red">*</span></label>
                                             <input type="text" name="nacl" id="nacl"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->nacl ?? '') }}">
                                             <small class="text-danger errorNacl"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Bj <span style="color: red">*</span></label>
                                             <input type="text" name="bj" id="bj"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->bj ?? '') }}">
                                             <small class="text-danger errorBj"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Visco <span style="color: red">*</span></label>
                                             <input type="text" name="visco" id="visco"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->visco ?? '') }}">
                                             <small class="text-danger errorVisco"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Aw <span style="color: red">*</span></label>
                                             <input type="text" name="aw" id="aw"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->aw ?? '') }}">
                                             <small class="text-danger errorAw"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">pH</label>
                                             <input type="text" name="ph" id="ph"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->ph ?? '') }}">
                                             <small class="text-danger errorPh"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Buih</label>
                                             <input type="text" name="buih" id="buih"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->buih ?? '') }}">
                                             <small class="text-danger errorBuih"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Organo <span style="color: red">*</span></label>
                                             <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $pasteurisasi->organo ?? '' }}">
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Endapan</label>
                                             <input type="text" name="endapan" id="endapan" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $pasteurisasi->endapan ?? '' }}">
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Warna <span style="color: red">*</span></label>
                                             <select name="color" id="color" class="select2 form-control">
                                                 <option value="">-- Pilih Warna --</option>
                                                 @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}">
+                                                    <option value="{{ $color->id }}"
+                                                        {{ $pasteurisasi->color_id == $color->id ? 'selected' : '' }}>
                                                         {{ $color->name }} ({{ $color->code }})
                                                     </option>
                                                 @endforeach
@@ -209,9 +219,14 @@
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK">OK</option>
-                                                <option value="NOT OK">NOT OK</option>
-                                                <option value="Adjustment">Adjustment</option>
+                                                <option value="OK"
+                                                    {{ $pasteurisasi->status == 'OK' ? 'selected' : '' }}>OK</option>
+                                                <option value="NOT OK"
+                                                    {{ $pasteurisasi->status == 'NOT OK' ? 'selected' : '' }}>NOT OK
+                                                </option>
+                                                <option value="Adjustment"
+                                                    {{ $pasteurisasi->status == 'Adjustment' ? 'selected' : '' }}>
+                                                    Adjustment</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
@@ -220,20 +235,34 @@
                                                 <label class="form-label">Disposition</label>
                                                 <select name="disposition" class="form-control disposition-select">
                                                     <option value="">-- Pilih Disposition --</option>
-                                                    <option value="Release">Release</option>
-                                                    <option value="Release Bersyarat">Release Bersyarat</option>
-                                                    <option value="Resampling">Resampling</option>
-                                                    <option value="Reject">Reject</option>
-                                                    <option value="Repro">Repro</option>
-                                                    <option value="Jalan Bareng">Jalan Bareng</option>
-                                                    <option value="Leveling">Leveling</option>
+                                                    <option value="Release"
+                                                        {{ $pasteurisasi->disposition == 'Release' ? 'selected' : '' }}>
+                                                        Release</option>
+                                                    <option value="Release Bersyarat"
+                                                        {{ $pasteurisasi->disposition == 'Release Bersyarat' ? 'selected' : '' }}>
+                                                        Release Bersyarat</option>
+                                                    <option value="Resampling"
+                                                        {{ $pasteurisasi->disposition == 'Resampling' ? 'selected' : '' }}>
+                                                        Resampling</option>
+                                                    <option value="Reject"
+                                                        {{ $pasteurisasi->disposition == 'Reject' ? 'selected' : '' }}>
+                                                        Reject</option>
+                                                    <option value="Repro"
+                                                        {{ $pasteurisasi->disposition == 'Repro' ? 'selected' : '' }}>
+                                                        Repro</option>
+                                                    <option value="Jalan Bareng"
+                                                        {{ $pasteurisasi->disposition == 'Jalan Bareng' ? 'selected' : '' }}>
+                                                        Jalan Bareng</option>
+                                                    <option value="Leveling"
+                                                        {{ $pasteurisasi->disposition == 'Leveling' ? 'selected' : '' }}>
+                                                        Leveling</option>
                                                 </select>
                                             </div>
                                         @endif
                                         <div class="col-lg-12">
-                                            <label class="form-label">Remarks</label>
+                                            <label class="form-label">Catatan</label>
                                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                                placeholder="Isi remarks jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
+                                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $pasteurisasi->disposition_remark ?? '' }}</textarea>
                                         </div>
 
                                         <div class="mb-3 d-none adjustment-qty-wrapper">
@@ -242,20 +271,20 @@
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Air (Liter)</label>
                                                     <input type="text" name="adjustment_qty_air"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="0,00">
+                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
+                                                        value="{{ str_replace('.', ',', $pasteurisasi->adjustment_qty_air ?? '') }}">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Gula (Kg)</label>
                                                     <input type="text" name="adjustment_qty_gula"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="0,00">
+                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
+                                                        value="{{ str_replace('.', ',', $pasteurisasi->adjustment_qty_gula ?? '') }}">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Garam (Kg)</label>
                                                     <input type="text" name="adjustment_qty_garam"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="0,00">
+                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
+                                                        value="{{ str_replace('.', ',', $pasteurisasi->adjustment_qty_garam ?? '') }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -275,7 +304,9 @@
 
 @section('scripts')
     <script>
-        $('.select2').select2();
+        $('.select2').select2({
+            placeholder: '-- Pilih Opsi --'
+        });
 
         $(document).ready(function() {
             $.ajaxSetup({

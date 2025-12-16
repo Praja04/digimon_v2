@@ -115,17 +115,17 @@
                                             </tr>
                                         </thead>
                                         <tbody class="list form-check-all">
-                                            @forelse ($productionBatch->monitoringPasteurisasi as $blending)
+                                            @forelse ($productionBatch->monitoringPasteurisasi as $pasteurisasi)
                                                 @php
-                                                    // Tentukan class berdasarkan disposition
-                                                    $dispositionUpper = strtoupper($blending->status ?? '');
-                                                    $rowClass = match ($dispositionUpper) {
+                                                    // Tentukan class berdasarkan status
+                                                    $statusUpper = strtoupper($pasteurisasi->status ?? '');
+                                                    $rowClass = match ($statusUpper) {
                                                         'NOT OK' => 'table-danger',
                                                         'ADJUSTMENT' => 'table-warning',
                                                         default => '',
                                                     };
 
-                                                    $badgeClass = match ($dispositionUpper) {
+                                                    $badgeClass = match ($statusUpper) {
                                                         'NOT OK' => 'bg-danger',
                                                         'ADJUSTMENT' => 'bg-warning text-dark',
                                                         'OK' => 'bg-success',
@@ -137,47 +137,61 @@
                                                         {{ $productionBatch->po_number }}
                                                     </td>
                                                     <td>
-                                                        @if ($blending->revisi != null)
-                                                            {{ $blending->batch_range }} ❗
+                                                        @if ($pasteurisasi->revisi != null)
+                                                            {{ $pasteurisasi->batch_range }} ❗
                                                         @else
-                                                            {{ $blending->batch_range }}
+                                                            {{ $pasteurisasi->batch_range }}
                                                         @endif
 
-                                                        @if ($blending->additionalBatches)
-                                                            @foreach ($blending->additionalBatches as $relasi)
+                                                        @if ($pasteurisasi->additionalBatches)
+                                                            @foreach ($pasteurisasi->additionalBatches as $relasi)
                                                                 <span class="badge bg-info">{{ $relasi->batch }}</span>
                                                             @endforeach
                                                         @endif
                                                     </td>
-                                                    <td>{{ $blending->nomor_blending }}</td>
-                                                    <td>{{ $blending->volume }}</td>
-                                                    <td>{{ $blending->storage ?? '-' }}</td>
-                                                    <td>{{ $blending->scanned_at ? \Carbon\Carbon::parse($blending->scanned_at)->format('d/m/Y H:i:s') : '-' }}
+                                                    <td>{{ $pasteurisasi->nomor_blending }}</td>
+                                                    <td>{{ $pasteurisasi->volume }}</td>
+                                                    <td>{{ $pasteurisasi->storage ?? '-' }}</td>
+                                                    <td>{{ $pasteurisasi->scanned_at ? \Carbon\Carbon::parse($pasteurisasi->scanned_at)->format('d/m/Y H:i:s') : '-' }}
                                                     </td>
-                                                    <td>{{ $blending->status ?? '-' }}</td>
-                                                    <td>{{ $blending->disposition ?? '-' }}</td>
+                                                    <td>
+                                                        @if ($pasteurisasi->status)
+                                                            <span
+                                                                class="badge {{ match (strtoupper($pasteurisasi->status)) {
+                                                                    'OK' => 'bg-success',
+                                                                    'NOT OK' => 'bg-danger',
+                                                                    'ADJUSTMENT' => 'bg-warning text-dark',
+                                                                    default => 'bg-secondary',
+                                                                } }}">
+                                                                {{ $pasteurisasi->status }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>{{ $pasteurisasi->disposition ?? '-' }}</td>
                                                     <td>
                                                         <button class="btn btn-sm btn-info" id="btnDetail"
-                                                            data-id="{{ $blending->id }}">
-                                                            <i class="ri-eye-line"></i> Lihat
+                                                            data-id="{{ $pasteurisasi->id }}">
+                                                            <i class="ri-eye-line"></i>
                                                         </button>
                                                     </td>
                                                     <td>
-                                                        @if (is_null($blending->status))
-                                                            <button class="btn btn-sm btn-primary open-blending-modal"
-                                                                data-id="{{ $blending->id }}">
+                                                        @if (is_null($pasteurisasi->status))
+                                                            <button class="btn btn-sm btn-primary open-pasteurisasi-modal"
+                                                                data-id="{{ $pasteurisasi->id }}">
                                                                 Input Data
                                                             </button>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
-                                                                    class="btn btn-sm btn-warning open-blending-modal-edit"
-                                                                    data-id="{{ $blending->id }}">
-                                                                    Edit Data
+                                                                    class="btn btn-sm btn-warning open-pasteurisasi-modal-edit"
+                                                                    data-id="{{ $pasteurisasi->id }}">
+                                                                    Kelola Data
                                                                 </button>
                                                             @else
                                                                 <span class="badge bg-success-subtle text-success">
-                                                                    <i class="ri-check-line"></i> Lengkap
+                                                                    <i class="ri-check-line align-middle"></i> Lengkap
                                                                 </span>
                                                             @endif
                                                         @endif
@@ -304,9 +318,9 @@
                             </div>
                         @endif
                         <div class="col-lg-12">
-                            <label class="form-label">Remarks</label>
+                            <label class="form-label">Catatan</label>
                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                placeholder="Isi remarks jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
+                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
                         </div>
 
                         <div class="mb-3 d-none adjustment-qty-wrapper">
@@ -583,7 +597,7 @@
                 toggleAdjustmentFields(selected);
             });
 
-            $('.open-blending-modal').on('click', function() {
+            $('.open-pasteurisasi-modal').on('click', function() {
                 const id = $(this).data('id');
 
                 $('#form')[0].reset();
@@ -604,7 +618,7 @@
                 $('#modal').modal('show');
             });
 
-            $('body').on('click', '.open-blending-modal-edit', function() {
+            $('body').on('click', '.open-pasteurisasi-modal-edit', function() {
                 const id = $(this).data('id');
 
                 $.ajax({

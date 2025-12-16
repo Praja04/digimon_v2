@@ -152,12 +152,26 @@
                                                     <td>{{ $blending->volume }}</td>
                                                     <td>{{ $blending->scanned_at ? \Carbon\Carbon::parse($blending->scanned_at)->format('d/m/Y H:i:s') : '-' }}
                                                     </td>
-                                                    <td>{{ $blending->status ?? '-' }}</td>
+                                                    <td>
+                                                        @if ($blending->status)
+                                                            <span
+                                                                class="badge {{ match (strtoupper($blending->status)) {
+                                                                    'OK' => 'bg-success',
+                                                                    'NOT OK' => 'bg-danger',
+                                                                    'ADJUSTMENT' => 'bg-warning text-dark',
+                                                                    default => 'bg-secondary',
+                                                                } }}">
+                                                                {{ $blending->status }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $blending->disposition ?? '-' }}</td>
                                                     <td>
                                                         <button class="btn btn-sm btn-info" id="btnDetail"
                                                             data-id="{{ $blending->id }}">
-                                                            <i class="ri-eye-line"></i> Lihat
+                                                            <i class="ri-eye-line"></i>
                                                         </button>
                                                     </td>
                                                     <td>
@@ -171,11 +185,11 @@
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-warning open-blending-modal-edit"
                                                                     data-id="{{ $blending->id }}">
-                                                                    Edit Data
+                                                                    Kelola Data
                                                                 </button>
                                                             @else
                                                                 <span class="badge bg-success-subtle text-success">
-                                                                    <i class="ri-check-line"></i> Lengkap
+                                                                    <i class="ri-check-line align-middle"></i> Lengkap
                                                                 </span>
                                                             @endif
                                                         @endif
@@ -302,9 +316,9 @@
                             </div>
                         @endif
                         <div class="col-lg-12">
-                            <label class="form-label">Remarks</label>
+                            <label class="form-label">Catatan</label>
                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                placeholder="Isi remarks jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
+                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
                         </div>
 
                         <div class="mb-3 d-none adjustment-qty-wrapper">

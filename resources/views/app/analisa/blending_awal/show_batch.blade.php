@@ -244,9 +244,9 @@
                                             </div>
                                         @endif
                                         <div class="col-lg-12">
-                                            <label class="form-label">Remarks</label>
+                                            <label class="form-label">Catatan</label>
                                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                                placeholder="Isi remarks jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $blending->disposition_remark ?? '' }}</textarea>
+                                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $blending->disposition_remark ?? '' }}</textarea>
                                         </div>
 
                                         <div class="mb-3 d-none adjustment-qty-wrapper">
@@ -288,7 +288,9 @@
 
 @section('scripts')
     <script>
-        $('.select2').select2();
+        $('.select2').select2({
+            placeholder: '-- Pilih Opsi --'
+        });
 
         $(document).ready(function() {
             $.ajaxSetup({
