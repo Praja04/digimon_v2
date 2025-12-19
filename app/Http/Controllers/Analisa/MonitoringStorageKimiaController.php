@@ -12,6 +12,7 @@ use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\DataTables;
 
 class MonitoringStorageKimiaController extends Controller
@@ -141,9 +142,7 @@ class MonitoringStorageKimiaController extends Controller
             $isUpdate = !is_null($monitoringStorageKimia->status);
             $userRole = auth()->user()->role;
 
-            // Validasi akses berdasarkan role
             if ($userRole === 'Analis Kimia') {
-                // Analis hanya bisa input/update jika belum ada disposition
                 if (!is_null($monitoringStorageKimia->disposition)) {
                     DB::rollBack();
                     return response()->json([
@@ -152,7 +151,6 @@ class MonitoringStorageKimiaController extends Controller
                     ], 403);
                 }
             } elseif ($userRole === 'Foreman') {
-                // Foreman hanya bisa update disposition jika sudah ada status dari Analis
                 if (is_null($monitoringStorageKimia->status)) {
                     DB::rollBack();
                     return response()->json([
@@ -165,7 +163,6 @@ class MonitoringStorageKimiaController extends Controller
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
-            // Validasi remarks wajib untuk status tertentu
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
@@ -193,9 +190,7 @@ class MonitoringStorageKimiaController extends Controller
                 'status' => $status_disposition,
             ];
 
-            // PERBAIKAN: Logic berdasarkan Role
             if ($userRole === 'Analis Kimia') {
-                // Analis hanya update status, disposition tetap null (menunggu Foreman)
                 $updateData['disposition'] = null;
 
                 if (!$isUpdate) {
@@ -286,14 +281,25 @@ class MonitoringStorageKimiaController extends Controller
                 $remarkText = '-';
             }
 
-            Http::post(env('PRODUCTION_URL') . 'api/monitoring-storage-kimia/' . $monitoringStorageKimia->id, [
-                'disposition' => $updateData['disposition'] ?? null,
-                'disposition_remark' => $remarkText,
-                'revisi' => $updateData['revisi'],
-                'is_adjustment' => $status_disposition === 'Adjustment',
-                'not_standard' => $updateData['not_standard'] ?? false,
-                'status' => $status_disposition,
-            ]);
+            if ($userRole === 'Foreman' && $dispositionChanged) {
+                try {
+                    Http::post(env('PRODUCTION_URL') . 'api/monitoring-storage-kimia', [
+                        'id' => $monitoringStorageKimia->id,
+                        'production_batch_id' => $monitoringStorageKimia->production_batch_id,
+                        'batch_range' => $monitoringStorageKimia->batch_range,
+                        'nomor_blending' => $monitoringStorageKimia->nomor_blending,
+                        'volume' => $monitoringStorageKimia->volume,
+                        'disposition' => $updateData['disposition'],
+                        'disposition_remark' => $remarkText,
+                        'revisi' => $updateData['revisi'],
+                        'is_adjustment' => $status_disposition === 'Adjustment',
+                        'not_standard' => $updateData['not_standard'] ?? false,
+                        'status' => $status_disposition,
+                    ]);
+                } catch (\Exception $apiException) {
+                    Log::error('API Monitoring Storage Kimia Error: ' . $apiException->getMessage());
+                }
+            }
 
             DB::commit();
 

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\MonitoringStorageMikro;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
 
@@ -239,6 +241,7 @@ class MonitoringStorageMikroController extends Controller
 
             // ✅ Tentukan hasil berdasarkan kelengkapan dan kriteria
             $hasil = 'PENDING';
+            $shouldCallApi = false; // Flag untuk menentukan kapan panggil API
 
             if ($monitoringStorageMikro->eb !== null && $monitoringStorageMikro->tpc !== null && $monitoringStorageMikro->ym !== null) {
                 // ✅ EB = 0, TPC = 30, YM = 0 → OK
@@ -247,30 +250,29 @@ class MonitoringStorageMikroController extends Controller
                 } else {
                     $hasil = 'NOT OK';
                 }
+
+                // Hanya panggil API jika hasil sudah final (OK atau NOT OK)
+                $shouldCallApi = true;
             }
 
             // Update hasil
             $monitoringStorageMikro->update(['hasil' => $hasil]);
 
-            $apiPayload = [
-                'hasil' => $hasil,
-            ];
-
-            // Call external API
-            $client = new \GuzzleHttp\Client();
-            $apiResponse = $client->request('POST', env('PRODUCTION_URL') . "api/monitoring-storage-mikro/{$monitoringStorageMikro->id}", [
-                'json' => $apiPayload,
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-            ]);
-
-            if ($apiResponse->getStatusCode() !== 200) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal update data ke API eksternal.',
-                ], 500);
+            // Panggil API hanya jika hasil sudah final (bukan PENDING)
+            if ($shouldCallApi) {
+                try {
+                    Http::post(env('PRODUCTION_URL') . 'api/monitoring-storage-mikro', [
+                        'id' => $monitoringStorageMikro->id,
+                        'production_batch_id' => $monitoringStorageMikro->production_batch_id,
+                        'batch_range' => $monitoringStorageMikro->batch_range,
+                        'nomor_blending' => $monitoringStorageMikro->nomor_blending,
+                        'volume' => $monitoringStorageMikro->volume,
+                        'hasil' => $hasil,
+                        'storage' => $monitoringStorageMikro->storage,
+                    ]);
+                } catch (\Exception $apiException) {
+                    Log::error('API Monitoring Storage Mikro Error: ' . $apiException->getMessage());
+                }
             }
 
             // Tentukan nama field untuk pesan

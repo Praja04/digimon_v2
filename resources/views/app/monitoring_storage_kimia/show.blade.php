@@ -170,22 +170,22 @@
                                                                             <button type="button"
                                                                                 class="btn btn-sm btn-primary"
                                                                                 data-bs-toggle="modal"
-                                                                                data-bs-target="#qrModal{{ $storageKimia->id }}">
+                                                                                data-bs-target="#qrModalKimia{{ $storageKimia->id }}">
                                                                                 QR Code {{ $storageKimia->id }}
                                                                             </button>
 
                                                                             <!-- Modal Besar -->
                                                                             <div class="modal fade"
-                                                                                id="qrModal{{ $storageKimia->id }}"
+                                                                                id="qrModalKimia{{ $storageKimia->id }}"
                                                                                 tabindex="-1"
-                                                                                aria-labelledby="qrModalLabel{{ $storageKimia->id }}"
+                                                                                aria-labelledby="qrModalKimiaLabel{{ $storageKimia->id }}"
                                                                                 aria-hidden="true">
                                                                                 <div
                                                                                     class="modal-dialog modal-dialog-centered modal-lg">
                                                                                     <div class="modal-content">
                                                                                         <div class="modal-header py-2">
                                                                                             <h5 class="modal-title"
-                                                                                                id="qrModalLabel{{ $storageKimia->id }}">
+                                                                                                id="qrModalKimiaLabel{{ $storageKimia->id }}">
                                                                                                 QR Code - Monitoring
                                                                                                 Storage Kimia
                                                                                             </h5>
@@ -195,7 +195,7 @@
                                                                                                 aria-label="Close"></button>
                                                                                         </div>
                                                                                         <div class="modal-body text-center"
-                                                                                            id="qrPrintArea{{ $storageKimia->id }}">
+                                                                                            id="qrPrintKimiaArea{{ $storageKimia->id }}">
                                                                                             <div
                                                                                                 style="display: inline-block;">
                                                                                                 <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-kimia.show_batch', $storageKimia->id), 'QRCODE') }}"
@@ -212,7 +212,7 @@
                                                                                                 class="btn btn-sm btn-dark"
                                                                                                 data-bs-dismiss="modal">Tutup</button>
                                                                                             <button
-                                                                                                onclick="printQR('qrPrintArea{{ $storageKimia->id }}')"
+                                                                                                onclick="printQR('qrPrintKimiaArea{{ $storageKimia->id }}')"
                                                                                                 class="btn btn-sm btn-primary">Cetak</button>
                                                                                         </div>
                                                                                     </div>
@@ -306,22 +306,22 @@
                                                                             <button type="button"
                                                                                 class="btn btn-sm btn-primary"
                                                                                 data-bs-toggle="modal"
-                                                                                data-bs-target="#qrModal{{ $storageMikro->id }}">
+                                                                                data-bs-target="#qrModalMikro{{ $storageMikro->id }}">
                                                                                 QR Code {{ $storageMikro->id }}
                                                                             </button>
 
                                                                             <!-- Modal Besar -->
                                                                             <div class="modal fade"
-                                                                                id="qrModal{{ $storageMikro->id }}"
+                                                                                id="qrModalMikro{{ $storageMikro->id }}"
                                                                                 tabindex="-1"
-                                                                                aria-labelledby="qrModalLabel{{ $storageMikro->id }}"
+                                                                                aria-labelledby="qrModalMikroLabel{{ $storageMikro->id }}"
                                                                                 aria-hidden="true">
                                                                                 <div
                                                                                     class="modal-dialog modal-dialog-centered modal-lg">
                                                                                     <div class="modal-content">
                                                                                         <div class="modal-header py-2">
                                                                                             <h5 class="modal-title"
-                                                                                                id="qrModalLabel{{ $storageMikro->id }}">
+                                                                                                id="qrModalMikroLabel{{ $storageMikro->id }}">
                                                                                                 QR Code - Monitoring
                                                                                                 Storage Mikro
                                                                                             </h5>
@@ -331,7 +331,7 @@
                                                                                                 aria-label="Close"></button>
                                                                                         </div>
                                                                                         <div class="modal-body text-center"
-                                                                                            id="qrPrintArea{{ $storageMikro->id }}">
+                                                                                            id="qrPrintMikroArea{{ $storageMikro->id }}">
                                                                                             <div
                                                                                                 style="display: inline-block;">
                                                                                                 <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-mikro.show_batch', $storageMikro->id), 'QRCODE') }}"
@@ -348,7 +348,7 @@
                                                                                                 class="btn btn-sm btn-dark"
                                                                                                 data-bs-dismiss="modal">Tutup</button>
                                                                                             <button
-                                                                                                onclick="printQR('qrPrintArea{{ $storageMikro->id }}')"
+                                                                                                onclick="printQR('qrPrintMikroArea{{ $storageMikro->id }}')"
                                                                                                 class="btn btn-sm btn-primary">Cetak</button>
                                                                                         </div>
                                                                                     </div>
