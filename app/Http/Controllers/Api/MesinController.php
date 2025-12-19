@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Mesin;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
+class MesinController extends Controller
+{
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'mesin' => 'required|string|max:255',
+            'variant' => 'required|string|max:255',
+            'waktu' => 'required|date',
+            'status' => 'required|string',
+            'berat' => 'required|numeric',
+            'unit' => 'required|string|max:50'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $mesin = Mesin::create([
+            'mesin' => $request->mesin,
+            'variant' => $request->variant,
+            'waktu' => $request->waktu,
+            'status' => $request->status,
+            'berat' => $request->berat,
+            'unit' => $request->unit
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data mesin berhasil ditambahkan',
+            'data' => $mesin
+        ], 201);
+    }
+}
