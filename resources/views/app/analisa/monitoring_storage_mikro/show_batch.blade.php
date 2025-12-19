@@ -31,7 +31,8 @@
                                     <div class="mt-xl-0 mt-5">
                                         <div class="d-flex">
                                             <div class="flex-grow-1">
-                                                <h4>{{ $monitoringStorageMikro->productionBatch->po_number }} (Nomor PO)</h4>
+                                                <h4>{{ $monitoringStorageMikro->productionBatch->po_number }} (Nomor PO)
+                                                </h4>
                                                 <div class="hstack gap-3 flex-wrap">
                                                     <div><a href="#"
                                                             class="text-primary d-block">{{ Session::get('username') }}</a>
@@ -57,7 +58,8 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Variant :</p>
-                                                            <h5 class="mb-0">{{ $monitoringStorageMikro->productionBatch->variant }}
+                                                            <h5 class="mb-0">
+                                                                {{ $monitoringStorageMikro->productionBatch->variant }}
                                                             </h5>
                                                         </div>
                                                     </div>
@@ -75,7 +77,8 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Batch Range :</p>
-                                                            <h5 class="mb-0">{{ $monitoringStorageMikro->productionBatch->batch_range }}
+                                                            <h5 class="mb-0">
+                                                                {{ $monitoringStorageMikro->productionBatch->batch_range }}
                                                             </h5>
                                                         </div>
                                                     </div>
@@ -105,7 +108,8 @@
                                 <form id="form">
                                     <div class="row g-3">
                                         <div class="alert alert-danger d-none error-alert"></div>
-                                        <input type="hidden" name="id" id="id" value="{{ $monitoringStorageMikro->id }}">
+                                        <input type="hidden" name="id" id="id"
+                                            value="{{ $monitoringStorageMikro->id }}">
 
                                         <!-- ✅ Loading Indicator -->
                                         <div id="loadingContainer" class="col-lg-12">
@@ -119,6 +123,27 @@
                                         <div class="col-lg-12 d-none" id="statusContainer">
                                             <div class="alert alert-info" id="statusInfo">
                                                 <strong>Status:</strong> <span id="statusText"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Analis Field -->
+                                        <div id="analisContainer" class="col-lg-12 d-none">
+                                            <div class="mb-3">
+                                                <label class="form-label">Shift <span style="color: red;">*</span></label>
+                                                <select name="shift_analis" id="shift_analis" class="form-control">
+                                                    <option value="">-- Pilih Shift --</option>
+                                                    <option value="1">Shift 1 (06:00 - 14:00)</option>
+                                                    <option value="2">Shift 2 (14:00 - 22:00)</option>
+                                                    <option value="3">Shift 3 (22:00 - 06:00)</option>
+                                                </select>
+                                                <small class="text-danger errorShiftAnalis"></small>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Nama Analis <span
+                                                        style="color: red;">*</span></label>
+                                                <input type="text" name="nama_analis" id="nama_analis"
+                                                    class="form-control comma-input" placeholder="Masukkan Nama Analis">
+                                                <small class="text-danger errorNamaAnalis"></small>
                                             </div>
                                         </div>
 
@@ -221,39 +246,66 @@
             }
 
             function showNextField() {
+                let shift = currentMonitoringStorageMikroData.shift;
+                let nama_analis = currentMonitoringStorageMikroData.nama_analis;
                 let eb = currentMonitoringStorageMikroData.eb;
                 let tpc = currentMonitoringStorageMikroData.tpc;
                 let ym = currentMonitoringStorageMikroData.ym;
 
                 // Sembunyikan semua field dulu
-                $('#ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
-                $('#eb, #tpc, #ym').val('').prop('disabled', true);
+                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#shift_analis, #nama_analis, #eb, #tpc, #ym').val('').prop('disabled', true);
                 $('#btnSave').prop('disabled', true);
 
-                // ✅ Logika urutan: EB → TPC → YM (cek null/undefined secara eksplisit)
-                if (eb === null || eb === undefined) {
-                    // Jika EB belum diisi
-                    $('#statusText').text('Langkah 1/3 - Input EB terlebih dahulu');
+                // ✅ STEP 1: Input Shift & Nama Analis terlebih dahulu
+                if (!shift || !nama_analis) {
+                    $('#statusText').text('Langkah 1/4 - Input Shift dan Nama Analis terlebih dahulu');
+                    $('#analisContainer').removeClass('d-none');
+                    $('#shift_analis, #nama_analis').prop('disabled', false);
+
+                    // Auto-set shift berdasarkan jam saat ini (opsional, bisa di-skip jika user ingin pilih manual)
+                    const currentHour = new Date().getHours();
+                    let suggestedShift = 1;
+                    if (currentHour >= 6 && currentHour < 14) {
+                        suggestedShift = 1;
+                    } else if (currentHour >= 14 && currentHour < 22) {
+                        suggestedShift = 2;
+                    } else {
+                        suggestedShift = 3;
+                    }
+                    $('#shift_analis').val(suggestedShift);
+
+                    $('#nama_analis').focus();
+                    $('#btnSave').prop('disabled', false);
+
+                    // ✅ STEP 2: Jika Shift & Nama Analis sudah, input EB
+                } else if (eb === null || eb === undefined) {
+                    $('#statusText').html(
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>Langkah 2/4 - Input EB`
+                    );
                     $('#ebContainer').removeClass('d-none');
                     $('#eb').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
 
+                    // ✅ STEP 3: Jika EB sudah, input TPC
                 } else if (tpc === null || tpc === undefined) {
-                    // Jika EB sudah, tapi TPC belum
-                    $('#statusText').html(`EB sudah diisi: <strong>${eb}</strong><br>Langkah 2/3 - Input TPC`);
+                    $('#statusText').html(
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong><br>Langkah 3/4 - Input TPC`
+                    );
                     $('#tpcContainer').removeClass('d-none');
                     $('#tpc').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
 
+                    // ✅ STEP 4: Jika TPC sudah, input YM (terakhir)
                 } else if (ym === null || ym === undefined) {
-                    // Jika EB & TPC sudah, tapi YM belum
                     $('#statusText').html(
-                        `EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>Langkah 3/3 - Input YM (terakhir)`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>Langkah 4/4 - Input YM (terakhir)`
                     );
                     $('#ymContainer').removeClass('d-none');
                     $('#ym').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
 
+                    // ✅ Semua sudah lengkap
                 } else {
                     Swal.fire({
                         icon: 'info',
@@ -294,7 +346,6 @@
                             title: 'Sukses',
                             text: response.message,
                         }).then(() => {
-                            // Reload data untuk menampilkan field berikutnya
                             loadMonitoringStorageMikroData();
                         });
                     },
@@ -313,6 +364,14 @@
                         if (xhr.status === 422 && response && response.errors) {
                             let errors = response.errors;
 
+                            if (errors.shift_analis) {
+                                $('#shift_analis').addClass('is-invalid');
+                                $('.errorShiftAnalis').html(errors.shift_analis.join('<br>'));
+                            }
+                            if (errors.nama_analis) {
+                                $('#nama_analis').addClass('is-invalid');
+                                $('.errorNamaAnalis').html(errors.nama_analis.join('<br>'));
+                            }
                             if (errors.eb) {
                                 $('#eb').addClass('is-invalid');
                                 $('.errorEb').html(errors.eb.join('<br>'));

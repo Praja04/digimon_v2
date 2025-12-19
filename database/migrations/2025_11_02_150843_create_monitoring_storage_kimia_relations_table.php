@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('monitoring_storage_kimia_relations', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->primary();
+            $table->id();
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->unsignedBigInteger('monitoring_storage_kimia_id');
             $table->foreign('monitoring_storage_kimia_id', 'msk_relation_fk')

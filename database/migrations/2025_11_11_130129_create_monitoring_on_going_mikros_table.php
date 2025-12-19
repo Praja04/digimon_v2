@@ -26,13 +26,9 @@ return new class extends Migration
             $table->string('jenis_sampel_3')->nullable();
             $table->text('keterangan')->nullable();
 
-            // Data analisa lab kimia
-            $table->foreignId('analis_eb')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('analis_tpc')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('analis_ym')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('analis_benda_asing')->nullable()->constrained('users')->onDelete('set null');
+            // Data analisa
+            $table->string('nama_analis')->nullable();
             $table->string('shift')->nullable();
-            $table->timestamp('received_at')->nullable();
 
             // Parameter hasil analisa mikro
             $table->string('eb')->nullable();

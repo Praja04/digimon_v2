@@ -179,10 +179,12 @@
                                                             data-id="{{ $ggas->id }}">
                                                             <i class="ri-eye-line"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
-                                                            data-id="{{ $ggas->id }}">
-                                                            <i class="ri-file-list-line"></i>
-                                                        </button>
+                                                        @if (auth()->user()->role == 'Foreman')
+                                                            <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
+                                                                data-id="{{ $ggas->id }}">
+                                                                <i class="ri-file-list-line"></i>
+                                                            </button>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         @if (is_null($ggas->status))

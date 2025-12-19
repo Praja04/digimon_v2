@@ -53,7 +53,8 @@ class MonitoringDailyTankKimiaController extends Controller
                 $shift = 3;
             }
 
-            $monitoringDailyTank->update([
+            // Build update data
+            $updateData = [
                 'brix' => $request->brix,
                 'nacl' => $request->nacl,
                 'bj' => $request->bj,
@@ -67,30 +68,27 @@ class MonitoringDailyTankKimiaController extends Controller
                 'status' => $request->status_parameter,
                 'disposisi' => $request->status_disposisi,
                 'alasan_disposisi' => $request->alasan_disposisi ? strtoupper($request->alasan_disposisi) : null,
-                'qc_analisa' => auth()->id(),
-                'tanggal_analisa' => now(),
-                'shift_analisa' => $shift,
-                'tanggal_input_hasil' => now(),
-            ]);
+            ];
+
+            $monitoringDailyTank->update($updateData);
 
             // Kirim notifikasi untuk semua status (OK maupun NOT OK)
             $notificationTitle = "Monitoring Daily Tank Kimia - Batch " . $monitoringDailyTank->productionBatch->batch_number;
 
             // Buat message yang sesuai dengan status
             if ($request->status_parameter === 'OK') {
-                $message = "Status: OK";
+                $message = "-";
             } else {
-                $message = "Status: NOT OK - Disposisi: " . ($request->status_disposisi ?? '-') .
-                    ($alasanDisposisi ? " - Alasan: " . strtoupper($alasanDisposisi) : '');
+                $message =  strtoupper($alasanDisposisi);
             }
 
             event(new ProcessOutsideDisposition(
                 $notificationTitle,
                 $monitoringDailyTank->productionBatch->id,
                 'Monitoring Daily Tank Kimia',
-                $request->status_parameter, // OK atau NOT OK
+                $request->status_parameter,
                 $message,
-                route('analisa.monitoring-daily-tank-kimia.show', $monitoringDailyTank->productionBatch->id) // tambahkan route jika ada
+                route('analisa.monitoring-daily-tank-kimia.show', $monitoringDailyTank->id)
             ));
 
             return response()->json([

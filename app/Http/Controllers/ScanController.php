@@ -12,6 +12,7 @@ use App\Models\MonitoringOnGoingMikro;
 use App\Models\MonitoringPasteurisasi;
 use App\Models\MonitoringStorageBeforeUse;
 use App\Models\MonitoringStorageKimia;
+use App\Models\MonitoringStorageMikro;
 use App\Models\MonitoringTurunBlending;
 use App\Models\QRScanLog;
 use Carbon\Carbon;
@@ -69,6 +70,11 @@ class ScanController extends Controller
                 'model' => MonitoringStorageKimia::class,
                 'route' => 'analisa.monitoring-storage-kimia.show_batch',
                 'name'  => 'Monitoring Storage Kimia'
+            ],
+            'monitoring-storage-mikro' => [
+                'model' => MonitoringStorageMikro::class,
+                'route' => 'analisa.monitoring-storage-mikro.show_batch',
+                'name'  => 'Monitoring Storage Mikro'
             ],
             'monitoring-storage-before-use' => [
                 'model' => MonitoringStorageBeforeUse::class,

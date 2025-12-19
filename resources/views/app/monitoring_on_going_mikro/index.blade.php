@@ -91,7 +91,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <input type="hidden" name="id" id="id">
                             <label for="tanggal_produksi" class="form-label">Tanggal Produksi <span
                                     style="color: red;">*</span></label>
@@ -99,7 +99,7 @@
                             <small class="errorTanggalProduksi text-danger"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="storage" class="form-label">Storage <span style="color: red;">*</span></label>
                             <select name="storage" id="storage" class="form-control">
                                 <option value="">-- Pilih Storage --</option>
@@ -135,7 +135,7 @@
                             <small class="text-danger errorStorage"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="nomor_po" class="form-label">Nomor PO <span style="color: red;">*</span></label>
                             <select id="nomor_po" name="nomor_po" class="select2 form-control">
                                 <option value="">-- Pilih Nomor PO --</option>
@@ -143,33 +143,47 @@
                             <small class="text-danger errorNomorPO"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <label for="variant" class="form-label">Variant <span style="color: red;">*</span></label>
                             <select id="variant" name="variant" class="select2 form-control">
                                 <option value="">-- Pilih Variant --</option>
                             </select>
                             <small class="text-danger errorVariant"></small>
                         </div>
+
                         <!-- No Filler -->
-                        <div class="col-lg-6" id="no_filler_wrapper"> <label for="no_filler" class="form-label">No
-                                Filler / Mesin <span style="color: red;">*</span></label>
+                        <div class="col-lg-4" id="no_filler_wrapper">
+                            <label for="no_filler" class="form-label">No Filler / Mesin <span
+                                    style="color: red;">*</span></label>
                             <input type="number" name="no_filler" id="no_filler" class="form-control">
                             <small class="text-danger errorNoFiller"></small>
                         </div>
 
-                        <div class="col-lg-6" id="no_kempu_jeriken_wrapper"> <label for="no_kempu_jeriken"
-                                class="form-label">No Kempu / Jeriken <span style="color: red;">*</span></label>
+                        <!-- No Kempu/Jeriken -->
+                        <div class="col-lg-4" id="no_kempu_jeriken_wrapper" style="display: none;">
+                            <label for="no_kempu_jeriken" class="form-label">No Kempu / Jeriken <span
+                                    style="color: red;">*</span></label>
                             <input type="number" name="no_kempu_jeriken" id="no_kempu_jeriken" class="form-control">
                             <small class="text-danger errorNoKempuJeriken"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <!-- Running Number -->
+                        <div class="col-lg-4" id="running_number_wrapper" style="display: none;">
+                            <label for="running_number" class="form-label">Running Number <span
+                                    style="color: red;">*</span></label>
+                            <input type="number" name="running_number" id="running_number" class="form-control">
+                            <small class="text-danger errorRunningNumber"></small>
+                        </div>
+
+                        <!-- Koding -->
+                        <div class="col-lg-6" id="koding_wrapper">
                             <label for="koding" class="form-label">Koding</label>
                             <input type="text" name="koding" id="koding" class="form-control">
                             <small class="text-danger errorKoding"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <!-- Jam Koding -->
+                        <div class="col-lg-6" id="jam_koding_wrapper">
                             <label for="jam_koding" class="form-label">Jam Koding <span
                                     style="color: red;">*</span></label>
                             <input type="time" name="jam_koding" id="jam_koding" class="form-control">
@@ -322,7 +336,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success" id="save">Simpan</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
                     </div>
                 </div>
             </form>
@@ -387,6 +402,12 @@
                             <div class="mb-2">
                                 <span class="text-muted d-block">No Kempu/Jeriken</span>
                                 <strong id="detail_no_kempu_jeriken">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div class="mb-2">
+                                <span class="text-muted d-block">Running Number</span>
+                                <strong id="detail_running_number">-</strong>
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
@@ -552,20 +573,40 @@
                 variantName.toLowerCase().includes('jeriken');
 
             const $noKempuJerikenWrapper = $('#no_kempu_jeriken_wrapper');
+            const $runningNumberWrapper = $('#running_number_wrapper');
             const $noFillerWrapper = $('#no_filler_wrapper');
+            const $kodingWrapper = $('#koding_wrapper');
+            const $jamKodingWrapper = $('#jam_koding_wrapper');
 
             if (isKempuOrJeriken) {
+                // Tampilkan field Kempu/Jeriken dan Running Number
                 $noKempuJerikenWrapper.show();
+                $runningNumberWrapper.show();
 
-                $noFillerWrapper.removeClass('col-lg-12').addClass('col-lg-6');
-                $noKempuJerikenWrapper.removeClass('col-lg-12').addClass('col-lg-6');
+                // Set kolom: No Filler, No Kempu/Jeriken, Running Number = 4-4-4 (3 kolom)
+                $noFillerWrapper.removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+                $noKempuJerikenWrapper.removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+                $runningNumberWrapper.removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+
+                // Koding dan Jam Koding tetap 6-6
+                $kodingWrapper.removeClass('col-lg-12 col-lg-4 col-lg-8').addClass('col-lg-6');
+                $jamKodingWrapper.removeClass('col-lg-12 col-lg-4 col-lg-8').addClass('col-lg-6');
 
             } else {
+                // Sembunyikan field Kempu/Jeriken dan Running Number
                 $noKempuJerikenWrapper.hide();
-                $('.errorNoKempuJeriken').html('');
-                $('#no_kempu_jeriken').removeClass('is-invalid');
+                $runningNumberWrapper.hide();
 
-                $noFillerWrapper.removeClass('col-lg-6').addClass('col-lg-12');
+                // Reset error dan value
+                $('.errorNoKempuJeriken, .errorRunningNumber').html('');
+                $('#no_kempu_jeriken, #running_number').removeClass('is-invalid').val('');
+
+                // No Filler jadi col-lg-4
+                $noFillerWrapper.removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+
+                // Koding dan Jam Koding jadi col-lg-4 (total 3 field: filler, koding, jam = 4-4-4)
+                $kodingWrapper.removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+                $jamKodingWrapper.removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
             }
         }
 
@@ -576,8 +617,10 @@
             $variant.empty().append('<option value="">-- Pilih Variant --</option>');
             $('.errorVariant').html('');
 
-            $('#no_kempu_jeriken_wrapper').hide();
-            $('#no_filler_wrapper').removeClass('col-lg-6').addClass('col-lg-12');
+            $('#no_kempu_jeriken_wrapper, #running_number_wrapper').hide();
+            $('#no_filler_wrapper').removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+            $('#koding_wrapper').removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+            $('#jam_koding_wrapper').removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
 
             if (production_batch_id) {
                 $.ajax({
@@ -743,8 +786,10 @@
                 $('#jenis_sampel_2').val('').trigger('change');
                 $('#jenis_sampel_3').val('').trigger('change');
 
-                $('#no_kempu_jeriken_wrapper').hide();
-                $('#no_filler_wrapper').removeClass('col-lg-6').addClass('col-lg-12');
+                $('#no_kempu_jeriken_wrapper, #running_number_wrapper').hide();
+                $('#no_filler_wrapper').removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+                $('#koding_wrapper').removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
+                $('#jam_koding_wrapper').removeClass('col-lg-12 col-lg-6 col-lg-8').addClass('col-lg-4');
 
                 $('.form-control').removeClass('is-invalid');
                 $('.text-danger').html('');
@@ -833,6 +878,7 @@
                         $('#detail_variant').text(response.variant);
                         $('#detail_no_filler').text(response.no_filler);
                         $('#detail_no_kempu_jeriken').text(response.no_kempu_jeriken);
+                        $('#detail_running_number').text(response.running_number);
                         $('#detail_filling_date').text(response.filling_date_formatted);
                         $('#detail_koding').text(response.koding);
                         $('#detail_jam_koding').text(response.jam_koding);
@@ -938,6 +984,12 @@
                             if (errors.no_kempu_jeriken) {
                                 $('#no_kempu_jeriken').addClass('is-invalid');
                                 $('.errorNoKempuJeriken').html(errors.no_kempu_jeriken.join(
+                                    '<br>'));
+                            }
+
+                            if (errors.running_number) {
+                                $('#running_number').addClass('is-invalid');
+                                $('.errorRunningNumber').html(errors.running_number.join(
                                     '<br>'));
                             }
 

@@ -108,6 +108,8 @@
                                                 <th>Batch Range</th>
                                                 <th>No Blending</th>
                                                 <th>Volume</th>
+                                                <th>Nama Analis</th>
+                                                <th>Shift Analis</th>
                                                 <th>EB</th>
                                                 <th>TPC</th>
                                                 <th>YM</th>
@@ -122,6 +124,9 @@
                                                     <td>{{ $monitoringStorageMikro->batch_range }}</td>
                                                     <td>{{ $monitoringStorageMikro->nomor_blending }}</td>
                                                     <td>{{ $monitoringStorageMikro->volume }}</td>
+                                                    <td>{{ $monitoringStorageMikro->nama_analis ?? '-' }}</td>
+                                                    <td>{{ $monitoringStorageMikro->shift ? 'Shift ' . $monitoringStorageMikro->shift : '-' }}
+                                                    </td>
                                                     <td>{{ $monitoringStorageMikro->eb ?? '-' }}</td>
                                                     <td>{{ $monitoringStorageMikro->tpc ?? '-' }}</td>
                                                     <td>{{ $monitoringStorageMikro->ym ?? '-' }}</td>

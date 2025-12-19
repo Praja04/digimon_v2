@@ -80,6 +80,7 @@ class NotificationController extends Controller
             'Monitoring Turun Blending' => $notification->redirect,
             'Monitoring Pasteurisasi' => $notification->redirect,
             'Monitoring Storage Kimia' => $notification->redirect,
+            'Monitoring Daily Tank Kimia' => $notification->redirect,
         ];
 
         return $routeMap[$process] ?? route('notifications.index');

@@ -111,19 +111,9 @@ class User extends Authenticatable
         return $this->hasMany(MonitoringStorageMikro::class, 'created_by');
     }
 
-    public function konfirmasiMonitoringStorageMikro()
-    {
-        return $this->hasMany(KonfirmasiMonitoringStorageMikro::class, 'created_by');
-    }
-
     public function blendingAfterAdjustMikro()
     {
         return $this->hasMany(BlendingAfterAdjustMikro::class, 'created_by');
-    }
-
-    public function konfirmasiBlendingAfterAdjustMikro()
-    {
-        return $this->hasMany(KonfirmasiBlendingAfterAdjustMikro::class, 'created_by');
     }
 
     public function monitoringDailyTankMikro()
@@ -159,36 +149,6 @@ class User extends Authenticatable
     public function dianalisaBy()
     {
         return $this->hasMany(KonfirmasiKedatangan::class, 'dianalisa_by');
-    }
-
-    public function monitoringOnGoingKimia()
-    {
-        return $this->hasMany(MonitoringOnGoingKimia::class, 'analis_id');
-    }
-
-    public function monitoringOnGoingMikro()
-    {
-        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_id');
-    }
-
-    public function monitoringOnGoingMikroEb()
-    {
-        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_eb');
-    }
-
-    public function monitoringOnGoingMikroTpc()
-    {
-        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_tpc');
-    }
-
-    public function monitoringOnGoingMikroYm()
-    {
-        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_ym');
-    }
-
-    public function monitoringOnGoingMikroBendaAsing()
-    {
-        return $this->hasMany(MonitoringOnGoingMikro::class, 'analis_benda_asing');
     }
 
     public function qrScanLogs()

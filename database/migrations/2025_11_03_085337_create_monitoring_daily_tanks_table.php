@@ -17,20 +17,18 @@ return new class extends Migration
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->string('storage', 100)->nullable();
             $table->dateTime('tanggal_sampling')->nullable();
-            $table->string('sampling_point', 50)->nullable(); // DT, DTP1, DTP2, dst.
+            $table->string('sampling_point', 50)->nullable();
             $table->enum('status_pemakaian', ['Filling', 'Habis'])->nullable();
             $table->enum('jenis_analisa', ['Kimia', 'Mikro'])->nullable();
-            $table->string('jenis_sample', 50)->nullable(); // Awal Trf, Tengah PO, dll
+            $table->string('jenis_sample', 50)->nullable();
             $table->text('keterangan_level')->nullable();
 
             // Data QC & Lab
             $table->foreignId('qc_field')->nullable()->constrained('users')->onDelete('set null');
-            $table->dateTime('tanggal_diterima_lab')->nullable();
 
             // Analisa
-            $table->string('shift_analisa', 20)->nullable();
-            $table->foreignId('qc_analisa')->nullable()->constrained('users')->onDelete('set null');
-            $table->dateTime('tanggal_analisa')->nullable();
+            $table->string('nama_analis')->nullable();
+            $table->string('shift')->nullable();
 
             // Parameter & Hasil Uji (maksimal 3 parameter umum)
             $table->float('eb')->nullable();
@@ -53,7 +51,6 @@ return new class extends Migration
 
             // Hasil Analisa & Catatan
             $table->text('catatan_analis')->nullable();
-            $table->dateTime('tanggal_input_hasil')->nullable();
 
             // Disposisi / Keputusan Akhir
             $table->enum('disposisi', ['Release', 'Release Bersyarat', 'Drain'])->nullable();

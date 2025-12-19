@@ -30,6 +30,8 @@ class MonitoringDailyTankMikroController extends Controller
                 'status' => 'success',
                 'data' => [
                     'id' => $monitoringDailyTank->id,
+                    'shift' => $monitoringDailyTank->shift,
+                    'nama_analis' => $monitoringDailyTank->nama_analis,
                     'eb' => $monitoringDailyTank->eb,
                     'tpc' => $monitoringDailyTank->tpc,
                     'ym' => $monitoringDailyTank->ym,
@@ -47,7 +49,6 @@ class MonitoringDailyTankMikroController extends Controller
     public function update(Request $request)
     {
         try {
-            // ✅ Hanya merge field yang benar-benar ada dan tidak kosong
             $mergeData = [];
 
             if ($request->filled('eb')) {
@@ -73,21 +74,46 @@ class MonitoringDailyTankMikroController extends Controller
                 ], 404);
             }
 
-            // ✅ Validasi hanya field yang benar-benar dikirim dan tidak kosong
             $rules = [];
             $updateData = [];
 
+            if ($request->filled('shift_analis') || $request->filled('nama_analis')) {
+                $rules['shift_analis'] = 'required|integer|min:1|max:3';
+                $rules['nama_analis'] = 'required|string|max:255';
+
+                $updateData['shift'] = $request->shift_analis;
+                $updateData['nama_analis'] = $request->nama_analis;
+            }
+
             if ($request->filled('eb')) {
+                if (empty($monitoringDailyTank->shift) || empty($monitoringDailyTank->nama_analis)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input EB.'
+                    ], 409);
+                }
                 $rules['eb'] = 'required|numeric|min:0';
                 $updateData['eb'] = $request->eb;
             }
 
             if ($request->filled('tpc')) {
+                if (empty($monitoringDailyTank->shift) || empty($monitoringDailyTank->nama_analis)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input TPC.'
+                    ], 409);
+                }
                 $rules['tpc'] = 'required|numeric|min:0';
                 $updateData['tpc'] = $request->tpc;
             }
 
             if ($request->filled('ym')) {
+                if (empty($monitoringDailyTank->shift) || empty($monitoringDailyTank->nama_analis)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input YM.'
+                    ], 409);
+                }
                 $rules['ym'] = 'required|numeric|min:0';
                 $updateData['ym'] = $request->ym;
             }
@@ -95,6 +121,13 @@ class MonitoringDailyTankMikroController extends Controller
             // ✅ Validasi hanya field yang ada di rules
             if (!empty($rules)) {
                 $validator = Validator::make($request->only(array_keys($rules)), $rules, [
+                    'shift_analis.required' => 'Shift wajib diisi.',
+                    'shift_analis.integer' => 'Shift harus berupa angka.',
+                    'shift_analis.min' => 'Shift minimal 1.',
+                    'shift_analis.max' => 'Shift maksimal 3.',
+                    'nama_analis.required' => 'Nama Analis wajib diisi.',
+                    'nama_analis.string' => 'Nama Analis harus berupa teks.',
+                    'nama_analis.max' => 'Nama Analis maksimal 255 karakter.',
                     'eb.required' => 'EB wajib diisi.',
                     'eb.numeric' => 'EB harus berupa angka.',
                     'eb.min' => 'EB tidak boleh negatif.',
@@ -121,20 +154,6 @@ class MonitoringDailyTankMikroController extends Controller
                     'message' => 'Tidak ada data yang diinput.'
                 ], 409);
             }
-
-            // ✅ TENTUKAN SHIFT OTOMATIS BERDASARKAN JAM
-            $currentHour = (int) now()->format('H');
-            if ($currentHour >= 6 && $currentHour < 14) {
-                $shift = 1;
-            } elseif ($currentHour >= 14 && $currentHour < 22) {
-                $shift = 2;
-            } else {
-                $shift = 3;
-            }
-
-            $updateData['shift_analisa'] = $shift;
-            $updateData['qc_analisa'] = auth()->user()->id;
-            $updateData['tanggal_analisa'] = now();
 
             // Update data
             $monitoringDailyTank->update($updateData);
@@ -163,7 +182,7 @@ class MonitoringDailyTankMikroController extends Controller
             if (isset($updateData['tpc'])) $fieldName = 'TPC';
             if (isset($updateData['ym'])) $fieldName = 'YM';
 
-            $message = "Data {$fieldName} berhasil disimpan (Shift {$shift}).";
+            $message = "Data {$fieldName} berhasil disimpan.";
 
             if ($hasil !== 'PENDING') {
                 if ($hasil === 'OK') {
@@ -177,7 +196,6 @@ class MonitoringDailyTankMikroController extends Controller
                 'status' => 'success',
                 'message' => $message,
                 'hasil' => $hasil,
-                'shift' => $shift,
                 'data' => [
                     'eb' => $monitoringDailyTank->eb,
                     'tpc' => $monitoringDailyTank->tpc,

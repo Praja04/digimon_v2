@@ -30,8 +30,8 @@
 
                             <div class="row g-3 text-dark">
                                 <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Tanggal Sample</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->tanggal_sampling ?? '-' }}</span>
+                                    <label class="d-block small text-muted mb-1">Waktu Scan</label>
+                                    <span class="fw-medium">{{ $monitoringDailyTank->scanned_at ?? '-' }}</span>
                                 </div>
 
                                 <div class="col-md-6 col-lg-4">
@@ -73,7 +73,7 @@
                         <div class="card-body p-4">
                             <form id="form">
                                 <div class="row g-3">
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <input type="hidden" name="id" id="id"
                                             value="{{ $monitoringDailyTank->id }}">
                                         <label class="form-label">BRIX <span style="color: red">*</span></label>
@@ -81,52 +81,52 @@
                                             placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->brix ?? '' }}">
                                         <small class="text-danger errorBrix"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">NACL <span style="color: red">*</span></label>
                                         <input type="text" name="nacl" id="nacl" class="form-control comma-input"
                                             placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->nacl ?? '' }}">
                                         <small class="text-danger errorNacl"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Bj <span style="color: red">*</span></label>
                                         <input type="text" name="bj" id="bj" class="form-control comma-input"
                                             placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->bj ?? '' }}">
                                         <small class="text-danger errorBj"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Visco <span style="color: red">*</span></label>
                                         <input type="text" name="visco" id="visco" class="form-control comma-input"
                                             placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->visco ?? '' }}">
                                         <small class="text-danger errorVisco"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Aw <span style="color: red">*</span></label>
                                         <input type="text" name="aw" id="aw" class="form-control comma-input"
                                             placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->aw ?? '' }}">
                                         <small class="text-danger errorAw"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">pH <span style="color: red">*</span></label>
                                         <input type="text" name="ph" id="ph"
                                             class="form-control comma-input" placeholder="Contoh: 0,00"
                                             value="{{ $monitoringDailyTank->ph ?? '' }}">
                                         <small class="text-danger errorPh"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Buih</label>
                                         <input type="text" name="buih" id="buih"
                                             class="form-control comma-input" placeholder="Contoh: 0,00"
                                             value="{{ $monitoringDailyTank->buih ?? '' }}">
                                         <small class="text-danger errorBuih"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Organo <span style="color: red">*</span></label>
                                         <input type="text" name="organo" id="organo" class="form-control"
                                             oninput="this.value = this.value.toUpperCase();"
                                             value="{{ $monitoringDailyTank->organo ?? '' }}">
                                         <small class="text-danger errorOrgano"></small>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Endapan</label>
                                         <input type="text" name="endapan" id="endapan" class="form-control"
                                             oninput="this.value = this.value.toUpperCase();"
@@ -146,7 +146,7 @@
                                         <small class="text-danger errorColor"></small>
                                     </div>
                                     @if (auth()->user()->role == 'Analis Kimia')
-                                        <div class="col-lg-12">
+                                        <div class="col-lg-6">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
                                             <select name="status_parameter" id="status_parameter" class="form-control">
                                                 <option value="">-- Pilih Status --</option>
@@ -161,7 +161,7 @@
                                             <small class="text-danger errorStatusParameter"></small>
                                         </div>
                                     @else
-                                        <div class="col-lg-12">
+                                        <div class="col-lg-6">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
                                             <input type="text" name="status_parameter" id="status_parameter"
                                                 class="form-control" value="{{ $monitoringDailyTank->status ?? '' }}"
@@ -210,8 +210,12 @@
 @endsection
 
 @section('scripts')
+
+
     <script>
-        $('.select2').select2();
+        $('.select2').select2({
+            placeholder: '-- Pilih Opsi --'
+        });
 
         $(document).ready(function() {
             $.ajaxSetup({
@@ -219,6 +223,17 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
+
+            const foreman = "{{ auth()->user()->role }}";
+
+            if (foreman == 'Foreman') {
+                setTimeout(function() {
+                    const disposisi = document.getElementById('status_disposisi');
+                    if (disposisi) {
+                        disposisi.focus();
+                    }
+                }, 300);
+            }
 
             document.querySelectorAll('.comma-input').forEach(function(el) {
                 el.addEventListener('input', function() {

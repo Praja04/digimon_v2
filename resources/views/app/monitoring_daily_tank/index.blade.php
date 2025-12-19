@@ -155,9 +155,9 @@
                                 <option value="DTP3">DTP3</option>
                                 <option value="DTS">DTS</option>
                                 <option value="DTB">DTB</option>
-                                <option value="K1">K1</option>
-                                <option value="K2">K2</option>
-                                <option value="K3">K3</option>
+                                <option value="DTD1">DTD1</option>
+                                <option value="DTD2">DTD2</option>
+                                <option value="DTD3">DTD3</option>
                             </select>
                             <small class="text-danger errorSamplingPoint"></small>
                         </div>
@@ -187,7 +187,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success" id="save">Simpan</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
                     </div>
                 </div>
             </form>
@@ -225,7 +226,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success" id="saveAnalisa">Simpan</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary" id="saveAnalisa">Simpan</button>
                     </div>
                 </div>
             </form>
@@ -233,172 +235,223 @@
     </div>
 
     <!-- Modal Detail -->
+    <!-- Modal Detail - Version Simple & Clean -->
     <div class="modal fade" id="modalDetail" tabindex="-1" aria-labelledby="modalDetailLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header py-2 bg-light">
-                    <h6 class="modal-title mb-0">Detail Monitoring Daily Tank</h6>
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail Monitoring Daily Tank</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-3">
-                    <!-- QR Code Section -->
-                    <div class="text-center mb-3" id="qrPrintAreaDetail">
-                        <div style="display: inline-block;" id="qr_code_container"></div>
-                        <p class="mt-2 mb-1 small text-muted" id="qr_code_text">-</p>
-                    </div>
-
-                    <div class="text-center mb-3">
-                        <button type="button" class="btn btn-sm btn-primary" onclick="printQR('qrPrintAreaDetail')">
-                            <i class="mdi mdi-printer"></i> Cetak QR
+                <div class="modal-body">
+                    <!-- QR Code -->
+                    <div class="text-center mb-3 pb-3 border-bottom" id="qrPrintAreaDetail">
+                        <div id="qr_code_container" class="mb-2"></div>
+                        <p class="small text-muted mb-2" id="qr_code_text">-</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="printQR('qrPrintAreaDetail')">
+                            Cetak QR
                         </button>
                     </div>
 
-                    <hr class="my-2">
-
                     <!-- Identitas Sampel -->
-                    <div class="mb-2">
-                        <small class="text-muted d-block mb-1 fw-bold">IDENTITAS SAMPEL</small>
-                        <div class="row g-1 small">
-                            <div class="col-4"><span class="text-muted">Storage:</span></div>
-                            <div class="col-8"><strong id="detail_storage">-</strong></div>
+                    <div class="mb-3">
+                        <h6 class="mb-2 fw-bold">Identitas Sampel</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr>
+                                <td class="text-muted" width="35%">Storage</td>
+                                <td width="5%">:</td>
+                                <td><strong id="detail_storage">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Sampling Point</td>
+                                <td>:</td>
+                                <td><strong id="detail_sampling_point">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Jenis Analisa</td>
+                                <td>:</td>
+                                <td><strong id="detail_jenis_analisa">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Jenis Sample</td>
+                                <td>:</td>
+                                <td><strong id="detail_jenis_sample">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Status</td>
+                                <td>:</td>
+                                <td><span id="detail_status_pemakaian">-</span></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Tgl Sampling</td>
+                                <td>:</td>
+                                <td><strong id="detail_tanggal_sampling">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">QC Field</td>
+                                <td>:</td>
+                                <td><strong id="detail_qc_field">-</strong></td>
+                            </tr>
+                        </table>
+                    </div>
 
-                            <div class="col-4"><span class="text-muted">Sampling Point:</span></div>
-                            <div class="col-8"><strong id="detail_sampling_point">-</strong></div>
-
-                            <div class="col-4"><span class="text-muted">Jenis Analisa:</span></div>
-                            <div class="col-8"><strong id="detail_jenis_analisa">-</strong></div>
-
-                            <div class="col-4"><span class="text-muted">Jenis Sample:</span></div>
-                            <div class="col-8"><strong id="detail_jenis_sample">-</strong></div>
-
-                            <div class="col-4"><span class="text-muted">Status:</span></div>
-                            <div class="col-8"><span id="detail_status_pemakaian">-</span></div>
-
-                            <div class="col-4"><span class="text-muted">Tgl Sampling:</span></div>
-                            <div class="col-8"><strong id="detail_tanggal_sampling">-</strong></div>
-
-                            <div class="col-4"><span class="text-muted">QC Field:</span></div>
-                            <div class="col-8"><strong id="detail_qc_field">-</strong></div>
+                    <!-- Info Belum Ada Analisa -->
+                    <div id="no_analisa_section">
+                        <div class="alert alert-light text-center border">
+                            <p class="mb-0 text-muted">Belum ada data analisa</p>
                         </div>
                     </div>
 
-                    <hr class="my-2">
-
-                    <!-- Data Analisa (tampil jika ada) -->
+                    <!-- Section Analisa -->
                     <div id="analisa_section" style="display: none;">
-                        <div class="mb-2">
-                            <small class="text-muted d-block mb-1 fw-bold">DATA ANALISA</small>
-                            <div class="row g-1 small">
-                                <div class="col-4"><span class="text-muted">Shift:</span></div>
-                                <div class="col-8"><strong id="detail_shift_analisa">-</strong></div>
-
-                                <div class="col-4"><span class="text-muted">QC Analisa:</span></div>
-                                <div class="col-8"><strong id="detail_qc_analisa">-</strong></div>
-
-                                <div class="col-4"><span class="text-muted">Tgl Analisa:</span></div>
-                                <div class="col-8"><strong id="detail_tanggal_analisa">-</strong></div>
+                        <!-- Data Analisa -->
+                        <div class="mb-3 pt-3 border-top">
+                            <h6 class="mb-2 fw-bold">Data Analisa</h6>
+                            <div class="row">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Shift</small>
+                                    <strong id="detail_shift_analisa">-</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">QC Analisa</small>
+                                    <strong id="detail_qc_analisa">-</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Tanggal Analisa</small>
+                                    <strong id="detail_tanggal_analisa">-</strong>
+                                </div>
                             </div>
                         </div>
 
-                        <hr class="my-2">
-
-                        <!-- Parameter Uji MIKRO -->
-                        <div id="parameter_mikro" style="display: none;">
-                            <div class="mb-2">
-                                <small class="text-muted d-block mb-1 fw-bold">PARAMETER UJI (MIKRO)</small>
-                                <div class="row g-1 small">
-                                    <div class="col-4"><span class="text-muted">EB:</span></div>
-                                    <div class="col-8"><strong id="detail_eb">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">TPC:</span></div>
-                                    <div class="col-8"><strong id="detail_tpc">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">YM:</span></div>
-                                    <div class="col-8"><strong id="detail_ym">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Hasil:</span></div>
-                                    <div class="col-8"><span id="detail_hasil">-</span></div>
+                        <!-- Parameter Mikro -->
+                        <div id="parameter_mikro" class="mb-3" style="display: none;">
+                            <h6 class="mb-2 fw-bold">Parameter Uji Mikrobiologi</h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <small class="text-muted d-block">EB</small>
+                                        <strong class="d-block" id="detail_eb">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <small class="text-muted d-block">TPC</small>
+                                        <strong class="d-block" id="detail_tpc">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <small class="text-muted d-block">YM</small>
+                                        <strong class="d-block" id="detail_ym">-</strong>
+                                    </div>
                                 </div>
                             </div>
-                            <hr class="my-2">
+                            <div class="text-center mt-2">
+                                <small class="text-muted d-block">Hasil</small>
+                                <div id="detail_hasil">-</div>
+                            </div>
                         </div>
 
-                        <!-- Parameter Uji KIMIA -->
-                        <div id="parameter_kimia" style="display: none;">
-                            <div class="mb-2">
-                                <small class="text-muted d-block mb-1 fw-bold">PARAMETER UJI (KIMIA)</small>
-                                <div class="row g-1 small">
-                                    <div class="col-4"><span class="text-muted">BRIX:</span></div>
-                                    <div class="col-8"><strong id="detail_brix">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">NACL:</span></div>
-                                    <div class="col-8"><strong id="detail_nacl">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Bj:</span></div>
-                                    <div class="col-8"><strong id="detail_bj">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Visco:</span></div>
-                                    <div class="col-8"><strong id="detail_visco">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Aw:</span></div>
-                                    <div class="col-8"><strong id="detail_aw">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">pH:</span></div>
-                                    <div class="col-8"><strong id="detail_ph">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Buih:</span></div>
-                                    <div class="col-8"><strong id="detail_buih">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Organo:</span></div>
-                                    <div class="col-8"><strong id="detail_organo">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Endapan:</span></div>
-                                    <div class="col-8"><strong id="detail_endapan">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Warna:</span></div>
-                                    <div class="col-8"><strong id="detail_color">-</strong></div>
-
-                                    <div class="col-4"><span class="text-muted">Status Parameter:</span></div>
-                                    <div class="col-8"><span id="detail_status_parameter">-</span></div>
+                        <!-- Parameter Kimia -->
+                        <div id="parameter_kimia" class="mb-3" style="display: none;">
+                            <h6 class="mb-2 fw-bold">Parameter Uji Kimia</h6>
+                            <div class="row g-2">
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">BRIX</small>
+                                        <strong id="detail_brix">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">NACL</small>
+                                        <strong id="detail_nacl">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">BJ</small>
+                                        <strong id="detail_bj">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">Visco</small>
+                                        <strong id="detail_visco">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">AW</small>
+                                        <strong id="detail_aw">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">pH</small>
+                                        <strong id="detail_ph">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">Buih</small>
+                                        <strong id="detail_buih">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">Warna</small>
+                                        <strong id="detail_color">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">Organo</small>
+                                        <strong id="detail_organo">-</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-2 text-center">
+                                        <small class="text-muted d-block">Endapan</small>
+                                        <strong id="detail_endapan">-</strong>
+                                    </div>
                                 </div>
                             </div>
-                            <hr class="my-2">
+                            <div class="text-center mt-2">
+                                <small class="text-muted d-block">Status Parameter</small>
+                                <div id="detail_status_parameter">-</div>
+                            </div>
                         </div>
 
                         <!-- Hasil & Disposisi -->
-                        <div class="mb-2">
-                            <small class="text-muted d-block mb-1 fw-bold">HASIL & DISPOSISI</small>
-                            <div class="row g-1 small">
-                                <div class="col-4"><span class="text-muted">Disposisi:</span></div>
-                                <div class="col-8"><span id="detail_status_disposisi">-</span></div>
-
-                                <div class="col-4" id="tindakan_label" style="display: none;"><span
-                                        class="text-muted">Tindakan:</span></div>
-                                <div class="col-8" id="tindakan_value" style="display: none;"><span
-                                        id="detail_tindakan_lanjutan">-</span></div>
-
-                                <div class="col-4" id="catatan_label" style="display: none;"><span
-                                        class="text-muted">Catatan:</span></div>
-                                <div class="col-8" id="catatan_value" style="display: none;"><em
-                                        id="detail_catatan_analis" class="text-muted small">-</em></div>
-
-                                <div class="col-4" id="alasan_label" style="display: none;"><span
-                                        class="text-muted">Alasan:</span></div>
-                                <div class="col-8" id="alasan_value" style="display: none;"><em
-                                        id="detail_alasan_disposisi" class="text-muted small">-</em></div>
+                        <div class="pt-3 border-top">
+                            <h6 class="mb-2 fw-bold">Hasil & Disposisi</h6>
+                            <div class="mb-2">
+                                <small class="text-muted d-block">Disposisi</small>
+                                <strong id="detail_status_disposisi">-</strong>
+                            </div>
+                            <div id="tindakan_section" class="mb-2" style="display: none;">
+                                <small class="text-muted d-block">Tindakan Lanjutan</small>
+                                <strong id="detail_tindakan_lanjutan">-</strong>
+                            </div>
+                            <div id="catatan_section" class="mb-2" style="display: none;">
+                                <small class="text-muted d-block">Catatan Analis</small>
+                                <div class="border rounded p-2 bg-light">
+                                    <em id="detail_catatan_analis" class="small">-</em>
+                                </div>
+                            </div>
+                            <div id="alasan_section" style="display: none;">
+                                <small class="text-muted d-block">Alasan Disposisi</small>
+                                <div class="border rounded p-2 bg-light">
+                                    <em id="detail_alasan_disposisi" class="small">-</em>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Info jika belum ada analisa -->
-                    <div id="no_analisa_section">
-                        <div class="alert alert-info py-2 mb-0 small text-center">
-                            <i class="mdi mdi-information-outline"></i> Belum ada data analisa
-                        </div>
-                    </div>
                 </div>
-                <div class="modal-footer py-2 bg-light">
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -433,6 +486,10 @@
                     text: 'Sample P'
                 },
                 {
+                    value: 'Sample PP',
+                    text: 'Sample PP'
+                },
+                {
                     value: 'Sample Tengah',
                     text: 'Sample Tengah'
                 },
@@ -447,7 +504,11 @@
                 {
                     value: 'Awal Transfer',
                     text: 'Awal Transfer'
-                }
+                },
+                {
+                    value: 'Sample Akhir',
+                    text: 'Sample Akhir'
+                },
             ];
 
             $('#jenis_analisa').on('change', function() {

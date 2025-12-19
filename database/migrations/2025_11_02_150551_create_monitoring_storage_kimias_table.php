@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('monitoring_storage_kimia', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->primary();
+            $table->id();
             $table->foreignId('production_batch_id')->constrained('production_batches')->onDelete('cascade');
             $table->string('batch_range')->nullable();
             $table->integer('nomor_blending')->nullable();

@@ -16,9 +16,4 @@ class MonitoringStorageMikro extends Model
     {
         return $this->belongsTo(ProductionBatch::class);
     }
-
-    public function konfirmasi()
-    {
-        return $this->hasOne(KonfirmasiMonitoringStorageMikro::class, 'monitoring_storage_mikro_id');
-    }
 }

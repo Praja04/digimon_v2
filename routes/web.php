@@ -146,7 +146,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/monitoring-pasteurisasi/{id}', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'show'])->name('monitoring-pasteurisasi.show');
         Route::post('/monitoring-pasteurisasi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'store'])->name('monitoring-pasteurisasi.store');
         Route::post('/monitoring-pasteurisasi/revisi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'storeRevisi'])->name('monitoring-pasteurisasi.storeRevisi');
+    });
 
+    Route::middleware(['user-access:Supervisor,Foreman,Analis Field'])->group(function () {
         // Monitoring Storage Kimia
         Route::get('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'index'])->name('monitoring-storage-kimia.index');
         Route::get('/monitoring-storage-kimia/get-last-revisi', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getLastRevisi'])->name('monitoring-storage-kimia.getLastRevisi');
@@ -233,8 +235,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/monitoring-storage-mikro/get-blending-data', [App\Http\Controllers\Analisa\MonitoringStorageMikroController::class, 'getData'])->name('analisa.monitoring-storage-mikro.getData');
         Route::get('/analisa/monitoring-storage-mikro/edit/{id}', [App\Http\Controllers\Analisa\MonitoringStorageMikroController::class, 'edit'])->name('analisa.monitoring-storage-mikro.edit');
         Route::get('/analisa/monitoring-storage-mikro/show/{id}', [App\Http\Controllers\Analisa\MonitoringStorageMikroController::class, 'show'])->name('analisa.monitoring-storage-mikro.show');
-        Route::get('/analisa/monitoring-storage-mikro/batch/{id}', [App\Http\Controllers\Analisa\MonitoringStorageMikroController::class, 'show_batch'])->name('analisa.monitoring-storage-mikro.show_batch');
         Route::post('/analisa/monitoring-storage-mikro/update', [App\Http\Controllers\Analisa\MonitoringStorageMikroController::class, 'update'])->name('analisa.monitoring-storage-mikro.update');
+        Route::get('/scan/batch/monitoring-storage-mikro/{id}', [App\Http\Controllers\Analisa\MonitoringStorageMikroController::class, 'show_batch'])->name('analisa.monitoring-storage-mikro.show_batch');
 
         // Analisa - Blending Awal - Mikro
         Route::get('/analisa/blending-awal/mikro/index', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'index'])->name('analisa.blending-awal-mikro.index');

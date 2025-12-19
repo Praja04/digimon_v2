@@ -145,7 +145,7 @@
 
                         {{-- Monitoring Filling Menu --}}
                         <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-daily-tank.menu', 'monitoring-daily-tank.index', 'monitoring-daily-tank.show', 'analisa.monitoring-daily-tank-mikro.show', 'analisa.monitoring-daily-tank-kimia.show', 'monitoring-ongoing-kimia.index', 'monitoring-ongoing-mikro.index', 'monitoring-ongoing-kimia.show', 'monitoring-ongoing-mikro.show']) ? 'active' : '' }}"
+                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-daily-tank.menu', 'monitoring-daily-tank.index', 'monitoring-daily-tank.show', 'analisa.monitoring-daily-tank-mikro.show', 'analisa.monitoring-daily-tank-kimia.show', 'monitoring-ongoing-kimia.index', 'monitoring-ongoing-mikro.index', 'monitoring-ongoing-kimia.show', 'monitoring-ongoing-mikro.analisa']) ? 'active' : '' }}"
                                 href="{{ route('monitoring-daily-tank.menu') }}">
                                 <i class="mdi mdi-bottle-wine"></i> <span>Monitoring Filling</span>
                             </a>

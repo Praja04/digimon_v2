@@ -15,11 +15,6 @@ class MonitoringOnGoingKimia extends Model
         return $this->hasOne(ProductionBatch::class, 'id', 'production_batch_id');
     }
 
-    public function analis()
-    {
-        return $this->belongsTo(User::class, 'analis_id');
-    }
-
     public function color()
     {
         return $this->belongsTo(Color::class, 'color_id');

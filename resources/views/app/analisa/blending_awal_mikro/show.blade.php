@@ -108,6 +108,8 @@
                                                 <th>Batch Range</th>
                                                 <th>No Blending</th>
                                                 <th>Volume</th>
+                                                <th>Nama Analis</th>
+                                                <th>Shift Analis</th>
                                                 <th>EB</th>
                                                 <th>TPC</th>
                                                 <th>YM</th>
@@ -124,6 +126,9 @@
                                                     <td>{{ $blending->batch_range }}</td>
                                                     <td>{{ $blending->nomor_blending }}</td>
                                                     <td>{{ $blending->volume }}</td>
+                                                    <td>{{ $blending->nama_analis ?? '-' }}</td>
+                                                    <td>{{ $blending->shift ? 'Shift ' . $blending->shift : '-' }}
+                                                    </td>
                                                     <td>{{ $blending->eb ?? '-' }}</td>
                                                     <td>{{ $blending->tpc ?? '-' }}</td>
                                                     <td>{{ $blending->ym ?? '-' }}</td>

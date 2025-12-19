@@ -114,6 +114,7 @@ class MonitoringOnGoingMikroController extends Controller
                     'variant' => $request->variant,
                     'no_filler' => $request->no_filler,
                     'no_kempu_jeriken' => $noKempuJeriken,
+                    'running_number' => $request->running_number,
                     'koding' => $request->koding,
                     'jam_koding' => $request->jam_koding,
                     'jenis_sampel_1' => $request->jenis_sampel_1,
@@ -167,10 +168,6 @@ class MonitoringOnGoingMikroController extends Controller
         try {
             $monitoring = MonitoringOnGoingMikro::with([
                 'productionBatch',
-                'analisEb',
-                'analisTpc',
-                'analisYm',
-                'analisBendaAsing'
             ])->findOrFail($id);
 
             $qrCode = DNS2DFacade::getBarcodePNG(route('monitoring-ongoing-mikro.analisa', $monitoring->id), 'QRCODE');
@@ -190,6 +187,7 @@ class MonitoringOnGoingMikroController extends Controller
                 'variant' => $monitoring->variant,
                 'no_filler' => $monitoring->no_filler,
                 'no_kempu_jeriken' => $monitoring->no_kempu_jeriken,
+                'running_number' => $monitoring->running_number,
                 'filling_date' => $monitoring->filling_date,
                 'filling_date_formatted' => $monitoring->filling_date ?
                     \Carbon\Carbon::parse($monitoring->filling_date)->locale('id')->translatedFormat('d F Y') : '-',
@@ -245,7 +243,6 @@ class MonitoringOnGoingMikroController extends Controller
     {
         try {
             $mergeData = [];
-
             if ($request->filled('eb')) {
                 $mergeData['eb'] = str_replace(',', '.', $request->eb);
             }
@@ -273,27 +270,57 @@ class MonitoringOnGoingMikroController extends Controller
             $rules = [];
             $updateData = [];
 
+            if ($request->filled('shift_analis') || $request->filled('nama_analis')) {
+                $rules['shift_analis'] = 'required|integer|min:1|max:3';
+                $rules['nama_analis'] = 'required|string|max:255';
+
+                $updateData['shift'] = $request->shift_analis;
+                $updateData['nama_analis'] = $request->nama_analis;
+            }
+
             if ($request->filled('eb')) {
+                if (empty($monitoringOnGoing->shift) || empty($monitoringOnGoing->nama_analis)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input EB.'
+                    ], 409);
+                }
                 $rules['eb'] = 'required|numeric|min:0';
                 $updateData['eb'] = $request->eb;
-                $updateData['analis_eb'] = auth()->user()->id;
             }
 
             if ($request->filled('tpc')) {
+                if (empty($monitoringOnGoing->shift) || empty($monitoringOnGoing->nama_analis)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input TPC.'
+                    ], 409);
+                }
                 $rules['tpc'] = 'required|numeric|min:0';
                 $updateData['tpc'] = $request->tpc;
-                $updateData['analis_tpc'] = auth()->user()->id;
             }
 
             if ($request->filled('ym')) {
+                if (empty($monitoringOnGoing->shift) || empty($monitoringOnGoing->nama_analis)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input YM.'
+                    ], 409);
+                }
                 $rules['ym'] = 'required|numeric|min:0';
                 $updateData['ym'] = $request->ym;
-                $updateData['analis_ym'] = auth()->user()->id;
             }
 
             // ✅ Validasi hanya field yang ada di rules
             if (!empty($rules)) {
                 $validator = Validator::make($request->only(array_keys($rules)), $rules, [
+                    'shift_analis.required' => 'Shift wajib diisi.',
+                    'shift_analis.integer' => 'Shift harus berupa angka.',
+                    'shift_analis.min' => 'Shift minimal 1.',
+                    'shift_analis.max' => 'Shift maksimal 3.',
+                    'nama_analis.required' => 'Nama Analis wajib diisi.',
+                    'nama_analis.string' => 'Nama Analis harus berupa teks.',
+                    'nama_analis.max' => 'Nama Analis maksimal 255 karakter.',
                     'eb.required' => 'EB wajib diisi.',
                     'eb.numeric' => 'EB harus berupa angka.',
                     'eb.min' => 'EB tidak boleh negatif.',
@@ -319,16 +346,6 @@ class MonitoringOnGoingMikroController extends Controller
                     'status' => 'error',
                     'message' => 'Tidak ada data yang diinput.'
                 ], 409);
-            }
-
-            // ✅ TENTUKAN SHIFT OTOMATIS BERDASARKAN JAM
-            $currentHour = (int) now()->format('H');
-            if ($currentHour >= 6 && $currentHour < 14) {
-                $shift = 1;
-            } elseif ($currentHour >= 14 && $currentHour < 22) {
-                $shift = 2;
-            } else {
-                $shift = 3;
             }
 
             // Update data
@@ -358,7 +375,7 @@ class MonitoringOnGoingMikroController extends Controller
             if (isset($updateData['tpc'])) $fieldName = 'TPC';
             if (isset($updateData['ym'])) $fieldName = 'YM';
 
-            $message = "Data {$fieldName} berhasil disimpan (Shift {$shift}).";
+            $message = "Data {$fieldName} berhasil disimpan.";
 
             if ($hasil !== 'PENDING') {
                 if ($hasil === 'OK') {
@@ -372,7 +389,6 @@ class MonitoringOnGoingMikroController extends Controller
                 'status' => 'success',
                 'message' => $message,
                 'hasil' => $hasil,
-                'shift' => $shift,
                 'data' => [
                     'eb' => $monitoringOnGoing->eb,
                     'tpc' => $monitoringOnGoing->tpc,

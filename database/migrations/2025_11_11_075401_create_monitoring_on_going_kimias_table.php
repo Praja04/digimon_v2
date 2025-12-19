@@ -21,9 +21,8 @@ return new class extends Migration
             $table->time('jam_koding');
 
             // Data analisa lab kimia
-            $table->foreignId('analis_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->string('nama_analis')->nullable();
             $table->string('shift')->nullable();
-            $table->timestamp('received_at')->nullable();
 
             // Parameter analisa
             $table->string('berat_jenis')->nullable();

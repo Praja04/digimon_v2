@@ -31,6 +31,7 @@ class MonitoringOnGoingMikroRequest extends FormRequest
 
             if ($isKempuOrJeriken) {
                 $rules['no_kempu_jeriken'] = 'required|integer';
+                $rules['running_number'] = 'required|string';
             } else {
                 $rules['no_kempu_jeriken'] = 'nullable|integer';
             }
@@ -50,6 +51,7 @@ class MonitoringOnGoingMikroRequest extends FormRequest
             'variant' => 'Variant',
             'no_filler' => 'Nomor Filler',
             'no_kempu_jeriken' => 'Nomor Kempu / Jeriken',
+            'running_number' => 'Running Number',
             'koding' => 'Koding',
             'jam_koding' => 'Jam Koding',
             'jenis_sampel_1' => 'Jenis Sampel 1',
