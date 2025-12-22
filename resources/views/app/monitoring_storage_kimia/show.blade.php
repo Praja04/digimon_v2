@@ -400,7 +400,7 @@
                         <div class="mb-3">
                             <label for="nomor_blending" class="form-label">Nomor Blending <span
                                     style="color: red">*</span></label>
-                            <input type="number" name="nomor_blending" id="nomor_blending" class="form-control">
+                            <input type="text" name="nomor_blending" id="nomor_blending" class="form-control">
                             <small class="text-danger errorNomorBlending"></small>
                         </div>
 

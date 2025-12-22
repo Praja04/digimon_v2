@@ -34,9 +34,9 @@ class MonitoringStorageBeforeUseStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'visco' => 'required|numeric|max:20',
+            'visco' => 'required|numeric',
             'brix' => 'required|numeric|min:0|max:100',
-            'aw' => 'required|numeric|max:20',
+            'aw' => 'required|numeric',
         ];
     }
 

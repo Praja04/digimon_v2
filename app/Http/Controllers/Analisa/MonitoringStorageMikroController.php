@@ -221,7 +221,7 @@ class MonitoringStorageMikroController extends Controller
                     return response()->json([
                         'status' => 'error',
                         'errors' => $validator->errors()
-                    ], 422);
+                    ], 409);
                 }
             }
 

@@ -703,6 +703,20 @@
             });
         }
 
+        function formatDecimal(value, forDatabase = false) {
+            if (value === null || value === undefined || value === '') {
+                return '';
+            }
+
+            let stringValue = String(value);
+
+            if (forDatabase) {
+                return stringValue.replace(/\./g, '').replace(',', '.');
+            } else {
+                return stringValue.replace(/\./g, ',');
+            }
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -791,8 +805,8 @@
                         $('.modal-title').text('Kelola Data GGA');
 
                         $('#id').val(response.id);
-                        $('#brix').val(response.brix);
-                        $('#nacl').val(response.nacl);
+                        $('#brix').val(formatDecimal(response.brix));
+                        $('#nacl').val(formatDecimal(response.nacl));
                         $('#organo').val(response.organo || '');
                         $('#disposition_remark').val(response.disposition_remark || '');
 

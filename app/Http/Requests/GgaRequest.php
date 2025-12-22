@@ -32,7 +32,7 @@ class GgaRequest extends FormRequest
         return [
             'brix' => 'required|numeric|min:0|max:100',
             'nacl' => 'required|numeric|min:0|max:100',
-            'organo' => 'required|string|max:20',
+            'organo' => 'required|string',
             'status_disposition' => 'required',
             'disposition_remaks' => 'nullable|string|max:255',
             'adjustment_qty_gula_tebu' => 'nullable|numeric',

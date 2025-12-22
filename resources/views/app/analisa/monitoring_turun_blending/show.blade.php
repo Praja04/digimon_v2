@@ -545,6 +545,20 @@
 
 @section('scripts')
     <script>
+        function formatDecimal(value, forDatabase = false) {
+            if (value === null || value === undefined || value === '') {
+                return '';
+            }
+
+            let stringValue = String(value);
+
+            if (forDatabase) {
+                return stringValue.replace(/\./g, '').replace(',', '.');
+            } else {
+                return stringValue.replace(/\./g, ',');
+            }
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -632,13 +646,13 @@
                         const userRole = "{{ auth()->user()->role }}";
 
                         $('#id').val(response.id);
-                        $('#brix').val(response.brix);
-                        $('#nacl').val(response.nacl);
-                        $('#bj').val(response.bj);
-                        $('#visco').val(response.visco);
-                        $('#aw').val(response.aw);
-                        $('#ph').val(response.ph);
-                        $('#buih').val(response.buih);
+                        $('#brix').val(formatDecimal(response.brix));
+                        $('#nacl').val(formatDecimal(response.nacl));
+                        $('#bj').val(formatDecimal(response.bj));
+                        $('#visco').val(formatDecimal(response.visco));
+                        $('#aw').val(formatDecimal(response.aw));
+                        $('#ph').val(formatDecimal(response.ph));
+                        $('#buih').val(formatDecimal(response.buih));
                         $('#organo').val(response.organo);
                         $('#endapan').val(response.endapan);
                         $('#color').val(response.color_id).trigger('change');

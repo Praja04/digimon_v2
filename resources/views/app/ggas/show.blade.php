@@ -624,6 +624,19 @@
             });
         }
 
+        function formatDecimal(value, forDatabase = false) {
+            if (value === null || value === undefined || value === '') {
+                return '';
+            }
+
+            let stringValue = String(value);
+
+            if (forDatabase) {
+                return stringValue.replace(/\./g, '').replace(',', '.');
+            } else {
+                return stringValue.replace(/\./g, ',');
+            }
+        }
 
         $(document).ready(function() {
             $.ajaxSetup({
@@ -684,14 +697,14 @@
                     },
                     success: function(response) {
                         const userRole =
-                            "{{ auth()->user()->role }}"; // FIX: Deklarasi userRole di sini
+                            "{{ auth()->user()->role }}";
 
                         $('.modal-title').text('Kelola Data GGAS');
 
                         $('#id').val(response.id);
-                        $('#brix').val(response.brix);
-                        $('#nacl').val(response.nacl || ''); // FIX: Tambahkan fallback
-                        $('#organo').val(response.organo || ''); // FIX: Tambahkan fallback
+                        $('#brix').val(formatDecimal(response.brix));
+                        $('#nacl').val(formatDecimal(response.nacl));
+                        $('#organo').val(response.organo || '');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         // FIX: Set value status dulu sebelum disable

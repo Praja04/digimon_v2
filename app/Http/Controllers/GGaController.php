@@ -177,7 +177,7 @@ class GGaController extends Controller
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Foreman wajib memilih disposisi.'
-                    ], 422);
+                    ], 409);
                 }
 
                 $disposition = $request->disposition;
