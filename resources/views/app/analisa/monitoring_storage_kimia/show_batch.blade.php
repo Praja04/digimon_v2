@@ -81,6 +81,39 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-list-ordered"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Batch :</p>
+                                                            <h5 class="mb-0">{{ $blending->batch_range }}
+                                                            </h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-hashtag"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Nomor Blending :</p>
+                                                            <h5 class="mb-0">{{ $blending->nomor_blending }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <!-- end row -->
 
@@ -111,6 +144,12 @@
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-4">
+                                            <label class="form-label">Visco <span style="color: red">*</span></label>
+                                            <input type="text" name="visco" id="visco"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                            <small class="text-danger errorVisco"></small>
+                                        </div>
+                                        <div class="col-lg-4">
                                             <label class="form-label">NACL <span style="color: red">*</span></label>
                                             <input type="text" name="nacl" id="nacl"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00">
@@ -123,10 +162,10 @@
                                             <small class="text-danger errorBj"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">Visco <span style="color: red">*</span></label>
-                                            <input type="text" name="visco" id="visco"
+                                            <label class="form-label">pH</label>
+                                            <input type="text" name="ph" id="ph"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00">
-                                            <small class="text-danger errorVisco"></small>
+                                            <small class="text-danger errorPh"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Aw <span style="color: red">*</span></label>
@@ -135,22 +174,16 @@
                                             <small class="text-danger errorAw"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">pH</label>
-                                            <input type="text" name="ph" id="ph"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
-                                            <small class="text-danger errorPh"></small>
+                                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                                            <input type="text" name="organo" id="organo" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();">
+                                            <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Buih</label>
                                             <input type="text" name="buih" id="buih"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00">
                                             <small class="text-danger errorBuih"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Organo <span style="color: red">*</span></label>
-                                            <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
-                                            <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Endapan</label>

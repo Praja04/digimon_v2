@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'Detail Monitoring Storage Kimia')
+@section('title', 'Detail Monitoring Storage')
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -13,7 +13,7 @@
                             <ol class="breadcrumb m-0">
                                 <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
                                 <li class="breadcrumb-item"><a
-                                        href="{{ route('monitoring-storage-kimia.index') }}">Monitoring Storage Kimia</a>
+                                        href="{{ route('monitoring-storage-kimia.index') }}">Monitoring Storage</a>
                                 </li>
                                 <li class="breadcrumb-item active">@yield('title')</li>
                             </ol>
@@ -46,7 +46,7 @@
                                                     <div class="text-end">
                                                         <button class="btn btn-primary" data-bs-toggle="modal"
                                                             data-bs-target="#inputModal">
-                                                            Input Monitoring Storage Kimia
+                                                            Input Monitoring Storage
                                                         </button>
                                                     </div>
                                                 </div>
@@ -570,7 +570,6 @@
         const allBatches = @json($filteredBatchGroups);
         const validGgasBatches = @json($filteredBatchGroups);
 
-        // Isi select option hanya dengan batch yang valid
         function populateBatchOptions() {
             const $start = $('#batch_range');
             $start.empty();
@@ -729,165 +728,242 @@
             win.close();
         }
 
+        $('#batch_range').on('change', function() {
+            const selectedBatch = $(this).val();
+
+            if (!selectedBatch) {
+                $('#nomor_blending').val('');
+                $('#volume').val('');
+                $('#storage').val('');
+                return;
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "{{ route('monitoring-storage-kimia.getBatchData') }}",
+                data: {
+                    production_batch_id: "{{ $productionBatch->id }}",
+                    batch_range: selectedBatch
+                },
+                dataType: "json",
+                success: function(response) {
+                    Swal.close();
+
+                    if (response.status === 'success' && response.data) {
+                        const data = response.data;
+
+                        $('#nomor_blending').val(data.nomor_blending || '');
+
+                        if (data.volume_after_cooling) {
+                            const formattedVolume = parseFloat(data.volume_after_cooling)
+                                .toFixed(2)
+                                .replace('.', ',');
+                            $('#volume').val(formattedVolume);
+                        } else {
+                            $('#volume').val('');
+                        }
+
+                        if (data.storage) {
+                            $('#storage').val(data.storage);
+                        } else {
+                            $('#storage').val('');
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Data Tidak Lengkap',
+                            text: 'Beberapa data mungkin perlu diisi manual',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.close();
+
+                    let errorMessage = 'Gagal memuat data batch dari Portal Produksi';
+                    let errorTitle = 'Kesalahan';
+
+                    if (xhr.status === 404) {
+                        errorTitle = 'Data Tidak Ditemukan';
+                        errorMessage = 'Data monitoring pasteurisasi tidak ditemukan untuk batch ini.';
+                    } else if (xhr.status === 401) {
+                        errorTitle = 'Autentikasi Gagal';
+                        errorMessage = 'Koneksi ke Portal Produksi gagal. Hubungi administrator.';
+                    } else if (xhr.status === 0 || xhr.statusText === 'timeout') {
+                        errorTitle = 'Timeout';
+                        errorMessage = 'Koneksi ke Portal Produksi timeout. Coba lagi.';
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: errorTitle,
+                        html: `<p>${errorMessage}</p><small>Silakan isi form secara manual atau coba lagi.</small>`,
+                        confirmButtonText: 'OK'
+                    });
+
+                    $('#nomor_blending').val('');
+                    $('#volume').val('');
+                    $('#storage').val('');
+                }
+            });
+        });
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
+            populateBatchOptions();
 
-            $(document).ready(function() {
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
+            if ($('#batch_range').val()) {
+                $('#batch_range').trigger('change');
+            }
 
-                populateBatchOptions();
+            $('#form').submit(function(e) {
+                e.preventDefault();
+                $.ajax({
+                    data: $(this).serialize(),
+                    url: "{{ route('monitoring-storage-kimia.store') }}",
+                    type: "POST",
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#save').prop('disabled', true).html(
+                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
+                        );
 
-                $('#form').submit(function(e) {
-                    e.preventDefault();
-                    $.ajax({
-                        data: $(this).serialize(),
-                        url: "{{ route('monitoring-storage-kimia.store') }}",
-                        type: "POST",
-                        dataType: 'json',
-                        beforeSend: function() {
-                            $('#save').prop('disabled', true).html(
-                                '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                            );
+                        $('.form-control').removeClass('is-invalid');
+                        $('.text-danger').html('');
+                    },
+                    complete: function() {
+                        $('#save').prop('disabled', false).text('Simpan');
+                    },
+                    success: function(response) {
+                        $('#inputModal').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sukses',
+                            text: response.message,
+                        }).then(() => {
+                            window.location.reload()
+                        });
+                    },
+                    error: function(xhr) {
+                        let response = xhr.responseJSON;
 
-                            $('.form-control').removeClass('is-invalid');
-                            $('.text-danger').html('');
-                        },
-                        complete: function() {
-                            $('#save').prop('disabled', false).text('Simpan');
-                        },
-                        success: function(response) {
-                            $('#inputModal').modal('hide');
+                        if (xhr.status === 409 && response && response.message) {
                             Swal.fire({
-                                icon: 'success',
-                                title: 'Sukses',
+                                icon: 'warning',
+                                title: 'Gagal Disimpan',
                                 text: response.message,
-                            }).then(() => {
-                                window.location.reload()
                             });
-                        },
-                        error: function(xhr) {
-                            let response = xhr.responseJSON;
-
-                            if (xhr.status === 409 && response && response.message) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Gagal Disimpan',
-                                    text: response.message,
-                                });
-                                $('#save').prop('disabled', false).text('Simpan');
-                                return;
-                            }
-
-                            if (xhr.status === 422) {
-                                let errors = response.errors;
-                                if (errors.batch_start) {
-                                    $('#batch_start').addClass('is-invalid');
-                                    $('.errorBatchStart').html(errors.batch_start.join(
-                                        '<br>'));
-                                }
-                                if (errors.batch_end) {
-                                    $('#batch_end').addClass('is-invalid');
-                                    $('.errorBatchEnd').html(errors.batch_end.join(
-                                        '<br>'));
-                                }
-                                if (errors.nomor_blending) {
-                                    $('#nomor_blending').addClass('is-invalid');
-                                    $('.errorNomorBlending').html(errors.nomor_blending
-                                        .join(
-                                            '<br>'));
-                                }
-
-                                if (errors.volume) {
-                                    $('#volume').addClass('is-invalid');
-                                    $('.errorVolume').html(errors.volume.join('<br>'));
-                                }
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Kesalahan',
-                                    text: 'Terjadi kesalahan, silakan coba lagi.',
-                                });
-                            }
+                            $('#save').prop('disabled', false).text('Simpan');
+                            return;
                         }
-                    })
+
+                        if (xhr.status === 422) {
+                            let errors = response.errors;
+                            if (errors.batch_start) {
+                                $('#batch_start').addClass('is-invalid');
+                                $('.errorBatchStart').html(errors.batch_start.join(
+                                    '<br>'));
+                            }
+                            if (errors.batch_end) {
+                                $('#batch_end').addClass('is-invalid');
+                                $('.errorBatchEnd').html(errors.batch_end.join(
+                                    '<br>'));
+                            }
+                            if (errors.nomor_blending) {
+                                $('#nomor_blending').addClass('is-invalid');
+                                $('.errorNomorBlending').html(errors.nomor_blending
+                                    .join(
+                                        '<br>'));
+                            }
+
+                            if (errors.volume) {
+                                $('#volume').addClass('is-invalid');
+                                $('.errorVolume').html(errors.volume.join('<br>'));
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Kesalahan',
+                                text: 'Terjadi kesalahan, silakan coba lagi.',
+                            });
+                        }
+                    }
                 })
+            })
 
-                $('#formRevisi').submit(function(e) {
-                    e.preventDefault();
-                    $.ajax({
-                        data: $(this).serialize(),
-                        url: "{{ route('monitoring-storage-kimia.storeRevisi') }}",
-                        type: "POST",
-                        dataType: 'json',
-                        beforeSend: function() {
-                            $('#save_revisi_blending').prop('disabled', true).html(
-                                '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                            );
+            $('#formRevisi').submit(function(e) {
+                e.preventDefault();
+                $.ajax({
+                    data: $(this).serialize(),
+                    url: "{{ route('monitoring-storage-kimia.storeRevisi') }}",
+                    type: "POST",
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#save_revisi_blending').prop('disabled', true).html(
+                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
+                        );
 
-                            $('.form-control').removeClass('is-invalid');
-                            $('.text-danger').html('');
-                        },
-                        complete: function() {
+                        $('.form-control').removeClass('is-invalid');
+                        $('.text-danger').html('');
+                    },
+                    complete: function() {
+                        $('#save_revisi_blending').prop('disabled', false).text(
+                            'Generate Ulang');
+                    },
+                    success: function(response) {
+                        $('#modalRevisi').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sukses',
+                            text: response.message,
+                        }).then(() => {
+                            window.location.reload()
+                        });
+                    },
+                    error: function(xhr) {
+                        let response = xhr.responseJSON;
+
+                        if (xhr.status === 409 && response && response.message) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Gagal Disimpan',
+                                text: response.message,
+                            });
                             $('#save_revisi_blending').prop('disabled', false).text(
                                 'Generate Ulang');
-                        },
-                        success: function(response) {
-                            $('#modalRevisi').modal('hide');
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Sukses',
-                                text: response.message,
-                            }).then(() => {
-                                window.location.reload()
-                            });
-                        },
-                        error: function(xhr) {
-                            let response = xhr.responseJSON;
-
-                            if (xhr.status === 409 && response && response.message) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Gagal Disimpan',
-                                    text: response.message,
-                                });
-                                $('#save_revisi_blending').prop('disabled', false).text(
-                                    'Generate Ulang');
-                                return;
-                            }
-
-                            if (xhr.status === 422) {
-                                let errors = response.errors;
-                                if (errors.no_blending_revisi) {
-                                    $('#no_blending_revisi').addClass('is-invalid');
-                                    $('.errorNoBlendingRevisi').html(errors
-                                        .no_blending_revisi.join(
-                                            '<br>'));
-                                }
-
-                                if (errors.volume_revisi) {
-                                    $('#volume_revisi').addClass('is-invalid');
-                                    $('.errorVolumeRevisi').html(errors.volume_revisi
-                                        .join('<br>'));
-                                }
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Kesalahan',
-                                    text: 'Terjadi kesalahan, silakan coba lagi.',
-                                });
-                            }
+                            return;
                         }
-                    })
+
+                        if (xhr.status === 422) {
+                            let errors = response.errors;
+                            if (errors.no_blending_revisi) {
+                                $('#no_blending_revisi').addClass('is-invalid');
+                                $('.errorNoBlendingRevisi').html(errors
+                                    .no_blending_revisi.join(
+                                        '<br>'));
+                            }
+
+                            if (errors.volume_revisi) {
+                                $('#volume_revisi').addClass('is-invalid');
+                                $('.errorVolumeRevisi').html(errors.volume_revisi
+                                    .join('<br>'));
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Kesalahan',
+                                text: 'Terjadi kesalahan, silakan coba lagi.',
+                            });
+                        }
+                    }
                 })
-            });
+            })
         });
     </script>
 @endsection

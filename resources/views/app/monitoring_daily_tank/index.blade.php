@@ -474,6 +474,22 @@
             win.close();
         }
 
+        document.querySelectorAll('.comma-input').forEach(function(el) {
+            el.addEventListener('input', function() {
+                const value = this.value;
+                if (value.includes('.')) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Format Salah!',
+                        text: 'Gunakan tanda koma (,) untuk desimal, bukan titik (.)',
+                        confirmButtonText: 'Mengerti',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    this.value = value.replace(/\./g, ',');
+                }
+            });
+        });
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -981,10 +997,10 @@
 
                             if (response.status === 'success' && response.count > 0) {
 
-                                response.po_list.forEach(item => { // Iterasi melalui 'po_list'
+                                response.po_list.forEach(item => 
                                     $nomorPO.append(
                                         `<option value="${item.id}">${item.po_number}</option>`
-                                    ); // Value: ID, Text: Nomor PO
+                                    ); 
                                 });
 
                                 if (response.count === 1) {

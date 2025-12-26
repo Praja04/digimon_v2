@@ -12,6 +12,7 @@ use App\Models\MonitoringStorageMikro;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
 
 class MonitoringStorageKimiaController extends Controller
@@ -288,6 +289,98 @@ class MonitoringStorageKimiaController extends Controller
             'productionBatch',
             'filteredBatchGroups'
         ));
+    }
+
+    public function getBatchData(Request $request)
+    {
+        try {
+            $request->validate([
+                'production_batch_id' => 'required|integer',
+                'batch_range' => 'required|string',
+            ]);
+
+            $productionBatchId = $request->production_batch_id;
+            $batchRange = $request->batch_range;
+
+            $validDispositions = ['Release', 'Release Bersyarat'];
+
+            $monitoringPasteurisasi = MonitoringPasteurisasi::where('production_batch_id', $productionBatchId)
+                ->where('batch_range', $batchRange)
+                ->whereIn('disposition', $validDispositions)
+                ->orderByDesc('revisi')
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$monitoringPasteurisasi) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data monitoring pasteurisasi tidak ditemukan untuk batch ini.',
+                ], 404);
+            }
+
+            try {
+                $response = Http::get(env('PRODUCTION_URL') . "api/monitoring-pasteurisasi/{$monitoringPasteurisasi->id}");
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+
+                    if (isset($apiData['status']) && $apiData['status'] === 'success' && isset($apiData['data'])) {
+                        $data = $apiData['data'];
+
+                        return response()->json([
+                            'status' => 'success',
+                            'message' => 'Data berhasil dimuat.',
+                            'data' => [
+                                'nomor_blending' => $data['nomor_blending'] ?? null,
+                                'volume_after_cooling' => $data['volume_after_cooling'] ?? null,
+                                'storage' => $data['storage'] ?? null,
+                                'batch_range' => $data['batch_range'] ?? $batchRange,
+                            ]
+                        ], 200);
+                    }
+                }
+
+                // Handle error response dari API
+                $errorMessage = 'Gagal mengambil data dari Portal Produksi.';
+
+                if ($response->status() === 404) {
+                    $errorMessage = 'Data tidak ditemukan di Portal Produksi.';
+                } elseif ($response->status() === 401) {
+                    $errorMessage = 'Autentikasi gagal. Periksa API token.';
+                } elseif ($response->status() === 500) {
+                    $errorMessage = 'Portal Produksi mengalami kesalahan server.';
+                }
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $errorMessage,
+                    'api_status' => $response->status(),
+                ], 500);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tidak dapat terhubung ke Portal Produksi. Periksa koneksi network.',
+                    'error' => $e->getMessage(),
+                ], 500);
+            } catch (\Illuminate\Http\Client\RequestException $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Kesalahan saat melakukan request ke Portal Produksi.',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function store(MonitoringStorageKimiaStoreRequest $request)

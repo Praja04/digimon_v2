@@ -294,6 +294,7 @@ class MonitoringStorageKimiaController extends Controller
                         'revisi' => $updateData['revisi'],
                         'is_adjustment' => $status_disposition === 'Adjustment',
                         'not_standard' => $updateData['not_standard'] ?? false,
+                        'storage' => $monitoringStorageKimia->storage,
                         'status' => $status_disposition,
                     ]);
                 } catch (\Exception $apiException) {

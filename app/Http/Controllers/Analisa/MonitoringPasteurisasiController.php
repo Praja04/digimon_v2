@@ -257,21 +257,21 @@ class MonitoringPasteurisasiController extends Controller
                 $dispositionChanged = ($pasteurisasi->disposition !== $disposition);
                 $updateData['disposition'] = $disposition;
 
-                // Validasi disposition untuk shift yang sama (khusus Foreman)
-                $existingDisposition = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
-                    ->where('batch_range', $pasteurisasi->batch_range)
-                    ->where('shift', $shift)
-                    ->where('disposition', $disposition)
-                    ->where('id', '!=', $id)
-                    ->first();
+                // // Validasi disposition untuk shift yang sama (khusus Foreman)
+                // $existingDisposition = MonitoringPasteurisasi::where('production_batch_id', $pasteurisasi->production_batch_id)
+                //     ->where('batch_range', $pasteurisasi->batch_range)
+                //     ->where('shift', $shift)
+                //     ->where('disposition', $disposition)
+                //     ->where('id', '!=', $id)
+                //     ->first();
 
-                if ($existingDisposition) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
-                    ], 409);
-                }
+                // if ($existingDisposition) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'status' => 'error',
+                //         'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
+                //     ], 409);
+                // }
             }
 
             // Handle Adjustment
@@ -384,9 +384,9 @@ class MonitoringPasteurisasiController extends Controller
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data berhasil diperbarui.'
-                    : 'Data berhasil disimpan untuk shift ' . $shift . '.';
+                    : 'Data berhasil disimpan.';
             } elseif ($userRole === 'Foreman') {
-                $message = 'Disposisi berhasil diberikan untuk shift ' . $shift . '.';
+                $message = 'Disposisi berhasil diberikan.';
             } else {
                 $message = 'Data berhasil disimpan.';
             }

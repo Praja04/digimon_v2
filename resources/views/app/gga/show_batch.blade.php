@@ -87,7 +87,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Batch Number :</p>
+                                                            <p class="text-muted mb-1">Batch :</p>
                                                             <h5 class="mb-0">{{ $gga->batch_number }}
                                                             </h5>
                                                         </div>

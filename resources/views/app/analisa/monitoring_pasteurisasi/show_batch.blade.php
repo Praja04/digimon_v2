@@ -92,7 +92,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Batch Number :</p>
+                                                            <p class="text-muted mb-1">Batch :</p>
                                                             <h5 class="mb-0">{{ $pasteurisasi->batch_range }}
                                                             </h5>
                                                         </div>
@@ -147,6 +147,13 @@
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-4">
+                                            <label class="form-label">Visco <span style="color: red">*</span></label>
+                                            <input type="text" name="visco" id="visco"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pasteurisasi->visco ?? '') }}">
+                                            <small class="text-danger errorVisco"></small>
+                                        </div>
+                                        <div class="col-lg-4">
                                             <label class="form-label">NACL <span style="color: red">*</span></label>
                                             <input type="text" name="nacl" id="nacl"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
@@ -161,11 +168,11 @@
                                             <small class="text-danger errorBj"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">Visco <span style="color: red">*</span></label>
-                                            <input type="text" name="visco" id="visco"
+                                            <label class="form-label">pH</label>
+                                            <input type="text" name="ph" id="ph"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $pasteurisasi->visco ?? '') }}">
-                                            <small class="text-danger errorVisco"></small>
+                                                value="{{ str_replace('.', ',', $pasteurisasi->ph ?? '') }}">
+                                            <small class="text-danger errorPh"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Aw <span style="color: red">*</span></label>
@@ -175,11 +182,11 @@
                                             <small class="text-danger errorAw"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">pH</label>
-                                            <input type="text" name="ph" id="ph"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $pasteurisasi->ph ?? '') }}">
-                                            <small class="text-danger errorPh"></small>
+                                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                                            <input type="text" name="organo" id="organo" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $pasteurisasi->organo ?? '' }}">
+                                            <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Buih</label>
@@ -187,13 +194,6 @@
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
                                                 value="{{ str_replace('.', ',', $pasteurisasi->buih ?? '') }}">
                                             <small class="text-danger errorBuih"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Organo <span style="color: red">*</span></label>
-                                            <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();"
-                                                value="{{ $pasteurisasi->organo ?? '' }}">
-                                            <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Endapan</label>

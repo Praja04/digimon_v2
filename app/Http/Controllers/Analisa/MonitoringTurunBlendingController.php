@@ -389,9 +389,9 @@ class MonitoringTurunBlendingController extends Controller
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data berhasil diperbarui.'
-                    : 'Data berhasil disimpan untuk shift ' . $shift . '.';
+                    : 'Data berhasil disimpan.';
             } elseif ($userRole === 'Foreman') {
-                $message = 'Disposisi berhasil diberikan untuk shift ' . $shift . '.';
+                $message = 'Disposisi berhasil diberikan.';
             } else {
                 $message = 'Data berhasil disimpan.';
             }

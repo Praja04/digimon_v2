@@ -150,6 +150,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['user-access:Supervisor,Foreman,Analis Field'])->group(function () {
         // Monitoring Storage Kimia
+        Route::get('/monitoring-storage-kimia/getBatchData', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getBatchData'])->name('monitoring-storage-kimia.getBatchData');
         Route::get('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'index'])->name('monitoring-storage-kimia.index');
         Route::get('/monitoring-storage-kimia/get-last-revisi', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getLastRevisi'])->name('monitoring-storage-kimia.getLastRevisi');
         Route::get('/monitoring-storage-kimia/get-available-additional-batch', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getAvailableAdditionalBatch'])->name('monitoring-storage-kimia.getAvailableAdditionalBatch');
