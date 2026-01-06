@@ -105,14 +105,14 @@
                     @endif
 
                     {{-- Persiapan Masak Menu --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Operator']))
+                    {{-- @if (in_array($userRole, ['Supervisor', 'Foreman', 'Operator']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['productionbatch.*', 'gga-ggas.index', 'gga-ggas.show', 'blending-awal.index', 'blending-awal.show', 'monitoring-turun-blending.index', 'monitoring-turun-blending.show', 'monitoring-pasteurisasi.index', 'monitoring-pasteurisasi.show', 'monitoring-pasteurisasi.show_batch', 'monitoring-storage-kimia.index', 'monitoring-storage-kimia.show']) ? 'active' : '' }}"
                                 href="{{ route('productionbatch.index') }}">
                                 <i class="mdi mdi-puzzle-outline"></i> <span data-key="t-widgets">Persiapan Masak</span>
                             </a>
                         </li>
-                    @endif
+                    @endif --}}
 
                     {{-- GGA & GGAS Menu --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia']))
@@ -151,6 +151,13 @@
                             </a>
                         </li>
                     @endif
+
+                    <li class="nav-item">
+                        <a class="nav-link menu-link {{ request()->routeIs(['shelf-life.index', 'shelf-life.sample.index', 'shelf-life.sample.show', 'shelf-life.checksheet.index', 'shelf-life.analysis-kimia.index', 'shelf-life.analysis-kimia.show', 'shelf-life.analysis-mikro.index', 'shelf-life.analysis-mikro.show']) ? 'active' : '' }}"
+                            href="{{ route('shelf-life.index') }}">
+                            <i class="mdi mdi-calendar-clock"></i> <span data-key="t-widgets">Shelf Life</span>
+                        </a>
+                    </li>
 
                     {{-- Notifikasi Menu --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman']))

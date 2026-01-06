@@ -78,10 +78,22 @@ class MonitoringDailyTankController extends Controller
                 })
                 ->addColumn('hasil_analisa', function ($data) {
                     if ($data->jenis_analisa == 'Mikro') {
-                        return $data->hasil ?? '-';
+                        if (!$data->hasil) {
+                            return '<span class="badge bg-secondary">Belum dianalisa</span>';
+                        } else {
+                            $badgeClass = $data->hasil == 'OK' ? 'bg-success' : 'bg-danger';
+                            return '<span class="badge ' . $badgeClass . '">' . $data->hasil . '</span>';
+                        }
                     }
                     if ($data->jenis_analisa == 'Kimia') {
-                        return $data->disposisi ?? '-';
+                        if (!$data->status) {
+                            return '<span class="badge bg-secondary">Belum dianalisa</span>';
+                        } elseif ($data->status && $data->disposisi == null) {
+                            return '<span class="badge bg-primary">Menunggu disposisi</span>';
+                        } else {
+                            $badgeClass = $data->disposisi == 'Release' ? 'bg-success' : ($data->disposisi == 'Reject' ? 'bg-danger' : 'bg-info');
+                            return '<span class="badge ' . $badgeClass . '">' . $data->disposisi . '</span>';
+                        }
                     }
                     return '-';
                 })
@@ -239,23 +251,28 @@ class MonitoringDailyTankController extends Controller
         }
     }
 
-    public function destroy(Request $request)
+    public function destroy($id)
     {
         try {
-            $data = MonitoringDailyTank::find($request->id);
+            $data = MonitoringDailyTank::find($id);
 
-            if ($data) {
-                $data->delete();
-
+            if (!$data) {
                 return response()->json([
-                    'status' => 'success',
-                    'message' => 'Data berhasil dihapus.',
-                ], 201);
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan.',
+                ], 404);
             }
+
+            $data->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data berhasil dihapus.',
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error occurred, please try againrred',
+                'message' => 'Terjadi kesalahan saat menghapus data.',
                 'error' => $e->getMessage()
             ], 500);
         }

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Analisa;
 
-use App\Events\ProcessOutsideDisposition;
 use App\Http\Controllers\Controller;
+use App\Events\ProcessOutsideDisposition;
 use App\Http\Requests\Analisa\BlendingAwalUpdateRequest;
 use App\Models\BlendingAwal;
 use App\Models\Color;

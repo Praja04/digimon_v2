@@ -30,13 +30,19 @@ class MonitoringOnGoingKimiaController extends Controller
                     return $data->productionBatch->po_number ?? '-';
                 })
                 ->addColumn('status', function ($data) {
-                    $status = $data->status ?? '-';
-                    $badgeClass = match ($status) {
-                        'OK' => 'badge bg-success',
-                        'NOT OK' => 'badge bg-danger',
-                        default => 'badge bg-secondary',
-                    };
-                    return '<span class="' . $badgeClass . '">' . $status . '</span>';
+                    if ($data->status && $data->disposition == null) {
+                        return '<span class="badge bg-primary">Menunggu Didsposisi</span>';
+                    } elseif ($data->disposition) {
+                        $status = $data->status ?? '-';
+                        $badgeClass = match ($status) {
+                            'OK' => 'badge bg-success',
+                            'NOT OK' => 'badge bg-danger',
+                            default => 'badge bg-secondary',
+                        };
+                        return '<span class="' . $badgeClass . '">' . $status . ' - ' . $data->disposition . '</span>';
+                    } else {
+                        return '<span class="badge bg-primary">Belum dianalisa</span>';
+                    }
                 })
                 ->editColumn('filling_date', function ($data) {
                     if (!$data->filling_date) {
@@ -143,7 +149,6 @@ class MonitoringOnGoingKimiaController extends Controller
         try {
             $monitoring = MonitoringOnGoingKimia::with([
                 'productionBatch',
-                'analis',
                 'color'
             ])->findOrFail($id);
 
@@ -249,7 +254,7 @@ class MonitoringOnGoingKimiaController extends Controller
                 $shift = 3;
             }
 
-            $monitoring->analis_id = auth()->user()->id;
+            $monitoring->nama_analis = auth()->user()->name;
             $monitoring->shift = $shift;
             $monitoring->berat_jenis = $request->berat_jenis;
             $monitoring->visco = $request->visco;

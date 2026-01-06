@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->tinyInteger('role')->comment('0:dept_head, 1:supervisor, 2:foreman, 3:analis_kimia, 4:analis_mikro, 5:analis_rm, 6:analis_field, 7:operator');
+            $table->tinyInteger('role')->comment('0:dept_head, 1:supervisor, 2:foreman, 3:analis_kimia, 4:analis_mikro, 5:analis_rm, 6:analis_field, 7:operator, 8:helper');
             $table->rememberToken();
             $table->timestamps();
         });

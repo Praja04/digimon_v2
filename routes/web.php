@@ -52,6 +52,37 @@ Route::middleware(['auth'])->group(function () {
     // Scan
     Route::get('/scan', [App\Http\Controllers\ScanController::class, 'index'])->name('scan.index');
     Route::post('/scan', [App\Http\Controllers\ScanController::class, 'store'])->name('scan.store');
+
+    // Shelf Life
+    Route::get('/shelf-life', [App\Http\Controllers\ShelfLife\ShelfLifeController::class, 'index'])->name('shelf-life.index');
+
+    // Shelf Life - Sample
+    Route::get('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'index'])->name('shelf-life.sample.index');
+    Route::get('/shelf-life/sample/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'edit'])->name('shelf-life.sample.edit');
+    Route::post('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'store'])->name('shelf-life.sample.store');
+    Route::post('/shelf-life/sample/get-po', [App\Http\Controllers\ShelfLife\SampleController::class, 'getPoByDateAndStorage'])->name('shelf-life.sample.get-po');
+    Route::delete('/shelf-life/sample/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroy'])->name('shelf-life.sample.destroy');
+    Route::get('/shelf-life/sample/show/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'show'])->name('shelf-life.sample.show');
+    Route::post('/shelf-life/sample/detail', [App\Http\Controllers\ShelfLife\SampleController::class, 'storeSamplingDetail'])->name('shelf-life.sample.detail.store');
+    Route::get('/shelf-life/sample/detail/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'editSamplingDetail'])->name('shelf-life.sample.detail.edit');
+    Route::delete('/shelf-life/sample/detail/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroySamplingDetail'])->name('shelf-life.sample.detail.destroy');
+
+    // Shelf Life - Checksheet
+    Route::get('/shelf-life/checksheet', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'index'])->name('shelf-life.checksheet.index');
+    Route::post('/shelf-life/checksheet/update-status', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'updateStatus'])->name('shelf-life.checksheet.update-status');
+
+    // Shelf Life - Analisis Kimia
+    Route::get('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'index'])->name('shelf-life.analysis-kimia.index');
+    Route::get('/shelf-life/analisis-kimia/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'show'])->name('shelf-life.analysis-kimia.show');
+    Route::post('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'store'])->name('shelf-life.analysis-kimia.store');
+    Route::get('/shelf-life/analisis-kimia/edit/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'edit'])->name('shelf-life.analysis-kimia.edit');
+
+    // Shelf Life - Analisis Mikro
+    Route::get('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'index'])->name('shelf-life.analysis-mikro.index');
+    Route::get('/shelf-life/analisis-mikro/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'show'])->name('shelf-life.analysis-mikro.show');
+    Route::post('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'store'])->name('shelf-life.analysis-mikro.store');
+    Route::get('/shelf-life/analisis-mikro/get-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'getMikroData'])->name('shelf-life.analysis-mikro.get-mikro');
+
     /*------------------------------------------
     RMPM
     Roles: Supervisor, Foreman, Analis RM
@@ -169,22 +200,22 @@ Route::middleware(['auth'])->group(function () {
     --------------------------------------------*/
     Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia'])->group(function () {
         // Analisa - GGA
-        Route::get('/gga/menu', [App\Http\Controllers\GGaController::class, 'menu'])->name('gga.menu');
-        Route::get('/gga', [App\Http\Controllers\GGaController::class, 'index'])->name('gga.index');
-        Route::get('/gga/formulasi/', [App\Http\Controllers\GGaController::class, 'formulasi'])->name('gga.formulasi');
-        Route::get('/gga/{id}', [App\Http\Controllers\GGaController::class, 'show'])->name('gga.show');
-        Route::get('/gga/edit/{id}', [App\Http\Controllers\GGaController::class, 'edit'])->name('gga.edit');
-        Route::post('/gga', [App\Http\Controllers\GGaController::class, 'update'])->name('gga.update');
-        Route::get('/scan/batch/gga/{id}', [App\Http\Controllers\GGaController::class, 'show_batch'])->name('gga.show_batch');
+        Route::get('/gga/menu', [App\Http\Controllers\Analisa\GGaController::class, 'menu'])->name('gga.menu');
+        Route::get('/gga', [App\Http\Controllers\Analisa\GGaController::class, 'index'])->name('gga.index');
+        Route::get('/gga/formulasi/', [App\Http\Controllers\Analisa\GGaController::class, 'formulasi'])->name('gga.formulasi');
+        Route::get('/gga/{id}', [App\Http\Controllers\Analisa\GGaController::class, 'show'])->name('gga.show');
+        Route::get('/gga/edit/{id}', [App\Http\Controllers\Analisa\GGaController::class, 'edit'])->name('gga.edit');
+        Route::post('/gga', [App\Http\Controllers\Analisa\GGaController::class, 'update'])->name('gga.update');
+        Route::get('/scan/batch/gga/{id}', [App\Http\Controllers\Analisa\GGaController::class, 'show_batch'])->name('gga.show_batch');
 
         // Analisa - GGAS
-        Route::get('/ggas', [App\Http\Controllers\GgasController::class, 'index'])->name('ggas.index');
-        Route::get('/ggas/formulasi/', [App\Http\Controllers\GgasController::class, 'formulasi'])->name('ggas.formulasi');
-        Route::get('/ggas/{id}', [App\Http\Controllers\GgasController::class, 'show'])->name('ggas.show');
-        Route::get('/ggas/batch/{id}', [App\Http\Controllers\GgasController::class, 'show_batch'])->name('ggas.show_batch');
-        Route::get('/ggas/edit/{id}', [App\Http\Controllers\GgasController::class, 'edit'])->name('ggas.edit');
-        Route::post('/ggas', [App\Http\Controllers\GgasController::class, 'update'])->name('ggas.update');
-        Route::get('/scan/batch/ggas/{id}', [App\Http\Controllers\GgasController::class, 'show_batch'])->name('ggas.show_batch');
+        Route::get('/ggas', [App\Http\Controllers\Analisa\GgasController::class, 'index'])->name('ggas.index');
+        Route::get('/ggas/formulasi/', [App\Http\Controllers\Analisa\GgasController::class, 'formulasi'])->name('ggas.formulasi');
+        Route::get('/ggas/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'show'])->name('ggas.show');
+        Route::get('/ggas/batch/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'show_batch'])->name('ggas.show_batch');
+        Route::get('/ggas/edit/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'edit'])->name('ggas.edit');
+        Route::post('/ggas', [App\Http\Controllers\Analisa\GgasController::class, 'update'])->name('ggas.update');
+        Route::get('/scan/batch/ggas/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'show_batch'])->name('ggas.show_batch');
 
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');

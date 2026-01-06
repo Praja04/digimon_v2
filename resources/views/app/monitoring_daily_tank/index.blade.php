@@ -234,7 +234,6 @@
         </div>
     </div>
 
-    <!-- Modal Detail -->
     <!-- Modal Detail - Version Simple & Clean -->
     <div class="modal fade" id="modalDetail" tabindex="-1" aria-labelledby="modalDetailLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -527,18 +526,15 @@
                 },
             ];
 
+            // Handler untuk Jenis Analisa
             $('#jenis_analisa').on('change', function() {
                 const selectedAnalisa = $(this).val();
                 const $jenisSample = $('#jenis_sample');
 
-                // Hapus semua opsi dulu
                 $jenisSample.empty();
-
-                // Tambahkan placeholder
                 $jenisSample.append('<option value="">-- Pilih Jenis Sample --</option>');
 
                 if (selectedAnalisa === 'Kimia') {
-                    // Tambahkan semua sample kecuali 'Awal Transfer'
                     allSamples.forEach(sample => {
                         if (sample.value !== 'Awal Transfer') {
                             $jenisSample.append(
@@ -549,9 +545,6 @@
                     $jenisSample.append('<option value="Awal Transfer">Awal Transfer</option>');
                     $jenisSample.append('<option value="Tengah PO">Tengah PO</option>');
                     $jenisSample.append('<option value="Akhir PO">Akhir PO</option>');
-                } else {
-                    // Jika belum pilih analisa, tampilkan default placeholder saja
-                    $jenisSample.append('<option value="">-- Pilih Jenis Sample --</option>');
                 }
             });
 
@@ -561,9 +554,18 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('monitoring-daily-tank.index') }}",
+                    type: 'GET',
                     data: function(d) {
                         d.start_date = $('#start_date').val();
                         d.end_date = $('#end_date').val();
+                    },
+                    error: function(xhr, error, code) {
+                        console.error('DataTable Error:', xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Gagal memuat data. Silakan refresh halaman.',
+                        });
                     }
                 },
                 columns: [{
@@ -631,19 +633,21 @@
                 table.ajax.reload();
             });
 
+            // Enter key untuk filter
             $('#start_date, #end_date').on('keypress', function(e) {
                 if (e.which == 13) {
                     table.ajax.reload();
                 }
             });
 
+            // Tombol Tambah Data
             $('body').on('click', '#btnAdd', function() {
                 $('#form').trigger("reset");
                 $('#id').val('');
-
-                $('#storage').val('').trigger('change');
-                $('#sampling_point').val('').trigger('change');
-                $('#jenis_analisa').val('').trigger('change');
+                $('#nomor_po').empty().append('<option value="">-- Pilih Nomor PO --</option>');
+                $('#storage').val('');
+                $('#sampling_point').val('');
+                $('#jenis_analisa').val('');
                 $('#jenis_sample').html('<option value="">-- Pilih Jenis Sample --</option>');
 
                 $('.form-control').removeClass('is-invalid');
@@ -651,41 +655,51 @@
                 $('#modal').modal('show');
             });
 
+            // Tombol Edit
             $('body').on('click', '#btnEdit', function() {
                 let id = $(this).data('id');
+
                 $.ajax({
                     type: "GET",
-                    url: "{{ route('monitoring-daily-tank.edit', '') }}/" + id,
+                    url: "{{ url('monitoring-daily-tank/edit') }}/" + id,
                     dataType: "json",
                     success: function(response) {
                         $('#save').val("edit-data");
-
-                        $('#storage').val('').trigger('change');
-                        $('#sampling_point').val('').trigger('change');
-                        $('#jenis_analisa').val('').trigger('change');
-                        $('#jenis_sample').html(
-                            '<option value="">-- Pilih Jenis Sample --</option>');
 
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
 
                         $('#id').val(response.id);
-                        $('#storage').val(response.storage).trigger('change');
-                        $('#sampling_point').val(response.sampling_point).trigger('change');
+                        $('#storage').val(response.storage);
+                        $('#sampling_point').val(response.sampling_point);
                         $('#jenis_analisa').val(response.jenis_analisa).trigger('change');
-                        $('#jenis_sample').val(response.jenis_sample).trigger('change');
 
+                        // Set jenis sample setelah jenis analisa di-trigger
+                        setTimeout(function() {
+                            $('#jenis_sample').val(response.jenis_sample);
+                        }, 100);
+
+                        $('#keterangan_level').val(response.keterangan_level);
                         $('#modal').modal('show');
+                    },
+                    error: function(xhr) {
+                        console.error('Edit Error:', xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Gagal mengambil data.',
+                        });
                     }
                 });
-            })
+            });
 
+            // Tombol Detail
             $('body').on('click', '.btn-detail', function() {
                 let id = $(this).data('id');
 
                 $.ajax({
                     type: "GET",
-                    url: "{{ route('monitoring-daily-tank.show', '') }}/" + id,
+                    url: "{{ url('monitoring-daily-tank/show') }}/" + id,
                     dataType: "json",
                     success: function(response) {
                         // QR Code
@@ -718,9 +732,8 @@
                         }
                         $('#detail_status_pemakaian').html(statusText);
 
-                        // Cek apakah ada data analisa berdasarkan jenis analisa
+                        // Cek apakah ada data analisa
                         let hasAnalisa = false;
-
                         if (response.jenis_analisa === 'Mikro') {
                             hasAnalisa = response.eb !== null || response.tpc !== null ||
                                 response.ym !== null;
@@ -730,39 +743,31 @@
                         }
 
                         if (hasAnalisa) {
-                            // Tampilkan section analisa
                             $('#analisa_section').show();
                             $('#no_analisa_section').hide();
 
-                            // Data Analisa
                             $('#detail_shift_analisa').text(response.shift_analisa ? "Shift " +
                                 response.shift_analisa : '-');
                             $('#detail_qc_analisa').text(response.qc_analisa_name || '-');
                             $('#detail_tanggal_analisa').text(response.tanggal_analisa || '-');
 
-                            // Tampilkan parameter sesuai jenis analisa
                             if (response.jenis_analisa === 'Mikro') {
                                 $('#parameter_mikro').show();
                                 $('#parameter_kimia').hide();
 
-                                // Parameter Uji Mikro
                                 $('#detail_eb').text(response.eb !== null ? response.eb : '-');
                                 $('#detail_tpc').text(response.tpc !== null ? response.tpc :
                                     '-');
                                 $('#detail_ym').text(response.ym !== null ? response.ym : '-');
 
-                                // Hasil untuk Mikro
                                 let hasilHtml = '-';
-                                if (response.hasil) {
-                                    if (response.hasil === 'OK') {
-                                        hasilHtml = '<span class="badge bg-success">OK</span>';
-                                    } else if (response.hasil === 'NOT OK') {
-                                        hasilHtml =
-                                            '<span class="badge bg-danger">NOT OK</span>';
-                                    } else {
-                                        hasilHtml =
-                                            '<span class="badge bg-warning text-dark">PENDING</span>';
-                                    }
+                                if (response.hasil === 'OK') {
+                                    hasilHtml = '<span class="badge bg-success">OK</span>';
+                                } else if (response.hasil === 'NOT OK') {
+                                    hasilHtml = '<span class="badge bg-danger">NOT OK</span>';
+                                } else if (response.hasil) {
+                                    hasilHtml =
+                                        '<span class="badge bg-warning text-dark">PENDING</span>';
                                 }
                                 $('#detail_hasil').html(hasilHtml);
 
@@ -770,7 +775,6 @@
                                 $('#parameter_mikro').hide();
                                 $('#parameter_kimia').show();
 
-                                // Parameter Uji Kimia
                                 $('#detail_brix').text(response.brix !== null ? response.brix :
                                     '-');
                                 $('#detail_nacl').text(response.nacl !== null ? response.nacl :
@@ -786,40 +790,32 @@
                                 $('#detail_endapan').text(response.endapan || '-');
                                 $('#detail_color').text(response.color_name || '-');
 
-                                // Status Parameter untuk Kimia
                                 let statusParamHtml = '-';
-                                if (response.status) {
-                                    if (response.status === 'OK') {
-                                        statusParamHtml =
-                                            '<span class="badge bg-success">OK</span>';
-                                    } else if (response.status === 'NOT OK') {
-                                        statusParamHtml =
-                                            '<span class="badge bg-danger">NOT OK</span>';
-                                    }
+                                if (response.status === 'OK') {
+                                    statusParamHtml =
+                                    '<span class="badge bg-success">OK</span>';
+                                } else if (response.status === 'NOT OK') {
+                                    statusParamHtml =
+                                        '<span class="badge bg-danger">NOT OK</span>';
                                 }
                                 $('#detail_status_parameter').html(statusParamHtml);
                             }
 
-                            // Status Disposisi (sama untuk Mikro dan Kimia)
+                            // Disposisi
                             let disposisiHtml = '-';
-                            if (response.disposisi) {
-                                if (response.disposisi === 'Release') {
-                                    disposisiHtml =
-                                        '<span class="badge bg-success">Release</span>';
-                                } else if (response.disposisi === 'Drain') {
-                                    disposisiHtml =
-                                        '<span class="badge bg-danger">Drain</span>';
-                                } else {
-                                    disposisiHtml =
-                                        '<span class="badge bg-success">Release Bersyarat</span>';
-                                }
+                            if (response.disposisi === 'Release') {
+                                disposisiHtml = '<span class="badge bg-success">Release</span>';
+                            } else if (response.disposisi === 'Drain') {
+                                disposisiHtml = '<span class="badge bg-danger">Drain</span>';
+                            } else if (response.disposisi) {
+                                disposisiHtml =
+                                    '<span class="badge bg-success">Release Bersyarat</span>';
                             }
                             $('#detail_status_disposisi').html(disposisiHtml);
 
-                            // Tindakan Lanjutan
+                            // Tindakan, Catatan, Alasan
                             if (response.tindakan_lanjutan) {
-                                $('#tindakan_label').show();
-                                $('#tindakan_value').show();
+                                $('#tindakan_section').show();
                                 let tindakanHtml = response.tindakan_lanjutan;
                                 if (response.tindakan_lanjutan === 'Drain') {
                                     tindakanHtml = '<strong class="text-danger">' +
@@ -830,41 +826,31 @@
                                 }
                                 $('#detail_tindakan_lanjutan').html(tindakanHtml);
                             } else {
-                                $('#tindakan_label').hide();
-                                $('#tindakan_value').hide();
+                                $('#tindakan_section').hide();
                             }
 
-                            // Catatan Analis
                             if (response.catatan_analis) {
-                                $('#catatan_label').show();
-                                $('#catatan_value').show();
+                                $('#catatan_section').show();
                                 $('#detail_catatan_analis').text(response.catatan_analis);
                             } else {
-                                $('#catatan_label').hide();
-                                $('#catatan_value').hide();
+                                $('#catatan_section').hide();
                             }
 
-                            // Alasan Disposisi
                             if (response.alasan_disposisi) {
-                                $('#alasan_label').show();
-                                $('#alasan_value').show();
+                                $('#alasan_section').show();
                                 $('#detail_alasan_disposisi').text(response.alasan_disposisi);
                             } else {
-                                $('#alasan_label').hide();
-                                $('#alasan_value').hide();
+                                $('#alasan_section').hide();
                             }
                         } else {
-                            // Sembunyikan section analisa
                             $('#analisa_section').hide();
-                            $('#parameter_mikro').hide();
-                            $('#parameter_kimia').hide();
                             $('#no_analisa_section').show();
                         }
 
-                        // Tampilkan modal
                         $('#modalDetail').modal('show');
                     },
                     error: function(xhr) {
+                        console.error('Detail Error:', xhr.responseText);
                         Swal.fire({
                             icon: 'error',
                             title: 'Kesalahan',
@@ -874,8 +860,10 @@
                 });
             });
 
+            // Submit Form
             $('#form').submit(function(e) {
                 e.preventDefault();
+
                 $.ajax({
                     data: $(this).serialize(),
                     url: "{{ route('monitoring-daily-tank.store') }}",
@@ -883,9 +871,7 @@
                     dataType: 'json',
                     beforeSend: function() {
                         $('#save').prop('disabled', true).html(
-                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                        );
-
+                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...');
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
                     },
@@ -903,48 +889,51 @@
                         table.ajax.reload();
                     },
                     error: function(xhr) {
+                        console.error('Submit Error:', xhr.responseText);
+
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
+
                             if (errors.tanggal_produksi) {
                                 $('#tanggal_produksi').addClass('is-invalid');
-                                $('.errorTanggalProduksi').html(errors.tanggal_produksi.join(
-                                    '<br>'));
+                                $('.errorTanggalProduksi').html(errors.tanggal_produksi[0]);
                             }
                             if (errors.storage) {
                                 $('#storage').addClass('is-invalid');
-                                $('.errorStorage').html(errors.storage.join('<br>'));
+                                $('.errorStorage').html(errors.storage[0]);
                             }
                             if (errors.nomor_po) {
                                 $('#nomor_po').addClass('is-invalid');
-                                $('.errorNomorPO').html(errors.nomor_po.join('<br>'));
+                                $('.errorNomorPO').html(errors.nomor_po[0]);
                             }
                             if (errors.sampling_point) {
                                 $('#sampling_point').addClass('is-invalid');
-                                $('.errorSamplingPoint').html(errors.sampling_point.join(
-                                    '<br>'));
+                                $('.errorSamplingPoint').html(errors.sampling_point[0]);
                             }
                             if (errors.jenis_analisa) {
                                 $('#jenis_analisa').addClass('is-invalid');
-                                $('.errorJenisAnalisa').html(errors.jenis_analisa.join('<br>'));
+                                $('.errorJenisAnalisa').html(errors.jenis_analisa[0]);
                             }
-
                             if (errors.jenis_sample) {
                                 $('#jenis_sample').addClass('is-invalid');
-                                $('.errorJenisSample').html(errors.jenis_sample.join('<br>'));
+                                $('.errorJenisSample').html(errors.jenis_sample[0]);
                             }
                         } else {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Kesalahan',
-                                text: 'Terjadi kesalahan, silakan coba lagi.',
+                                text: xhr.responseJSON?.message ||
+                                    'Terjadi kesalahan, silakan coba lagi.',
                             });
                         }
                     }
-                })
-            })
+                });
+            });
 
+            // Tombol Delete
             $('body').on('click', '#btnDelete', function() {
                 let id = $(this).data('id');
+
                 Swal.fire({
                     title: 'Apakah Anda yakin?',
                     text: "Anda tidak akan dapat mengembalikan data ini!",
@@ -952,12 +941,13 @@
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
-                    confirmButtonText: 'Ya, hapus saja!'
+                    confirmButtonText: 'Ya, hapus saja!',
+                    cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
                             type: "DELETE",
-                            url: "monitoring-daily-tank/" + id,
+                            url: "{{ url('monitoring-daily-tank') }}/" + id,
                             dataType: "json",
                             success: function(response) {
                                 Swal.fire({
@@ -966,12 +956,21 @@
                                     text: response.message,
                                 });
                                 table.ajax.reload();
+                            },
+                            error: function(xhr) {
+                                console.error('Delete Error:', xhr.responseText);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Gagal menghapus data.',
+                                });
                             }
                         });
                     }
-                })
-            })
+                });
+            });
 
+            // Get PO by Date and Storage
             $('#tanggal_produksi, #storage').on('change', function() {
                 const tanggal_produksi = $('#tanggal_produksi').val();
                 const storage = $('#storage').val();
@@ -991,39 +990,39 @@
                         dataType: 'json',
                         beforeSend: function() {
                             $nomorPO.prop('disabled', true);
+                            $nomorPO.html('<option value="">Loading...</option>');
                         },
                         success: function(response) {
                             $nomorPO.prop('disabled', false);
+                            $nomorPO.empty().append(
+                                '<option value="">-- Pilih Nomor PO --</option>');
 
                             if (response.status === 'success' && response.count > 0) {
-
-                                response.po_list.forEach(item => 
+                                response.po_list.forEach(item => {
                                     $nomorPO.append(
                                         `<option value="${item.id}">${item.po_number}</option>`
-                                    ); 
+                                        );
                                 });
 
-                                if (response.count === 1) {
-                                    $nomorPO.val(response.selected_id).trigger('change');
-                                } else if (response.count > 1) {
-                                    $nomorPO.val('').trigger('change');
+                                if (response.count === 1 && response.selected_id) {
+                                    $nomorPO.val(response.selected_id);
                                 }
                             } else {
-                                $nomorPO.empty().append(
-                                        '<option value="">-- Tidak Ada PO Release --</option>')
-                                    .val('');
+                                $nomorPO.append(
+                                    '<option value="">-- Tidak Ada PO Release --</option>');
                                 $('.errorNomorPO').html(
-                                    '<small class="text-danger">Tidak ada Nomor PO yang Release.</small>'
-                                );
+                                    '<small class="text-danger">Tidak ada Nomor PO yang Release untuk tanggal dan storage ini.</small>'
+                                    );
                             }
                         },
-                        error: function() {
+                        error: function(xhr) {
+                            console.error('Get PO Error:', xhr.responseText);
                             $nomorPO.prop('disabled', false);
                             $nomorPO.empty().append(
                                 '<option value="">-- Gagal mengambil data --</option>');
                             $('.errorNomorPO').html(
                                 '<small class="text-danger">Terjadi kesalahan saat mengambil data PO.</small>'
-                            );
+                                );
                         }
                     });
                 }

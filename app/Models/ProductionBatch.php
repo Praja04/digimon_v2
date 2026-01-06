@@ -77,6 +77,11 @@ class ProductionBatch extends Model
         return $this->hasMany(MonitoringDailyTank::class);
     }
 
+    public function shelfLifeSamples()
+    {
+        return $this->hasMany(ShelfLifeSamples::class);
+    }
+
     public function getBatchRangeArrayAttribute()
     {
         if (preg_match('/(\d+)\s*-\s*(\d+)/', $this->batch_range, $matches)) {

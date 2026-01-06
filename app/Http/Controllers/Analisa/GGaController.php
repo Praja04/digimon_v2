@@ -1,24 +1,29 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Analisa;
 
 use App\Events\ProcessOutsideDisposition;
-use App\Http\Requests\GgasRequest;
-use App\Models\Color;
-use App\Models\GGAS;
+use App\Http\Requests\GgaRequest;
+use App\Models\GGA;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
+use App\Http\Controllers\Controller;
 
-class GgasController extends Controller
+class GGaController extends Controller
 {
+    public function menu()
+    {
+        return view('app.GgaGgas.menu');
+    }
+
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = ProductionBatch::with('ggas')
-                ->has('ggas')
+            $query = ProductionBatch::with('gga')
+                ->has('gga')
                 ->orderBy('date', 'desc');
 
             if ($request->has('start_date') && $request->start_date != '') {
@@ -29,38 +34,38 @@ class GgasController extends Controller
                 $query->whereDate('date', '<=', $request->end_date);
             }
 
-            $ggas = $query->get();
+            $gga = $query->get();
 
             if ($request->has('status') && $request->status != '') {
                 if ($request->status == 'complete') {
-                    $ggas = $ggas->filter(function ($batch) {
-                        return $batch->isGGasComplete();
+                    $gga = $gga->filter(function ($batch) {
+                        return $batch->isGGaComplete();
                     });
                 } elseif ($request->status == 'progress') {
-                    $ggas = $ggas->filter(function ($batch) {
-                        return !$batch->isGGasComplete();
+                    $gga = $gga->filter(function ($batch) {
+                        return !$batch->isGGaComplete();
                     });
                 }
             }
 
-            $ggas = $ggas->sortBy(function ($batch) {
-                return ($batch->isGGasComplete()) ? 1 : 0;
+            $gga = $gga->sortBy(function ($batch) {
+                return ($batch->isGGaComplete()) ? 1 : 0;
             })->values();
 
-            return DataTables::of($ggas)
+            return DataTables::of($gga)
                 ->addIndexColumn()
-                ->addColumn('ggas_count', function ($data) {
-                    return '<span>' . $data->ggas->count() . '</span>';
+                ->addColumn('gga_count', function ($data) {
+                    return '<span>' . $data->gga->count() . '</span>';
                 })
-                ->addColumn('status_ggas', function ($data) {
-                    $isComplete = $data->isGGasComplete();
+                ->addColumn('status_gga', function ($data) {
+                    $isComplete = $data->isGGaComplete();
                     $icon = $isComplete ? '✅' : '⌛';
                     $text = $isComplete ? 'Complete' : 'Progress';
 
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
-                    $showUrl = route('ggas.show', ['id' => $data->id]);
+                    $showUrl = route('gga.show', ['id' => $data->id]);
 
                     return '
                     <a href="' . $showUrl . '" class="btn btn-sm btn-primary" title="Lihat Detail">
@@ -68,29 +73,30 @@ class GgasController extends Controller
                     </a>
                 ';
                 })
-                ->rawColumns(['ggas_count', 'status_ggas', 'action'])
+                ->rawColumns(['gga_count', 'status_gga', 'action'])
                 ->make(true);
         }
-        return view('app.ggas.index');
+        return view('app.gga.index');
     }
 
     public function show($id)
     {
-        $productionBatch = ProductionBatch::with('ggas')->findOrFail($id);
+        $productionBatch = ProductionBatch::with('gga')->findOrFail($id);
 
-        return view('app.ggas.show', compact(['productionBatch']));
+        return view('app.gga.show', compact(['productionBatch']));
     }
 
     public function show_batch($id)
     {
-        $ggas = GGAS::with('productionBatch')->findOrFail($id);
-        return view('app.ggas.show_batch', compact(['ggas']));
+        $gga = GGA::with('productionBatch')->findOrFail($id);
+
+        return view('app.gga.show_batch', compact(['gga']));
     }
 
     public function edit($id)
     {
         try {
-            $data = GGAS::find($id);
+            $data = GGA::find($id);
 
             if (!$data) {
                 return response()->json([
@@ -109,16 +115,17 @@ class GgasController extends Controller
         }
     }
 
-    public function update(GgasRequest $request)
+    public function update(GgaRequest $request)
     {
         DB::beginTransaction();
         try {
-            $ggas = GGAS::findOrFail($request->id);
-            $isUpdate = !is_null($ggas->status_disposition);
+            $gga = GGA::findOrFail($request->id);
+            $isUpdate = !is_null($gga->status);
             $userRole = auth()->user()->role;
 
+            // Validasi akses berdasarkan role
             if ($userRole === 'Analis Kimia') {
-                if (!is_null($ggas->disposition)) {
+                if (!is_null($gga->disposition)) {
                     DB::rollBack();
                     return response()->json([
                         'status' => 'error',
@@ -126,7 +133,7 @@ class GgasController extends Controller
                     ], 403);
                 }
             } elseif ($userRole === 'Foreman') {
-                if (is_null($ggas->status)) {
+                if (is_null($gga->status)) {
                     DB::rollBack();
                     return response()->json([
                         'status' => 'error',
@@ -138,7 +145,8 @@ class GgasController extends Controller
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
-            if (in_array($status_disposition, ['NOT OK']) && empty($remark)) {
+            // Validasi remarks wajib untuk status tertentu
+            if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
                     'status' => 'error',
@@ -146,7 +154,8 @@ class GgasController extends Controller
                 ], 409);
             }
 
-            $status_disposition = $request->status_disposition;
+            // Cek apakah status berubah
+            $statusChanged = ($gga->status !== $status_disposition);
             $dispositionChanged = false;
 
             $updateData = [
@@ -173,8 +182,32 @@ class GgasController extends Controller
                 }
 
                 $disposition = $request->disposition;
-                $dispositionChanged = ($ggas->disposition !== $disposition);
+                $dispositionChanged = ($gga->disposition !== $disposition);
                 $updateData['disposition'] = $disposition;
+            }
+
+            // Handle Adjustment
+            $adjustmentGulaTebu = null;
+            $adjustmentGulaKelapa = null;
+
+            if ($status_disposition === 'Adjustment') {
+                if (!empty($request->adjustment_qty_gula_tebu)) {
+                    $adjustmentGulaTebu = str_replace(',', '.', $request->adjustment_qty_gula_tebu);
+                }
+                if (!empty($request->adjustment_qty_gula_kelapa)) {
+                    $adjustmentGulaKelapa = str_replace(',', '.', $request->adjustment_qty_gula_kelapa);
+                }
+
+                $updateData['adjustment_qty_gula_tebu'] = $adjustmentGulaTebu;
+                $updateData['adjustment_qty_gula_kelapa'] = $adjustmentGulaKelapa;
+                $updateData['not_standard'] = true;
+            } else {
+                // Jika status bukan Adjustment lagi, clear adjustment data
+                if ($statusChanged) {
+                    $updateData['adjustment_qty_gula_tebu'] = null;
+                    $updateData['adjustment_qty_gula_kelapa'] = null;
+                    $updateData['not_standard'] = false;
+                }
             }
 
             // Handle Resampling (hanya untuk Foreman)
@@ -188,35 +221,41 @@ class GgasController extends Controller
             if ($request->filled('revisi')) {
                 $updateData['revisi'] = $request->revisi;
             } else {
-                $updateData['revisi'] = $ggas->revisi;
+                $updateData['revisi'] = $gga->revisi;
             }
 
-            $ggas->update($updateData);
+            $gga->update($updateData);
 
             // Build remark text for API payload
-            if ($remark !== null && $remark !== '-') {
+            if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
                 $remarkText = $remark;
-            } elseif ($updateData['not_standard'] ?? false) {
-                $remarkText = 'Adjustment';
+            } elseif ($status_disposition === 'Adjustment') {
+                $remarkText = sprintf(
+                    'Adjustment Gula Tebu: %s Kg, Gula Kelapa: %s Kg',
+                    $adjustmentGulaTebu ?? 0,
+                    $adjustmentGulaKelapa ?? 0
+                );
             } else {
                 $remarkText = '-';
             }
 
-            $jamSelesaiGgas = ($status_disposition === 'OK')
+            $jamSelesaiGga = ($status_disposition === 'OK')
                 ? now()->format('Y-m-d H:i:s')
                 : null;
 
+            // Prepare payload for external API
             $apiPayload = [
                 'disposition' => $updateData['disposition'] ?? null,
                 'revisi' => $updateData['revisi'] ?? null,
                 'not_standard' => $updateData['not_standard'] ?? false,
                 'status' => $status_disposition,
                 'disposition_remark' => $remarkText,
-                'jam_selesai_ggas' => $jamSelesaiGgas,
+                'jam_selesai_gga' => $jamSelesaiGga,
             ];
 
+            // Call external API
             $client = new \GuzzleHttp\Client();
-            $apiResponse = $client->request('POST', env('PRODUCTION_URL') . "api/ggas/{$ggas->id}", [
+            $apiResponse = $client->request('POST', env('PRODUCTION_URL') . "api/gga/{$gga->id}", [
                 'json' => $apiPayload,
                 'headers' => [
                     'Accept' => 'application/json',
@@ -236,7 +275,7 @@ class GgasController extends Controller
 
             // Kirim notifikasi berdasarkan kondisi
             $shouldSendNotification = false;
-            $notificationTitle = "GGAS - Batch " . $ggas->batch_number;
+            $notificationTitle = "GGA - Batch " . $gga->batch_number;
 
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;
@@ -249,19 +288,19 @@ class GgasController extends Controller
             if ($shouldSendNotification) {
                 event(new ProcessOutsideDisposition(
                     $notificationTitle,
-                    $ggas->production_batch_id,
-                    'GGAS',
+                    $gga->production_batch_id,
+                    'GGA',
                     $status_disposition,
                     $remarkText,
-                    route('ggas.show', $ggas->production_batch_id)
+                    route('gga.show', $gga->production_batch_id)
                 ));
             }
 
             // Pesan response berdasarkan role
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
-                    ? 'Data GGAS berhasil diperbarui.'
-                    : 'Data GGAS berhasil disimpan.';
+                    ? 'Data GGA berhasil diperbarui.'
+                    : 'Data GGA berhasil disimpan.';
             } elseif ($userRole === 'Foreman') {
                 $message = 'Disposisi berhasil diberikan.';
             } else {
@@ -274,7 +313,6 @@ class GgasController extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Error occurred, please try again.',
@@ -283,17 +321,19 @@ class GgasController extends Controller
         }
     }
 
+
     public function formulasi(Request $request)
     {
         try {
-            $ggas = Ggas::with('productionBatch:id,po_number,variant,date,batch_range')
+            // Ambil data GGA berdasarkan ID
+            $gga = Gga::with('productionBatch:id,po_number,variant,date,batch_range')
                 ->findOrFail($request->id);
 
             $apiUrl = url(env('PRODUCTION_URL') . 'api/formulasi/dissolver');
 
             $response = Http::get($apiUrl, [
-                'production_batch_id' => $ggas->production_batch_id,
-                'batch_number' => $ggas->batch_number,
+                'production_batch_id' => $gga->production_batch_id,
+                'batch_number' => $gga->batch_number,
             ]);
 
             if ($response->successful()) {
@@ -304,15 +344,15 @@ class GgasController extends Controller
                         'success' => true,
                         'message' => 'Data formulasi berhasil diambil',
                         'gga_info' => [
-                            'id' => $ggas->id,
-                            'batch_number' => $ggas->batch_number,
-                            'dissolver_number' => $ggas->dissolver_number,
-                            'production_batch_id' => $ggas->production_batch_id,
-                            'brix' => $ggas->brix,
-                            'nacl' => $ggas->nacl,
-                            'organo' => $ggas->organo,
-                            'disposition' => $ggas->disposition,
-                            'status' => $ggas->status,  
+                            'id' => $gga->id,
+                            'batch_number' => $gga->batch_number,
+                            'dissolver_number' => $gga->dissolver_number,
+                            'production_batch_id' => $gga->production_batch_id,
+                            'brix' => $gga->brix,
+                            'nacl' => $gga->nacl,
+                            'organo' => $gga->organo,
+                            'disposition' => $gga->disposition,
+                            'status' => $gga->status,
                         ],
                         'production_batch' => $data['data']['production_batch'] ?? null,
                         'formulasi' => $data['data']['formulasi'] ?? [],
@@ -324,10 +364,10 @@ class GgasController extends Controller
                         'success' => false,
                         'message' => $data['message'] ?? 'Data formulasi tidak ditemukan',
                         'gga_info' => [
-                            'id' => $ggas->id,
-                            'batch_number' => $ggas->batch_number,
-                            'dissolver_number' => $ggas->dissolver_number,
-                            'production_batch_id' => $ggas->production_batch_id,
+                            'id' => $gga->id,
+                            'batch_number' => $gga->batch_number,
+                            'dissolver_number' => $gga->dissolver_number,
+                            'production_batch_id' => $gga->production_batch_id,
                         ],
                     ], 404);
                 }

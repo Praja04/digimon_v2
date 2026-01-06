@@ -1,5 +1,62 @@
 @extends('layouts.component.main')
 @section('title', 'Menu Monitoring Filling')
+@section('styles')
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #405189 0%, #5b6fa8 100%);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #0ab39c 0%, #16c7a9 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f7b84b 0%, #f9c76c 100%);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #299cdb 0%, #4db3e8 100%);
+        }
+
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .card-hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+        }
+
+        .card-hover:hover::before {
+            opacity: 1;
+        }
+
+        .avatar-xl {
+            width: 4.5rem;
+            height: 4.5rem;
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.35rem 0.75rem;
+        }
+    </style>
+@endsection
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -19,79 +76,100 @@
                     </div>
                 </div>
             </div>
+
             <!-- end page title -->
-
-            <div class="row">
-                {{-- Daily Tank --}}
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-6">
-                    <div class="card ribbon-box right overflow-hidden">
-                        <div class="card-body text-center p-4">
-                            <div class="ribbon ribbon-info ribbon-shape trending-ribbon">
-                                <i class="ri-hand-heart-fill text-white align-bottom"></i>
-                                <span class="trending-ribbon-text">Monitoring</span>
-                            </div>
-                            <img src="{{ asset('assets/images/blending_awal.png') }}" alt="gambar" height="100">
-                            <h5 class="mb-1 mt-4"><a href="" class="link-primary">Daily Tank</a></h5>
-                            <p class="text-muted mb-4">Monitoring Daily Tank</p>
-                            <div class="row justify-content-center">
-                                <div class="col-lg-8">
-                                    <div id="chart-gga" data-colors='["--vz-danger"]'></div>
+            <div class="row g-4 mb-3">
+                <!-- Daily Tank Card -->
+                <div class="col-12 col-sm-6 col-xl-6">
+                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                        <div class="card-header bg-gradient-primary text-white border-0 py-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div
+                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                        <i class="ri-stack-line fs-1 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-white mb-1 fw-bold">Daily Tank</h5>
+                                        <p class="text-white text-opacity-75 mb-0 small">Monitoring Daily Tank</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="mt-4">
-                                <a href="{{ route('monitoring-daily-tank.index') }}" class="btn btn-light w-100">Lihat
-                                    Detail</a>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-primary-subtle text-primary">Monitoring</span>
+                                    <span class="badge bg-primary-subtle text-primary">Daily</span>
+                                </div>
+                                <a href="{{ route('monitoring-daily-tank.index') }}"
+                                    class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
+                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- On Going Kimia --}}
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-6">
-                    <div class="card ribbon-box right overflow-hidden">
-                        <div class="card-body text-center p-4">
-                            <div class="ribbon ribbon-info ribbon-shape trending-ribbon">
-                                <i class="ri-hand-heart-fill text-white align-bottom"></i>
-                                <span class="trending-ribbon-text">Monitoring</span>
-                            </div>
-                            <img src="{{ asset('assets/images/blending_awal.png') }}" alt="gambar" height="100">
-                            <h5 class="mb-1 mt-4"><a href="" class="link-primary">On Going</a></h5>
-                            <p class="text-muted mb-4">Monitoring On Going - Kimia</p>
-                            <div class="row justify-content-center">
-                                <div class="col-lg-8">
-                                    <div id="chart-gga" data-colors='["--vz-danger"]'></div>
+                <!-- On Going Kimia Card -->
+                <div class="col-12 col-sm-6 col-xl-6">
+                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                        <div class="card-header bg-gradient-success text-white border-0 py-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div
+                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                        <i class="ri-flask-line fs-1 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-white mb-1 fw-bold">On Going - Kimia</h5>
+                                        <p class="text-white text-opacity-75 mb-0 small">Monitoring On Going Kimia</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="mt-4">
-                                <a href="{{ route('monitoring-ongoing-kimia.index') }}" class="btn btn-light w-100">Lihat
-                                    Detail</a>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-success-subtle text-success">Monitoring</span>
+                                    <span class="badge bg-success-subtle text-success">Kimia</span>
+                                </div>
+                                <a href="{{ route('monitoring-ongoing-kimia.index') }}"
+                                    class="btn btn-success rounded-pill px-4 d-flex align-items-center">
+                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- On Going Mikro --}}
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-6">
-                    <div class="card ribbon-box right overflow-hidden">
-                        <div class="card-body text-center p-4">
-                            <div class="ribbon ribbon-info ribbon-shape trending-ribbon">
-                                <i class="ri-hand-heart-fill text-white align-bottom"></i>
-                                <span class="trending-ribbon-text">Monitoring</span>
-                            </div>
-                            <img src="{{ asset('assets/images/blending_awal.png') }}" alt="gambar" height="100">
-                            <h5 class="mb-1 mt-4"><a href="" class="link-primary">On Going</a></h5>
-                            <p class="text-muted mb-4">Monitoring On Going - Mikro</p>
-                            <div class="row justify-content-center">
-                                <div class="col-lg-8">
-                                    <div id="chart-gga" data-colors='["--vz-danger"]'></div>
+                <!-- On Going Mikro Card -->
+                <div class="col-12 col-sm-6 col-xl-6">
+                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                        <div class="card-header bg-gradient-warning text-white border-0 py-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div
+                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                        <i class="ri-microscope-line fs-1 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-white mb-1 fw-bold">On Going - Mikro</h5>
+                                        <p class="text-white text-opacity-75 mb-0 small">Monitoring On Going Mikro</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="mt-4">
-                                <a href="{{ route('monitoring-ongoing-mikro.index') }}" class="btn btn-light w-100">Lihat
-                                    Detail</a>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-warning-subtle text-warning">Monitoring</span>
+                                    <span class="badge bg-warning-subtle text-warning">Mikro</span>
+                                </div>
+                                <a href="{{ route('monitoring-ongoing-mikro.index') }}"
+                                    class="btn btn-warning rounded-pill px-4 d-flex align-items-center">
+                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                </a>
                             </div>
                         </div>
                     </div>

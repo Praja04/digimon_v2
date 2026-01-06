@@ -41,4 +41,9 @@ class Color extends Model
     {
         return $this->hasMany(MonitoringOnGoingMikro::class);
     }
+
+    public function shelfLifeSamplingKimia()
+    {
+        return $this->hasMany(ShelfLifeSamplingKimia::class);
+    }
 }

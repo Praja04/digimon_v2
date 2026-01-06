@@ -1,5 +1,62 @@
 @extends('layouts.component.main')
 @section('title', 'Menu Blending Awal')
+@section('styles')
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #405189 0%, #5b6fa8 100%);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #0ab39c 0%, #16c7a9 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f7b84b 0%, #f9c76c 100%);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #299cdb 0%, #4db3e8 100%);
+        }
+
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .card-hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+        }
+
+        .card-hover:hover::before {
+            opacity: 1;
+        }
+
+        .avatar-xl {
+            width: 4.5rem;
+            height: 4.5rem;
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.35rem 0.75rem;
+        }
+    </style>
+@endsection
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -18,28 +75,35 @@
                     </div>
                 </div>
             </div>
-
-            <div class="row">
+            <div class="row g-4 mb-3">
                 @if (auth()->user()->role == 'Analis Kimia' || auth()->user()->role == 'Foreman')
-                    <div class="col-xl-6 col-lg-4">
-                        <div class="card ribbon-box right overflow-hidden">
-                            <div class="card-body text-center p-4">
-                                <div class="ribbon ribbon-success ribbon-shape trending-ribbon">
-                                    <i class="ri-hand-heart-fill text-white align-bottom"></i>
-                                    <span class="trending-ribbon-text">Kimia</span>
-                                </div>
-                                <img src="{{ asset('assets/images/blending_awal.png') }}" alt="gambar" height="100">
-                                <h5 class="mb-1 mt-4"><a href="" class="link-primary">Data Blending</a></h5>
-                                <p class="text-muted mb-4">Analisis Blending - Kimia</p>
-                                <div class="row justify-content-center">
-                                    <div class="col-lg-8">
-                                        <div id="chart-gga" data-colors='["--vz-danger"]'></div>
+                    <!-- Blending Kimia Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-primary text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-flask-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Data Blending</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Analisis Blending - Kimia</p>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div class="mt-4">
-                                    <a href="{{ route('analisa.blending-awal.index') }}" class="btn btn-light w-100">Lihat
-                                        Detail</a>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-primary-subtle text-primary">Kimia</span>
+                                        <span class="badge bg-primary-subtle text-primary">Analisis</span>
+                                    </div>
+                                    <a href="{{ route('analisa.blending-awal.index') }}"
+                                        class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -49,31 +113,34 @@
                 @if (auth()->user()->role == 'Analis Mikro' ||
                         auth()->user()->role == 'Analis Field' ||
                         auth()->user()->role == 'Foreman')
-                    <div class="col-xl-6 col-lg-4">
-                        <div class="card ribbon-box right overflow-hidden">
-                            <div class="card-body text-center p-4">
-                                <div class="ribbon ribbon-warning ribbon-shape trending-ribbon">
-                                    <i class="ri-hand-heart-fill text-white align-bottom"></i>
-                                    <span class="trending-ribbon-text">Mikro</span>
-                                </div>
-                                <img src="{{ asset('assets/images/blending_adjust.png') }}" alt="gambar" height="100">
-                                <h5 class="mb-1 mt-4"><a href="" class="link-primary">Data Blending After
-                                        Adjustment</a>
-                                </h5>
-                                <p class="text-muted mb-4">Analisis Blending After Adjust - Mikro</p>
-                                <div class="row justify-content-center">
-                                    <div class="col-lg-8">
-                                        <div id="chart-ggas" data-colors='["--vz-danger"]'></div>
+                    <!-- Blending After Adjustment Mikro Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-success text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-microscope-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Data Blending After Adjustment</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Analisis Blending After Adjust
+                                                - Mikro</p>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div class="mt-4">
-                                    <div class="mt-4">
-                                        <a href="{{ route('analisa.blending-awal-mikro.index') }}"
-                                            class="btn btn-light w-100">Lihat
-                                            Detail</a>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-success-subtle text-success">Mikro</span>
+                                        <span class="badge bg-success-subtle text-success">Analisis</span>
                                     </div>
-
+                                    <a href="{{ route('analisa.blending-awal-mikro.index') }}"
+                                        class="btn btn-success rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>

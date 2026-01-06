@@ -125,25 +125,28 @@
 
                                         <!-- Analis Field -->
                                         <div id="analisContainer" class="col-lg-12 d-none">
-                                            <div class="mb-3">
-                                                <label class="form-label">Shift <span style="color: red;">*</span></label>
-                                                <select name="shift_analis" id="shift_analis" class="form-control">
-                                                    <option value="">-- Pilih Shift --</option>
-                                                    <option value="1">Shift 1 (06:00 - 14:00)</option>
-                                                    <option value="2">Shift 2 (14:00 - 22:00)</option>
-                                                    <option value="3">Shift 3 (22:00 - 06:00)</option>
-                                                </select>
-                                                <small class="text-danger errorShiftAnalis"></small>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Nama Analis <span
-                                                        style="color: red;">*</span></label>
-                                                <input type="text" name="nama_analis" id="nama_analis"
-                                                    class="form-control comma-input" placeholder="Masukkan Nama Analis">
-                                                <small class="text-danger errorNamaAnalis"></small>
+                                            <div class="row g-3">
+                                                <div class="col-lg-6">
+                                                    <label class="form-label">Shift <span
+                                                            style="color: red;">*</span></label>
+                                                    <select name="shift_analis" id="shift_analis" class="form-control">
+                                                        <option value="">-- Pilih Shift --</option>
+                                                        <option value="1">Shift 1 (06:00 - 14:00)</option>
+                                                        <option value="2">Shift 2 (14:00 - 22:00)</option>
+                                                        <option value="3">Shift 3 (22:00 - 06:00)</option>
+                                                    </select>
+                                                    <small class="text-danger errorShiftAnalis"></small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <label class="form-label">Nama Analis <span
+                                                            style="color: red;">*</span></label>
+                                                    <input type="text" name="nama_analis" id="nama_analis"
+                                                        class="form-control comma-input" placeholder="Masukkan Nama Analis">
+                                                    <small class="text-danger errorNamaAnalis"></small>
+                                                </div>
                                             </div>
                                         </div>
-
+                                        
                                         <!-- EB Field -->
                                         <div id="ebContainer" class="col-lg-12 d-none">
                                             <label class="form-label">EB <span class="text-danger">*</span></label>

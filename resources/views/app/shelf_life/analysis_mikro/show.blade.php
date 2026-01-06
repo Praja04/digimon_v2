@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'Analisa Monitoring Daily Tank Mikro')
+@section('title', 'Analisis Mikro - Shelf Life')
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -11,11 +11,13 @@
 
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
+                                <li class="breadcrumb-item"><a href="{{ route('shelf-life.index') }}">Menu</a></li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('shelf-life.analysis-mikro.index') }}">Analisis Mikro</a>
+                                </li>
                                 <li class="breadcrumb-item active">@yield('title')</li>
                             </ol>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -23,45 +25,44 @@
 
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <h5 class="mb-3 text-dark fw-semibold">{{ $monitoringDailyTank->storage ?? '-' }} <span
-                                    class="fw-normal text-muted">(Storage)</span></h5>
-
-                            <div class="row g-3 text-dark">
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Tanggal Sampling</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->tanggal_sampling ?? '-' }}</span>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Detail Produksi</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-sm-6 col-md-8">
+                                    <h4 class="mb-1 text-dark">Nomor PO:
+                                        <strong>{{ $data->shelfLifeSample->productionBatch->po_number }}</strong>
+                                    </h4>
                                 </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Sampling Point</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->sampling_point ?? '-' }}</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <p class="mb-0 text-muted small">Tanggal Produksi:</p>
+                                    <h6 class="fw-bold">
+                                        {{ \Carbon\Carbon::parse($data->shelfLifeSample->productionBatch->date)->locale('id')->translatedFormat('d F Y') }}
+                                    </h6>
                                 </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Status Pemakaian</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->status_pemakaian ?? '-' }}</span>
+                                <div class="col-6 col-md-4">
+                                    <p class="mb-0 text-muted small">Varian:</p>
+                                    <h6 class="fw-bold">{{ $data->shelfLifeSample->productionBatch->variant }}</h6>
                                 </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Jenis Analisa</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->jenis_analisa ?? '-' }}</span>
+                                <div class="col-12 col-md-4">
+                                    <p class="mb-0 text-muted small">Variant FG:</p>
+                                    <h6 class="fw-bold">{{ $data->variant_fg }}</h6>
                                 </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Jenis Sample</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->jenis_sample ?? '-' }}</span>
+                                <div class="col-12 col-md-4">
+                                    <p class="mb-0 text-muted small">Kelompok Sample:</p>
+                                    <h6 class="fw-bold">{{ $data->kelompok_sample }}</h6>
                                 </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">QC Field</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->qcField->name ?? '-' }}</span>
+                                <div class="col-12 col-md-4">
+                                    <p class="mb-0 text-muted small">Kelompok Tanggal:</p>
+                                    <h6 class="fw-bold">{{ $data->kelompok_tanggal }}</h6>
                                 </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Operator</label>
-                                    <span class="fw-medium">{{ auth()->user()->name }}</span>
+                                <div class="col-12 col-md-4">
+                                    <p class="mb-0 text-muted small">Bulan Ke:</p>
+                                    <h6 class="fw-bold">{{ $data->bulan_ke }}</h6>
                                 </div>
                             </div>
                         </div>
@@ -71,15 +72,15 @@
 
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
+                    <div class="card">
+                        <div class="card-body">
                             <form id="form">
                                 <div class="row g-3">
-                                    <div class="alert alert-danger d-none error-alert"></div>
-                                    <input type="hidden" name="id" id="id"
-                                        value="{{ $monitoringDailyTank->id }}">
+                                    <input type="hidden" name="shelf_life_sampling_detail_id"
+                                        id="shelf_life_sampling_detail_id" value="{{ $data->id }}">
+                                    <input type="hidden" name="bulan_ke" id="bulan_ke" value="{{ $bulanKe }}">
 
-                                    <!-- ✅ Loading Indicator -->
+                                    <!-- Loading Indicator -->
                                     <div id="loadingContainer" class="col-lg-12">
                                         <div class="alert alert-primary text-center">
                                             <i class="mdi mdi-loading mdi-spin me-2"></i>
@@ -87,7 +88,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- ✅ Info Status -->
+                                    <!-- Info Status -->
                                     <div class="col-lg-12 d-none" id="statusContainer">
                                         <div class="alert alert-info" id="statusInfo">
                                             <strong>Status:</strong> <span id="statusText"></span>
@@ -111,7 +112,8 @@
                                                 <label class="form-label">Nama Analis <span
                                                         style="color: red;">*</span></label>
                                                 <input type="text" name="nama_analis" id="nama_analis"
-                                                    class="form-control comma-input" placeholder="Masukkan Nama Analis">
+                                                    class="form-control" placeholder="Masukkan Nama Analis"
+                                                    oninput="this.value = this.value.toUpperCase();">
                                                 <small class="text-danger errorNamaAnalis"></small>
                                             </div>
                                         </div>
@@ -125,11 +127,19 @@
                                         <small class="text-danger errorEb"></small>
                                     </div>
 
+                                    <!-- SA Field (hanya untuk bulan ke-1 dan ke-24) -->
+                                    <div id="saContainer" class="col-lg-12 d-none">
+                                        <label class="form-label">SA <span style="color: red;">*</span></label>
+                                        <input type="text" name="sa" id="sa"
+                                            class="form-control comma-input" placeholder="Masukkan nilai SA">
+                                        <small class="text-danger errorSa"></small>
+                                    </div>
+
                                     <!-- TPC Field -->
                                     <div id="tpcContainer" class="col-lg-12 d-none">
                                         <label class="form-label">TPC <span style="color: red;">*</span></label>
-                                        <input type="text" name="tpc" id="tpc" class="form-control comma-input"
-                                            placeholder="Masukkan nilai TPC">
+                                        <input type="text" name="tpc" id="tpc"
+                                            class="form-control comma-input" placeholder="Masukkan nilai TPC">
                                         <small class="text-danger errorTpc"></small>
                                     </div>
 
@@ -178,27 +188,26 @@
                 });
             });
 
-            let currentMonitoringDailyTankData = null;
-            let monitoringDailyTankId = $('#id').val();
+            let currentMikroData = null;
+            let detailId = $('#shelf_life_sampling_detail_id').val();
+            let bulanKe = parseInt($('#bulan_ke').val());
+            let showSa = [1, 24].includes(bulanKe);
 
-            // Load data monitoring daily tank saat halaman dibuka
-            function loadMonitoringDailyTankData() {
-                // Tampilkan loading
+            function loadMikroData() {
                 $('#loadingContainer').removeClass('d-none');
                 $('#statusContainer').addClass('d-none');
-                $('#ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#analisContainer, #ebContainer, #saContainer, #tpcContainer, #ymContainer').addClass('d-none');
                 $('#btnSave').prop('disabled', true);
 
                 $.ajax({
                     type: "GET",
-                    url: "{{ route('analisa.monitoring-daily-tank-mikro.getData') }}",
+                    url: "{{ route('shelf-life.analysis-mikro.get-mikro') }}",
                     data: {
-                        id: monitoringDailyTankId
+                        id: detailId
                     },
                     dataType: "json",
                     success: function(response) {
-                        currentMonitoringDailyTankData = response.data;
-                        // Sembunyikan loading
+                        currentMikroData = response.data;
                         $('#loadingContainer').addClass('d-none');
                         $('#statusContainer').removeClass('d-none');
                         showNextField();
@@ -215,23 +224,29 @@
             }
 
             function showNextField() {
-                let shift = currentMonitoringDailyTankData.shift;
-                let nama_analis = currentMonitoringDailyTankData.nama_analis;
-                let eb = currentMonitoringDailyTankData.eb;
-                let tpc = currentMonitoringDailyTankData.tpc;
-                let ym = currentMonitoringDailyTankData.ym;
+                let shift = currentMikroData.shift_analis;
+                let nama_analis = currentMikroData.nama_analis;
+                let eb = currentMikroData.eb;
+                let sa = currentMikroData.sa;
+                let tpc = currentMikroData.tpc;
+                let ym = currentMikroData.ym;
 
                 // Sembunyikan semua field dulu
-                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
-                $('#shift_analis, #nama_analis, #eb, #tpc, #ym').val('').prop('disabled', true);
+                $('#analisContainer, #ebContainer, #saContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#shift_analis, #nama_analis, #eb, #sa, #tpc, #ym').val('').prop('disabled', true);
                 $('#btnSave').prop('disabled', true);
 
+                // Hitung total steps
+                let totalSteps = showSa ? 5 : 4;
+
+                // ✅ STEP 1: Input Shift & Nama Analis terlebih dahulu
                 if (!shift || !nama_analis) {
-                    $('#statusText').text('Langkah 1/4 - Input Shift dan Nama Analis terlebih dahulu');
+                    $('#statusText').text('Langkah 1/' + totalSteps +
+                        ' - Input Shift dan Nama Analis terlebih dahulu');
                     $('#analisContainer').removeClass('d-none');
                     $('#shift_analis, #nama_analis').prop('disabled', false);
 
-                    // Auto-set shift berdasarkan jam saat ini (opsional, bisa di-skip jika user ingin pilih manual)
+                    // Auto-set shift berdasarkan jam saat ini
                     const currentHour = new Date().getHours();
                     let suggestedShift = 1;
                     if (currentHour >= 6 && currentHour < 14) {
@@ -249,51 +264,120 @@
                     // ✅ STEP 2: Jika Shift & Nama Analis sudah, input EB
                 } else if (eb === null || eb === undefined) {
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>Langkah 2/4 - Input EB`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>Langkah 2/${totalSteps} - Input EB`
                     );
                     $('#ebContainer').removeClass('d-none');
                     $('#eb').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
 
-                    // ✅ STEP 3: Jika EB sudah, input TPC
-                } else if (tpc === null || tpc === undefined) {
+                    // ✅ STEP 3: Jika EB sudah, input SA (hanya untuk bulan ke-1 dan ke-24)
+                } else if (showSa && (sa === null || sa === undefined)) {
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong><br>Langkah 3/4 - Input TPC`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong><br>Langkah 3/5 - Input SA (Bulan ke-${bulanKe})`
                     );
+                    $('#saContainer').removeClass('d-none');
+                    $('#sa').prop('disabled', false).focus();
+                    $('#btnSave').prop('disabled', false);
+
+                    // ✅ STEP 4: Jika EB (dan SA untuk bulan 1/24) sudah, input TPC
+                } else if (tpc === null || tpc === undefined) {
+                    let currentStep = showSa ? 4 : 3;
+                    let statusHtml =
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong>`;
+
+                    if (showSa) {
+                        statusHtml += ` | SA: <strong>${sa}</strong>`;
+                    }
+
+                    statusHtml += `<br>Langkah ${currentStep}/${totalSteps} - Input TPC`;
+
+                    $('#statusText').html(statusHtml);
                     $('#tpcContainer').removeClass('d-none');
                     $('#tpc').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
 
-                    // ✅ STEP 4: Jika TPC sudah, input YM (terakhir)
+                    // ✅ STEP 5: Jika TPC sudah, input YM (terakhir)
                 } else if (ym === null || ym === undefined) {
-                    $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>Langkah 4/4 - Input YM (terakhir)`
-                    );
+                    let statusHtml =
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong>`;
+
+                    if (showSa) {
+                        statusHtml += ` | SA: <strong>${sa}</strong>`;
+                    }
+
+                    statusHtml +=
+                        ` | TPC: <strong>${tpc}</strong><br>Langkah ${totalSteps}/${totalSteps} - Input YM (terakhir)`;
+
+                    $('#statusText').html(statusHtml);
                     $('#ymContainer').removeClass('d-none');
                     $('#ym').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
 
+                    // ✅ Semua sudah lengkap - Tampilkan mode readonly
                 } else {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Data Lengkap',
-                        text: 'Semua parameter analisa sudah diisi.'
-                    }).then(() => {
-                        window.location.href =
-                            "{{ route('monitoring-daily-tank.index') }}"
-                    });
+                    showCompleteData(shift, nama_analis, eb, sa, tpc, ym);
                 }
             }
 
-            // Panggil fungsi untuk load data saat halaman dibuka
-            loadMonitoringDailyTankData();
+            function showCompleteData(shift, nama_analis, eb, sa, tpc, ym) {
+                // Update status
+                $('#statusContainer').removeClass('d-none');
+                $('#statusContainer .alert').removeClass('alert-info').addClass('alert-success');
+                $('#statusText').html('<strong>✓ Data Lengkap</strong> - Semua parameter analisa sudah diisi');
+
+                // Tampilkan semua field dalam mode readonly
+                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').removeClass('d-none');
+
+                if (showSa) {
+                    $('#saContainer').removeClass('d-none');
+                }
+
+                // Set nilai dan readonly
+                const shiftText = shift == 1 ? 'Shift 1 (06:00 - 14:00)' :
+                    shift == 2 ? 'Shift 2 (14:00 - 22:00)' :
+                    'Shift 3 (22:00 - 06:00)';
+
+                $('#shift_analis').val(shift).prop('disabled', true);
+                $('#nama_analis').val(nama_analis).prop('readonly', true);
+                $('#eb').val(eb).prop('readonly', true);
+                $('#tpc').val(tpc).prop('readonly', true);
+                $('#ym').val(ym).prop('readonly', true);
+
+                if (showSa) {
+                    $('#sa').val(sa).prop('readonly', true);
+                }
+
+                // Sembunyikan tombol simpan
+                $('#btnSave').addClass('d-none');
+
+                // Ubah label untuk menunjukkan readonly
+                $('#analisContainer label').html('Shift <span class="badge bg-success ms-2">Terisi</span>');
+                $('#analisContainer .col-lg-6:last-child label').html(
+                    'Nama Analis <span class="badge bg-success ms-2">Terisi</span>');
+                $('#ebContainer label').html('EB <span class="badge bg-success ms-2">Terisi</span>');
+                $('#tpcContainer label').html('TPC <span class="badge bg-success ms-2">Terisi</span>');
+                $('#ymContainer label').html('YM <span class="badge bg-success ms-2">Terisi</span>');
+
+                if (showSa) {
+                    $('#saContainer label').html('SA <span class="badge bg-success ms-2">Terisi</span>');
+                }
+
+                // Tambahkan styling untuk readonly
+                $('.form-control[readonly], .form-control:disabled').css({
+                    'background-color': '#f8f9fa',
+                    'cursor': 'not-allowed',
+                    'border-color': '#28a745'
+                });
+            }
+
+            loadMikroData();
 
             $('#form').submit(function(e) {
                 e.preventDefault();
 
                 $.ajax({
                     data: $(this).serialize(),
-                    url: "{{ route('analisa.monitoring-daily-tank-mikro.update') }}",
+                    url: "{{ route('shelf-life.analysis-mikro.store') }}",
                     type: "POST",
                     dataType: 'json',
                     beforeSend: function() {
@@ -312,8 +396,7 @@
                             title: 'Sukses',
                             text: response.message,
                         }).then(() => {
-                            // Reload data untuk menampilkan field berikutnya
-                            loadMonitoringDailyTankData();
+                            loadMikroData();
                         });
                     },
                     error: function(xhr) {
@@ -342,6 +425,10 @@
                             if (errors.eb) {
                                 $('#eb').addClass('is-invalid');
                                 $('.errorEb').html(errors.eb.join('<br>'));
+                            }
+                            if (errors.sa) {
+                                $('#sa').addClass('is-invalid');
+                                $('.errorSa').html(errors.sa.join('<br>'));
                             }
                             if (errors.tpc) {
                                 $('#tpc').addClass('is-invalid');

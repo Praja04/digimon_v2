@@ -56,6 +56,11 @@ class UserSeeder extends Seeder
                 'email' => 'operator@example.com',
                 'role' => 7,
             ],
+            [
+                'name' => 'Helper',
+                'email' => 'helper@example.com',
+                'role' => 8,
+            ],
         ];
 
         foreach ($users as $user) {
@@ -66,7 +71,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password'), // default password
                 'email_verified_at' => now(),
                 'remember_token' => Str::random(10),
-                'created_at' => now(),
+                'created_at' => now(),  
                 'updated_at' => now(),
             ]);
         }
