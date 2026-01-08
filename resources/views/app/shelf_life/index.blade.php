@@ -88,202 +88,184 @@
 
             <!-- Main Content Cards -->
             <div class="row g-4 mb-3">
-                <!-- Masuk Sampel Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-primary text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-inbox-archive-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">Masuk Sampel</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Input Data Sampel Shelf Life</p>
+                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Helper']))
+                    <!-- Masuk Sampel Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-primary text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-inbox-archive-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Masuk Sampel</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Input Data Sampel Shelf Life
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-primary-subtle text-primary">Input Sampel</span>
-                                    <span class="badge bg-primary-subtle text-primary">Shelf Life</span>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-primary-subtle text-primary">Input Sampel</span>
+                                        <span class="badge bg-primary-subtle text-primary">Shelf Life</span>
+                                    </div>
+                                    <a href="{{ route('shelf-life.sample.index') }}"
+                                        class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
-                                <a href="{{ route('shelf-life.sample.index') }}"
-                                    class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Pembuatan Checksheet Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-success text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-file-list-3-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">Pembuatan Checksheet</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Pembuatan Checksheet Pengantaran SL
-                                        </p>
+                    <!-- Pembuatan Checksheet Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-success text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-file-list-3-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Pembuatan Checksheet</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Pembuatan Checksheet
+                                                Pengantaran SL
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-success-subtle text-success">Checksheet</span>
-                                    <span class="badge bg-success-subtle text-success">Pengantaran</span>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-success-subtle text-success">Checksheet</span>
+                                        <span class="badge bg-success-subtle text-success">Pengantaran</span>
+                                    </div>
+                                    <a href="{{ route('shelf-life.checksheet.index') }}"
+                                        class="btn btn-success rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
-                                <a href="{{ route('shelf-life.checksheet.index') }}"
-                                    class="btn btn-success rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
-                <!-- Proses Analisa Kimia Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-warning text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-flask-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">Proses Analisa Kimia</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Proses Analisa Kimia Shelf Life</p>
+                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Helper', 'Analis Kimia']))
+                    <!-- Proses Analisa Kimia Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-warning text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-flask-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Proses Analisa Kimia</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Proses Analisa Kimia Shelf Life
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-warning-subtle text-warning">Proses</span>
-                                    <span class="badge bg-warning-subtle text-warning">Kimia</span>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-warning-subtle text-warning">Proses</span>
+                                        <span class="badge bg-warning-subtle text-warning">Kimia</span>
+                                    </div>
+                                    <a href="{{ route('shelf-life.analysis-kimia.index') }}"
+                                        class="btn btn-warning rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
-                                <a href="{{ route('shelf-life.analysis-kimia.index') }}"
-                                    class="btn btn-warning rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
-                <!-- Proses Analisa Mikro Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-danger text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-microscope-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">Proses Analisa Mikro</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Proses Analisa Mikro Shelf Life</p>
+                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Helper', 'Analis Mikro']))
+                    <!-- Proses Analisa Mikro Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-danger text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-microscope-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Proses Analisa Mikro</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Proses Analisa Mikro Shelf Life
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-danger-subtle text-danger">Proses</span>
-                                    <span class="badge bg-danger-subtle text-danger">Mikro</span>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-danger-subtle text-danger">Proses</span>
+                                        <span class="badge bg-danger-subtle text-danger">Mikro</span>
+                                    </div>
+                                    <a href="{{ route('shelf-life.analysis-mikro.index') }}"
+                                        class="btn btn-danger rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
-                                <a href="{{ route('shelf-life.analysis-mikro.index') }}"
-                                    class="btn btn-danger rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
-                <!-- Data Hasil Analisa Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-info text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-bar-chart-box-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">Data Hasil Analisa</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Data Hasil Analisa (Staff Up)</p>
+                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman']))
+                    <!-- Data Hasil Analisa Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-info text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-bar-chart-box-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Data Hasil Analisa</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Data Hasil Analisa (Staff Up)
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-info-subtle text-info">Data Hasil</span>
-                                    <span class="badge bg-info-subtle text-info">Staff Up</span>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-info-subtle text-info">Data Hasil</span>
+                                        <span class="badge bg-info-subtle text-info">Staff Up</span>
+                                    </div>
+                                    <a href="{{ route('shelf-life.result.index') }}"
+                                        class="btn btn-info rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
-                                <a href="#" class="btn btn-info rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Dashboard Shelf Life Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-primary text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-dashboard-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">Dashboard Shelf Life</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Dashboard Shelf Life (Staff Up)
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-primary-subtle text-primary">Dashboard</span>
-                                    <span class="badge bg-primary-subtle text-primary">Staff Up</span>
-                                </div>
-                                <a href="#" class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endif
 
                 <!-- Stock Opname Card -->
-                {{-- <div class="col-12 col-sm-6 col-xl-6">
+                <div class="col-12 col-sm-6 col-xl-6">
                     <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-success text-white border-0 py-4">
+                        <div class="card-header bg-gradient-primary text-white border-0 py-4">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center">
                                     <div
@@ -292,7 +274,8 @@
                                     </div>
                                     <div>
                                         <h5 class="text-white mb-1 fw-bold">Stock Opname</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Stock Opname Shelf Life</p>
+                                        <p class="text-white text-opacity-75 mb-0 small">Stock Opname Shelf Life (Comming
+                                            Soon)</p>
                                     </div>
                                 </div>
                             </div>
@@ -300,16 +283,16 @@
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="d-flex gap-2">
-                                    <span class="badge bg-success-subtle text-success">Stock</span>
-                                    <span class="badge bg-success-subtle text-success">Opname</span>
+                                    <span class="badge bg-primary-subtle text-primary">Stock</span>
+                                    <span class="badge bg-primary-subtle text-primary">Opname</span>
                                 </div>
-                                <a href="#" class="btn btn-success rounded-pill px-4 d-flex align-items-center">
+                                <a href="#" class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
                                     Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
                                 </a>
                             </div>
                         </div>
                     </div>
-                </div> --}}
+                </div>
             </div>
         </div>
     </div>

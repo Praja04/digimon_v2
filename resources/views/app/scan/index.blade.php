@@ -123,180 +123,249 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
     <script>
-        let html5QrCode;
-        let isScanning = false;
-        let redirectTimer = null;
-
-        const typeNames = {
-            'gga': 'GGA',
-            'ggas': 'GGAS',
-            'blending_awal': 'Blending Awal',
-            'blending_after_adjust': 'Blending After Adjust'
-        };
-
         $(document).ready(function() {
+            let html5QrCode;
+            let isScanning = false;
+            let redirectTimer = null;
+
+            // Mapping nama type QC yang lengkap
+            const typeNames = {
+                'gga': 'GGA',
+                'ggas': 'GGAS',
+                'blending-awal': 'Blending Awal',
+                'blending-awal-mikro': 'Blending Awal Mikro',
+                'monitoring-turun-blending': 'Monitoring Turun Blending',
+                'monitoring-pasteurisasi': 'Monitoring Pasteurisasi',
+                'monitoring-storage-kimia': 'Monitoring Storage Kimia',
+                'monitoring-storage-mikro': 'Monitoring Storage Mikro',
+                'monitoring-storage-before-use': 'Monitoring Storage Before Use',
+                'monitoring-daily-tank-kimia': 'Monitoring Daily Tank - Kimia',
+                'monitoring-daily-tank-mikro': 'Monitoring Daily Tank - Mikro',
+                'monitoring-ongoing-kimia': 'Monitoring Ongoing - Kimia',
+                'monitoring-ongoing-mikro': 'Monitoring Ongoing - Mikro',
+                'shelf-life-sampling': 'Shelf Life Analisis'
+            };
+
+            // Setup AJAX
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
+
+            // Initialize Scanner
             initializeScanner();
 
+            // Event: Manual Scan Form Submit
             $('#manualScanForm').on('submit', function(e) {
                 e.preventDefault();
                 const url = $('#manualUrl').val().trim();
-                if (url) processQRCode(url);
+                if (url) {
+                    processQRCode(url);
+                }
             });
 
+            // Event: Camera Select Change
             $('#cameraSelect').on('change', function() {
                 stopScanning();
                 startScanning($(this).val());
             });
-        });
 
-        function initializeScanner() {
-            html5QrCode = new Html5Qrcode("reader");
+            // Function: Initialize Scanner
+            function initializeScanner() {
+                html5QrCode = new Html5Qrcode("reader");
 
-            Html5Qrcode.getCameras().then(cameras => {
-                if (!cameras.length) {
-                    return showError("Tidak ada kamera ditemukan");
-                }
-
-                updateCameraList(cameras);
-                const selected = cameras[0].id;
-                $('#cameraSelect').val(selected);
-                startScanning(selected);
-
-            }).catch(() => showError("Gagal mengakses kamera"));
-        }
-
-        function updateCameraList(cameras) {
-            const select = $('#cameraSelect');
-            select.empty();
-            cameras.forEach((cam, i) => {
-                select.append(new Option(cam.label || `Camera ${i+1}`, cam.id));
-            });
-        }
-
-        function startScanning(cameraId) {
-            if (isScanning) return;
-
-            html5QrCode.start(
-                cameraId, {
-                    fps: 10,
-                    qrbox: {
-                        width: 250,
-                        height: 250
+                Html5Qrcode.getCameras().then(function(cameras) {
+                    if (!cameras || cameras.length === 0) {
+                        showError("Tidak ada kamera ditemukan");
+                        return;
                     }
-                },
-                onScanSuccess
-            ).then(() => {
-                isScanning = true;
-                updateScannerStatus("Kamera aktif, arahkan ke QR Code", false);
-            }).catch(() => showError("Scanner gagal dijalankan"));
-        }
 
-        function stopScanning() {
-            if (isScanning) {
-                html5QrCode.stop().then(() => {
-                    isScanning = false;
-                }).catch(() => {
-                    isScanning = false;
+                    updateCameraList(cameras);
+                    const selectedCamera = cameras[0].id;
+                    $('#cameraSelect').val(selectedCamera);
+                    startScanning(selectedCamera);
+
+                }).catch(function(err) {
+                    console.error("Error getting cameras:", err);
+                    showError("Gagal mengakses kamera");
                 });
             }
-        }
 
-        function onScanSuccess(decodedText) {
-            stopScanning();
-            processQRCode(decodedText);
-        }
+            // Function: Update Camera List
+            function updateCameraList(cameras) {
+                const $select = $('#cameraSelect');
+                $select.empty();
 
-        function processQRCode(url) {
-            updateScannerStatus("Memproses QR Code...", false);
+                $.each(cameras, function(index, camera) {
+                    const label = camera.label || ('Camera ' + (index + 1));
+                    $select.append($('<option></option>').val(camera.id).text(label));
+                });
+            }
 
-            $.post("{{ route('scan.store') }}", {
-                    url: url
-                })
-                .done(res => {
-                    if (res.status === 'success') {
-                        showScanResult(res.qc_type, res.qc_id, res.redirect_url);
-                    } else {
-                        showError(res.message || "QR Code tidak valid");
+            // Function: Start Scanning
+            function startScanning(cameraId) {
+                if (isScanning) return;
+
+                html5QrCode.start(
+                    cameraId, {
+                        fps: 10,
+                        qrbox: {
+                            width: 250,
+                            height: 250
+                        }
+                    },
+                    onScanSuccess
+                ).then(function() {
+                    isScanning = true;
+                    updateScannerStatus("Kamera aktif, arahkan ke QR Code", false);
+                }).catch(function(err) {
+                    console.error("Scanner start error:", err);
+                    showError("Scanner gagal dijalankan");
+                });
+            }
+
+            // Function: Stop Scanning
+            function stopScanning() {
+                if (isScanning && html5QrCode) {
+                    html5QrCode.stop().then(function() {
+                        isScanning = false;
+                    }).catch(function(err) {
+                        console.error("Scanner stop error:", err);
+                        isScanning = false;
+                    });
+                }
+            }
+
+            // Function: On Scan Success
+            function onScanSuccess(decodedText) {
+                stopScanning();
+                processQRCode(decodedText);
+            }
+
+            // Function: Process QR Code
+            function processQRCode(url) {
+                updateScannerStatus("Memproses QR Code...", false);
+
+                $.ajax({
+                    url: "{{ route('scan.store') }}",
+                    type: "POST",
+                    data: {
+                        url: url
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            showScanResult(response.qc_type, response.qc_id, response.redirect_url);
+                        } else {
+                            showError(response.message || "QR Code tidak valid");
+                            restartCamera();
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = "QR gagal diproses";
+
+                        if (xhr.status === 403 && xhr.responseJSON) {
+                            // Handle validation error (belum checklist)
+                            const response = xhr.responseJSON;
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Akses Ditolak',
+                                html: response.message + '<br><br><a href="' + response
+                                    .redirect_url +
+                                    '" class="btn btn-warning mt-3"><i class="mdi mdi-clipboard-check-outline"></i> Ke Halaman Checksheet</a>',
+                                showConfirmButton: false,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false
+                            }).then(function(result) {
+                                if (result.isConfirmed && response.redirect_url) {
+                                    window.location.href = response.redirect_url;
+                                } else {
+                                    restartCamera();
+                                }
+                            });
+                            return;
+                        }
+
+                        if (xhr.status === 404) {
+                            message = "Data tidak ditemukan";
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        showError(message);
                         restartCamera();
                     }
-                })
-                .fail((xhr) => {
-                    const message = xhr.responseJSON?.message || "QR gagal diproses";
-                    showError(message);
-                    restartCamera();
                 });
-        }
-
-        function showScanResult(type, id, redirectUrl) {
-            $('#resultType').text(typeNames[type] || type);
-            $('#resultId').text('#' + id);
-            $('#resultTime').text(new Date().toLocaleString('id-ID'));
-
-            $('#resultCard').slideDown(200);
-
-            startRedirect(redirectUrl);
-        }
-
-        function startRedirect(url) {
-            let time = 3;
-            const el = $('#countdown');
-            el.text(time);
-
-            // Clear previous timer if exists
-            if (redirectTimer) {
-                clearInterval(redirectTimer);
             }
 
-            redirectTimer = setInterval(() => {
-                time--;
-                el.text(time);
+            // Function: Show Scan Result
+            function showScanResult(type, id, redirectUrl) {
+                const typeName = typeNames[type] || type;
 
-                if (time <= 0) {
+                $('#resultType').text(typeName);
+                $('#resultId').text('#' + id);
+                $('#resultTime').text(new Date().toLocaleString('id-ID'));
+
+                $('#resultCard').slideDown(200);
+
+                startRedirect(redirectUrl);
+            }
+
+            // Function: Start Redirect Countdown
+            function startRedirect(url) {
+                let time = 3;
+                const $countdown = $('#countdown');
+                $countdown.text(time);
+
+                // Clear previous timer if exists
+                if (redirectTimer) {
+                    clearInterval(redirectTimer);
+                }
+
+                redirectTimer = setInterval(function() {
+                    time--;
+                    $countdown.text(time);
+
+                    if (time <= 0) {
+                        clearInterval(redirectTimer);
+                        redirectTimer = null;
+                        window.location.href = url;
+                    }
+                }, 1000);
+            }
+
+            function restartCamera() {
+                setTimeout(function() {
+                    const selectedCamera = $('#cameraSelect').val();
+                    if (selectedCamera) {
+                        updateScannerStatus("Mengaktifkan kembali kamera...", false);
+                        startScanning(selectedCamera);
+                    }
+                }, 2000);
+            }
+
+            function updateScannerStatus(message, isError) {
+                const $statusEl = $('#scannerStatus');
+                $statusEl.text(message);
+
+                if (isError) {
+                    $statusEl.addClass('alert-error');
+                } else {
+                    $statusEl.removeClass('alert-error');
+                }
+            }
+
+            // Function: Show Error
+            function showError(message) {
+                updateScannerStatus(message, true);
+                $('#resultCard').slideUp(200);
+
+                if (redirectTimer) {
                     clearInterval(redirectTimer);
                     redirectTimer = null;
-                    window.location.href = url;
                 }
-            }, 1000);
-        }
-
-        function restartCamera() {
-            // Wait 2 seconds before restarting camera
-            setTimeout(() => {
-                const selectedCamera = $('#cameraSelect').val();
-                if (selectedCamera) {
-                    updateScannerStatus("Mengaktifkan kembali kamera...", false);
-                    startScanning(selectedCamera);
-                }
-            }, 2000);
-        }
-
-        function updateScannerStatus(msg, isError = false) {
-            const statusEl = $('#scannerStatus');
-            statusEl.text(msg);
-
-            if (isError) {
-                statusEl.addClass('alert-error');
-            } else {
-                statusEl.removeClass('alert-error');
             }
-        }
-
-        function showError(msg) {
-            updateScannerStatus(msg, true);
-
-            // Hide result card if visible
-            $('#resultCard').slideUp(200);
-
-            // Clear redirect timer if exists
-            if (redirectTimer) {
-                clearInterval(redirectTimer);
-                redirectTimer = null;
-            }
-        }
+        });
     </script>
 @endsection

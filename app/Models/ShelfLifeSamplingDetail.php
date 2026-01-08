@@ -15,8 +15,10 @@ class ShelfLifeSamplingDetail extends Model
         'koding',
         'jam_koding',
         'bulan_ke',
+        'tanggal_filling',
         'ruang_sl',
         'bin_location',
+        'is_checked',
     ];
 
     public function shelfLifeSample()

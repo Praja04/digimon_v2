@@ -89,10 +89,11 @@
             $('.select2').select2({
                 placeholder: '-- Pilih Opsi --'
             });
-
+            
             var table = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: "{{ route('shelf-life.checksheet.index') }}",
                     data: function(d) {

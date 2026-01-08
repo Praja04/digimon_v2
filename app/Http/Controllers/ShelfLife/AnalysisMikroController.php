@@ -152,6 +152,12 @@ class AnalysisMikroController extends Controller
     public function show($id)
     {
         $data = ShelfLifeSamplingDetail::with(['shelfLifeSample.productionBatch', 'shelfLifeSamplingMikro'])->findOrFail($id);
+
+        if (!$data->is_checked) {
+            return redirect()->route('shelf-life.analysis-kimia.index')
+                ->with('error', 'Sample belum di-checklist. Silakan checklist terlebih dahulu di <a href="' . route('shelf-life.checksheet.index') . '" class="alert-link">halaman checksheet</a>.');
+        }
+
         $bulanKe = $data->bulan_ke;
 
         return view('app.shelf_life.analysis_mikro.show', compact('data', 'bulanKe'));
@@ -226,6 +232,12 @@ class AnalysisMikroController extends Controller
             }
 
             $detail = ShelfLifeSamplingDetail::findOrFail($request->shelf_life_sampling_detail_id);
+            if (!$detail->is_checked) {
+                return response()->json([
+                    'message' => 'Sample belum di-checklist. Silakan checklist terlebih dahulu.',
+                    'redirect_url' => route('shelf-life.checksheet.index')
+                ], 403);
+            }
             $bulanKe = $detail->bulan_ke;
             $showSa = in_array($bulanKe, [1, 24]);
 

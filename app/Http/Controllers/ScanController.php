@@ -123,6 +123,16 @@ class ScanController extends Controller
                         'id' => $shelfLifeSamplingId
                     ];
                 },
+                'validate_before_scan' => function ($id, $qcData) {
+                    if (!$qcData->is_checked) {
+                        return [
+                            'valid' => false,
+                            'message' => 'Sample belum di-checklist. Silakan checklist terlebih dahulu.',
+                            'redirect_url' => route('shelf-life.checksheet.index')
+                        ];
+                    }
+                    return ['valid' => true];
+                },
                 'update_scanned_resolver' => function ($id, $qcData) {
                     $userRole = auth()->user()->role;
 
@@ -132,13 +142,14 @@ class ScanController extends Controller
                         ? ShelfLifeSamplingKimia::class
                         : ShelfLifeSamplingMikro::class;
 
-                    $modelClass::updateOrCreate(
-                        ['shelf_life_sampling_detail_id' => $id],
-                        ['scanned_at' => Carbon::now()]
-                    );
+                    if ($qcData->is_checked) {
+                        $modelClass::updateOrCreate(
+                            ['shelf_life_sampling_detail_id' => $id],
+                            ['scanned_at' => Carbon::now()]
+                        );
+                    }
                 }
             ],
-
         ];
 
         if (!isset($qcMapping[$type])) {
@@ -160,6 +171,19 @@ class ScanController extends Controller
             }
 
             $qcData = $modelClass::findOrFail($id);
+
+            if (isset($config['validate_before_scan']) && is_callable($config['validate_before_scan'])) {
+                $validation = $config['validate_before_scan']($id, $qcData);
+
+                if (!$validation['valid']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => $validation['message'],
+                        'redirect_url' => $validation['redirect_url'] ?? null
+                    ], 403);
+                }
+            }
 
             if (isset($config['route_resolver']) && is_callable($config['route_resolver'])) {
                 $routeData = $config['route_resolver']($id, $qcData);

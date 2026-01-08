@@ -14,74 +14,135 @@ Routes berdasarkan Role Access
 --------------------------------------------*/
 
 Route::middleware(['auth'])->group(function () {
-    // Dashboard - Analisis GGA GGAS
-    Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
+    /*------------------------------------------
+    Dashboard
+    Roles: Supervisor, Foreman
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman'])->group(function () {
+        // Dashboard - Analisis GGA GGAS
+        Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
 
-    // Dahboard - Blending Awal
-    Route::get('/dashboard/blending-awal', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'index'])->name('dashboard.blending-awal.index');
+        // Dashboard - Blending Awal
+        Route::get('/dashboard/blending-awal', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'index'])->name('dashboard.blending-awal.index');
 
-    // Dashboard - Blending After Adjust
-    Route::get('/dashboard/blending-after-adjust', [App\Http\Controllers\Dashboard\BlendingAfterAdjustController::class, 'index'])->name('dashboard.blending-after-adjust.index');
+        // Dashboard - Blending After Adjust
+        Route::get('/dashboard/blending-after-adjust', [App\Http\Controllers\Dashboard\BlendingAfterAdjustController::class, 'index'])->name('dashboard.blending-after-adjust.index');
 
-    // Monitoring - Turun Blending
-    Route::get('/dashboard/monitoring-turun-blending', [App\Http\Controllers\Dashboard\MonitoringTurunBlendingController::class, 'index'])->name('dashboard.monitoring-turun-blending.index');
+        // Monitoring - Turun Blending
+        Route::get('/dashboard/monitoring-turun-blending', [App\Http\Controllers\Dashboard\MonitoringTurunBlendingController::class, 'index'])->name('dashboard.monitoring-turun-blending.index');
 
-    // Monitoring - On Going Kimia
-    Route::get('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'index'])->name('monitoring-ongoing-kimia.index');
-    Route::get('/monitoring-ongoing-kimia/edit/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'edit'])->name('monitoring-ongoing-kimia.edit');
-    Route::get('/monitoring-ongoing-kimia/show/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'show'])->name('monitoring-ongoing-kimia.show');
-    Route::get('/analisa/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'analisa'])->name('monitoring-ongoing-kimia.analisa');
-    Route::post('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'store'])->name('monitoring-ongoing-kimia.store');
-    Route::post('/monitoring-ongoing-kimia/analisa', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'storeAnalisa'])->name('monitoring-ongoing-kimia.store.analisa');
-    Route::delete('/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'destroy'])->name('monitoring-ongoing-kimia.destroy');
-    Route::post('/monitoring-ongoing-kimia/get-po', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-kimia.get-po');
-    Route::post('/monitoring-ongoing-kimia/get-variant', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'getVariantByPo'])->name('monitoring-ongoing-kimia.get-variant');
+        // Dashboard - Shelf Life
+        Route::get('/dashboard/shelf-life', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'index'])->name('dashboard.shelf-life.index');
+        Route::get('/dashboard/shelf-life/chart-data', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getChartData'])->name('dashboard.shelf-life.chart-data');
+        Route::get('/dashboard/shelf-life/kelompok-tanggal', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getKelompokTanggal'])->name('dashboard.shelf-life.kelompok-tanggal');
+    });
 
-    // Monitoring - On Going Mikro
-    Route::get('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'index'])->name('monitoring-ongoing-mikro.index');
-    Route::get('/monitoring-ongoing-mikro/edit/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'edit'])->name('monitoring-ongoing-mikro.edit');
-    Route::get('/monitoring-ongoing-mikro/show/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'show'])->name('monitoring-ongoing-mikro.show');
-    Route::get('/analisa/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'analisa'])->name('monitoring-ongoing-mikro.analisa');
-    Route::post('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'store'])->name('monitoring-ongoing-mikro.store');
-    Route::post('/monitoring-ongoing-mikro/analisa/mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaMikro'])->name('monitoring-ongoing-mikro.analisa.mikro');
-    Route::post('/monitoring-ongoing-mikro/analisa/kimia', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaKimia'])->name('monitoring-ongoing-mikro.analisa.kimia');
-    Route::delete('/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'destroy'])->name('monitoring-ongoing-mikro.destroy');
-    Route::post('/monitoring-ongoing-mikro/get-po', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-mikro.get-po');
-    Route::post('/monitoring-ongoing-mikro/get-variant', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getVariantByPo'])->name('monitoring-ongoing-mikro.get-variant');
+    /*------------------------------------------
+    Monitoring - On Going Kimia
+    Roles: Supervisor, Foreman, Analis Kimia
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia'])->group(function () {
+        Route::get('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'index'])->name('monitoring-ongoing-kimia.index');
+        Route::get('/monitoring-ongoing-kimia/edit/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'edit'])->name('monitoring-ongoing-kimia.edit');
+        Route::get('/monitoring-ongoing-kimia/show/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'show'])->name('monitoring-ongoing-kimia.show');
+        Route::get('/analisa/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'analisa'])->name('monitoring-ongoing-kimia.analisa');
+        Route::post('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'store'])->name('monitoring-ongoing-kimia.store');
+        Route::post('/monitoring-ongoing-kimia/analisa', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'storeAnalisa'])->name('monitoring-ongoing-kimia.store.analisa');
+        Route::delete('/monitoring-ongoing-kimia/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'destroy'])->name('monitoring-ongoing-kimia.destroy');
+        Route::post('/monitoring-ongoing-kimia/get-po', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-kimia.get-po');
+        Route::post('/monitoring-ongoing-kimia/get-variant', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'getVariantByPo'])->name('monitoring-ongoing-kimia.get-variant');
+    });
 
-    // Scan
-    Route::get('/scan', [App\Http\Controllers\ScanController::class, 'index'])->name('scan.index');
-    Route::post('/scan', [App\Http\Controllers\ScanController::class, 'store'])->name('scan.store');
+    /*------------------------------------------
+    Monitoring - On Going Mikro
+    Roles: Supervisor, Foreman, Analis Mikro
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Analis Mikro'])->group(function () {
+        Route::get('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'index'])->name('monitoring-ongoing-mikro.index');
+        Route::get('/monitoring-ongoing-mikro/edit/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'edit'])->name('monitoring-ongoing-mikro.edit');
+        Route::get('/monitoring-ongoing-mikro/show/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'show'])->name('monitoring-ongoing-mikro.show');
+        Route::get('/analisa/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'analisa'])->name('monitoring-ongoing-mikro.analisa');
+        Route::post('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'store'])->name('monitoring-ongoing-mikro.store');
+        Route::post('/monitoring-ongoing-mikro/analisa/mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaMikro'])->name('monitoring-ongoing-mikro.analisa.mikro');
+        Route::post('/monitoring-ongoing-mikro/analisa/kimia', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'storeAnalisaKimia'])->name('monitoring-ongoing-mikro.analisa.kimia');
+        Route::delete('/monitoring-ongoing-mikro/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'destroy'])->name('monitoring-ongoing-mikro.destroy');
+        Route::post('/monitoring-ongoing-mikro/get-po', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getPoByDateAndStorage'])->name('monitoring-ongoing-mikro.get-po');
+        Route::post('/monitoring-ongoing-mikro/get-variant', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'getVariantByPo'])->name('monitoring-ongoing-mikro.get-variant');
+    });
 
-    // Shelf Life
-    Route::get('/shelf-life', [App\Http\Controllers\ShelfLife\ShelfLifeController::class, 'index'])->name('shelf-life.index');
+    /*------------------------------------------
+    Scan
+    Roles: Analis Kimia, Analis Mikro
+    --------------------------------------------*/
+    Route::middleware(['user-access:Analis Kimia,Analis Mikro'])->group(function () {
+        Route::get('/scan', [App\Http\Controllers\ScanController::class, 'index'])->name('scan.index');
+        Route::post('/scan', [App\Http\Controllers\ScanController::class, 'store'])->name('scan.store');
+    });
 
-    // Shelf Life - Sample
-    Route::get('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'index'])->name('shelf-life.sample.index');
-    Route::get('/shelf-life/sample/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'edit'])->name('shelf-life.sample.edit');
-    Route::post('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'store'])->name('shelf-life.sample.store');
-    Route::post('/shelf-life/sample/get-po', [App\Http\Controllers\ShelfLife\SampleController::class, 'getPoByDateAndStorage'])->name('shelf-life.sample.get-po');
-    Route::delete('/shelf-life/sample/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroy'])->name('shelf-life.sample.destroy');
-    Route::get('/shelf-life/sample/show/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'show'])->name('shelf-life.sample.show');
-    Route::post('/shelf-life/sample/detail', [App\Http\Controllers\ShelfLife\SampleController::class, 'storeSamplingDetail'])->name('shelf-life.sample.detail.store');
-    Route::get('/shelf-life/sample/detail/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'editSamplingDetail'])->name('shelf-life.sample.detail.edit');
-    Route::delete('/shelf-life/sample/detail/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroySamplingDetail'])->name('shelf-life.sample.detail.destroy');
+    /*------------------------------------------
+    Shelf Life - Main Index
+    Roles: Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Helper,Analis Kimia,Analis Mikro'])->group(function () {
+        Route::get('/shelf-life', [App\Http\Controllers\ShelfLife\ShelfLifeController::class, 'index'])->name('shelf-life.index');
+    });
 
-    // Shelf Life - Checksheet
-    Route::get('/shelf-life/checksheet', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'index'])->name('shelf-life.checksheet.index');
-    Route::post('/shelf-life/checksheet/update-status', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'updateStatus'])->name('shelf-life.checksheet.update-status');
+    /*------------------------------------------
+    Shelf Life - Sample
+    Roles: Supervisor, Foreman, Helper
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Helper'])->group(function () {
+        Route::get('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'index'])->name('shelf-life.sample.index');
+        Route::get('/shelf-life/sample/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'edit'])->name('shelf-life.sample.edit');
+        Route::post('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'store'])->name('shelf-life.sample.store');
+        Route::post('/shelf-life/sample/get-po', [App\Http\Controllers\ShelfLife\SampleController::class, 'getPoByDateAndStorage'])->name('shelf-life.sample.get-po');
+        Route::delete('/shelf-life/sample/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroy'])->name('shelf-life.sample.destroy');
+        Route::get('/shelf-life/sample/show/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'show'])->name('shelf-life.sample.show');
+        Route::post('/shelf-life/sample/detail', [App\Http\Controllers\ShelfLife\SampleController::class, 'storeSamplingDetail'])->name('shelf-life.sample.detail.store');
+        Route::get('/shelf-life/sample/detail/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'editSamplingDetail'])->name('shelf-life.sample.detail.edit');
+        Route::delete('/shelf-life/sample/detail/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroySamplingDetail'])->name('shelf-life.sample.detail.destroy');
+    });
 
-    // Shelf Life - Analisis Kimia
-    Route::get('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'index'])->name('shelf-life.analysis-kimia.index');
-    Route::get('/shelf-life/analisis-kimia/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'show'])->name('shelf-life.analysis-kimia.show');
-    Route::post('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'store'])->name('shelf-life.analysis-kimia.store');
-    Route::get('/shelf-life/analisis-kimia/edit/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'edit'])->name('shelf-life.analysis-kimia.edit');
+    /*------------------------------------------
+    Shelf Life - Checksheet
+    Roles: Supervisor, Foreman, Helper
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Helper'])->group(function () {
+        Route::get('/shelf-life/checksheet', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'index'])->name('shelf-life.checksheet.index');
+        Route::post('/shelf-life/checksheet/update-status', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'updateStatus'])->name('shelf-life.checksheet.update-status');
+    });
 
-    // Shelf Life - Analisis Mikro
-    Route::get('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'index'])->name('shelf-life.analysis-mikro.index');
-    Route::get('/shelf-life/analisis-mikro/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'show'])->name('shelf-life.analysis-mikro.show');
-    Route::post('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'store'])->name('shelf-life.analysis-mikro.store');
-    Route::get('/shelf-life/analisis-mikro/get-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'getMikroData'])->name('shelf-life.analysis-mikro.get-mikro');
+    /*------------------------------------------
+    Shelf Life - Analisis Kimia
+    Roles: Supervisor, Foreman, Helper, Analis Kimia
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Helper,Analis Kimia'])->group(function () {
+        Route::get('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'index'])->name('shelf-life.analysis-kimia.index');
+        Route::get('/shelf-life/analisis-kimia/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'show'])->name('shelf-life.analysis-kimia.show');
+        Route::post('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'store'])->name('shelf-life.analysis-kimia.store');
+        Route::get('/shelf-life/analisis-kimia/edit/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'edit'])->name('shelf-life.analysis-kimia.edit');
+    });
+
+    /*------------------------------------------
+    Shelf Life - Analisis Mikro
+    Roles: Supervisor, Foreman, Helper, Analis Mikro
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman,Helper,Analis Mikro'])->group(function () {
+        Route::get('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'index'])->name('shelf-life.analysis-mikro.index');
+        Route::get('/shelf-life/analisis-mikro/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'show'])->name('shelf-life.analysis-mikro.show');
+        Route::post('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'store'])->name('shelf-life.analysis-mikro.store');
+        Route::get('/shelf-life/analisis-mikro/get-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'getMikroData'])->name('shelf-life.analysis-mikro.get-mikro');
+    });
+
+    /*------------------------------------------
+    Shelf Life - Result
+    Roles: Supervisor, Foreman
+    --------------------------------------------*/
+    Route::middleware(['user-access:Supervisor,Foreman'])->group(function () {
+        Route::get('/shelf-life/hasil', [App\Http\Controllers\ShelfLife\ResultController::class, 'index'])->name('shelf-life.result.index');
+        Route::get('/shelf-life/hasil/get-data', [App\Http\Controllers\ShelfLife\ResultController::class, 'getData'])->name('shelf-life.result.get-data');
+        Route::post('/shelf-life/hasil/get-po', [App\Http\Controllers\ShelfLife\ResultController::class, 'getPoByDateAndStorage'])->name('shelf-life.result.get-po');
+    });
 
     /*------------------------------------------
     RMPM

@@ -73,6 +73,8 @@ class LoginController extends Controller
                     return response()->json(['redirect' => route('analisa.blending-awal.menu')]);
                 case 'Operator':
                     return response()->json(['redirect' => route('productionbatch.index')]);
+                case 'Helper':
+                    return response()->json(['redirect' => route('shelf-life.index')]);
                 default:
                     return response()->json(['redirect' => route('users.index')]);
             }

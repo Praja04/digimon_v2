@@ -22,6 +22,13 @@
 
             <div class="row">
                 <div class="col-lg-12">
+                    @if (session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="mdi mdi-alert-circle-outline me-2"></i>
+                            {!! session('error') !!}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
                     <div class="card">
                         <div class="card-header d-flex align-items-center justify-content-between">
                             <h5 class="card-title mb-0">Daftar @yield('title')</h5>
@@ -59,7 +66,7 @@
                                             <th>Kelompok Sample</th>
                                             <th>Kelompok Tanggal</th>
                                             <th>Varian FG</th>
-                                            <th class="text-center">Bulan Ke-</th>
+                                            <th>Bulan Ke-</th>
                                             <th>Ruang SL</th>
                                             <th>Bin</th>
                                             <th class="text-center">Status</th>
@@ -94,6 +101,7 @@
             var table = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: "{{ route('shelf-life.analysis-kimia.index') }}",
                     data: function(d) {
@@ -121,8 +129,7 @@
                     },
                     {
                         data: 'bulan_ke',
-                        name: 'bulan_ke',
-                        className: 'text-center'
+                        name: 'bulan_ke'
                     },
                     {
                         data: 'ruang_sl',

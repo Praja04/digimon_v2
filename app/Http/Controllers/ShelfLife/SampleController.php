@@ -277,6 +277,7 @@ class SampleController extends Controller
                     'koding' => $request->koding,
                     'jam_koding' => $request->jam_koding,
                     'bulan_ke' => $request->bulan_ke,
+                    'tanggal_filling' => $request->tanggal_filling,
                     'ruang_sl' => $request->ruang_sl,
                     'bin_location' => $request->bin_location,
                 ]

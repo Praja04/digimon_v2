@@ -140,6 +140,8 @@ class AnalysisKimiaController extends Controller
                         $isComplete = $isComplete && $kimia->total_nitrogen;
                     }
 
+                    $isAnalisKimia = auth()->user()->role == 'Analis Kimia';
+
                     if ($isComplete) {
                         return '
                     <a class="btn btn-sm btn-success me-1" href="' . route("shelf-life.analysis-kimia.show", $data->id) . '">
@@ -148,11 +150,19 @@ class AnalysisKimiaController extends Controller
                     ';
                     }
 
-                    return '
-                <a class="btn btn-sm btn-primary me-1" href="' . route("shelf-life.analysis-kimia.show", $data->id) . '">
-                    <span class="mdi mdi-flask"></span> Analisa
-                </a>
-                ';
+                    if ($isAnalisKimia) {
+                        return '
+                    <a class="btn btn-sm btn-primary me-1" href="' . route("shelf-life.analysis-kimia.show", $data->id) . '">
+                        <span class="mdi mdi-flask"></span> Analisa
+                    </a>
+                    ';
+                    } else {
+                        return '
+                        <span class="mdi mdi-lock text-muted"></span>
+                    ';
+                    }
+
+                    return '';
                 })
                 ->rawColumns(['status', 'action'])
                 ->make(true);
@@ -164,6 +174,12 @@ class AnalysisKimiaController extends Controller
     public function show($id)
     {
         $data = ShelfLifeSamplingDetail::with(['shelfLifeSample.productionBatch', 'shelfLifeSamplingKimia'])->findOrFail($id);
+
+        if (!$data->is_checked) {
+            return redirect()->route('shelf-life.analysis-kimia.index')
+                ->with('error', 'Sample belum di-checklist. Silakan checklist terlebih dahulu di <a href="' . route('shelf-life.checksheet.index') . '" class="alert-link">halaman checksheet</a>.');
+        }
+
         $colors = Color::orderBy('name', 'asc')->get();
         $bulanKe = $data->bulan_ke;
 
@@ -200,6 +216,15 @@ class AnalysisKimiaController extends Controller
     {
         try {
             $detail = ShelfLifeSamplingDetail::find($request->shelf_life_sampling_detail_id);
+
+            if (!$detail->is_checked) {
+                return response()->json([
+                    'message' => 'Sample belum di-checklist. Silakan checklist terlebih dahulu.',
+                    'redirect_url' => route('shelf-life.checksheet.index')
+                ], 403);
+            }
+
+
             $bulanKe = $detail->bulan_ke;
 
             $hideVisco = in_array($bulanKe, [7, 8, 9, 10, 11, 15, 21]);

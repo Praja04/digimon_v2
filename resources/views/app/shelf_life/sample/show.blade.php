@@ -111,6 +111,7 @@
                                         <tr>
                                             <th class="fw-semibold ps-4">Bulan Ke-</th>
                                             <th class="fw-semibold">Kelompok Tanggal</th>
+                                            <th class="fw-semibold">Tanggal Filling</th>
                                             <th class="fw-semibold">Variant FG</th>
                                             <th class="fw-semibold">Koding</th>
                                             <th class="fw-semibold">Jam Koding</th>
@@ -129,6 +130,11 @@
                                                 <td>
                                                     <div class="fw-medium">
                                                         {{ $item->kelompok_tanggal }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-medium text-dark">
+                                                        {{ \Carbon\Carbon::parse($item->tanggal_filling)->locale('id')->translatedFormat('d F Y') }}
                                                     </div>
                                                 </td>
                                                 <td>

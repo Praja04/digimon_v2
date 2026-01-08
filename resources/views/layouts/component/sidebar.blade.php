@@ -37,6 +37,7 @@
             <ul class="navbar-nav" id="navbar-nav">
 
                 {{-- SECTION: DASHBOARD --}}
+                {{-- Dashboard hanya untuk Supervisor dan Foreman --}}
                 @if (in_array($userRole, ['Supervisor', 'Foreman']))
                     <li class="menu-title"><span data-key="t-menu">Dashboard</span></li>
 
@@ -73,6 +74,10 @@
                                         class="nav-link"><i class="mdi mdi-database"></i> Monitoring Storage</a></li>
                                 <li class="nav-item"><a href="{{ url('dashboard/rm') }}" class="nav-link"><i
                                             class="mdi mdi-chemical-weapon"></i> Dashboard RMPM</a></li>
+                                <li class="nav-item"><a href="{{ route('dashboard.shelf-life.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.shelf-life.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-calendar-clock"></i> Dashboard Shelf Life</a>
+                                </li>
                             </ul>
                         </div>
                     </li>
@@ -88,13 +93,14 @@
                         'Analis Kimia',
                         'Analis Mikro',
                         'Analis Field',
+                        'Helper',
                     ]);
                 @endphp
 
                 @if ($showMenuSection)
                     <li class="menu-title"><span data-key="t-menu">Menu</span></li>
 
-                    {{-- RMPM Menu --}}
+                    {{-- RMPM Menu: Supervisor, Foreman, Analis RM --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis RM']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['rmpm.index', 'rmpm.show']) ? 'active' : '' }}"
@@ -104,17 +110,7 @@
                         </li>
                     @endif
 
-                    {{-- Persiapan Masak Menu --}}
-                    {{-- @if (in_array($userRole, ['Supervisor', 'Foreman', 'Operator']))
-                        <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['productionbatch.*', 'gga-ggas.index', 'gga-ggas.show', 'blending-awal.index', 'blending-awal.show', 'monitoring-turun-blending.index', 'monitoring-turun-blending.show', 'monitoring-pasteurisasi.index', 'monitoring-pasteurisasi.show', 'monitoring-pasteurisasi.show_batch', 'monitoring-storage-kimia.index', 'monitoring-storage-kimia.show']) ? 'active' : '' }}"
-                                href="{{ route('productionbatch.index') }}">
-                                <i class="mdi mdi-puzzle-outline"></i> <span data-key="t-widgets">Persiapan Masak</span>
-                            </a>
-                        </li>
-                    @endif --}}
-
-                    {{-- GGA & GGAS Menu --}}
+                    {{-- GGA & GGAS Menu: Supervisor, Foreman, Analis Kimia --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['gga.menu', 'gga.index', 'gga.show', 'gga.show_batch', 'ggas.index', 'ggas.show', 'ggas.show_batch']) ? 'active' : '' }}"
@@ -124,7 +120,7 @@
                         </li>
                     @endif
 
-                    {{-- Blending Menu --}}
+                    {{-- Blending Menu: Supervisor, Foreman, Analis Kimia, Analis Mikro, Analis Field --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia', 'Analis Mikro', 'Analis Field']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['analisa.blending-awal.menu', 'analisa.blending-awal.index', 'analisa.blending-awal.show', 'analisa.blending-awal.show_batch', 'analisa.blending-awal-mikro.index', 'analisa.blending-awal-mikro.show', 'analisa.blending-awal-mikro.show_batch']) ? 'active' : '' }}"
@@ -134,7 +130,7 @@
                         </li>
                     @endif
 
-                    {{-- Monitoring Pasteurisasi & Storage Menu --}}
+                    {{-- Monitoring Pasteurisasi & Storage Menu: Supervisor, Foreman, Analis Kimia, Analis Field, Analis Mikro --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia', 'Analis Field', 'Analis Mikro']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['monitoring-storage-kimia.index', 'monitoring-storage-kimia.show', 'analisa.monitoring-turun-blending.menu', 'analisa.monitoring-turun-blending.index', 'analisa.monitoring-turun-blending.show', 'analisa.monitoring-turun-blending.show_batch', 'analisa.monitoring-pasteurisasi.index', 'analisa.monitoring-pasteurisasi.show', 'analisa.monitoring-pasteurisasi.show_batch', 'analisa.monitoring-storage-kimia.index', 'analisa.monitoring-storage-kimia.show', 'analisa.monitoring-storage-kimia.show_batch', 'analisa.monitoring-storage-mikro.index', 'analisa.monitoring-storage-mikro.show', 'analisa.monitoring-storage-mikro.show_batch', 'monitoring-storage-before-use.index', 'monitoring-storage-before-use.analisa']) ? 'active' : '' }}"
@@ -152,14 +148,47 @@
                         </li>
                     @endif
 
-                    <li class="nav-item">
-                        <a class="nav-link menu-link {{ request()->routeIs(['shelf-life.index', 'shelf-life.sample.index', 'shelf-life.sample.show', 'shelf-life.checksheet.index', 'shelf-life.analysis-kimia.index', 'shelf-life.analysis-kimia.show', 'shelf-life.analysis-mikro.index', 'shelf-life.analysis-mikro.show']) ? 'active' : '' }}"
-                            href="{{ route('shelf-life.index') }}">
-                            <i class="mdi mdi-calendar-clock"></i> <span data-key="t-widgets">Shelf Life</span>
-                        </a>
-                    </li>
+                    {{-- Monitoring Ongoing Kimia: Supervisor, Foreman, Analis Kimia --}}
+                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia']))
+                        <li class="nav-item">
+                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-ongoing-kimia.*']) ? 'active' : '' }}"
+                                href="{{ route('monitoring-ongoing-kimia.index') }}">
+                                <i class="mdi mdi-flask-outline"></i> <span>Monitoring Ongoing Kimia</span>
+                            </a>
+                        </li>
+                    @endif
 
-                    {{-- Notifikasi Menu --}}
+                    {{-- Monitoring Ongoing Mikro: Supervisor, Foreman, Analis Mikro --}}
+                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Mikro']))
+                        <li class="nav-item">
+                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-ongoing-mikro.*']) ? 'active' : '' }}"
+                                href="{{ route('monitoring-ongoing-mikro.index') }}">
+                                <i class="mdi mdi-bacteria"></i> <span>Monitoring Ongoing Mikro</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- Shelf Life Menu: Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro --}}
+                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Helper', 'Analis Kimia', 'Analis Mikro']))
+                        <li class="nav-item">
+                            <a class="nav-link menu-link {{ request()->routeIs(['shelf-life.index', 'shelf-life.sample.index', 'shelf-life.sample.show', 'shelf-life.checksheet.index', 'shelf-life.analysis-kimia.index', 'shelf-life.analysis-kimia.show', 'shelf-life.analysis-mikro.index', 'shelf-life.analysis-mikro.show', 'shelf-life.result.index']) ? 'active' : '' }}"
+                                href="{{ route('shelf-life.index') }}">
+                                <i class="mdi mdi-calendar-clock"></i> <span data-key="t-widgets">Shelf Life</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- Scan Menu: Analis Kimia, Analis Mikro --}}
+                    @if (in_array($userRole, ['Analis Kimia', 'Analis Mikro']))
+                        <li class="nav-item">
+                            <a class="nav-link menu-link {{ request()->routeIs(['scan.*']) ? 'active' : '' }}"
+                                href="{{ route('scan.index') }}">
+                                <i class="mdi mdi-barcode-scan"></i> <span data-key="t-scan">Scan</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- Notifikasi Menu: Supervisor, Foreman --}}
                     @if (in_array($userRole, ['Supervisor', 'Foreman']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['notifications.*']) ? 'active' : '' }}"
@@ -196,14 +225,6 @@
                         </li>
                     @endif
                 @endif
-
-
-                <li class="nav-item">
-                    <a class="nav-link menu-link {{ request()->routeIs(['scan.*']) ? 'active' : '' }}"
-                        href="{{ route('scan.index') }}">
-                        <i class="mdi mdi-barcode-scan"></i> <span data-key="t-scan">Scan</span>
-                    </a>
-                </li>
 
             </ul>
         </div>
