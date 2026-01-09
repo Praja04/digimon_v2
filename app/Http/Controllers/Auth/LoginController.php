@@ -55,29 +55,7 @@ class LoginController extends Controller
 
         if ($user && Hash::check($credentials['password'], $user->password)) {
             Auth::loginUsingId($user->id);
-
-            switch ($user->role) {
-                case 'Head Of Dapartement':
-                    return response()->json(['redirect' => route('users.index')]);
-                case 'Supervisor':
-                    return response()->json(['redirect' => route('users.index')]);
-                case 'Foreman':
-                    return response()->json(['redirect' => route('colors.index')]);
-                case 'Analis Kimia':
-                    return response()->json(['redirect' => route('gga.menu')]);
-                case 'Analis Mikro':
-                    return response()->json(['redirect' => route('analisa.blending-awal.menu')]);
-                case 'Analis RM':
-                    return response()->json(['redirect' => route('users.index')]);
-                case 'Analis Field':
-                    return response()->json(['redirect' => route('analisa.blending-awal.menu')]);
-                case 'Operator':
-                    return response()->json(['redirect' => route('productionbatch.index')]);
-                case 'Helper':
-                    return response()->json(['redirect' => route('shelf-life.index')]);
-                default:
-                    return response()->json(['redirect' => route('users.index')]);
-            }
+            return response()->json(['redirect' => route('homepage.index')]);
         } else {
             return response()->json(['errors' => [
                 'password' => ['Kata sandi salah.']

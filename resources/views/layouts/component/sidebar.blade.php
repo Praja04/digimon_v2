@@ -141,29 +141,9 @@
 
                         {{-- Monitoring Filling Menu --}}
                         <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-daily-tank.menu', 'monitoring-daily-tank.index', 'monitoring-daily-tank.show', 'analisa.monitoring-daily-tank-mikro.show', 'analisa.monitoring-daily-tank-kimia.show', 'monitoring-ongoing-kimia.index', 'monitoring-ongoing-mikro.index', 'monitoring-ongoing-kimia.show', 'monitoring-ongoing-mikro.analisa']) ? 'active' : '' }}"
+                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-daily-tank.menu', 'monitoring-daily-tank.index', 'monitoring-daily-tank.show', 'analisa.monitoring-daily-tank-mikro.show', 'analisa.monitoring-daily-tank-kimia.show', 'monitoring-ongoing-kimia.index', 'monitoring-ongoing-mikro.index', 'monitoring-ongoing-kimia.show', 'monitoring-ongoing-kimia.analisa', 'monitoring-ongoing-mikro.analisa']) ? 'active' : '' }}"
                                 href="{{ route('monitoring-daily-tank.menu') }}">
                                 <i class="mdi mdi-bottle-wine"></i> <span>Monitoring Filling</span>
-                            </a>
-                        </li>
-                    @endif
-
-                    {{-- Monitoring Ongoing Kimia: Supervisor, Foreman, Analis Kimia --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia']))
-                        <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-ongoing-kimia.*']) ? 'active' : '' }}"
-                                href="{{ route('monitoring-ongoing-kimia.index') }}">
-                                <i class="mdi mdi-flask-outline"></i> <span>Monitoring Ongoing Kimia</span>
-                            </a>
-                        </li>
-                    @endif
-
-                    {{-- Monitoring Ongoing Mikro: Supervisor, Foreman, Analis Mikro --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Mikro']))
-                        <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['monitoring-ongoing-mikro.*']) ? 'active' : '' }}"
-                                href="{{ route('monitoring-ongoing-mikro.index') }}">
-                                <i class="mdi mdi-bacteria"></i> <span>Monitoring Ongoing Mikro</span>
                             </a>
                         </li>
                     @endif

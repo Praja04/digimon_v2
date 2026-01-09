@@ -156,7 +156,6 @@ class GGaController extends Controller
 
             // Cek apakah status berubah
             $statusChanged = ($gga->status !== $status_disposition);
-            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
@@ -280,9 +279,6 @@ class GGaController extends Controller
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;
                 $notificationTitle .= " - Menunggu Review Foreman";
-            } elseif ($userRole === 'Foreman' && $dispositionChanged) {
-                $shouldSendNotification = true;
-                $notificationTitle .= " - Disposition: " . ($updateData['disposition'] ?? '-');
             }
 
             if ($shouldSendNotification) {

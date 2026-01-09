@@ -128,6 +128,8 @@ class AnalysisMikroController extends Controller
                         $isComplete = $isComplete && !is_null($mikro->sa);
                     }
 
+                    $isAnalisMikro = auth()->user()->role == 'Analis Mikro';
+
                     if ($isComplete) {
                         return '
                         <a class="btn btn-sm btn-success me-1" href="' . route("shelf-life.analysis-mikro.show", $data->id) . '">
@@ -136,11 +138,17 @@ class AnalysisMikroController extends Controller
                     ';
                     }
 
-                    return '
-                    <a class="btn btn-sm btn-primary me-1" href="' . route("shelf-life.analysis-mikro.show", $data->id) . '">
-                        <span class="mdi mdi-flask"></span> Analisa
-                    </a>
-                ';
+                    if ($isAnalisMikro) {
+                        return '
+                        <a class="btn btn-sm btn-primary me-1" href="' . route("shelf-life.analysis-mikro.show", $data->id) . '">
+                            <span class="mdi mdi-flask"></span> Analisa
+                        </a>
+                    ';
+                    } else {
+                        return '
+                        <span class="mdi mdi-lock text-muted"></span>
+                    ';
+                    }
                 })
                 ->rawColumns(['status', 'action'])
                 ->make(true);

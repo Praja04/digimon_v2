@@ -60,7 +60,7 @@ class MonitoringDailyTankController extends Controller
                 })
                 ->addColumn('analisa', function ($data) {
                     $html = '';
-                    if ($data->jenis_analisa == 'Mikro' && auth()->user()->role == 'Analis Mikro') {
+                    if ($data->jenis_analisa == 'Mikro' && in_array(auth()->user()->role, ['Analis Mikro', 'Foreman'])) {
                         $html .= '
                         <a class="btn btn-sm btn-primary me-1" id="btnAnalisa" href="' . route('analisa.monitoring-daily-tank-mikro.show', $data->id) . '">
                            <span class="mdi mdi-test-tube"></span>

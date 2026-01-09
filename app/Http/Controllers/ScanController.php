@@ -25,9 +25,54 @@ use Illuminate\Support\Facades\Log;
 
 class ScanController extends Controller
 {
+    // Definisi hak akses berdasarkan role
+    private $rolePermissions = [
+        'Analis Kimia' => [
+            'gga',
+            'ggas',
+            'blending-awal',
+            'monitoring-turun-blending',
+            'monitoring-pasteurisasi',
+            'monitoring-storage-kimia',
+            'monitoring-storage-before-use',
+            'monitoring-daily-tank-kimia',
+            'monitoring-ongoing-kimia',
+            'monitoring-ongoing-mikro',
+            'shelf-life-sampling'
+        ],
+        'Analis Mikro' => [
+            'blending-awal-mikro',
+            'monitoring-storage-mikro',
+            'monitoring-daily-tank-mikro',
+            'monitoring-ongoing-mikro',
+            'shelf-life-sampling'
+        ]
+    ];
+
     public function index()
     {
         return view('app.scan.index');
+    }
+
+    private function validateAccess($type, $userRole)
+    {
+        // Jika role tidak ada dalam mapping, tolak akses
+        if (!isset($this->rolePermissions[$userRole])) {
+            return [
+                'valid' => false,
+                'message' => 'Role Anda tidak memiliki akses untuk scan QR code.'
+            ];
+        }
+
+        // Cek apakah tipe QC ada dalam daftar permission role tersebut
+        if (!in_array($type, $this->rolePermissions[$userRole])) {
+            return [
+                'valid' => false,
+                'message' => 'Anda tidak memiliki akses untuk melakukan scan pada QR Code ini.'
+            ];
+        }
+
+        return ['valid' => true];
     }
 
     public function store(Request $request)
@@ -157,6 +202,17 @@ class ScanController extends Controller
                 'status' => 'error',
                 'message' => 'Tipe QC tidak dikenali.'
             ], 400);
+        }
+
+        // Validasi hak akses berdasarkan role
+        $userRole = auth()->user()->role;
+        $accessValidation = $this->validateAccess($type, $userRole);
+
+        if (!$accessValidation['valid']) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $accessValidation['message']
+            ], 403);
         }
 
         $config = $qcMapping[$type];

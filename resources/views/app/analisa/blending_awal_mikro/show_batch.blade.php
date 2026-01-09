@@ -173,7 +173,8 @@
                                                             style="color: red;">*</span></label>
                                                     <input type="text" name="nama_analis" id="nama_analis"
                                                         class="form-control comma-input"
-                                                        placeholder="Masukkan Nama Analis">
+                                                        placeholder="Masukkan Nama Analis"
+                                                        oninput="this.value = this.value.toUpperCase();">
                                                     <small class="text-danger errorNamaAnalis"></small>
                                                 </div>
                                             </div>

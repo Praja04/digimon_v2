@@ -11,7 +11,7 @@
 
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
+                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.menu')}}">Menu</a></li>
                                 <li class="breadcrumb-item active">@yield('title')</li>
                             </ol>
                         </div>
@@ -1011,7 +1011,7 @@
                                 $nomorPO.append(
                                     '<option value="">-- Tidak Ada PO Release --</option>');
                                 $('.errorNomorPO').html(
-                                    '<small class="text-danger">Tidak ada Nomor PO yang Release untuk tanggal dan storage ini.</small>'
+                                    '<small class="text-danger">Tidak ada Nomor PO yang Release.</small>'
                                     );
                             }
                         },

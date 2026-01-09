@@ -78,45 +78,50 @@
                                             value="{{ $monitoringDailyTank->id }}">
                                         <label class="form-label">BRIX <span style="color: red">*</span></label>
                                         <input type="text" name="brix" id="brix" class="form-control comma-input"
-                                            placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->brix ?? '' }}">
+                                            placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->brix ?? '') }}">
                                         <small class="text-danger errorBrix"></small>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">NACL <span style="color: red">*</span></label>
                                         <input type="text" name="nacl" id="nacl" class="form-control comma-input"
-                                            placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->nacl ?? '' }}">
+                                            placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->nacl ?? '') }}">
                                         <small class="text-danger errorNacl"></small>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Bj <span style="color: red">*</span></label>
                                         <input type="text" name="bj" id="bj" class="form-control comma-input"
-                                            placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->bj ?? '' }}">
+                                            placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->bj ?? '') }}">
                                         <small class="text-danger errorBj"></small>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Visco <span style="color: red">*</span></label>
                                         <input type="text" name="visco" id="visco" class="form-control comma-input"
-                                            placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->visco ?? '' }}">
+                                            placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->visco ?? '') }}">
                                         <small class="text-danger errorVisco"></small>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Aw <span style="color: red">*</span></label>
                                         <input type="text" name="aw" id="aw" class="form-control comma-input"
-                                            placeholder="Contoh: 0,00" value="{{ $monitoringDailyTank->aw ?? '' }}">
+                                            placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->aw ?? '') }}">
                                         <small class="text-danger errorAw"></small>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">pH <span style="color: red">*</span></label>
                                         <input type="text" name="ph" id="ph"
                                             class="form-control comma-input" placeholder="Contoh: 0,00"
-                                            value="{{ $monitoringDailyTank->ph ?? '' }}">
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->ph ?? '') }}">
                                         <small class="text-danger errorPh"></small>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Buih</label>
                                         <input type="text" name="buih" id="buih"
                                             class="form-control comma-input" placeholder="Contoh: 0,00"
-                                            value="{{ $monitoringDailyTank->buih ?? '' }}">
+                                            value="{{ str_replace('.', ',', $monitoringDailyTank->buih ?? '') }}">
                                         <small class="text-danger errorBuih"></small>
                                     </div>
                                     <div class="col-lg-4">

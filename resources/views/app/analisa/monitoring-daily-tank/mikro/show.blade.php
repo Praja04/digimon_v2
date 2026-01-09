@@ -11,7 +11,8 @@
 
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
+                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.menu')}}">Menu</a></li>
+                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.index') }}">Monitoring Daily Tank</a></li>
                                 <li class="breadcrumb-item active">@yield('title')</li>
                             </ol>
                         </div>
@@ -111,7 +112,8 @@
                                                 <label class="form-label">Nama Analis <span
                                                         style="color: red;">*</span></label>
                                                 <input type="text" name="nama_analis" id="nama_analis"
-                                                    class="form-control comma-input" placeholder="Masukkan Nama Analis">
+                                                    class="form-control comma-input" placeholder="Masukkan Nama Analis"
+                                                    oninput="this.value = this.value.toUpperCase();">
                                                 <small class="text-danger errorNamaAnalis"></small>
                                             </div>
                                         </div>
@@ -128,8 +130,8 @@
                                     <!-- TPC Field -->
                                     <div id="tpcContainer" class="col-lg-12 d-none">
                                         <label class="form-label">TPC <span style="color: red;">*</span></label>
-                                        <input type="text" name="tpc" id="tpc" class="form-control comma-input"
-                                            placeholder="Masukkan nilai TPC">
+                                        <input type="text" name="tpc" id="tpc"
+                                            class="form-control comma-input" placeholder="Masukkan nilai TPC">
                                         <small class="text-danger errorTpc"></small>
                                     </div>
 
@@ -274,14 +276,25 @@
                     $('#btnSave').prop('disabled', false);
 
                 } else {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Data Lengkap',
-                        text: 'Semua parameter analisa sudah diisi.'
-                    }).then(() => {
-                        window.location.href =
-                            "{{ route('monitoring-daily-tank.index') }}"
-                    });
+                    $('#statusText').html(`
+                        <div class="text-success">
+                            <i class="mdi mdi-check-all"></i> <strong>Semua parameter analisa sudah lengkap!</strong>
+                        </div>
+                        <div class="mt-2">
+                            <span class="badge bg-success me-2">Shift: ${shift}</span>
+                            <span class="badge bg-success me-2">Analis: ${nama_analis}</span>
+                            <span class="badge bg-success me-2">EB: ${eb}</span>
+                            <span class="badge bg-success me-2">TPC: ${tpc}</span>
+                            <span class="badge bg-success">YM: ${ym}</span>
+                        </div>
+                    `);
+
+                    $('#ebContainer, #tpcContainer, #ymContainer').removeClass('d-none');
+                    $('#eb').val(eb).prop('disabled', true);
+                    $('#tpc').val(tpc).prop('disabled', true);
+                    $('#ym').val(ym).prop('disabled', true);
+
+                    $('#btnSave').addClass('d-none');
                 }
             }
 

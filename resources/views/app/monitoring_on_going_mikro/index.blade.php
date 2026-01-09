@@ -346,215 +346,146 @@
 
     <!-- Modal Detail Monitoring Ongoing Mikro -->
     <div class="modal fade" id="modalDetail" tabindex="-1" aria-labelledby="modalDetailLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header py-2">
+                <div class="modal-header">
                     <h5 class="modal-title">Detail Monitoring Ongoing Mikro</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-3">
-                    <!-- QR Code Section -->
-                    <div class="text-center mb-3" id="qrPrintAreaDetail">
-                        <div style="display: inline-block;" id="qr_code_container"></div>
-                        <p class="mt-2 mb-1 small text-muted" id="qr_code_text">-</p>
-                    </div>
-
-                    <div class="text-center mb-3">
-                        <button type="button" class="btn btn-sm btn-primary" onclick="printQR('qrPrintAreaDetail')">
-                            <i class="mdi mdi-printer"></i> Cetak QR
+                <div class="modal-body">
+                    <!-- QR Code -->
+                    <div class="text-center mb-3 pb-3 border-bottom" id="qrPrintAreaDetail">
+                        <div id="qr_code_container" class="mb-2"></div>
+                        <p class="small text-muted mb-2" id="qr_code_text">-</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="printQR('qrPrintAreaDetail')">
+                            Cetak QR
                         </button>
                     </div>
 
-                    <!-- Info Dasar Section -->
-                    <h6 class="mb-2 small">Informasi Dasar :</h6>
-                    <div class="row g-2 small mb-3">
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Storage</span>
-                                <strong id="detail_storage">-</strong>
+                    <!-- Informasi Dasar -->
+                    <div class="mb-3">
+                        <h6 class="mb-2 fw-bold">Informasi Dasar</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr>
+                                <td class="text-muted" width="35%">Storage</td>
+                                <td width="5%">:</td>
+                                <td><strong id="detail_storage">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Nomor PO</td>
+                                <td>:</td>
+                                <td><strong id="detail_po_number">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Variant</td>
+                                <td>:</td>
+                                <td><strong id="detail_variant">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">No Filler</td>
+                                <td>:</td>
+                                <td><strong id="detail_no_filler">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">No Kempu/Jeriken</td>
+                                <td>:</td>
+                                <td><strong id="detail_no_kempu_jeriken">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Running Number</td>
+                                <td>:</td>
+                                <td><strong id="detail_running_number">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Tanggal Filling</td>
+                                <td>:</td>
+                                <td><strong id="detail_filling_date">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Koding</td>
+                                <td>:</td>
+                                <td><strong id="detail_koding">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Jam Koding</td>
+                                <td>:</td>
+                                <td><strong id="detail_jam_koding">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Jenis Sampel</td>
+                                <td>:</td>
+                                <td><strong id="detail_jenis_sampel">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Keterangan</td>
+                                <td>:</td>
+                                <td><strong id="detail_keterangan">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Dibuat Pada</td>
+                                <td>:</td>
+                                <td><strong id="detail_created_at">-</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Parameter Uji Mikrobiologi -->
+                    <div class="mb-3 pt-3 border-top">
+                        <h6 class="mb-2 fw-bold">Parameter Uji Mikro</h6>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">EB</small>
+                                    <strong class="d-block" id="detail_eb">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">TPC</small>
+                                    <strong class="d-block" id="detail_tpc">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">YM</small>
+                                    <strong class="d-block" id="detail_ym">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">Benda Asing</small>
+                                    <strong class="d-block" id="detail_benda_asing">-</strong>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Nomor PO</span>
-                                <strong id="detail_po_number">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Formulasi</span>
-                                <strong id="detail_formulation">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Variant</span>
-                                <strong id="detail_variant">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">No Filler</span>
-                                <strong id="detail_no_filler">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">No Kempu/Jeriken</span>
-                                <strong id="detail_no_kempu_jeriken">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Running Number</span>
-                                <strong id="detail_running_number">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Tanggal Filling</span>
-                                <strong id="detail_filling_date">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Koding</span>
-                                <strong id="detail_koding">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Jam Koding</span>
-                                <strong id="detail_jam_koding">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Jenis Sampel</span>
-                                <strong id="detail_jenis_sampel">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Keterangan</span>
-                                <p id="detail_keterangan" class="mb-0">-</p>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Dibuat Pada</span>
-                                <strong id="detail_created_at">-</strong>
-                            </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted d-block">Hasil</small>
+                            <div id="detail_hasil">-</div>
                         </div>
                     </div>
 
-                    <hr class="my-2">
-
-                    <!-- Analisa Lab Mikro Section -->
-                    <h6 class="mb-2 small">Analisa Lab Mikro :</h6>
-                    <div class="row g-2 small mb-3">
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Analis EB</span>
-                                <strong id="detail_analis_eb">-</strong>
+                    <!-- Hasil & Disposisi -->
+                    <div class="pt-3 border-top">
+                        <h6 class="mb-2 fw-bold">Hasil & Disposisi</h6>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Disposisi</small>
+                            <strong id="detail_disposition">-</strong>
+                        </div>
+                        <div id="remarks_section" class="mb-2" style="display: none;">
+                            <small class="text-muted d-block">Remarks</small>
+                            <div class="border rounded p-2 bg-light">
+                                <em id="detail_remarks" class="small">-</em>
                             </div>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Analis TPC</span>
-                                <strong id="detail_analis_tpc">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Analis YM</span>
-                                <strong id="detail_analis_ym">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Analis Benda Asing</span>
-                                <strong id="detail_analis_benda_asing">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Shift</span>
-                                <strong id="detail_shift">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Diterima Pada</span>
-                                <strong id="detail_received_at">-</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <!-- Parameter Analisa Section -->
-                    <h6 class="mb-2 small">Parameter Analisa Mikro :</h6>
-                    <div class="row g-2 small mb-3">
-                        <div class="col-6 col-md-3">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">EB</span>
-                                <strong id="detail_eb">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">TPC</span>
-                                <strong id="detail_tpc">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">YM</span>
-                                <strong id="detail_ym">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Benda Asing</span>
-                                <strong id="detail_benda_asing">-</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <!-- Status & Disposition Section -->
-                    <h6 class="mb-2 small">Hasil & Disposisi :</h6>
-                    <div class="row g-2 small">
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Hasil</span>
-                                <span id="detail_hasil" class="badge">-</span>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Disposition</span>
-                                <strong id="detail_disposition">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Diupdate Pada</span>
-                                <strong id="detail_updated_at">-</strong>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="mb-2">
-                                <span class="text-muted d-block">Remarks</span>
-                                <p id="detail_remarks" class="mb-0">-</p>
-                            </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Diupdate Pada</small>
+                            <strong id="detail_updated_at">-</strong>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -851,69 +782,87 @@
                     dataType: "json",
                     beforeSend: function() {
                         // Reset semua field ke default
-                        $('#detail_storage, #detail_po_number, #detail_formulation, #detail_variant, #detail_jenis_sampel, #detail_filling_date, #detail_jam_koding, #detail_created_at')
+                        $('#detail_storage, #detail_po_number, #detail_variant, #detail_no_filler, #detail_no_kempu_jeriken, #detail_running_number')
                             .text('-');
-                        $('#detail_analis, #detail_shift, #detail_received_at').text('-');
-                        $('#detail_berat_jenis, #detail_visco, #detail_brix, #detail_aw, #detail_nacl, #detail_ph, #detail_color, #detail_organo')
+                        $('#detail_filling_date, #detail_koding, #detail_jam_koding, #detail_jenis_sampel, #detail_keterangan, #detail_created_at')
                             .text('-');
-                        $('#detail_status').removeClass('bg-success bg-danger').addClass(
-                            'bg-secondary').text('-');
+                        $('#detail_shift, #detail_analis_eb, #detail_analis_tpc, #detail_analis_ym, #detail_analis_benda_asing, #detail_received_at')
+                            .text('-');
+                        $('#detail_eb, #detail_tpc, #detail_ym, #detail_benda_asing').text('-');
                         $('#detail_disposition, #detail_remarks, #detail_updated_at').text('-');
                     },
                     success: function(response) {
-                        // Show modal
-                        $('#modalDetail').modal('show');
-
                         // QR Code
-                        $('#qr_code_container').html(
-                            `<img src="data:image/png;base64,${response.qr_code}" alt="QR Code" style="width: 150px; height: 150px;">`
-                        );
-                        $('#qr_code_text').text(
-                            `Mikro_${response.variant}_${response.jenis_sampel}`);
-
-                        // Informasi Dasar
-                        $('#detail_storage').text(response.storage);
-                        $('#detail_po_number').text(response.po_number);
-                        $('#detail_formulation').text(response.formulation);
-                        $('#detail_variant').text(response.variant);
-                        $('#detail_no_filler').text(response.no_filler);
-                        $('#detail_no_kempu_jeriken').text(response.no_kempu_jeriken);
-                        $('#detail_running_number').text(response.running_number);
-                        $('#detail_filling_date').text(response.filling_date_formatted);
-                        $('#detail_koding').text(response.koding);
-                        $('#detail_jam_koding').text(response.jam_koding);
-                        $('#detail_jenis_sampel').text(response.jenis_sampel);
-                        $('#detail_keterangan').text(response.keterangan);
-                        $('#detail_created_at').text(response.created_at_formatted);
-
-                        // Analisa Lab Mikro
-                        $('#detail_analis_eb').text(response.analis_eb_name);
-                        $('#detail_analis_tpc').text(response.analis_tpc_name);
-                        $('#detail_analis_ym').text(response.analis_ym_name);
-                        $('#detail_analis_benda_asing').text(response.analis_benda_asing_name);
-                        $('#detail_shift').text(response.shift);
-                        $('#detail_received_at').text(response.received_at_formatted);
-
-                        // Parameter Analisa Mikro
-                        $('#detail_eb').text(response.eb);
-                        $('#detail_tpc').text(response.tpc);
-                        $('#detail_ym').text(response.ym);
-                        $('#detail_benda_asing').text(response.benda_asing);
-
-                        // Hasil & Disposisi
-                        const hasilBadge = $('#detail_hasil');
-                        hasilBadge.text(response.hasil);
-                        if (response.hasil === 'Pass') {
-                            hasilBadge.removeClass().addClass('badge bg-success');
-                        } else if (response.hasil === 'Fail') {
-                            hasilBadge.removeClass().addClass('badge bg-danger');
+                        if (response.qr_code) {
+                            $('#qr_code_container').html('<img src="data:image/png;base64,' +
+                                response.qr_code +
+                                '" alt="QR Code" style="max-width: 150px;">');
+                            let qrText = response.storage + '/' + response.variant;
+                            $('#qr_code_text').text(qrText);
                         } else {
-                            hasilBadge.removeClass().addClass('badge bg-secondary');
+                            $('#qr_code_container').html(
+                                '<p class="text-muted small">QR Code tidak tersedia</p>');
+                            $('#qr_code_text').text('-');
                         }
 
-                        $('#detail_disposition').text(response.disposition);
-                        $('#detail_remarks').text(response.remarks);
-                        $('#detail_updated_at').text(response.updated_at_formatted);
+                        // Informasi Dasar
+                        $('#detail_storage').text(response.storage || '-');
+                        $('#detail_po_number').text(response.po_number || '-');
+                        $('#detail_variant').text(response.variant || '-');
+                        $('#detail_no_filler').text(response.no_filler || '-');
+                        $('#detail_no_kempu_jeriken').text(response.no_kempu_jeriken || '-');
+                        $('#detail_running_number').text(response.running_number || '-');
+                        $('#detail_filling_date').text(response.filling_date_formatted || '-');
+                        $('#detail_koding').text(response.koding || '-');
+                        $('#detail_jam_koding').text(response.jam_koding || '-');
+                        $('#detail_jenis_sampel').text(response.jenis_sampel || '-');
+                        $('#detail_keterangan').text(response.keterangan || '-');
+                        $('#detail_created_at').text(response.created_at_formatted || '-');
+
+                        // Data Analisa
+                        $('#detail_shift').text(response.shift ? "Shift " + response.shift :
+                            '-');
+                        $('#detail_analis_eb').text(response.analis_eb_name || '-');
+                        $('#detail_analis_tpc').text(response.analis_tpc_name || '-');
+                        $('#detail_analis_ym').text(response.analis_ym_name || '-');
+                        $('#detail_analis_benda_asing').text(response.analis_benda_asing_name ||
+                            '-');
+                        $('#detail_received_at').text(response.received_at_formatted || '-');
+
+                        // Parameter Mikrobiologi
+                        $('#detail_eb').text(response.eb || '-');
+                        $('#detail_tpc').text(response.tpc || '-');
+                        $('#detail_ym').text(response.ym || '-');
+                        $('#detail_benda_asing').text(response.benda_asing || '-');
+
+                        // Hasil
+                        let hasilHtml = '-';
+                        if (response.hasil === 'OK' || response.hasil === 'Pass') {
+                            hasilHtml = '<span class="badge bg-success">' + response.hasil +
+                                '</span>';
+                        } else if (response.hasil === 'NOT OK' || response.hasil === 'Fail') {
+                            hasilHtml = '<span class="badge bg-danger">' + response.hasil +
+                                '</span>';
+                        } else if (response.hasil) {
+                            hasilHtml =
+                                '<span class="badge bg-warning text-dark">PENDING</span>';
+                        }
+                        $('#detail_hasil').html(hasilHtml);
+
+                        // Disposisi
+                        $('#detail_disposition').text(response.disposition || '-');
+
+                        // Remarks (tampilkan hanya jika ada)
+                        if (response.remarks) {
+                            $('#remarks_section').show();
+                            $('#detail_remarks').text(response.remarks);
+                        } else {
+                            $('#remarks_section').hide();
+                        }
+
+                        $('#detail_updated_at').text(response.updated_at_formatted || '-');
+
+                        $('#modalDetail').modal('show');
                     },
                     error: function(xhr) {
                         Swal.fire({

@@ -111,37 +111,39 @@
                     </div>
                 </div>
 
-                <!-- On Going Kimia Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
-                    <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
-                        <div class="card-header bg-gradient-success text-white border-0 py-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
-                                        <i class="ri-flask-line fs-1 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-white mb-1 fw-bold">On Going - Kimia</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Monitoring On Going Kimia</p>
+                @if (in_array(auth()->user()->role, ['Analis Field', 'Analis Kimia']))
+                    <!-- On Going Kimia Card -->
+                    <div class="col-12 col-sm-6 col-xl-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-success text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-flask-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">On Going - Kimia</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Monitoring On Going Kimia</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-success-subtle text-success">Monitoring</span>
-                                    <span class="badge bg-success-subtle text-success">Kimia</span>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-success-subtle text-success">Monitoring</span>
+                                        <span class="badge bg-success-subtle text-success">Kimia</span>
+                                    </div>
+                                    <a href="{{ route('monitoring-ongoing-kimia.index') }}"
+                                        class="btn btn-success rounded-pill px-4 d-flex align-items-center">
+                                        Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
                                 </div>
-                                <a href="{{ route('monitoring-ongoing-kimia.index') }}"
-                                    class="btn btn-success rounded-pill px-4 d-flex align-items-center">
-                                    Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
                 <!-- On Going Mikro Card -->
                 <div class="col-12 col-sm-6 col-xl-6">

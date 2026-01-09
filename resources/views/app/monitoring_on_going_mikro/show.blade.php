@@ -141,12 +141,13 @@
                                                     <label class="form-label">Nama Analis <span
                                                             style="color: red;">*</span></label>
                                                     <input type="text" name="nama_analis" id="nama_analis"
-                                                        class="form-control comma-input" placeholder="Masukkan Nama Analis">
+                                                        class="form-control comma-input" placeholder="Masukkan Nama Analis"
+                                                        oninput="this.value = this.value.toUpperCase();">
                                                     <small class="text-danger errorNamaAnalis"></small>
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- EB Field -->
                                         <div id="ebContainer" class="col-lg-12 d-none">
                                             <label class="form-label">EB <span class="text-danger">*</span></label>

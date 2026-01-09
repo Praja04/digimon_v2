@@ -167,10 +167,10 @@ class MonitoringOnGoingKimiaController extends Controller
                 'created_at_formatted' => $monitoring->created_at ?
                     $monitoring->created_at->locale('id')->translatedFormat('d F Y, H:i') : '-',
                 'qr_code' => $qrCode,
-                'analis_name' => $monitoring->analis->name ?? '-',
+                'analis_name' => $monitoring->nama_analis ?? '-',
                 'shift' => $monitoring->shift,
-                'received_at_formatted' => $monitoring->received_at ?
-                    \Carbon\Carbon::parse($monitoring->received_at)->locale('id')->translatedFormat('d F Y, H:i') : '-',
+                'scan_at_formatted' => $monitoring->scanned_at ?
+                    \Carbon\Carbon::parse($monitoring->scanned_at)->locale('id')->translatedFormat('d F Y, H:i') : '-',
                 'berat_jenis' => $monitoring->berat_jenis,
                 'visco' => $monitoring->visco,
                 'brix' => $monitoring->brix,
@@ -265,19 +265,26 @@ class MonitoringOnGoingKimiaController extends Controller
             $monitoring->color_id = $request->color;
             $monitoring->organo = $request->organo;
             $monitoring->status = $request->status_disposition;
-            $monitoring->disposition = $request->status_disposition === 'OK' ? 'Release' : 'Hold';
+            $monitoring->disposition = $request->disposition;
             $monitoring->remarks = $request->remark;
             $monitoring->save();
 
-            if (in_array($request->status_disposition, ['NOT OK'])) {
-                event(new ProcessOutsideDisposition(
-                    "Monitoring On Going - Kimia - Batch " . $monitoring->productionBatch->batch_number,
-                    $monitoring->productionBatch->id,
-                    'Monitoring On Going - Kimia',
-                    $request->status_disposition,
-                    $request->remark,
-                ));
+            $notificationTitle = "Monitoring On Going Kimia - Batch " . $monitoring->productionBatch->batch_number;
+
+            if ($request->status_disposition === 'OK') {
+                $message = "-";
+            } else {
+                $message = strtoupper($request->remark);
             }
+
+            event(new ProcessOutsideDisposition(
+                $notificationTitle,
+                $monitoring->productionBatch->id,
+                'Monitoring On Going Kimia',
+                $request->status_disposition,
+                $message,
+                route('monitoring-ongoing-kimia.analisa', $monitoring->id)
+            ));
 
             return response()->json([
                 'message' => 'Data analisa berhasil disimpan',

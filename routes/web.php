@@ -15,6 +15,15 @@ Routes berdasarkan Role Access
 
 Route::middleware(['auth'])->group(function () {
     /*------------------------------------------
+    Halaman utama
+    Roles: All
+    --------------------------------------------*/
+    Route::get('/halaman-utama', [App\Http\Controllers\HomepageController::class, 'index'])->name('homepage.index');
+
+
+
+
+    /*------------------------------------------
     Dashboard
     Roles: Supervisor, Foreman
     --------------------------------------------*/
@@ -39,9 +48,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Monitoring - On Going Kimia
-    Roles: Supervisor, Foreman, Analis Kimia
+    Roles: Supervisor, Foreman, Analis Kimia, Analis Field
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia'])->group(function () {
+    Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia,Analis Field'])->group(function () {
         Route::get('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'index'])->name('monitoring-ongoing-kimia.index');
         Route::get('/monitoring-ongoing-kimia/edit/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'edit'])->name('monitoring-ongoing-kimia.edit');
         Route::get('/monitoring-ongoing-kimia/show/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'show'])->name('monitoring-ongoing-kimia.show');
@@ -57,7 +66,7 @@ Route::middleware(['auth'])->group(function () {
     Monitoring - On Going Mikro
     Roles: Supervisor, Foreman, Analis Mikro
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Mikro'])->group(function () {
+    Route::middleware(['user-access:Supervisor,Foreman,Analis Mikro,Analis Kimia,Analis Field'])->group(function () {
         Route::get('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'index'])->name('monitoring-ongoing-mikro.index');
         Route::get('/monitoring-ongoing-mikro/edit/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'edit'])->name('monitoring-ongoing-mikro.edit');
         Route::get('/monitoring-ongoing-mikro/show/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'show'])->name('monitoring-ongoing-mikro.show');

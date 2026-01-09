@@ -266,23 +266,14 @@
                         let message = "QR gagal diproses";
 
                         if (xhr.status === 403 && xhr.responseJSON) {
-                            // Handle validation error (belum checklist)
                             const response = xhr.responseJSON;
-                            Swal.fire({
+                            let timeLeft = 5;
+                            const swal = Swal.fire({
                                 icon: 'warning',
                                 title: 'Akses Ditolak',
-                                html: response.message + '<br><br><a href="' + response
-                                    .redirect_url +
-                                    '" class="btn btn-warning mt-3"><i class="mdi mdi-clipboard-check-outline"></i> Ke Halaman Checksheet</a>',
-                                showConfirmButton: false,
-                                allowOutsideClick: false,
-                                allowEscapeKey: false
+                                text: response.message,
                             }).then(function(result) {
-                                if (result.isConfirmed && response.redirect_url) {
-                                    window.location.href = response.redirect_url;
-                                } else {
-                                    restartCamera();
-                                }
+                                restartCamera();
                             });
                             return;
                         }

@@ -15,7 +15,7 @@ class ShelfLifeAnalysisSeeder extends Seeder
      */
     public function run(): void
     {
-        $details = ShelfLifeSamplingDetail::where('kelompok_tanggal', '7')
+        $details = ShelfLifeSamplingDetail::where('kelompok_tanggal', '8')
             ->orderBy('bulan_ke', 'asc')
             ->get();
 

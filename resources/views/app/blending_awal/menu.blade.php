@@ -88,8 +88,8 @@
                                             <i class="ri-flask-line fs-1 text-white"></i>
                                         </div>
                                         <div>
-                                            <h5 class="text-white mb-1 fw-bold">Data Blending</h5>
-                                            <p class="text-white text-opacity-75 mb-0 small">Analisis Blending - Kimia</p>
+                                            <h5 class="text-white mb-1 fw-bold">Data Blending Awal</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Analisis Blending Awal</p>
                                         </div>
                                     </div>
                                 </div>
@@ -125,8 +125,7 @@
                                         </div>
                                         <div>
                                             <h5 class="text-white mb-1 fw-bold">Data Blending After Adjustment</h5>
-                                            <p class="text-white text-opacity-75 mb-0 small">Analisis Blending After Adjust
-                                                - Mikro</p>
+                                            <p class="text-white text-opacity-75 mb-0 small">Analisis Blending After Adjust</p>
                                         </div>
                                     </div>
                                 </div>

@@ -38,11 +38,6 @@
                                                     <div><a href="#"
                                                             class="text-primary d-block">{{ auth()->user()->name }}</a>
                                                     </div>
-                                                    <div class="vr"></div>
-
-                                                    <div class="text-muted">Jenis Sample : <span
-                                                            class="text-body fw-medium">{{ $monitoringOnGoing->jenis_sampel ?? '-' }}</span>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -74,7 +69,7 @@
                                                     <div class="d-flex align-items-center">
                                                         <div class="avatar-sm me-2">
                                                             <div
-                                                                class="avatar-title rounded bg-transparent text-info fs-24">
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
                                                                 <i class="ri-drop-fill"></i>
                                                             </div>
                                                         </div>
@@ -96,7 +91,7 @@
                                                     <div class="d-flex align-items-center">
                                                         <div class="avatar-sm me-2">
                                                             <div
-                                                                class="avatar-title rounded bg-transparent text-warning fs-24">
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
                                                                 <i class="ri-calendar-event-fill"></i>
                                                             </div>
                                                         </div>
@@ -115,7 +110,7 @@
                                                     <div class="d-flex align-items-center">
                                                         <div class="avatar-sm me-2">
                                                             <div
-                                                                class="avatar-title rounded bg-transparent text-warning fs-24">
+                                                                class="avatar-title rounded bg-transparent text-success fs-24">
                                                                 <i class="ri-time-line"></i>
                                                             </div>
                                                         </div>
@@ -149,43 +144,50 @@
                                         <div class="col-md-6 mb-3">
                                             <input type="hidden" id="id" name="id"
                                                 value="{{ $monitoringOnGoing->id }}">
-                                            <label for="berat_jenis" class="form-label">Berat Jenis <span
+                                            <label for="berat_jenis" class="form-label">Bj <span
                                                     style="color: red">*</span></label>
-                                            <input type="text" class="form-control" id="berat_jenis" name="berat_jenis">
+                                            <input type="text" class="form-control comma-input" id="berat_jenis"
+                                                name="berat_jenis" placeholder="0,00"
+                                                value="{{ str_replace('.', ',', $monitoringOnGoing->berat_jenis ?? '') }}">
                                             <small class="text-danger errorBeratJenis"></small>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="visco" class="form-label">Visco <span
                                                     style="color: red">*</span></label>
                                             <input type="text" class="form-control comma-input" id="visco"
-                                                name="visco" placeholder="0,00">
+                                                name="visco" placeholder="0,00"
+                                                value="{{ str_replace('.', ',', $monitoringOnGoing->visco ?? '') }}">
                                             <small class="text-danger errorVisco"></small>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="brix" class="form-label">Brix <span
                                                     style="color: red">*</span></label>
                                             <input type="text" class="form-control comma-input" id="brix"
-                                                name="brix" placeholder="0,00">
+                                                name="brix" placeholder="0,00"
+                                                value="{{ str_replace('.', ',', $monitoringOnGoing->brix ?? '') }}">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="aw" class="form-label">Aw <span
                                                     style="color: red">*</span></label>
                                             <input type="text" class="form-control comma-input" id="aw"
-                                                name="aw" placeholder="0,00">
+                                                name="aw" placeholder="0,00"
+                                                value="{{ str_replace('.', ',', $monitoringOnGoing->aw ?? '') }}">
                                             <small class="text-danger errorAw"></small>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="nacl" class="form-label">NaCl <span
                                                     style="color: red">*</span></label>
                                             <input type="text" class="form-control comma-input" id="nacl"
-                                                name="nacl" placeholder="0,00">
+                                                name="nacl" placeholder="0,00"
+                                                value="{{ str_replace('.', ',', $monitoringOnGoing->nacl ?? '') }}">
                                             <small class="text-danger errorNaCl"></small>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="ph" class="form-label">pH</label>
                                             <input type="text" class="form-control comma-input" id="ph"
-                                                name="ph" placeholder="0,00">
+                                                name="ph" placeholder="0,00"
+                                                value="{{ str_replace('.', ',', $monitoringOnGoing->ph ?? '') }}">
                                             <small class="text-danger errorPh"></small>
                                         </div>
                                         <div class="col-md-6 mb-3">
@@ -194,7 +196,8 @@
                                             <select class="form-control select2" id="color" name="color">
                                                 <option value="">-- Pilih Warna --</option>
                                                 @foreach ($colors as $item)
-                                                    <option value="{{ $item->id }}">
+                                                    <option value="{{ $item->id }}"
+                                                        {{ $monitoringOnGoing->color_id == $item->id ? 'selected' : '' }}>
                                                         {{ $item->name . ' - ' . $item->code }}</option>
                                                 @endforeach
                                             </select>
@@ -203,7 +206,9 @@
                                         <div class="col-md-6 mb-3">
                                             <label for="organo" class="form-label">Organo <span
                                                     style="color: red">*</span></label>
-                                            <input type="text" class="form-control" id="organo" name="organo">
+                                            <input type="text" class="form-control" id="organo" name="organo"
+                                                value="{{ $monitoringOnGoing->organo ?? '' }}"
+                                                oninput="this.value = this.value.toUpperCase();">
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-md-12 mb-3">
@@ -212,11 +217,36 @@
                                             <select class="form-control" id="status_disposition"
                                                 name="status_disposition">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK">OK</option>
-                                                <option value="NOT OK">NOT OK</option>
+                                                <option value="OK"
+                                                    {{ $monitoringOnGoing->status == 'OK' ? 'selected' : '' }}>OK</option>
+                                                <option value="NOT OK"
+                                                    {{ $monitoringOnGoing->status == 'NOT OK' ? 'selected' : '' }}>NOT OK
+                                                </option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
+
+                                        @if (auth()->user()->role == 'Foreman')
+                                            <div class="col-lg-12 mb-3">
+                                                <label class="form-label">Disposisi <span
+                                                        style="color: red">*</span></label>
+                                                <select name="disposition" id="disposition" class="form-control"
+                                                    required>
+                                                    <option value="">-- Pilih Disposisi --</option>
+                                                    @if ($monitoringOnGoing->status == 'OK')
+                                                        <option value="Release"
+                                                            {{ $monitoringOnGoing->disposisi == 'Release' ? 'selected' : '' }}>
+                                                            Release</option>
+                                                    @else
+                                                        <option value="Hold"
+                                                            {{ $monitoringOnGoing->disposisi == 'Hold' ? 'selected' : '' }}>
+                                                            Hold</option>
+                                                    @endif
+                                                </select>
+                                                <small class="text-danger errorStatusDisposisi"></small>
+                                            </div>
+                                        @endif
+
                                         <div class="col-md-12 mb-3">
                                             <label for="remark" class="form-label">Catatan</label>
                                             <textarea class="form-control" id="remark" name="remark" rows="3"

@@ -242,9 +242,6 @@ class GgasController extends Controller
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;
                 $notificationTitle .= " - Menunggu Review Foreman";
-            } elseif ($userRole === 'Foreman' && $dispositionChanged) {
-                $shouldSendNotification = true;
-                $notificationTitle .= " - Disposition: " . ($updateData['disposition'] ?? '-');
             }
 
             if ($shouldSendNotification) {

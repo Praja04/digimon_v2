@@ -314,10 +314,6 @@ class BlendingAwalController extends Controller
                 // Analis input/update status - kirim notif ke Foreman untuk review
                 $shouldSendNotification = true;
                 $notificationTitle .= " - Menunggu Review Foreman";
-            } elseif ($userRole === 'Foreman' && $dispositionChanged) {
-                // Foreman memberi disposition - kirim notif final ke semua
-                $shouldSendNotification = true;
-                $notificationTitle .= " - Disposition: " . ($updateData['disposition'] ?? '-');
             }
 
             if ($shouldSendNotification) {

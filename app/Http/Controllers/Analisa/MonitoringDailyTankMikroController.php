@@ -184,14 +184,6 @@ class MonitoringDailyTankMikroController extends Controller
 
             $message = "Data {$fieldName} berhasil disimpan.";
 
-            if ($hasil !== 'PENDING') {
-                if ($hasil === 'OK') {
-                    $message .= " ✅ Status: LOLOS (OK)";
-                } else {
-                    $message .= " ❌ Status: TIDAK LOLOS (NOT OK)";
-                }
-            }
-
             return response()->json([
                 'status' => 'success',
                 'message' => $message,
