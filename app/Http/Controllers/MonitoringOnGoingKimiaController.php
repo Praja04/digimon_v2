@@ -31,7 +31,7 @@ class MonitoringOnGoingKimiaController extends Controller
                 })
                 ->addColumn('status', function ($data) {
                     if ($data->status && $data->disposition == null) {
-                        return '<span class="badge bg-primary">Menunggu Didsposisi</span>';
+                        return '<span class="badge bg-primary">Menunggu Disposisi</span>';
                     } elseif ($data->disposition) {
                         $status = $data->status ?? '-';
                         $badgeClass = match ($status) {
@@ -269,7 +269,7 @@ class MonitoringOnGoingKimiaController extends Controller
             $monitoring->remarks = $request->remark;
             $monitoring->save();
 
-            $notificationTitle = "Monitoring On Going Kimia - Batch " . $monitoring->productionBatch->batch_number;
+            $notificationTitle = "Monitoring On Going Kimia - " . $monitoring->productionBatch->batch_number;
 
             if ($request->status_disposition === 'OK') {
                 $message = "-";

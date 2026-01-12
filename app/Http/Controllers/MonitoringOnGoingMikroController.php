@@ -435,7 +435,7 @@ class MonitoringOnGoingMikroController extends Controller
 
             if (in_array($request->benda_asing, ['Ada'])) {
                 event(new ProcessOutsideDisposition(
-                    "Monitoring On Going - Mikro - Batch " . $monitoringOnGoing->productionBatch->batch_number,
+                    "Monitoring On Going - Mikro - " . $monitoringOnGoing->productionBatch->batch_number,
                     $monitoringOnGoing->productionBatch->id,
                     'Monitoring On Going - Mikro',
                     $request->benda_asing,
