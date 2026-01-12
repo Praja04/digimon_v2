@@ -111,7 +111,7 @@
                     </div>
                 </div>
 
-                @if (in_array(auth()->user()->role, ['Analis Field', 'Analis Kimia']))
+                @if (in_array(auth()->user()->role, ['Foreman', 'Analis Field', 'Analis Kimia']))
                     <!-- On Going Kimia Card -->
                     <div class="col-12 col-sm-6 col-xl-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
