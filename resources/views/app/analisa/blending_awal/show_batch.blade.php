@@ -91,7 +91,11 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Batch :</p>
-                                                            <h5 class="mb-0">{{ $blending->batch_range }}
+                                                            <h5 class="mb-0">{{ $blending->batch_range }}@if ($blending->additionalBatches)
+                                                                    @foreach ($blending->additionalBatches as $relasi)
+                                                                        -{{ $relasi->batch }}
+                                                                    @endforeach
+                                                                @endif
                                                             </h5>
                                                         </div>
                                                     </div>
@@ -136,7 +140,8 @@
                                 <form id="form">
                                     <div class="row g-3">
                                         <div class="col-lg-4">
-                                            <input type="hidden" name="id" id="id" value="{{ $blending->id }}">
+                                            <input type="hidden" name="id" id="id"
+                                                value="{{ $blending->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"

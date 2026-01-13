@@ -171,17 +171,14 @@ class MonitoringStorageKimiaController extends Controller
 
         $all = $monitoringPasteurisasi;
 
-        // helper: expand a range string into array of integers
         $expandToNumbers = function (?string $str) {
             $str = trim((string)$str);
             if ($str === '') {
                 return [];
             }
-            // canonical "start-end"
             if (preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*$/', $str, $m)) {
                 return range((int)$m[1], (int)$m[2]);
             }
-            // chained like "1-2-3" or single number "5"
             if (strpos($str, '-') !== false) {
                 $parts = array_filter(array_map('trim', explode('-', $str)), fn($p) => $p !== '');
                 return array_map(fn($p) => (int) filter_var($p, FILTER_SANITIZE_NUMBER_INT), $parts);
@@ -189,9 +186,8 @@ class MonitoringStorageKimiaController extends Controller
             return [(int) filter_var($str, FILTER_SANITIZE_NUMBER_INT)];
         };
 
-        // Build raw groups with numeric expansions
         $grouped = $all->groupBy('batch_range');
-        $rawBatchGroups = []; // each item: ['string' => '1-2-3', 'numbers' => [1,2,3]]
+        $rawBatchGroups = [];
 
         foreach ($grouped as $batchRange => $items) {
             $chosen = $items->sortByDesc(
@@ -204,12 +200,10 @@ class MonitoringStorageKimiaController extends Controller
             $fullStringParts = [];
             $numbers = [];
 
-            // main range numbers
             $mainNums = $expandToNumbers($chosen->batch_range);
             $numbers = array_merge($numbers, $mainNums);
             $fullStringParts[] = $chosen->batch_range;
 
-            // related batches from monitoring_pasteurisasi_relations
             $relatedBatches = DB::table('monitoring_pasteurisasi_relations')
                 ->where('monitoring_pasteurisasi_id', $chosen->id)
                 ->pluck('batch')
@@ -232,7 +226,6 @@ class MonitoringStorageKimiaController extends Controller
             ];
         }
 
-        // Collect numbers already used in MonitoringStorageKimia (for this production batch)
         $usedMonitoringNumbers = [];
         foreach ($productionBatch->MonitoringStorageKimia as $mEntry) {
             $usedMonitoringNumbers = array_merge($usedMonitoringNumbers, $expandToNumbers($mEntry->batch_range));
@@ -248,13 +241,11 @@ class MonitoringStorageKimiaController extends Controller
         }
         $usedMonitoringNumbers = array_values(array_unique($usedMonitoringNumbers));
 
-        // Filter out any candidate that overlaps with already used numbers
         $candidates = array_filter($rawBatchGroups, function ($grp) use ($usedMonitoringNumbers) {
             if (empty($grp['numbers'])) return false;
             return empty(array_intersect($grp['numbers'], $usedMonitoringNumbers));
         });
 
-        // Remove candidates that are subsets of another candidate (keep only maximal groups)
         $finalCandidates = [];
         foreach ($candidates as $i => $cand) {
             $isSubset = false;
@@ -270,7 +261,6 @@ class MonitoringStorageKimiaController extends Controller
             }
         }
 
-        // Convert to strings for view
         $filteredBatchGroups = array_map(fn($g) => $g['string'], $finalCandidates);
 
         foreach ($productionBatch->MonitoringStorageKimia as $data) {
@@ -300,10 +290,15 @@ class MonitoringStorageKimiaController extends Controller
             ]);
 
             $productionBatchId = $request->production_batch_id;
-            $batchRange = $request->batch_range;
+            $batchRangeRaw = $request->batch_range;
+
+            // Ambil dua angka pertama dari batch_range (contoh: "7-8-5-6-9-10" → "7-8")
+            $parts = array_filter(explode('-', $batchRangeRaw), 'is_numeric');
+            $batchRange = implode('-', array_slice($parts, 0, 2));
 
             $validDispositions = ['Release', 'Release Bersyarat'];
 
+            // Jika hasilnya lebih dari 1 record, ambil yang paling baru berdasarkan revisi & id
             $monitoringPasteurisasi = MonitoringPasteurisasi::where('production_batch_id', $productionBatchId)
                 ->where('batch_range', $batchRange)
                 ->whereIn('disposition', $validDispositions)

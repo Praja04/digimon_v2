@@ -20,7 +20,7 @@ class BlendingAwalMikroController extends Controller
                 'id' => 'required|integer',
                 'production_batch_id' => 'required|integer|exists:production_batches,id',
                 'batch_range' => 'nullable|string',
-                'nomor_blending' => 'nullable|integer',
+                'nomor_blending' => 'nullable',
                 'volume' => 'nullable|numeric',
             ]);
 

@@ -89,15 +89,31 @@ class BlendingAwalController extends Controller
             'BlendingAwal.additionalBatches'
         ])->findOrFail($id);
 
-        // Loop setiap blending_awal untuk cek apakah ada additional batch
+        $parseBatchRange = function ($range) {
+            if (preg_match('/(\d+)\s*-\s*(\d+)/', $range, $matches)) {
+                return range((int) $matches[1], (int) $matches[2]);
+            }
+            return [(int) $range];
+        };
+
+        $getFirstNumber = function ($range) use ($parseBatchRange) {
+            $numbers = $parseBatchRange($range);
+            return !empty($numbers) ? min($numbers) : PHP_INT_MAX;
+        };
+
         foreach ($productionBatch->BlendingAwal as $blending) {
-            // Tambahkan properti custom 'additional_batch_info' ke setiap data
             $blending->additional_batch_info = $blending->additionalBatches->isNotEmpty()
                 ? $blending->additionalBatches
                 : null;
 
             $blending->po_number = $productionBatch->po_number;
+            $blending->sort_key = $getFirstNumber($blending->batch_range);
         }
+
+        $productionBatch->setRelation(
+            'BlendingAwal',
+            $productionBatch->BlendingAwal->sortBy('sort_key')->values()
+        );
 
         $colors = Color::orderBy('name', 'asc')->get();
         return view('app.analisa.blending_awal.show', compact('colors', 'productionBatch'));

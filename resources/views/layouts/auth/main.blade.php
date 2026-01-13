@@ -48,7 +48,7 @@
                                         <div class="bg-overlay"></div>
                                         <div class="position-relative h-100 d-flex flex-column">
                                             <div class="mb-4">
-                                                <a href="index.html" class="d-block">
+                                                <a href="{{ route('login') }}" class="d-block">
                                                     <img src="{{ asset('assets') }}/images/icon-utility/kecap.png"
                                                         alt="" height="120">
                                                 </a>
@@ -74,16 +74,18 @@
                                                     </div>
                                                     <div class="carousel-inner text-center text-white pb-5">
                                                         <div class="carousel-item active">
-                                                            <p class="fs-15 fst-italic">" Great! Clean code, clean
-                                                                design, easy for customization. Thanks very much! "</p>
+                                                            <p class="fs-15 fst-italic">"Sistem QC yang handal untuk
+                                                                memastikan setiap tetes kecap berkualitas tinggi."</p>
                                                         </div>
                                                         <div class="carousel-item">
-                                                            <p class="fs-15 fst-italic">" The theme is really great with
-                                                                an amazing customer support."</p>
+                                                            <p class="fs-15 fst-italic">"Pengecekan kualitas yang ketat
+                                                                menjaga standar rasa dan keamanan produk kecap kami."
+                                                            </p>
                                                         </div>
                                                         <div class="carousel-item">
-                                                            <p class="fs-15 fst-italic">" Great! Clean code, clean
-                                                                design, easy for customization. Thanks very much! "</p>
+                                                            <p class="fs-15 fst-italic">"Teknologi terbaru dalam sistem
+                                                                QC untuk menghadirkan kecap terbaik kepada konsumen."
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
