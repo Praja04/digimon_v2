@@ -35,7 +35,6 @@ class PressTestDataController extends Controller
                 'variant' => 'required|string|max:255',
                 'mesin' => 'required|string|max:255',
                 'batas' => 'required|numeric',
-                'status' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -111,7 +110,6 @@ class PressTestDataController extends Controller
                 'variant' => 'sometimes|required|string|max:255',
                 'mesin' => 'sometimes|required|string|max:255',
                 'batas' => 'sometimes|required|numeric',
-                'status' => 'sometimes|required|string',
             ]);
 
             if ($validator->fails()) {

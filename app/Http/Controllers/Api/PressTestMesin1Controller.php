@@ -34,6 +34,7 @@ class PressTestMesin1Controller extends Controller
                 'variant' => 'required|string|max:255',
                 'jarak' => 'required',
                 'batas' => 'nullable',
+                'status' => 'nullable|string|max:20',
             ]);
 
             $pressTest = PressTestMesin1::create($validated);
