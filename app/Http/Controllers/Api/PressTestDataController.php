@@ -12,7 +12,7 @@ class PressTestDataController extends Controller
     public function index()
     {
         try {
-            $data = PressTestData::all();
+            $data = PressTestData::orderBy('created_at', 'desc')->first();
             return response()->json([
                 'success' => true,
                 'data' => $data
