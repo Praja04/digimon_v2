@@ -58,3 +58,14 @@ Route::post('/monitoring-storage-mikro', [App\Http\Controllers\Api\MonitoringSto
 
 
 Route::post('mesin', [App\Http\Controllers\Api\MesinController::class, 'store']);
+
+// Press Test Data 
+Route::get('/press-test-data', [App\Http\Controllers\Api\PressTestDataController::class, 'index'])->name('api.press-test-data.index');
+Route::post('/press-test-data', [App\Http\Controllers\Api\PressTestDataController::class, 'store'])->name('api.press-test-data.store');
+Route::get('/press-test-data/{id}', [App\Http\Controllers\Api\PressTestDataController::class, 'show'])->name('api.press-test-data.show');
+Route::post('/press-test-data/{id}', [App\Http\Controllers\Api\PressTestDataController::class, 'update'])->name('api.press-test-data.update');
+Route::delete('/press-test-data/{id}', [App\Http\Controllers\Api\PressTestDataController::class, 'destroy'])->name('api.press-test-data.destroy');
+
+// Press Test Mesin 1
+Route::get('/press-test-mesin-1', [App\Http\Controllers\Api\PressTestMesin1Controller::class, 'index'])->name('api.press-test-mesin-1.index');
+Route::post('/press-test-mesin-1', [App\Http\Controllers\Api\PressTestMesin1Controller::class, 'store'])->name('api.press-test-mesin-1.store');
