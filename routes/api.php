@@ -68,4 +68,4 @@ Route::delete('/press-test-data/{id}', [App\Http\Controllers\Api\PressTestDataCo
 
 // Press Test Mesin 1
 Route::get('/press-test-mesin-1', [App\Http\Controllers\Api\PressTestMesin1Controller::class, 'index'])->name('api.press-test-mesin-1.index');
-Route::post('/press-test-mesin-1', [App\Http\Controllers\Api\PressTestMesin1Controller::class, 'store'])->name('api.press-test-mesin-1.store');
+Route::post('/press-test-mesin-1/store', [App\Http\Controllers\Api\PressTestMesin1Controller::class, 'store'])->name('api.press-test-mesin-1.store');
