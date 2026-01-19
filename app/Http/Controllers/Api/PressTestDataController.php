@@ -34,6 +34,7 @@ class PressTestDataController extends Controller
                 'shift' => 'nullable|string|max:255',
                 'variant' => 'required|string|max:255',
                 'mesin' => 'required|string|max:255',
+                'batas' => 'required|numeric',
             ]);
 
             if ($validator->fails()) {
@@ -44,10 +45,7 @@ class PressTestDataController extends Controller
                 ], 422);
             }
 
-            $data = $request->all();
-            $data['waktu'] = now()->format('Y-m-d H:i:s');
-
-            $pressTestData = PressTestData::create($data);
+            $pressTestData = PressTestData::create($request->all());
 
             return response()->json([
                 'success' => true,
@@ -110,7 +108,6 @@ class PressTestDataController extends Controller
                 'nama_analis' => 'sometimes|required|string|max:255',
                 'shift' => 'sometimes|nullable|string|max:255',
                 'variant' => 'sometimes|required|string|max:255',
-                'waktu' => 'sometimes|required',
                 'mesin' => 'sometimes|required|string|max:255',
             ]);
 

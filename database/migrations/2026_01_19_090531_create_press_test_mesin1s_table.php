@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('press_test_mesin_1', function (Blueprint $table) {
             $table->string('variant');
-            $table->datetime('waktu');
             $table->float('jarak');
             $table->float('batas');
             $table->timestamps();

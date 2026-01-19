@@ -11,9 +11,7 @@ class PressTestMesin1Controller extends Controller
     public function index()
     {
         try {
-            $pressTests = PressTestMesin1::orderBy('created_at', 'desc')
-                ->select(['variant', 'waktu', 'batas', 'created_at', 'updated_at'])
-                ->first();
+            $pressTests = PressTestMesin1::orderBy('created_at', 'desc')->first();
 
             return response()->json([
                 'success' => true,
@@ -37,8 +35,6 @@ class PressTestMesin1Controller extends Controller
                 'jarak' => 'required',
                 'batas' => 'required',
             ]);
-
-            $validated['waktu'] = now()->format('Y-m-d H:i:s');
 
             $pressTest = PressTestMesin1::create($validated);
 

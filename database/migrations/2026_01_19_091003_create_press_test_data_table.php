@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama_analis');
             $table->string('shift')->nullable();
             $table->string('variant');
-            $table->datetime('waktu');
+            $table->double('batas');
             $table->string('mesin')->nullable();
             $table->timestamps();
         });
