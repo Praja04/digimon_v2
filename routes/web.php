@@ -20,7 +20,10 @@ Route::middleware(['auth'])->group(function () {
     --------------------------------------------*/
     Route::get('/halaman-utama', [App\Http\Controllers\HomepageController::class, 'index'])->name('homepage.index');
 
-
+    Route::get('/press-test-data', [App\Http\Controllers\PressTestDataController::class, 'index'])->name('press-test-data.index');
+    Route::post('/press-test-data', [App\Http\Controllers\PressTestDataController::class, 'store'])->name('press-test-data.store');
+    Route::get('/press-test-data/{id}', [App\Http\Controllers\PressTestDataController::class, 'edit'])->name('press-test-data.edit');
+    Route::delete('/press-test-data/{id}', [App\Http\Controllers\PressTestDataController::class, 'destroy'])->name('press-test-data.destroy');
 
 
     /*------------------------------------------

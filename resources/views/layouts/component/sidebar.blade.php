@@ -158,6 +158,29 @@
                         </li>
                     @endif
 
+                    <li class="nav-item">
+                        <a class="nav-link menu-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}" href="#press-test" data-bs-toggle="collapse" role="button"
+                            aria-expanded="false" aria-controls="press-test">
+                            <i class="mdi mdi-test-tube"></i> <span>Press Test</span>
+                        </a>
+                        <div class="collapse menu-dropdown {{ request()->routeIs(['press-test-data.index']) ? 'show' : '' }}"
+                            id="press-test">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="{{ route('press-test-data.index') }}"
+                                        class="nav-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}">
+                                        <i class="mdi mdi-database"></i> Press Test Data
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="" class="nav-link">
+                                        <i class="mdi mdi-menu"></i> Press Test Mesin
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
                     {{-- Scan Menu: Analis Kimia, Analis Mikro --}}
                     @if (in_array($userRole, ['Analis Kimia', 'Analis Mikro']))
                         <li class="nav-item">
