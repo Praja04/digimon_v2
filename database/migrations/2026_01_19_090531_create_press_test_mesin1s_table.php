@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('press_test_mesin_1', function (Blueprint $table) {
             $table->string('variant');
             $table->float('jarak');
-            $table->float('batas');
+            $table->float('batas')->nullable();
             $table->timestamps();
         });
     }

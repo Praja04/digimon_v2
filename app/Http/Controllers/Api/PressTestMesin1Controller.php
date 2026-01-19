@@ -33,7 +33,7 @@ class PressTestMesin1Controller extends Controller
             $validated = $request->validate([
                 'variant' => 'required|string|max:255',
                 'jarak' => 'required',
-                'batas' => 'required',
+                'batas' => 'nullable',
             ]);
 
             $pressTest = PressTestMesin1::create($validated);
