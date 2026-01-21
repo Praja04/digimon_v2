@@ -50,30 +50,41 @@
                         <div class="collapse menu-dropdown {{ request()->routeIs('dashboard.*') ? 'show' : '' }}"
                             id="Dashboards">
                             <ul class="nav nav-sm flex-column">
-                                <li class="nav-item"><a href="{{ route('dashboard.gga-ggas.index') }}"
+                                <li class="nav-item">
+                                    <a href="{{ route('dashboard.gga-ggas.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.gga-ggas.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-flask"></i> Analisis GGA & GGAS</a></li>
-                                <li class="nav-item"><a href="{{ route('dashboard.blending-awal.index') }}"
-                                        class="nav-link {{ request()->routeIs('dashboard.blending-awal.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-blender"></i> Analisis Blending Awal</a>
+                                            class="mdi mdi-flask"></i>GGA & GGAS</a>
                                 </li>
-                                <li class="nav-item"><a href="{{ route('dashboard.blending-after-adjust.index') }}"
+                                <li class="nav-item">
+                                    <a href="{{ route('dashboard.blending-awal.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.blending-awal.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-blender"></i>Blending Awal</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('dashboard.blending-after-adjust.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.blending-after-adjust.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-blender-outline"></i> Analisis Blending
-                                        After Adjust</a></li>
+                                            class="mdi mdi-blender-outline"></i>Blending
+                                        After Adjust</a>
+                                </li>
                                 <li class="nav-item"><a href="{{ route('dashboard.monitoring-turun-blending.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.monitoring-turun-blending.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-chart-line"></i> Monitoring Turun
-                                        Blending</a></li>
-                                <li class="nav-item"><a href="{{ url('dashboard/monitoring/storage') }}"
-                                        class="nav-link"><i class="mdi mdi-database"></i> Monitoring Storage</a></li>
-                                <li class="nav-item"><a href="{{ url('dashboard/mikro/blending/after') }}"
-                                        class="nav-link"><i class="mdi mdi-blender"></i> Blending After Adjust</a>
+                                        Blending</a>
                                 </li>
-                                <li class="nav-item"><a href="{{ url('dashboard/mikro/monitoring/storage') }}"
-                                        class="nav-link"><i class="mdi mdi-database"></i> Monitoring Storage</a></li>
-                                <li class="nav-item"><a href="{{ url('dashboard/rm') }}" class="nav-link"><i
-                                            class="mdi mdi-chemical-weapon"></i> Dashboard RMPM</a></li>
+                                <li class="nav-item"><a href="{{ route('dashboard.monitoring-pasteurisasi.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.monitoring-pasteurisasi.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-thermometer"></i> Monitoring Pasteurisasi</a></li>
+                                <li class="nav-item"><a href="{{ route('dashboard.monitoring-storage-kimia.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.monitoring-storage-kimia.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-database"></i> Monitoring Storage</a></li>
+
+                                <li class="nav-item"><a href="{{ route('dashboard.monitoring-storage-mikro.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.monitoring-storage-mikro.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-bacteria"></i> Monitoring Storage Mikro</a>
+                                </li>
+                                {{-- <li class="nav-item"><a href="{{ route('dashboard.rmpm.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.rmpm.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-chemical-weapon"></i> Dashboard RMPM</a></li> --}}
                                 <li class="nav-item"><a href="{{ route('dashboard.shelf-life.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.shelf-life.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-calendar-clock"></i> Dashboard Shelf Life</a>
@@ -159,26 +170,11 @@
                     @endif
 
                     <li class="nav-item">
-                        <a class="nav-link menu-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}" href="#press-test" data-bs-toggle="collapse" role="button"
-                            aria-expanded="false" aria-controls="press-test">
-                            <i class="mdi mdi-test-tube"></i> <span>Press Test</span>
+                        <a class="nav-link menu-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}"
+                            href="{{ route('press-test-data.index') }}">
+                            <i class="mdi mdi-clipboard-text-play-outline"></i> <span data-key="t-widgets">Press Test
+                                Data</span>
                         </a>
-                        <div class="collapse menu-dropdown {{ request()->routeIs(['press-test-data.index']) ? 'show' : '' }}"
-                            id="press-test">
-                            <ul class="nav nav-sm flex-column">
-                                <li class="nav-item">
-                                    <a href="{{ route('press-test-data.index') }}"
-                                        class="nav-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}">
-                                        <i class="mdi mdi-database"></i> Press Test Data
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="" class="nav-link">
-                                        <i class="mdi mdi-menu"></i> Press Test Mesin
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
                     </li>
 
                     {{-- Scan Menu: Analis Kimia, Analis Mikro --}}

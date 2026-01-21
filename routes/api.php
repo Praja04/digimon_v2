@@ -15,6 +15,23 @@ Route::get('/dashboard/blending-awal/analisa/disposisi', [App\Http\Controllers\A
 Route::get('/dashboard/blending-after-adjust/analisa', [App\Http\Controllers\Api\Dashboard\BlendingAfterAdjustController::class, 'analisaBlendingAfterAdjust'])->name('api.dashboard.blending-after-adjust.analisa');
 Route::get('/dashboard/blending-after-adjust/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\BlendingAfterAdjustController::class, 'analisaDisposisi'])->name('api.dashboard.blending-after-adjust.analisa.disposisi');
 
+// Dashboard - Monitoring Turun Blending
+Route::get('/dashboard/monitoring-turun-blending/analisa', [App\Http\Controllers\Api\Dashboard\MonitoringTurunBlendingController::class, 'analisaMonitoringTurunBlending'])->name('api.dashboard.monitoring-turun-blending.analisa');
+Route::get('/dashboard/monitoring-turun-blending/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\MonitoringTurunBlendingController::class, 'analisaDisposisi'])->name('api.dashboard.monitoring-turun-blending.analisa.disposisi');
+
+// Dashboard - Monitoring Pasteurisasi
+Route::get('/dashboard/monitoring-pasteurisasi/analisa', [App\Http\Controllers\Api\Dashboard\MonitoringPasteurisasiController::class, 'analisaMonitoringPasteurisasi'])->name('api.dashboard.monitoring-pasteurisasi.analisa');
+Route::get('/dashboard/monitoring-pasteurisasi/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\MonitoringPasteurisasiController::class, 'analisaDisposisi'])->name('api.dashboard.monitoring-pasteurisasi.analisa.disposisi');
+
+// Dashboard - Monitoring Storage Kimia
+Route::get('/dashboard/monitoring-storage-kimia/analisa', [App\Http\Controllers\Api\Dashboard\MonitoringStorageKimiaController::class, 'analisaMonitoringStorageKimia'])->name('api.dashboard.monitoring-storage-kimia.analisa');
+Route::get('/dashboard/monitoring-storage-kimia/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\MonitoringStorageKimiaController::class, 'analisaDisposisi'])->name('api.dashboard.monitoring-storage-kimia.analisa.disposisi');
+
+// Dashboard - Monitoring Storage Mikro
+Route::get('/dashboard/monitoring-storage-mikro/analisa', [App\Http\Controllers\Api\Dashboard\MonitoringStorageMikroController::class, 'analisaMonitoringStorageMikro'])->name('api.dashboard.monitoring-storage-mikro.analisa');
+Route::get('/dashboard/monitoring-storage-mikro/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\MonitoringStorageMikroController::class, 'analisaDisposisi'])->name('api.dashboard.monitoring-storage-mikro.analisa.disposisi');
+
+
 // Production Batch
 Route::get('/persiapan-masak', [App\Http\Controllers\Api\ProductionBatchController::class, 'index'])->name('api.production.batch.index');
 Route::get('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'show'])->name('api.production.batch.show');

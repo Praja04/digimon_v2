@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\MonitoringTurunBlending;
+use App\Models\MonitoringStorageKimia;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class MonitoringTurunBlendingController extends Controller
+class MonitoringStorageKimiaController extends Controller
 {
-    public function analisaMonitoringTurunBlending(Request $request)
+    public function analisaMonitoringStorageKimia(Request $request)
     {
         $startDate = $request->input('start_date');
         $endDate   = $request->input('end_date');
@@ -18,7 +18,7 @@ class MonitoringTurunBlendingController extends Controller
         $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfDay();
         $endDate   = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
-        $query = MonitoringTurunBlending::with([
+        $query = MonitoringStorageKimia::with([
             'productionBatch:id,po_number,variant'
         ])->whereBetween('created_at', [$startDate, $endDate]);
 
@@ -57,7 +57,7 @@ class MonitoringTurunBlendingController extends Controller
         }
 
         return response()->json([
-            'monitoring_turun_blending' => $flattened
+            'monitoring_storage_kimia' => $flattened
         ]);
     }
 
@@ -70,7 +70,7 @@ class MonitoringTurunBlendingController extends Controller
         $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfDay();
         $endDate   = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
-        $query = MonitoringTurunBlending::whereNotNull('disposition')
+        $query = MonitoringStorageKimia::whereNotNull('disposition')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($variant) {

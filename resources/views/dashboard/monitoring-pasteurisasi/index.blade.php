@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'Dashboard - Monitoring Turun Blending')
+@section('title', 'Dashboard - Monitoring Pasteurisasi')
 @section('styles')
     <!-- Custom CSS for enhanced styling -->
     <style>
@@ -286,7 +286,7 @@
 
             let chartDisposition = null;
             let paramCharts = {};
-            const API_BASE = "{{ url('/api/dashboard/monitoring-turun-blending') }}";
+            const API_BASE = "{{ url('/api/dashboard/monitoring-pasteurisasi') }}";
 
             function getParams() {
                 const params = {};
@@ -354,7 +354,7 @@
                 try {
                     const res = await fetch(`${API_BASE}/analisa?${getParams()}`);
                     const data = await res.json();
-                    const monitoringData = data.monitoring_turun_blending || [];
+                    const monitoringData = data.monitoring_pasteurisasi || [];
 
                     monitoringData.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 

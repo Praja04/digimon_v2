@@ -225,7 +225,7 @@
         <div class="container-fluid">
 
             <!-- QC Hero Banner -->
-            <div class="banner-wrapper position-relative"
+            <div class="banner-wrapper position-relative mb-3"
                 style="background: url('{{ asset('assets/images/banner/banner_5.png') }}') center center/cover no-repeat;">
 
                 <!-- Dark overlay -->

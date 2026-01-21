@@ -283,10 +283,10 @@
                                                     </td>
                                                     <td>
                                                         @if (is_null($gga->status))
-                                                            <button class="btn btn-sm btn-primary open-gga-modal"
-                                                                data-id="{{ $gga->id }}">
-                                                                Input Data
-                                                            </button>
+                                                            <a href="{{ route('gga.show_batch', $gga->id) }}"
+                                                                class="btn btn-sm btn-primary">
+                                                                Analisa Data
+                                                            </a>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
@@ -765,26 +765,6 @@
             $('#status_disposition').on('change', function() {
                 const selected = $(this).val();
                 toggleAdjustmentFields(selected);
-            });
-
-            $('.open-gga-modal').on('click', function() {
-                const id = $(this).data('id');
-
-                $('#form')[0].reset();
-                $('.text-danger').html('');
-                $('.form-control').removeClass('is-invalid');
-                $('.modal-title').text('Input Data GGA');
-                $('#id').val(id);
-
-                $('#disposition').val('').trigger('change');
-
-                $('#status_disposition').val('').trigger('change');
-                $('#status_disposition').prop('disabled', false);
-
-                $('.adjustment-qty-wrapper').addClass('d-none');
-                $('.adjustment-qty').prop('required', false).val('');
-
-                $('#modal').modal('show');
             });
 
             $('body').on('click', '.open-gga-modal-edit', function() {

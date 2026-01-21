@@ -43,6 +43,15 @@ Route::middleware(['auth'])->group(function () {
         // Monitoring - Turun Blending
         Route::get('/dashboard/monitoring-turun-blending', [App\Http\Controllers\Dashboard\MonitoringTurunBlendingController::class, 'index'])->name('dashboard.monitoring-turun-blending.index');
 
+        // Monitoring - Pasteurisasi
+        Route::get('/dashboard/monitoring-pasteurisasi', [App\Http\Controllers\Dashboard\MonitoringPasteurisasiController::class, 'index'])->name('dashboard.monitoring-pasteurisasi.index');
+
+        // Monitoring - Storage Kimia
+        Route::get('/dashboard/monitoring-storage-kimia', [App\Http\Controllers\Dashboard\MonitoringStorageKimiaController::class, 'index'])->name('dashboard.monitoring-storage-kimia.index');
+
+        // Monitoring - Storage Mikro
+        Route::get('/dashboard/monitoring-storage-mikro', [App\Http\Controllers\Dashboard\MonitoringStorageMikroController::class, 'index'])->name('dashboard.monitoring-storage-mikro.index');
+
         // Dashboard - Shelf Life
         Route::get('/dashboard/shelf-life', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'index'])->name('dashboard.shelf-life.index');
         Route::get('/dashboard/shelf-life/chart-data', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getChartData'])->name('dashboard.shelf-life.chart-data');
