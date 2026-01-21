@@ -172,7 +172,7 @@
                                             <small class="text-danger errorBj"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">pH</label>
+                                            <label class="form-label">pH <span style="color: red">*</span></label>
                                             <input type="text" name="ph" id="ph"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
                                                 value="{{ str_replace('.', ',', $pasteurisasi->ph ?? '') }}">
@@ -193,30 +193,25 @@
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">Buih</label>
+                                            <label class="form-label">Buih <span style="color: red">*</span></label>
                                             <input type="text" name="buih" id="buih"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
                                                 value="{{ str_replace('.', ',', $pasteurisasi->buih ?? '') }}">
                                             <small class="text-danger errorBuih"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">Endapan</label>
-                                            <input type="text" name="endapan" id="endapan" class="form-control"
+                                            <label class="form-label">Aroma <span style="color: red">*</span></label>
+                                            <input type="text" name="aroma" id="aroma" class="form-control"
                                                 oninput="this.value = this.value.toUpperCase();"
-                                                value="{{ $pasteurisasi->endapan ?? '' }}">
+                                                value="{{ $pasteurisasi->aroma ?? '' }}">
+                                            <small class="text-danger errorAroma"></small>
                                         </div>
                                         <div class="col-lg-6">
-                                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                                            <select name="color" id="color" class="select2 form-control">
-                                                <option value="">-- Pilih Warna --</option>
-                                                @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}"
-                                                        {{ $pasteurisasi->color_id == $color->id ? 'selected' : '' }}>
-                                                        {{ $color->name }} ({{ $color->code }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-danger errorColor"></small>
+                                            <label class="form-label">Endapan <span style="color: red">*</span></label>
+                                            <input type="text" name="endapan" id="endapan"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ $pasteurisasi->endapan ?? '' }}">
+                                            <small class="text-danger errorEndapan"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
@@ -443,9 +438,13 @@
                                 $('#ph').addClass('is-invalid');
                                 $('.errorPh').html(errors.ph.join('<br>'));
                             }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
+                            if (errors.aroma) {
+                                $('#aroma').addClass('is-invalid');
+                                $('.errorAroma').html(errors.aroma.join('<br>'));
+                            }
+                            if (errors.endapan) {
+                                $('#endapan').addClass('is-invalid');
+                                $('.errorEndapan').html(errors.endapan.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');

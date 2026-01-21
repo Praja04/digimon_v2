@@ -176,10 +176,11 @@
                                                     </td>
                                                     <td>
                                                         @if (is_null($blending->status))
-                                                            <button class="btn btn-sm btn-primary open-blending-modal"
+                                                            <a href="{{ route('analisa.monitoring-turun-blending.show_batch', $blending->id) }}"
+                                                                class="btn btn-sm btn-primary"
                                                                 data-id="{{ $blending->id }}">
-                                                                Input Data
-                                                            </button>
+                                                                Analisa Data
+                                                            </a>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
@@ -217,7 +218,7 @@
             <form id="form">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Input Data Monitoring Turun Blending</h5>
+                        <h5 class="modal-title">Kelola Data Monitoring Turun Blending</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -242,18 +243,6 @@
                             <small class="text-danger errorNacl"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Bj <span style="color: red">*</span></label>
-                            <input type="text" name="bj" id="bj" class="form-control comma-input"
-                                placeholder="Contoh: 0,00">
-                            <small class="text-danger errorBj"></small>
-                        </div>
-                        <div class="col-lg-4">
-                            <label class="form-label">pH</label>
-                            <input type="text" name="ph" id="ph" class="form-control comma-input"
-                                placeholder="Contoh: 0,00">
-                            <small class="text-danger errorPh"></small>
-                        </div>
-                        <div class="col-lg-4">
                             <label class="form-label">Aw <span style="color: red">*</span></label>
                             <input type="text" name="aw" id="aw" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
@@ -266,29 +255,6 @@
                             <small class="text-danger errorOrgano"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                            <select name="color" id="color" class="select2 form-control">
-                                <option value="">-- Pilih Warna --</option>
-                                @foreach ($colors as $color)
-                                    <option value="{{ $color->id }}">
-                                        {{ $color->name }} ({{ $color->code }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="text-danger errorColor"></small>
-                        </div>
-                        <div class="col-lg-4">
-                            <label class="form-label">Buih</label>
-                            <input type="text" name="buih" id="buih" class="form-control comma-input"
-                                placeholder="Contoh: 0,00">
-                            <small class="text-danger errorBuih"></small>
-                        </div>
-                        <div class="col-lg-6">
-                            <label class="form-label">Endapan</label>
-                            <input type="text" name="endapan" id="endapan" class="form-control"
-                                oninput="this.value = this.value.toUpperCase();">
-                        </div>
-                        <div class="col-lg-6">
                             <label class="form-label">Status <span style="color: red">*</span></label>
                             <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
@@ -407,40 +373,28 @@
                     <div class="mb-4">
                         <h6 class="border-bottom pb-2 mb-3">Parameter Analisa</h6>
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Brix</span>
                                     <span class="fw-medium">: <span id="detail_brix">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">NaCl</span>
-                                    <span class="fw-medium">: <span id="detail_nacl">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">BJ</span>
-                                    <span class="fw-medium">: <span id="detail_bj">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Visco</span>
                                     <span class="fw-medium">: <span id="detail_visco">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <span class="text-muted" style="min-width: 140px;">NaCl</span>
+                                    <span class="fw-medium">: <span id="detail_nacl">-</span></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">AW</span>
                                     <span class="fw-medium">: <span id="detail_aw">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">pH</span>
-                                    <span class="fw-medium">: <span id="detail_ph">-</span></span>
                                 </div>
                             </div>
                         </div>
@@ -452,26 +406,8 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Buih</span>
-                                    <span class="fw-medium">: <span id="detail_buih">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Organo</span>
                                     <span class="fw-medium">: <span id="detail_organo">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Endapan</span>
-                                    <span class="fw-medium">: <span id="detail_endapan">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Warna</span>
-                                    <span class="fw-medium">: <span id="detail_color">-</span></span>
                                 </div>
                             </div>
                         </div>
@@ -617,8 +553,6 @@
                 $('.form-control').removeClass('is-invalid');
 
                 $('#id').val(id);
-
-                $('#color').val('').trigger('change');
                 $('#disposition').val('').trigger('change');
 
                 $('#status_disposition').val('').trigger('change');
@@ -648,14 +582,9 @@
                         $('#id').val(response.id);
                         $('#brix').val(formatDecimal(response.brix));
                         $('#nacl').val(formatDecimal(response.nacl));
-                        $('#bj').val(formatDecimal(response.bj));
                         $('#visco').val(formatDecimal(response.visco));
                         $('#aw').val(formatDecimal(response.aw));
-                        $('#ph').val(formatDecimal(response.ph));
-                        $('#buih').val(formatDecimal(response.buih));
                         $('#organo').val(response.organo);
-                        $('#endapan').val(response.endapan);
-                        $('#color').val(response.color_id).trigger('change');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         $('#status_disposition').val(response.status);
@@ -707,9 +636,9 @@
                         // Reset semua field
                         $('#detail_batch_range, #detail_nomor_blending, #detail_shift, #detail_volume, #detail_storage, #detail_revisi')
                             .text('-');
-                        $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph')
+                        $('#detail_brix, #detail_nacl, #detail_visco, #detail_aw')
                             .text('-');
-                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_color').text(
+                        $('#detail_organo').text(
                             '-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
@@ -729,26 +658,11 @@
                         // Parameter Analisa
                         $('#detail_brix').text(response.brix || '-');
                         $('#detail_nacl').text(response.nacl || '-');
-                        $('#detail_bj').text(response.bj || '-');
                         $('#detail_visco').text(response.visco || '-');
                         $('#detail_aw').text(response.aw || '-');
-                        $('#detail_ph').text(response.ph || '-');
 
                         // Parameter Fisik
-                        $('#detail_buih').text(response.buih || '-');
                         $('#detail_organo').text(response.organo || '-');
-                        $('#detail_endapan').text(response.endapan || '-');
-
-                        // Safe access untuk color
-                        let colorText = '-';
-                        if (response.color && response.color.name) {
-                            colorText = response.color.name;
-                        } else if (response.color && response.color.code) {
-                            colorText = response.color.code;
-                        } else if (response.color_id) {
-                            colorText = 'ID: ' + response.color_id;
-                        }
-                        $('#detail_color').text(colorText);
 
                         // Status & Disposisi
                         $('#detail_status').text(response.status || '-');
@@ -879,10 +793,6 @@
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
-                            if (errors.bj) {
-                                $('#bj').addClass('is-invalid');
-                                $('.errorBj').html(errors.bj.join('<br>'));
-                            }
                             if (errors.visco) {
                                 $('#visco').addClass('is-invalid');
                                 $('.errorVisco').html(errors.visco.join('<br>'));
@@ -894,18 +804,6 @@
                             if (errors.organo) {
                                 $('#organo').addClass('is-invalid');
                                 $('.errorOrgano').html(errors.organo.join('<br>'));
-                            }
-                            if (errors.buih) {
-                                $('#buih').addClass('is-invalid');
-                                $('.errorBuih').html(errors.buih.join('<br>'));
-                            }
-                            if (errors.ph) {
-                                $('#ph').addClass('is-invalid');
-                                $('.errorPh').html(errors.ph.join('<br>'));
-                            }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');

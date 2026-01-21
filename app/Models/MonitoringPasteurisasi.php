@@ -24,11 +24,6 @@ class MonitoringPasteurisasi extends Model
         return $this->hasMany(MonitoringPasteurisasiRelation::class, 'monitoring_pasteurisasi_id');
     }
 
-    public function color()
-    {
-        return $this->belongsTo(Color::class);
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class, 'created_by');

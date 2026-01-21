@@ -170,7 +170,7 @@
                                             <small class="text-danger errorBj"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">pH</label>
+                                            <label class="form-label">pH <span style="color: red">*</span></label>
                                             <input type="text" name="ph" id="ph"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
                                                 value="{{ str_replace('.', ',', $blending->ph ?? '') }}">
@@ -191,6 +191,13 @@
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
                                         <div class="col-lg-4">
+                                            <label class="form-label">Aroma <span style="color: red">*</span></label>
+                                            <input type="text" name="aroma" id="aroma" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ str_replace('.', ',', $blending->aroma ?? '') }}">
+                                            <small class="text-danger errorAroma"></small>
+                                        </div>
+                                        <div class="col-lg-4">
                                             <label class="form-label">Warna <span style="color: red">*</span></label>
                                             <select name="color" id="color" class="select2 form-control">
                                                 <option value="">-- Pilih Warna --</option>
@@ -203,20 +210,7 @@
                                             </select>
                                             <small class="text-danger errorColor"></small>
                                         </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Buih</label>
-                                            <input type="text" name="buih" id="buih"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->buih ?? '') }}">
-                                            <small class="text-danger errorBuih"></small>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <label class="form-label">Endapan</label>
-                                            <input type="text" name="endapan" id="endapan" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();"
-                                                value="{{ str_replace('.', ',', $blending->endapan ?? '') }}">
-                                        </div>
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-12">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
@@ -420,9 +414,9 @@
                                 $('#organo').addClass('is-invalid');
                                 $('.errorOrgano').html(errors.organo.join('<br>'));
                             }
-                            if (errors.buih) {
-                                $('#buih').addClass('is-invalid');
-                                $('.errorBuih').html(errors.buih.join('<br>'));
+                            if (errors.aroma) {
+                                $('#aroma').addClass('is-invalid');
+                                $('.errorAroma').html(errors.aroma.join('<br>'));
                             }
                             if (errors.ph) {
                                 $('#ph').addClass('is-invalid');

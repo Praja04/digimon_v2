@@ -145,76 +145,96 @@
                                                 value="{{ $blending->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->brix ?? '') }}">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Visco <span style="color: red">*</span></label>
                                             <input type="text" name="visco" id="visco"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->visco ?? '') }}">
                                             <small class="text-danger errorVisco"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">NACL <span style="color: red">*</span></label>
                                             <input type="text" name="nacl" id="nacl"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->nacl ?? '') }}">
                                             <small class="text-danger errorNacl"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">Bj <span style="color: red">*</span></label>
+                                            <label class="form-label">Bj</label>
                                             <input type="text" name="bj" id="bj"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
-                                            <small class="text-danger errorBj"></small>
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->bj ?? '') }}">
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">pH</label>
                                             <input type="text" name="ph" id="ph"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->ph ?? '') }}">
                                             <small class="text-danger errorPh"></small>
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Aw <span style="color: red">*</span></label>
                                             <input type="text" name="aw" id="aw"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->aw ?? '') }}">
                                             <small class="text-danger errorAw"></small>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                                            <label class="form-label">%TN</label>
+                                            <input type="text" name="tn" id="tn"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->tn ?? '') }}">
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Organo</label>
                                             <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
-                                            <small class="text-danger errorOrgano"></small>
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $blending->organo ?? '' }}">
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Buih</label>
                                             <input type="text" name="buih" id="buih"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00">
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $blending->buih ?? '') }}">
                                             <small class="text-danger errorBuih"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Aroma <span style="color: red">*</span></label>
+                                            <input type="text" name="aroma" id="aroma" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $blending->aroma ?? '' }}">
+                                            <small class="text-danger errorAroma"></small>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Kristal</label>
+                                            <input type="text" name="kristal" id="kristal" class="form-control"
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $blending->kristal ?? '' }}">
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="form-label">Endapan</label>
                                             <input type="text" name="endapan" id="endapan" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();">
+                                                oninput="this.value = this.value.toUpperCase();"
+                                                value="{{ $blending->endapan ?? '' }}">
                                         </div>
-                                        <div class="col-lg-6">
-                                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                                            <select name="color" id="color" class="select2 form-control">
-                                                <option value="">-- Pilih Warna --</option>
-                                                @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}">
-                                                        {{ $color->name }} ({{ $color->code }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-danger errorColor"></small>
-                                        </div>
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-12">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK">OK</option>
-                                                <option value="NOT OK">NOT OK</option>
-                                                <option value="Adjustment">Adjustment</option>
+                                                <option value="OK"
+                                                    {{ $blending->status == 'OK' ? 'selected' : '' }}>OK
+                                                </option>
+                                                <option value="NOT OK"
+                                                    {{ $blending->status == 'NOT OK' ? 'selected' : '' }}>NOT
+                                                    OK</option>
+                                                <option value="Adjustment"
+                                                    {{ $blending->status == 'Adjustment' ? 'selected' : '' }}>
+                                                    Adjustment</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
@@ -223,13 +243,35 @@
                                                 <label class="form-label">Disposition</label>
                                                 <select name="disposition" class="form-control disposition-select">
                                                     <option value="">-- Pilih Disposition --</option>
-                                                    <option value="Release">Release</option>
-                                                    <option value="Release Bersyarat">Release Bersyarat</option>
-                                                    <option value="Resampling">Resampling</option>
-                                                    <option value="Reject">Reject</option>
-                                                    <option value="Repro">Repro</option>
-                                                    <option value="Jalan Bareng">Jalan Bareng</option>
-                                                    <option value="Leveling">Leveling</option>
+                                                    <option value="Release"
+                                                        {{ $blending->disposition == 'Release' ? 'selected' : '' }}>Release
+                                                    </option>
+                                                    <option value="Release Bersyarat"
+                                                        {{ $blending->disposition == 'Release Bersyarat' ? 'selected' : '' }}>
+                                                        Release
+                                                        Bersyarat</option>
+                                                    <option value="Resampling"
+                                                        {{ $blending->disposition == 'Resampling' ? 'selected' : '' }}>
+                                                        Resampling
+                                                    </option>
+                                                    <option value="Reject"
+                                                        {{ $blending->disposition == 'Reject' ? 'selected' : '' }}>Reject
+                                                    </option>
+                                                    <option value="Repro"
+                                                        {{ $blending->disposition == 'Repro' ? 'selected' : '' }}>Repro
+                                                    </option>
+                                                    </option>
+                                                    <option value="Repro"
+                                                        {{ $blending->disposition == 'Repro' ? 'selected' : '' }}>Repro
+                                                    </option>
+                                                    <option value="Jalan Bareng"
+                                                        {{ $blending->disposition == 'Jalan Bareng' ? 'selected' : '' }}>
+                                                        Jalan Bareng
+                                                    </option>
+                                                    <option value="Leveling"
+                                                        {{ $blending->disposition == 'Leveling' ? 'selected' : '' }}>
+                                                        Leveling
+                                                    </option>
                                                 </select>
                                             </div>
                                         @endif
@@ -245,20 +287,20 @@
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Air (Liter)</label>
                                                     <input type="text" name="adjustment_qty_air"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="0,00">
+                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
+                                                        value="{{ str_replace('.', ',', $blending->adjustment_qty_air ?? '') }}">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Gula (Kg)</label>
                                                     <input type="text" name="adjustment_qty_gula"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="0,00">
+                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
+                                                        value="{{ str_replace('.', ',', $blending->adjustment_qty_gula ?? '') }}">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Garam (Kg)</label>
                                                     <input type="text" name="adjustment_qty_garam"
-                                                        class="form-control adjustment-qty comma-input"
-                                                        placeholder="0,00">
+                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
+                                                        value="{{ str_replace('.', ',', $blending->adjustment_qty_garam ?? '') }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -389,10 +431,6 @@
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
-                            if (errors.bj) {
-                                $('#bj').addClass('is-invalid');
-                                $('.errorBj').html(errors.bj.join('<br>'));
-                            }
                             if (errors.visco) {
                                 $('#visco').addClass('is-invalid');
                                 $('.errorVisco').html(errors.visco.join('<br>'));
@@ -401,21 +439,17 @@
                                 $('#aw').addClass('is-invalid');
                                 $('.errorAw').html(errors.aw.join('<br>'));
                             }
-                            if (errors.organo) {
-                                $('#organo').addClass('is-invalid');
-                                $('.errorOrgano').html(errors.organo.join('<br>'));
-                            }
                             if (errors.buih) {
                                 $('#buih').addClass('is-invalid');
                                 $('.errorBuih').html(errors.buih.join('<br>'));
                             }
+                            if (errors.aroma) {
+                                $('#aroma').addClass('is-invalid');
+                                $('.errorAroma').html(errors.aroma.join('<br>'));
+                            }
                             if (errors.ph) {
                                 $('#ph').addClass('is-invalid');
                                 $('.errorPh').html(errors.ph.join('<br>'));
-                            }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');

@@ -37,7 +37,6 @@ return new class extends Migration
             $table->float('ph')->nullable();
             $table->string('organo')->nullable();
             $table->string('endapan')->nullable();
-            $table->foreignId('color_id')->nullable()->constrained('colors')->onDelete('restrict');
             $table->string('shift', 10)->nullable();
             $table->timestamps();
         });

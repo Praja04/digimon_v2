@@ -16,6 +16,7 @@ class MonitoringPasteurisasiUpdateRequest extends FormRequest
             'aw',
             'buih',
             'ph',
+            'endapan',
             'adjustment_qty_air',
             'adjustment_qty_garam',
             'adjustment_qty_gula'
@@ -46,11 +47,12 @@ class MonitoringPasteurisasiUpdateRequest extends FormRequest
             'bj' => 'required|numeric',
             'visco' => 'required|numeric',
             'aw' => 'required|numeric',
-            'buih' => 'nullable|numeric',
-            'ph' => 'nullable|numeric',
+            'buih' => 'required|numeric',
+            'ph' => 'required|numeric',
             'organo' => 'required|string',
-            'endapan' => 'nullable|string',
-            'color' => 'required|string',
+            'endapan' => 'required|numeric',
+            'aroma' => 'required|string',
+            'endapan' => 'required|string',
             'status_disposition' => 'required',
             'disposition' => 'nullable|in:Release,Release Bersyarat,Adjustment,Resampling,Reject,Repro,Jalan Bareng,Leveling',
             'disposition_remarks' => 'nullable|string|max:255',
@@ -72,7 +74,7 @@ class MonitoringPasteurisasiUpdateRequest extends FormRequest
             'ph' => 'pH',
             'organo' => 'Organo',
             'endapan' => 'Endapan',
-            'color' => 'Warna',
+            'aroma' => 'Aroma',
             'status_disposition' => 'Status',
         ];
     }

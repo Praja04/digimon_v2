@@ -98,8 +98,7 @@ class MonitoringTurunBlendingController extends Controller
             $blending->po_number = $productionBatch->po_number;
         }
 
-        $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_turun_blending.show', compact('colors', 'productionBatch'));
+        return view('app.analisa.monitoring_turun_blending.show', compact('productionBatch'));
     }
 
     public function show_batch($id)
@@ -109,14 +108,13 @@ class MonitoringTurunBlendingController extends Controller
             'productionBatch',
         ])->findOrFail($id);
 
-        $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_turun_blending.show_batch', compact('colors', 'blending'));
+        return view('app.analisa.monitoring_turun_blending.show_batch', compact('blending'));
     }
 
     public function edit($id)
     {
         try {
-            $data = MonitoringTurunBlending::with('color', 'user')->find($id);
+            $data = MonitoringTurunBlending::with('user')->find($id);
 
             if (!$data) {
                 return response()->json([
@@ -190,19 +188,13 @@ class MonitoringTurunBlendingController extends Controller
 
             // Cek apakah status berubah
             $statusChanged = ($blending->status !== $status_disposition);
-            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
-                'nacl' => $request->nacl,
-                'bj' => $request->bj,
                 'visco' => $request->visco,
+                'nacl' => $request->nacl,
                 'aw' => $request->aw,
-                'buih' => $request->buih,
-                'ph' => $request->ph,
                 'organo' => $request->organo,
-                'endapan' => $request->endapan,
-                'color_id' => $request->color,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,
                 'shift' => $shift,
@@ -366,7 +358,7 @@ class MonitoringTurunBlendingController extends Controller
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;
                 $notificationTitle .= " - Menunggu Review Foreman";
-            } 
+            }
 
             if ($shouldSendNotification) {
                 event(new ProcessOutsideDisposition(

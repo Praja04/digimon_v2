@@ -17,15 +17,6 @@ class Color extends Model
         return $this->hasMany(BlendingAwal::class);
     }
 
-    public function monitoringTurunBlending()
-    {
-        return $this->hasMany(MonitoringTurunBlending::class);
-    }
-
-    public function monitoringStorageKimia()
-    {
-        return $this->hasMany(MonitoringStorageKimia::class);
-    }
 
     public function monitoringDailyTank()
     {

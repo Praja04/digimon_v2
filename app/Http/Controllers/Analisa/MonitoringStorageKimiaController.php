@@ -95,8 +95,7 @@ class MonitoringStorageKimiaController extends Controller
             $blending->po_number = $productionBatch->po_number;
         }
 
-        $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_storage_kimia.show', compact('colors', 'productionBatch'));
+        return view('app.analisa.monitoring_storage_kimia.show', compact('productionBatch'));
     }
 
     public function show_batch($id)
@@ -106,14 +105,14 @@ class MonitoringStorageKimiaController extends Controller
             'productionBatch',
         ])->findOrFail($id);
 
-        $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_storage_kimia.show_batch', compact('colors', 'blending'));
+
+        return view('app.analisa.monitoring_storage_kimia.show_batch', compact('blending'));
     }
 
     public function edit($id)
     {
         try {
-            $data = MonitoringStorageKimia::with('color', 'user')->find($id);
+            $data = MonitoringStorageKimia::with('user')->find($id);
 
             if (!$data) {
                 return response()->json([
@@ -177,17 +176,19 @@ class MonitoringStorageKimiaController extends Controller
 
             $updateData = [
                 'brix' => $request->brix,
+                'visco' => $request->visco,
                 'nacl' => $request->nacl,
                 'bj' => $request->bj,
-                'visco' => $request->visco,
-                'aw' => $request->aw,
-                'buih' => $request->buih,
                 'ph' => $request->ph,
+                'aw' => $request->aw,
+                'tn' => $request->tn,
                 'organo' => $request->organo,
+                'buih' => $request->buih,
+                'aroma' => $request->aroma,
+                'kristal' => $request->kristal,
                 'endapan' => $request->endapan,
-                'color_id' => $request->color,
-                'disposition_remark' => $remark,
                 'status' => $status_disposition,
+                'disposition_remark' => $remark,
             ];
 
             if ($userRole === 'Analis Kimia') {

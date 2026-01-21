@@ -177,10 +177,10 @@
                                                     </td>
                                                     <td>
                                                         @if (is_null($blending->status))
-                                                            <button class="btn btn-sm btn-primary open-blending-modal"
-                                                                data-id="{{ $blending->id }}">
-                                                                Input Data
-                                                            </button>
+                                                            <a href="{{ route('analisa.blending-awal.show_batch', $blending->id) }}"
+                                                                class="btn btn-sm btn-primary">
+                                                                Analisa Data
+                                                            </a>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
@@ -219,7 +219,7 @@
             <form id="inputForm">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Input Data Blending Awal</h5>
+                        <h5 class="modal-title">Kelola Data Blending Awal</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -280,17 +280,11 @@
                             <small class="text-danger errorColor"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Buih</label>
-                            <input type="text" name="buih" id="buih" class="form-control comma-input"
-                                placeholder="Contoh: 0,00">
-                            <small class="text-danger errorBuih"></small>
-                        </div>
-                        <div class="col-lg-6">
-                            <label class="form-label">Endapan</label>
-                            <input type="text" name="endapan" id="endapan" class="form-control"
+                            <label class="form-label">Aroma <span style="color: red">*</span></label>
+                            <input type="text" name="aroma" id="aroma" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <label class="form-label">Status <span style="color: red">*</span></label>
                             <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
@@ -448,20 +442,14 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Buih</span>
-                                    <span class="fw-medium">: <span id="detail_buih">-</span></span>
+                                    <span class="text-muted" style="min-width: 140px;">Aroma</span>
+                                    <span class="fw-medium">: <span id="detail_aroma">-</span></span>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Organo</span>
                                     <span class="fw-medium">: <span id="detail_organo">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Endapan</span>
-                                    <span class="fw-medium">: <span id="detail_endapan">-</span></span>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -813,26 +801,6 @@
                 toggleAdjustmentFields(selected);
             });
 
-            $('.open-blending-modal').on('click', function() {
-                const id = $(this).data('id');
-
-                $('#inputForm')[0].reset();
-                $('.text-danger').html('');
-                $('.form-control').removeClass('is-invalid');
-
-                $('#id').val(id);
-
-                $('#color').val('').trigger('change');
-                $('#disposition').val('').trigger('change');
-                $('#status_disposition').prop('disabled', false);
-                $('#status_disposition').val('').trigger('change');
-
-                $('.adjustment-qty-wrapper').addClass('d-none');
-                $('.adjustment-qty').prop('required', false).val('');
-
-                $('#inputBlendingModal').modal('show');
-            });
-
             $('body').on('click', '.open-blending-modal-edit', function() {
                 const id = $(this).data('id');
 
@@ -855,9 +823,8 @@
                         $('#visco').val(formatDecimal(response.visco));
                         $('#aw').val(formatDecimal(response.aw));
                         $('#ph').val(formatDecimal(response.ph));
-                        $('#buih').val(formatDecimal(response.buih));
                         $('#organo').val(response.organo);
-                        $('#endapan').val(response.endapan);
+                        $('#aroma').val(response.aroma);
                         $('#color').val(response.color_id).trigger('change');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
@@ -911,7 +878,7 @@
                             .text('-');
                         $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph')
                             .text('-');
-                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_color').text(
+                        $('#detail_aroma, #detail_organo, #detail_color').text(
                             '-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
@@ -936,9 +903,8 @@
                         $('#detail_ph').text(response.ph || '-');
 
                         // Parameter Fisik
-                        $('#detail_buih').text(response.buih || '-');
+                        $('#detail_aroma').text(response.aroma || '-');
                         $('#detail_organo').text(response.organo || '-');
-                        $('#detail_endapan').text(response.endapan || '-');
 
                         // Safe access untuk color - ini yang penting!
                         let colorText = '-';
@@ -1131,9 +1097,9 @@
                                 $('#organo').addClass('is-invalid');
                                 $('.errorOrgano').html(errors.organo.join('<br>'));
                             }
-                            if (errors.buih) {
-                                $('#buih').addClass('is-invalid');
-                                $('.errorBuih').html(errors.buih.join('<br>'));
+                            if (errors.aroma) {
+                                $('#aroma').addClass('is-invalid');
+                                $('.errorAroma').html(errors.aroma.join('<br>'));
                             }
                             if (errors.ph) {
                                 $('#ph').addClass('is-invalid');

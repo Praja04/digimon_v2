@@ -175,10 +175,10 @@
                                                     </td>
                                                     <td>
                                                         @if (is_null($blending->status))
-                                                            <button class="btn btn-sm btn-primary open-blending-modal"
-                                                                data-id="{{ $blending->id }}">
-                                                                Input Data
-                                                            </button>
+                                                            <a href="{{ route('analisa.monitoring-storage-kimia.show_batch', $blending->id) }}"
+                                                                class="btn btn-sm btn-primary open-blending-modal">
+                                                                Analisa Data
+                                                            </a>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
@@ -216,7 +216,7 @@
             <form id="form">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Input Data Monitoring Storage Kimia</h5>
+                        <h5 class="modal-title">Kelola Data Monitoring Storage Kimia</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -241,10 +241,9 @@
                             <small class="text-danger errorNacl"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Bj <span style="color: red">*</span></label>
+                            <label class="form-label">Bj</label>
                             <input type="text" name="bj" id="bj" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
-                            <small class="text-danger errorBj"></small>
                         </div>
                         <div class="col-lg-4">
                             <label class="form-label">pH</label>
@@ -259,35 +258,37 @@
                             <small class="text-danger errorAw"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Organo <span style="color: red">*</span></label>
+                            <label class="form-label">%TN</label>
+                            <input type="text" name="tn" id="tn" class="form-control comma-input"
+                                placeholder="Contoh: 0,00">
+                        </div>
+                        <div class="col-lg-4">
+                            <label class="form-label">Organo</label>
                             <input type="text" name="organo" id="organo" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">
-                            <small class="text-danger errorOrgano"></small>
                         </div>
                         <div class="col-lg-4">
                             <label class="form-label">Buih</label>
                             <input type="text" name="buih" id="buih" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
-                            <small class="text-danger errorBuih"></small>
+                        </div>
+                        <div class="col-lg-4">
+                            <label class="form-label">Aroma <span style="color: red">*</span></label>
+                            <input type="text" name="aroma" id="aroma" class="form-control"
+                                oninput="this.value = this.value.toUpperCase();">
+                            <small class="text-danger errorAroma"></small>
+                        </div>
+                        <div class="col-lg-4">
+                            <label class="form-label">Kristal</label>
+                            <input type="text" name="kristal" id="kristal" class="form-control"
+                                oninput="this.value = this.value.toUpperCase();">
                         </div>
                         <div class="col-lg-4">
                             <label class="form-label">Endapan</label>
                             <input type="text" name="endapan" id="endapan" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">
                         </div>
-                        <div class="col-lg-6">
-                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                            <select name="color" id="color" class="select2 form-control">
-                                <option value="">-- Pilih Warna --</option>
-                                @foreach ($colors as $color)
-                                    <option value="{{ $color->id }}">
-                                        {{ $color->name }} ({{ $color->code }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="text-danger errorColor"></small>
-                        </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <label class="form-label">Status <span style="color: red">*</span></label>
                             <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
@@ -441,6 +442,12 @@
                                     <span class="fw-medium">: <span id="detail_ph">-</span></span>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="d-flex">
+                                    <span class="text-muted" style="min-width: 140px;">%TN</span>
+                                    <span class="fw-medium">: <span id="detail_tn">-</span></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -468,8 +475,14 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Warna</span>
-                                    <span class="fw-medium">: <span id="detail_color">-</span></span>
+                                    <span class="text-muted" style="min-width: 140px;">Aroma</span>
+                                    <span class="fw-medium">: <span id="detail_aroma">-</span></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex">
+                                    <span class="text-muted" style="min-width: 140px;">Kristal</span>
+                                    <span class="fw-medium">: <span id="detail_kristal">-</span></span>
                                 </div>
                             </div>
                         </div>
@@ -607,25 +620,6 @@
                 toggleAdjustmentFields(selected);
             });
 
-            $('.open-blending-modal').on('click', function() {
-                const id = $(this).data('id');
-
-                $('#form')[0].reset();
-                $('.text-danger').html('');
-                $('.form-control').removeClass('is-invalid');
-
-                $('#id').val(id);
-
-                $('#color').val('').trigger('change');
-                $('#status_disposition').val('').trigger('change');
-                $('#disposition').val('').trigger('change');
-
-                $('.adjustment-qty-wrapper').addClass('d-none');
-                $('.adjustment-qty').prop('required', false).val('');
-
-                $('#modal').modal('show');
-            });
-
             $('body').on('click', '.open-blending-modal-edit', function() {
                 const id = $(this).data('id');
 
@@ -639,20 +633,32 @@
                         $('.form-control').removeClass('is-invalid');
                     },
                     success: function(response) {
+                        const userRole = "{{ auth()->user()->role }}";
+
                         $('#id').val(response.id);
                         $('#brix').val(formatDecimal(response.brix));
+                        $('#visco').val(formatDecimal(response.visco));
                         $('#nacl').val(formatDecimal(response.nacl));
                         $('#bj').val(formatDecimal(response.bj));
-                        $('#visco').val(formatDecimal(response.visco));
-                        $('#aw').val(formatDecimal(response.aw));
                         $('#ph').val(formatDecimal(response.ph));
-                        $('#buih').val(formatDecimal(response.buih));
+                        $('#aw').val(formatDecimal(response.aw));
+                        $('#tn').val(formatDecimal(response.tn));
                         $('#organo').val(response.organo);
+                        $('#buih').val(formatDecimal(response.buih));
+                        $('#aroma').val(response.aroma);
+                        $('#kristal').val(response.kristal);
                         $('#endapan').val(response.endapan);
-                        $('#color').val(response.color_id).trigger('change');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         $('#status_disposition').val(response.status);
+                        $('#status_disposition').val(response.status);
+                        if (userRole === 'Foreman') {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', true);
+                        } else {
+                            $('#status_disposition').val(response.status);
+                            $('#status_disposition').prop('disabled', false);
+                        }
                         $('#disposition').val(response.disposition);
 
                         if (response.status === 'Adjustment') {
@@ -693,9 +699,9 @@
                         // Reset semua field
                         $('#detail_batch_range, #detail_nomor_blending, #detail_shift, #detail_volume, #detail_storage, #detail_revisi')
                             .text('-');
-                        $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph')
+                        $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph, #detail_tn')
                             .text('-');
-                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_color').text(
+                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_aroma, #detail_kristal').text(
                             '-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
@@ -719,23 +725,15 @@
                         $('#detail_visco').text(response.visco || '-');
                         $('#detail_aw').text(response.aw || '-');
                         $('#detail_ph').text(response.ph || '-');
+                        $('#detail_tn').text(response.tn || '-');
 
                         // Parameter Fisik
                         $('#detail_buih').text(response.buih || '-');
                         $('#detail_organo').text(response.organo || '-');
                         $('#detail_endapan').text(response.endapan || '-');
-
-                        // Safe access untuk color
-                        let colorText = '-';
-                        if (response.color && response.color.name) {
-                            colorText = response.color.name;
-                        } else if (response.color && response.color.code) {
-                            colorText = response.color.code;
-                        } else if (response.color_id) {
-                            colorText = 'ID: ' + response.color_id;
-                        }
-                        $('#detail_color').text(colorText);
-
+                        $('#detail_aroma').text(response.aroma || '-');
+                        $('#detail_kristal').text(response.kristal || '-');
+                        
                         // Status & Disposisi
                         $('#detail_status').text(response.status || '-');
                         $('#detail_disposition').text(response.disposition || '-');
@@ -801,6 +799,11 @@
             $('#form').submit(function(e) {
                 e.preventDefault();
 
+                const wasDisabled = $('#status_disposition').prop('disabled');
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', false);
+                }
+
                 $.ajax({
                     data: $(this).serialize(),
                     url: "{{ route('analisa.monitoring-storage-kimia.update') }}",
@@ -857,37 +860,21 @@
                                 $('#brix').addClass('is-invalid');
                                 $('.errorBrix').html(errors.brix.join('<br>'));
                             }
-                            if (errors.nacl) {
-                                $('#nacl').addClass('is-invalid');
-                                $('.errorNacl').html(errors.nacl.join('<br>'));
-                            }
-                            if (errors.bj) {
-                                $('#bj').addClass('is-invalid');
-                                $('.errorBj').html(errors.bj.join('<br>'));
-                            }
                             if (errors.visco) {
                                 $('#visco').addClass('is-invalid');
                                 $('.errorVisco').html(errors.visco.join('<br>'));
+                            }
+                            if (errors.nacl) {
+                                $('#nacl').addClass('is-invalid');
+                                $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
                             if (errors.aw) {
                                 $('#aw').addClass('is-invalid');
                                 $('.errorAw').html(errors.aw.join('<br>'));
                             }
-                            if (errors.organo) {
-                                $('#organo').addClass('is-invalid');
-                                $('.errorOrgano').html(errors.organo.join('<br>'));
-                            }
-                            if (errors.buih) {
-                                $('#buih').addClass('is-invalid');
-                                $('.errorBuih').html(errors.buih.join('<br>'));
-                            }
-                            if (errors.ph) {
-                                $('#ph').addClass('is-invalid');
-                                $('.errorPh').html(errors.ph.join('<br>'));
-                            }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
+                            if (errors.aroma) {
+                                $('#aroma').addClass('is-invalid');
+                                $('.errorAroma').html(errors.aroma.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');

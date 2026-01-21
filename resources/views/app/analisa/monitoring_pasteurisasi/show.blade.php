@@ -178,10 +178,10 @@
                                                     </td>
                                                     <td>
                                                         @if (is_null($pasteurisasi->status))
-                                                            <button class="btn btn-sm btn-primary open-pasteurisasi-modal"
-                                                                data-id="{{ $pasteurisasi->id }}">
-                                                                Input Data
-                                                            </button>
+                                                            <a href="{{ route('analisa.monitoring-pasteurisasi.show_batch', $pasteurisasi->id) }}"
+                                                                class="btn btn-sm btn-primary">
+                                                                Analisa Data
+                                                            </a>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
@@ -219,7 +219,7 @@
             <form id="form">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Input Data Monitoring Pasteurisasi</h5>
+                        <h5 class="modal-title">Kelola Data Monitoring Pasteurisasi</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -250,7 +250,7 @@
                             <small class="text-danger errorBj"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">pH</label>
+                            <label class="form-label">pH <span style="color: red">*</span></label>
                             <input type="text" name="ph" id="ph" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorPh"></small>
@@ -268,27 +268,22 @@
                             <small class="text-danger errorOrgano"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Buih</label>
+                            <label class="form-label">Buih <span style="color: red">*</span></label>
                             <input type="text" name="buih" id="buih" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorBuih"></small>
                         </div>
                         <div class="col-lg-4">
-                            <label class="form-label">Endapan</label>
-                            <input type="text" name="endapan" id="endapan" class="form-control"
+                            <label class="form-label">Aroma <span style="color: red">*</span></label>
+                            <input type="text" name="aroma" id="aroma" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">
+                            <small class="text-danger errorAroma"></small>
                         </div>
                         <div class="col-lg-6">
-                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                            <select name="color" id="color" class="select2 form-control">
-                                <option value="">-- Pilih Warna --</option>
-                                @foreach ($colors as $color)
-                                    <option value="{{ $color->id }}">
-                                        {{ $color->name }} ({{ $color->code }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="text-danger errorColor"></small>
+                            <label class="form-label">Endapan</label>
+                            <input type="text" name="endapan" id="endapan" class="form-control comma-input"
+                                placeholder="Contoh: 0,00">
+                            <small class="text-danger errorEndapan"></small>
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label">Status <span style="color: red">*</span></label>
@@ -472,8 +467,8 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Warna</span>
-                                    <span class="fw-medium">: <span id="detail_color">-</span></span>
+                                    <span class="text-muted" style="min-width: 140px;">Aroma</span>
+                                    <span class="fw-medium">: <span id="detail_aroma">-</span></span>
                                 </div>
                             </div>
                         </div>
@@ -611,27 +606,6 @@
                 toggleAdjustmentFields(selected);
             });
 
-            $('.open-pasteurisasi-modal').on('click', function() {
-                const id = $(this).data('id');
-
-                $('#form')[0].reset();
-                $('.text-danger').html('');
-                $('.form-control').removeClass('is-invalid');
-
-                $('#id').val(id);
-
-                $('#color').val('').trigger('change');
-                $('#disposition').val('').trigger('change');
-
-                $('#status_disposition').prop('disabled', false);
-                $('#status_disposition').val('').trigger('change');
-
-                $('.adjustment-qty-wrapper').addClass('d-none');
-                $('.adjustment-qty').prop('required', false).val('');
-
-                $('#modal').modal('show');
-            });
-
             $('body').on('click', '.open-pasteurisasi-modal-edit', function() {
                 const id = $(this).data('id');
 
@@ -657,7 +631,7 @@
                         $('#buih').val(formatDecimal(response.buih));
                         $('#organo').val(response.organo);
                         $('#endapan').val(response.endapan);
-                        $('#color').val(response.color_id).trigger('change');
+                        $('#aroma').val(response.aroma);
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         $('#status_disposition').val(response.status);
@@ -710,7 +684,7 @@
                             .text('-');
                         $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph')
                             .text('-');
-                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_color').text(
+                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_aroma').text(
                             '-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
@@ -739,17 +713,7 @@
                         $('#detail_buih').text(response.buih || '-');
                         $('#detail_organo').text(response.organo || '-');
                         $('#detail_endapan').text(response.endapan || '-');
-
-                        // Safe access untuk color
-                        let colorText = '-';
-                        if (response.color && response.color.name) {
-                            colorText = response.color.name;
-                        } else if (response.color && response.color.code) {
-                            colorText = response.color.code;
-                        } else if (response.color_id) {
-                            colorText = 'ID: ' + response.color_id;
-                        }
-                        $('#detail_color').text(colorText);
+                        $('#detail_aroma').text(response.aroma || '-');
 
                         // Status & Disposisi
                         $('#detail_status').text(response.status || '-');
@@ -905,9 +869,13 @@
                                 $('#ph').addClass('is-invalid');
                                 $('.errorPh').html(errors.ph.join('<br>'));
                             }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
+                            if (errors.aroma) {
+                                $('#aroma').addClass('is-invalid');
+                                $('.errorAroma').html(errors.aroma.join('<br>'));
+                            }
+                            if (errors.endapan) {
+                                $('#endapan').addClass('is-invalid');
+                                $('.errorEndapan').html(errors.endapan.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');

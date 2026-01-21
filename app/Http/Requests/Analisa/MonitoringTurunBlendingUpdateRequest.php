@@ -10,12 +10,9 @@ class MonitoringTurunBlendingUpdateRequest extends FormRequest
     {
         $numericFields = [
             'brix',
-            'nacl',
-            'bj',
             'visco',
+            'nacl',
             'aw',
-            'buih',
-            'ph',
             'adjustment_qty_air',
             'adjustment_qty_garam',
             'adjustment_qty_gula'
@@ -42,15 +39,10 @@ class MonitoringTurunBlendingUpdateRequest extends FormRequest
     {
         return [
             'brix' => 'required|numeric|min:0|max:100',
-            'nacl' => 'required|numeric|min:0|max:100',
-            'bj' => 'required|numeric',
             'visco' => 'required|numeric',
+            'nacl' => 'required|numeric|min:0|max:100',
             'aw' => 'required|numeric',
-            'buih' => 'nullable|numeric',
-            'ph' => 'nullable|numeric',
             'organo' => 'required|string',
-            'endapan' => 'nullable|string',
-            'color' => 'required|string',
             'status_disposition' => 'required',
             'disposition' => 'nullable|in:Release,Release Bersyarat,Resampling,Adjustment,Reject,Repro,Jalan Bareng,Leveling',
             'disposition_remarks' => 'nullable|string|max:255',
@@ -64,15 +56,10 @@ class MonitoringTurunBlendingUpdateRequest extends FormRequest
     {
         return [
             'brix' => 'Brix',
-            'nacl' => 'Nacl',
-            'bj' => 'Bj',
             'visco' => 'Visco',
+            'nacl' => 'Nacl',
             'aw' => 'AW',
-            'buih' => 'Buih',
-            'ph' => 'pH',
             'organo' => 'Organo',
-            'endapan' => 'Endapan',
-            'color' => 'Warna',
             'status_disposition' => 'Status',
         ];
     }

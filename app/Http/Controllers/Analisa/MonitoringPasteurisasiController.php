@@ -93,8 +93,7 @@ class MonitoringPasteurisasiController extends Controller
             $blending->po_number = $productionBatch->po_number;
         }
 
-        $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_pasteurisasi.show', compact('colors', 'productionBatch'));
+        return view('app.analisa.monitoring_pasteurisasi.show', compact('productionBatch'));
     }
 
     public function show_batch($id)
@@ -104,14 +103,14 @@ class MonitoringPasteurisasiController extends Controller
             'productionBatch',
         ])->findOrFail($id);
 
-        $colors = Color::orderBy('name', 'asc')->get();
-        return view('app.analisa.monitoring_pasteurisasi.show_batch', compact('colors', 'pasteurisasi'));
+
+        return view('app.analisa.monitoring_pasteurisasi.show_batch', compact('pasteurisasi'));
     }
 
     public function edit($id)
     {
         try {
-            $data = MonitoringPasteurisasi::with('color', 'user')->find($id);
+            $data = MonitoringPasteurisasi::with('user')->find($id);
 
             if (!$data) {
                 return response()->json([
@@ -197,7 +196,7 @@ class MonitoringPasteurisasiController extends Controller
                 'ph' => $request->ph,
                 'organo' => $request->organo,
                 'endapan' => $request->endapan,
-                'color_id' => $request->color,
+                'aroma' => $request->aroma,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,
                 'shift' => $shift,
