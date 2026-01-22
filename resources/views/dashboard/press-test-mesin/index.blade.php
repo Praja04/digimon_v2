@@ -298,6 +298,7 @@
         let jarakChart, statusChart;
         let allData = [];
         let filteredData = [];
+        let isAutoRefresh = false;
 
         $(document).ready(function() {
             // Set tanggal hari ini sebagai default
@@ -312,8 +313,11 @@
             // Initial fetch
             fetchData();
 
-            // Auto refresh setiap 30 detik
-            setInterval(fetchData, 30000);
+            // Auto refresh setiap 10 detik
+            setInterval(function() {
+                isAutoRefresh = true;
+                fetchData();
+            }, 10000);
         });
 
         // Fetch data dari API
@@ -400,6 +404,7 @@
 
         // Refresh data
         function refreshData() {
+            isAutoRefresh = false;
             Swal.fire({
                 title: 'Memuat Data...',
                 text: 'Sedang mengambil data terbaru',
@@ -564,7 +569,7 @@
                         }
                     },
                     animations: {
-                        enabled: true,
+                        enabled: !isAutoRefresh,
                         easing: 'easeinout',
                         speed: 800
                     }
@@ -701,6 +706,12 @@
             jarakChart = new ApexCharts(document.querySelector("#jarakChart"), jarakOptions);
             jarakChart.render();
 
+            if (isAutoRefresh) {
+                setTimeout(function() {
+                    isAutoRefresh = false;
+                }, 100);
+            }
+
             // Donut Chart - Status Distribution
             const statusOK = data.filter(function(item) {
                 return item.status === 'OK';
@@ -715,7 +726,7 @@
                     type: 'donut',
                     height: 350,
                     animations: {
-                        enabled: true,
+                        enabled: !isAutoRefresh,
                         easing: 'easeinout',
                         speed: 800
                     }
