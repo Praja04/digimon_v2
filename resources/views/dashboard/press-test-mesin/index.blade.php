@@ -258,6 +258,11 @@
                         <div class="card-body">
                             <div class="chart-container">
                                 <div id="jarakChart"></div>
+                                <div id="emptyStateJarak" class="text-center py-5" style="display: none;">
+                                    <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                    <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                    <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -272,6 +277,11 @@
                         <div class="card-body">
                             <div class="chart-container">
                                 <div id="statusChart"></div>
+                                <div id="emptyStateStatus" class="text-center py-5" style="display: none;">
+                                    <i class="ri-pie-chart-line" style="font-size: 64px; color: #ddd;"></i>
+                                    <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                    <p class="text-muted">Tidak ada data untuk ditampilkan</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -284,6 +294,7 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let jarakChart, statusChart;
         let allData = [];
@@ -301,9 +312,6 @@
 
             // Initial fetch
             fetchData();
-
-            // Auto refresh setiap 30 detik
-            setInterval(fetchData, 30000);
         });
 
         // Fetch data dari API
@@ -316,10 +324,25 @@
                     if (result.success) {
                         allData = result.data;
                         applyFilter();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Memuat Data',
+                            text: 'Terjadi kesalahan saat mengambil data dari server.',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#3085d6'
+                        });
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Error fetching data:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Koneksi Gagal',
+                        text: 'Tidak dapat terhubung ke server. Silakan cek koneksi Anda.',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3085d6'
+                    });
                 }
             });
         }
@@ -370,13 +393,92 @@
 
         // Refresh data
         function refreshData() {
-            fetchData();
+            Swal.fire({
+                title: 'Memuat Data...',
+                text: 'Sedang mengambil data terbaru',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: 'http://127.0.0.1:8000/api/press-test-mesin-1/all',
+                type: 'GET',
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        allData = result.data;
+                        applyFilter();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Data berhasil diperbarui',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Refresh',
+                        text: 'Tidak dapat memuat data terbaru',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            });
         }
 
         // Update dashboard dengan data
         function updateDashboard(data) {
+            // Cek jika data kosong
+            if (data.length === 0) {
+                showEmptyState();
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Data Tidak Ditemukan',
+                    text: 'Tidak ada data yang sesuai pada saat ini.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#3085d6'
+                });
+                return;
+            }
+
+            hideEmptyState();
             updateStatistics(data);
             updateCharts(data);
+        }
+
+        // Show empty state
+        function showEmptyState() {
+            // Hide charts
+            $('#jarakChart').hide();
+            $('#statusChart').hide();
+
+            // Show empty state
+            $('#emptyStateJarak').show();
+            $('#emptyStateStatus').show();
+
+            // Reset statistics to 0
+            $('#totalData').text(0);
+            $('#statusOK').text(0);
+            $('#statusBocor').text(0);
+            $('#avgJarak').text(0);
+        }
+
+        // Hide empty state
+        function hideEmptyState() {
+            // Show charts
+            $('#jarakChart').show();
+            $('#statusChart').show();
+
+            // Hide empty state
+            $('#emptyStateJarak').hide();
+            $('#emptyStateStatus').hide();
         }
 
         // Update statistics cards
