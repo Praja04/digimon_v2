@@ -312,8 +312,8 @@
             // Initial fetch
             fetchData();
 
-            // Auto refresh setiap 20 detik
-            setInterval(fetchData, 20);
+            // Auto refresh setiap 30 detik
+            setInterval(fetchData, 30000);
         });
 
         // Fetch data dari API
