@@ -317,7 +317,7 @@
         // Fetch data dari API
         function fetchData() {
             $.ajax({
-                url: 'http://127.0.0.1:8000/api/press-test-mesin-1/all',
+                url: '{{ env('APP_URL') }}/api/press-test-mesin-1/all',
                 type: 'GET',
                 dataType: 'json',
                 success: function(result) {
@@ -404,7 +404,7 @@
             });
 
             $.ajax({
-                url: 'http://127.0.0.1:8000/api/press-test-mesin-1/all',
+                url: '{{ env('APP_URL') }}/api/press-test-mesin-1/all',
                 type: 'GET',
                 dataType: 'json',
                 success: function(result) {
