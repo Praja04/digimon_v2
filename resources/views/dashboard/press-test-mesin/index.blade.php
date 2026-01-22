@@ -142,6 +142,7 @@
                                         <option value="50">50</option>
                                         <option value="100">100</option>
                                         <option value="500">500</option>
+                                        <option value="all">Semua</option>
                                     </select>
                                 </div>
                             </div>
@@ -294,20 +295,6 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof window.Echo === 'undefined') {
-                console.error('Echo belum ter-load');
-                return;
-            }
-
-            window.Echo.channel('press-test-mesin-1')
-                .listen('.created', (e) => {
-                    allData.unshift(e.data);
-                    applyFilter();
-                });
-
-        });
-
         let jarakChart, statusChart;
         let allData = [];
         let filteredData = [];
@@ -384,6 +371,7 @@
                 return true;
             });
 
+            // Sort by created_at descending (terbaru di depan)
             filteredData.sort(function(a, b) {
                 return new Date(b.created_at) - new Date(a.created_at);
             });
@@ -528,6 +516,7 @@
             const jarakData = [];
             const batasData = [];
             const colors = [];
+            const createdAtData = [];
 
             $.each(sortedVariants, function(index, variant) {
                 const items = variantGroups[variant];
@@ -535,6 +524,7 @@
                     labels.push(variant + ' #' + (idx + 1));
                     jarakData.push(parseFloat(item.jarak));
                     batasData.push(parseFloat(item.batas));
+                    createdAtData.push(item.created_at);
                     // Color based on status
                     colors.push(item.status === 'OK' ? '#22c55e' : '#ef4444');
                 });
@@ -657,10 +647,47 @@
                 tooltip: {
                     shared: true,
                     intersect: false,
-                    y: {
-                        formatter: function(val) {
-                            return val.toFixed(3) + ' cm';
-                        }
+                    custom: function({
+                        series,
+                        seriesIndex,
+                        dataPointIndex,
+                        w
+                    }) {
+                        const createdAt = createdAtData[dataPointIndex];
+                        const date = new Date(createdAt);
+                        const formattedDate = date.toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                        const formattedTime = date.toLocaleTimeString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+
+                        return '<div class="apexcharts-tooltip-custom" style="padding: 12px; background: white; border: 1px solid #e3e3e3; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">' +
+                            '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e3e3e3;">' +
+                            '<strong style="font-size: 13px; color: #333;">' + labels[dataPointIndex] +
+                            '</strong>' +
+                            '</div>' +
+                            '<div style="margin-bottom: 6px;">' +
+                            '<span style="display: inline-block; width: 10px; height: 10px; background: #4bc0c0; border-radius: 50%; margin-right: 6px;"></span>' +
+                            '<span style="color: #666; font-size: 12px;">Jarak: </span>' +
+                            '<strong style="color: #333; font-size: 13px;">' + series[0][dataPointIndex].toFixed(
+                                3) + ' cm</strong>' +
+                            '</div>' +
+                            '<div style="margin-bottom: 8px;">' +
+                            '<span style="display: inline-block; width: 10px; height: 10px; background: #ff6384; border-radius: 50%; margin-right: 6px;"></span>' +
+                            '<span style="color: #666; font-size: 12px;">Batas: </span>' +
+                            '<strong style="color: #333; font-size: 13px;">' + series[1][dataPointIndex].toFixed(
+                                3) + ' cm</strong>' +
+                            '</div>' +
+                            '<div style="padding-top: 6px; border-top: 1px solid #e3e3e3; font-size: 11px; color: #999;">' +
+                            formattedDate + ' ' +
+                            formattedTime +
+                            '</div>' +
+                            '</div>';
                     }
                 }
             };
