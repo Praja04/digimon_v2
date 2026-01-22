@@ -372,6 +372,10 @@
                 return true;
             });
 
+            filteredData.sort(function(a, b) {
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+
             // Apply limit filter
             if (limit !== 'all') {
                 const limitNum = parseInt(limit);
