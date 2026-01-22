@@ -59,8 +59,6 @@ class PressTestMesin1Controller extends Controller
 
             $pressTest = PressTestMesin1::create($validated);
 
-            event(new PressTestMesin1Created($pressTest));
-
             return response()->json([
                 'message' => 'Data created successfully.',
                 'data' => $pressTest,
