@@ -142,7 +142,6 @@
                                         <option value="50">50</option>
                                         <option value="100">100</option>
                                         <option value="500">500</option>
-                                        <option value="all">Semua</option>
                                     </select>
                                 </div>
                             </div>
@@ -294,8 +293,21 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.Echo === 'undefined') {
+                console.error('Echo belum ter-load');
+                return;
+            }
+
+            window.Echo.channel('press-test-mesin-1')
+                .listen('.created', (e) => {
+                    allData.unshift(e.data);
+                    applyFilter();
+                });
+
+        });
+
         let jarakChart, statusChart;
         let allData = [];
         let filteredData = [];
@@ -317,7 +329,7 @@
         // Fetch data dari API
         function fetchData() {
             $.ajax({
-                url: '{{ env('APP_URL') }}/api/press-test-mesin-1/all',
+                url: 'http://10.11.10.130:8081/api/press-test-mesin-1/all',
                 type: 'GET',
                 dataType: 'json',
                 success: function(result) {
@@ -408,7 +420,7 @@
             });
 
             $.ajax({
-                url: '{{ env('APP_URL') }}/api/press-test-mesin-1/all',
+                url: 'http://10.11.10.130:8081/api/press-test-mesin-1/all',
                 type: 'GET',
                 dataType: 'json',
                 success: function(result) {
@@ -442,13 +454,6 @@
             // Cek jika data kosong
             if (data.length === 0) {
                 showEmptyState();
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Data Tidak Ditemukan',
-                    text: 'Tidak ada data yang sesuai pada saat ini.',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#3085d6'
-                });
                 return;
             }
 

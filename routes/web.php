@@ -28,9 +28,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Dashboard
-    Roles: Supervisor, Foreman
+    Roles: Head Of Dapartement, Supervisor, Foreman
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman'])->group(function () {
         // Dashboard - Analisis GGA GGAS
         Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
 
@@ -63,9 +63,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Monitoring - On Going Kimia
-    Roles: Supervisor, Foreman, Analis Kimia, Analis Field
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Field
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia,Analis Field'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia,Analis Field'])->group(function () {
         Route::get('/monitoring-ongoing-kimia', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'index'])->name('monitoring-ongoing-kimia.index');
         Route::get('/monitoring-ongoing-kimia/edit/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'edit'])->name('monitoring-ongoing-kimia.edit');
         Route::get('/monitoring-ongoing-kimia/show/{id}', [App\Http\Controllers\MonitoringOnGoingKimiaController::class, 'show'])->name('monitoring-ongoing-kimia.show');
@@ -79,9 +79,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Monitoring - On Going Mikro
-    Roles: Supervisor, Foreman, Analis Mikro
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Mikro, Analis Kimia, Analis Field
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Mikro,Analis Kimia,Analis Field'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Mikro,Analis Kimia,Analis Field'])->group(function () {
         Route::get('/monitoring-ongoing-mikro', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'index'])->name('monitoring-ongoing-mikro.index');
         Route::get('/monitoring-ongoing-mikro/edit/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'edit'])->name('monitoring-ongoing-mikro.edit');
         Route::get('/monitoring-ongoing-mikro/show/{id}', [App\Http\Controllers\MonitoringOnGoingMikroController::class, 'show'])->name('monitoring-ongoing-mikro.show');
@@ -105,17 +105,17 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Main Index
-    Roles: Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro
+    Roles: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Helper,Analis Kimia,Analis Mikro'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper,Analis Kimia,Analis Mikro'])->group(function () {
         Route::get('/shelf-life', [App\Http\Controllers\ShelfLife\ShelfLifeController::class, 'index'])->name('shelf-life.index');
     });
 
     /*------------------------------------------
     Shelf Life - Sample
-    Roles: Supervisor, Foreman, Helper
+    Roles: Head Of Dapartement, Supervisor, Foreman, Helper
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Helper'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper'])->group(function () {
         Route::get('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'index'])->name('shelf-life.sample.index');
         Route::get('/shelf-life/sample/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'edit'])->name('shelf-life.sample.edit');
         Route::post('/shelf-life/sample', [App\Http\Controllers\ShelfLife\SampleController::class, 'store'])->name('shelf-life.sample.store');
@@ -129,18 +129,18 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Checksheet
-    Roles: Supervisor, Foreman, Helper
+    Roles: Head Of Dapartement, Supervisor, Foreman, Helper
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Helper'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper'])->group(function () {
         Route::get('/shelf-life/checksheet', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'index'])->name('shelf-life.checksheet.index');
         Route::post('/shelf-life/checksheet/update-status', [App\Http\Controllers\ShelfLife\ChecksheetController::class, 'updateStatus'])->name('shelf-life.checksheet.update-status');
     });
 
     /*------------------------------------------
     Shelf Life - Analisis Kimia
-    Roles: Supervisor, Foreman, Helper, Analis Kimia
+    Roles: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Kimia
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Helper,Analis Kimia'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper,Analis Kimia'])->group(function () {
         Route::get('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'index'])->name('shelf-life.analysis-kimia.index');
         Route::get('/shelf-life/analisis-kimia/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'show'])->name('shelf-life.analysis-kimia.show');
         Route::post('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'store'])->name('shelf-life.analysis-kimia.store');
@@ -149,9 +149,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Analisis Mikro
-    Roles: Supervisor, Foreman, Helper, Analis Mikro
+    Roles: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Mikro
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Helper,Analis Mikro'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper,Analis Mikro'])->group(function () {
         Route::get('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'index'])->name('shelf-life.analysis-mikro.index');
         Route::get('/shelf-life/analisis-mikro/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'show'])->name('shelf-life.analysis-mikro.show');
         Route::post('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'store'])->name('shelf-life.analysis-mikro.store');
@@ -160,9 +160,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Result
-    Roles: Supervisor, Foreman
+    Roles: Head Of Dapartement, Supervisor, Foreman
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman'])->group(function () {
         Route::get('/shelf-life/hasil', [App\Http\Controllers\ShelfLife\ResultController::class, 'index'])->name('shelf-life.result.index');
         Route::get('/shelf-life/hasil/get-data', [App\Http\Controllers\ShelfLife\ResultController::class, 'getData'])->name('shelf-life.result.get-data');
         Route::post('/shelf-life/hasil/get-po', [App\Http\Controllers\ShelfLife\ResultController::class, 'getPoByDateAndStorage'])->name('shelf-life.result.get-po');
@@ -170,9 +170,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     RMPM
-    Roles: Supervisor, Foreman, Analis RM
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis RM'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM'])->group(function () {
         Route::get('/rmpm', [App\Http\Controllers\RMPMController::class, 'index'])->name('rmpm.index');
         Route::get('/rmpm/konfirmasi/{id}', [App\Http\Controllers\RMPMController::class, 'getKonfirmasi'])->name('rmpm.konfirmasi');
         Route::post('/rmpm/konfirmasi/update', [App\Http\Controllers\RMPMController::class, 'updateKonfirmasi'])->name('rmpm.konfirmasi.update');
@@ -208,9 +208,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Persiapan Masak
-    Roles: Supervisor, Foreman, Operator
+    Roles: Head Of Dapartement, Supervisor, Foreman, Operator
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Operator'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Operator'])->group(function () {
         Route::get('/persiapan-masak', [App\Http\Controllers\ProductionBatchController::class, 'index'])->name('productionbatch.index');
         Route::get('/persiapan-masak/tambah', [App\Http\Controllers\ProductionBatchController::class, 'create'])->name('productionbatch.create');
         Route::post('/persiapan-masak', [App\Http\Controllers\ProductionBatchController::class, 'store'])->name('productionbatch.store');
@@ -264,7 +264,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/monitoring-pasteurisasi/revisi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'storeRevisi'])->name('monitoring-pasteurisasi.storeRevisi');
     });
 
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Field'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Field'])->group(function () {
         // Monitoring Storage Kimia
         Route::get('/monitoring-storage-kimia/getBatchData', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getBatchData'])->name('monitoring-storage-kimia.getBatchData');
         Route::get('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'index'])->name('monitoring-storage-kimia.index');
@@ -281,9 +281,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     GGA & GGAS
-    Roles: Supervisor, Foreman, Analis Kimia
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Kimia
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia'])->group(function () {
         // Analisa - GGA
         Route::get('/gga/menu', [App\Http\Controllers\Analisa\GGaController::class, 'menu'])->name('gga.menu');
         Route::get('/gga', [App\Http\Controllers\Analisa\GGaController::class, 'index'])->name('gga.index');
@@ -338,9 +338,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Monitoring Pasteurisasi & Storage
-    Roles: Supervisor, Foreman, Analis Kimia, Analis Field, Analis Mikro
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Field, Analis Mikro
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman,Analis Kimia,Analis Field,Analis Mikro'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia,Analis Field,Analis Mikro'])->group(function () {
         // Menu Blending
         Route::get('/analisa/blending-awal/menu', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'menu'])->name('analisa.blending-awal.menu');
 
@@ -394,9 +394,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Notifikasi
-    Roles: Supervisor, Foreman
+    Roles: Head Of Dapartement, Supervisor, Foreman
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor,Foreman'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman'])->group(function () {
         Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/unread', [App\Http\Controllers\NotificationController::class, 'unreadNotifications'])->name('notifications.unreadNotifications');
         Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
@@ -405,9 +405,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Master Data - Pengguna
-    Roles: Supervisor Only
+    Roles: Head Of Dapartement, Supervisor Only
     --------------------------------------------*/
-    Route::middleware(['user-access:Supervisor'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor'])->group(function () {
         Route::get('/pengguna', [App\Http\Controllers\UsersController::class, 'index'])->name('users.index');
         Route::post('/pengguna', [App\Http\Controllers\UsersController::class, 'store'])->name('users.store');
         Route::get('/pengguna/{id}', [App\Http\Controllers\UsersController::class, 'edit'])->name('users.edit');

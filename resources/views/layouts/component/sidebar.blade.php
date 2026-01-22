@@ -37,8 +37,8 @@
             <ul class="navbar-nav" id="navbar-nav">
 
                 {{-- SECTION: DASHBOARD --}}
-                {{-- Dashboard hanya untuk Supervisor dan Foreman --}}
-                @if (in_array($userRole, ['Supervisor', 'Foreman']))
+                {{-- Dashboard hanya untuk Head Of Dapartement, Supervisor dan Foreman --}}
+                @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman']))
                     <li class="menu-title"><span data-key="t-menu">Dashboard</span></li>
 
                     <li class="nav-item">
@@ -101,6 +101,7 @@
                 {{-- SECTION: MENU UTAMA --}}
                 @php
                     $showMenuSection = in_array($userRole, [
+                        'Head Of Dapartement',
                         'Supervisor',
                         'Foreman',
                         'Analis RM',
@@ -115,8 +116,8 @@
                 @if ($showMenuSection)
                     <li class="menu-title"><span data-key="t-menu">Menu</span></li>
 
-                    {{-- RMPM Menu: Supervisor, Foreman, Analis RM --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis RM']))
+                    {{-- RMPM Menu: Head Of Dapartement, Supervisor, Foreman, Analis RM --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['rmpm.index', 'rmpm.show']) ? 'active' : '' }}"
                                 href="{{ route('rmpm.index') }}">
@@ -125,8 +126,8 @@
                         </li>
                     @endif
 
-                    {{-- GGA & GGAS Menu: Supervisor, Foreman, Analis Kimia --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia']))
+                    {{-- GGA & GGAS Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['gga.menu', 'gga.index', 'gga.show', 'gga.show_batch', 'ggas.index', 'ggas.show', 'ggas.show_batch']) ? 'active' : '' }}"
                                 href="{{ route('gga.menu') }}">
@@ -135,8 +136,8 @@
                         </li>
                     @endif
 
-                    {{-- Blending Menu: Supervisor, Foreman, Analis Kimia, Analis Mikro, Analis Field --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia', 'Analis Mikro', 'Analis Field']))
+                    {{-- Blending Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Mikro, Analis Field --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia', 'Analis Mikro', 'Analis Field']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['analisa.blending-awal.menu', 'analisa.blending-awal.index', 'analisa.blending-awal.show', 'analisa.blending-awal.show_batch', 'analisa.blending-awal-mikro.index', 'analisa.blending-awal-mikro.show', 'analisa.blending-awal-mikro.show_batch']) ? 'active' : '' }}"
                                 href="{{ route('analisa.blending-awal.menu') }}">
@@ -145,8 +146,8 @@
                         </li>
                     @endif
 
-                    {{-- Monitoring Pasteurisasi & Storage Menu: Supervisor, Foreman, Analis Kimia, Analis Field, Analis Mikro --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Analis Kimia', 'Analis Field', 'Analis Mikro']))
+                    {{-- Monitoring Pasteurisasi & Storage Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Field, Analis Mikro --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia', 'Analis Field', 'Analis Mikro']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['monitoring-storage-kimia.index', 'monitoring-storage-kimia.show', 'analisa.monitoring-turun-blending.menu', 'analisa.monitoring-turun-blending.index', 'analisa.monitoring-turun-blending.show', 'analisa.monitoring-turun-blending.show_batch', 'analisa.monitoring-pasteurisasi.index', 'analisa.monitoring-pasteurisasi.show', 'analisa.monitoring-pasteurisasi.show_batch', 'analisa.monitoring-storage-kimia.index', 'analisa.monitoring-storage-kimia.show', 'analisa.monitoring-storage-kimia.show_batch', 'analisa.monitoring-storage-mikro.index', 'analisa.monitoring-storage-mikro.show', 'analisa.monitoring-storage-mikro.show_batch', 'monitoring-storage-before-use.index', 'monitoring-storage-before-use.analisa']) ? 'active' : '' }}"
                                 href="{{ route('analisa.monitoring-turun-blending.menu') }}">
@@ -163,8 +164,8 @@
                         </li>
                     @endif
 
-                    {{-- Shelf Life Menu: Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman', 'Helper', 'Analis Kimia', 'Analis Mikro']))
+                    {{-- Shelf Life Menu: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Helper', 'Analis Kimia', 'Analis Mikro']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['shelf-life.index', 'shelf-life.sample.index', 'shelf-life.sample.show', 'shelf-life.checksheet.index', 'shelf-life.analysis-kimia.index', 'shelf-life.analysis-kimia.show', 'shelf-life.analysis-mikro.index', 'shelf-life.analysis-mikro.show', 'shelf-life.result.index']) ? 'active' : '' }}"
                                 href="{{ route('shelf-life.index') }}">
@@ -191,8 +192,8 @@
                         </li>
                     @endif
 
-                    {{-- Notifikasi Menu: Supervisor, Foreman --}}
-                    @if (in_array($userRole, ['Supervisor', 'Foreman']))
+                    {{-- Notifikasi Menu: Head Of Dapartement, Supervisor, Foreman --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['notifications.*']) ? 'active' : '' }}"
                                 href="{{ route('notifications.index') }}">
@@ -203,13 +204,13 @@
                 @endif
 
                 {{-- SECTION: MASTER DATA --}}
-                @if (in_array($userRole, ['Supervisor', 'Foreman']))
+                @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman']))
                     <li class="menu-title">
                         <i class="ri-more-fill"></i> <span data-key="t-pages">Master Data</span>
                     </li>
 
-                    {{-- Pengguna Menu (Supervisor only) --}}
-                    @if ($userRole === 'Supervisor')
+                    {{-- Pengguna Menu (Head Of Dapartement, Supervisor only) --}}
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['users.*']) ? 'active' : '' }}"
                                 href="{{ route('users.index') }}">

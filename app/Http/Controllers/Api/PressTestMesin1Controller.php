@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PressTestMesin1Created;
 use App\Http\Controllers\Controller;
 use App\Models\PressTestMesin1;
 use Illuminate\Http\Request;
@@ -57,6 +58,8 @@ class PressTestMesin1Controller extends Controller
             ]);
 
             $pressTest = PressTestMesin1::create($validated);
+
+            event(new PressTestMesin1Created($pressTest));
 
             return response()->json([
                 'message' => 'Data created successfully.',
