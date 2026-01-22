@@ -54,6 +54,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard - Press Test Mesin
         Route::get('/dashboard/press-test-mesin', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'index'])->name('dashboard.press-test-mesin.index');
+        Route::get('/dashboard/press-test-mesin/export', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'export'])->name('dashboard.press-test-mesin.export');
 
         // Dashboard - Shelf Life
         Route::get('/dashboard/shelf-life', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'index'])->name('dashboard.shelf-life.index');

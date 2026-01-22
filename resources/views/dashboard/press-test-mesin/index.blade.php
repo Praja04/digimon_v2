@@ -103,7 +103,7 @@
                                     <input type="date" class="form-control" id="filterTanggal">
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="mb-3">
                                     <label for="filterVariant" class="form-label">
                                         <i class="ri-list-check me-1"></i>Variant
@@ -146,13 +146,16 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="mb-3 d-flex gap-2">
                                     <button class="btn btn-primary flex-grow-1" id="btnApplyFilter">
                                         <i class="ri-filter-3-line me-1"></i>Terapkan Filter
                                     </button>
                                     <button class="btn btn-light" id="btnResetFilter">
                                         <i class="ri-refresh-line me-1"></i>Reset
+                                    </button>
+                                    <button class="btn btn-success" id="btnExport">
+                                        <i class="ri-file-excel-2-line me-1"></i>Export
                                     </button>
                                 </div>
                             </div>
@@ -301,6 +304,12 @@
         let isAutoRefresh = false;
 
         $(document).ready(function() {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
             // Set tanggal hari ini sebagai default
             const today = new Date().toISOString().split('T')[0];
             $('#filterTanggal').val(today);
@@ -309,6 +318,22 @@
             $('#btnApplyFilter').on('click', applyFilter);
             $('#btnResetFilter').on('click', resetFilter);
             $('#btnRefresh').on('click', refreshData);
+
+            $('#btnExport').on('click', function() {
+                const params = new URLSearchParams({
+                    tanggal: $('#filterTanggal').val(),
+                    variant: $('#filterVariant').val(),
+                    status: $('#filterStatus').val(),
+                    limit: $('#filterLimit').val(),
+                });
+
+                window.open(
+                    "{{ route('dashboard.press-test-mesin.export') }}?" + params.toString(),
+                    "_blank"
+                );
+            });
+
+
 
             // Initial fetch
             fetchData();
