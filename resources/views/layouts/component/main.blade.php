@@ -41,10 +41,8 @@
 </head>
 
 <body>
-    @vite(['resources/js/app.js'])
     <!-- Begin page -->
     <div id="layout-wrapper">
-
         @include('layouts.component.topbar')
 
         @include('layouts.component.sidebar')
