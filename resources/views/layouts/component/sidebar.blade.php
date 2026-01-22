@@ -87,7 +87,11 @@
                                             class="mdi mdi-chemical-weapon"></i> Dashboard RMPM</a></li> --}}
                                 <li class="nav-item"><a href="{{ route('dashboard.shelf-life.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.shelf-life.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-calendar-clock"></i> Dashboard Shelf Life</a>
+                                            class="mdi mdi-calendar-clock"></i> Shelf Life</a>
+                                </li>
+                                <li class="nav-item"><a href="{{ route('dashboard.press-test-mesin.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.press-test-mesin.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-clipboard-text-play-outline"></i> Press Test Mesin</a>
                                 </li>
                             </ul>
                         </div>

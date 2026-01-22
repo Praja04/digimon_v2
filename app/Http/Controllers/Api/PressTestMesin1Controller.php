@@ -27,6 +27,25 @@ class PressTestMesin1Controller extends Controller
         }
     }
 
+    public function getAll()
+    {
+        try {
+            $pressTests = PressTestMesin1::orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data retrieved successfully.',
+                'data' => $pressTests,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {

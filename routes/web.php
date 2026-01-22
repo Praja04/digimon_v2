@@ -52,6 +52,9 @@ Route::middleware(['auth'])->group(function () {
         // Monitoring - Storage Mikro
         Route::get('/dashboard/monitoring-storage-mikro', [App\Http\Controllers\Dashboard\MonitoringStorageMikroController::class, 'index'])->name('dashboard.monitoring-storage-mikro.index');
 
+        // Dashboard - Press Test Mesin
+        Route::get('/dashboard/press-test-mesin', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'index'])->name('dashboard.press-test-mesin.index');
+
         // Dashboard - Shelf Life
         Route::get('/dashboard/shelf-life', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'index'])->name('dashboard.shelf-life.index');
         Route::get('/dashboard/shelf-life/chart-data', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getChartData'])->name('dashboard.shelf-life.chart-data');
