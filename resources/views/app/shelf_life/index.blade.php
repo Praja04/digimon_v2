@@ -157,7 +157,7 @@
                     </div>
                 @endif
 
-                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Helper', 'Analis Kimia']))
+                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Analis Kimia']))
                     <!-- Proses Analisa Kimia Card -->
                     <div class="col-12 col-sm-6 col-xl-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
@@ -192,7 +192,7 @@
                     </div>
                 @endif
 
-                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Helper', 'Analis Mikro']))
+                @if (in_array(auth()->user()->role, ['Supervisor', 'Foreman', 'Analis Mikro']))
                     <!-- Proses Analisa Mikro Card -->
                     <div class="col-12 col-sm-6 col-xl-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">

@@ -101,8 +101,30 @@
                 <div class="col-lg-12">
                     <div class="card shadow-sm mb-5">
                         <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0 fw-semibold">Data Sample Shelf Life</h5>
-                            <p class="text-muted mb-0 small">Daftar detail sample yang telah diinput</p>
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h5 class="mb-0 fw-semibold">Data Sample Shelf Life</h5>
+                                    <p class="text-muted mb-0 small">Daftar detail sample yang telah diinput</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row g-2">
+                                        <div class="col-md-8">
+                                            <select id="filterVariantFg" class="form-select form-select-sm">
+                                                <option value="">-- Semua Variant FG --</option>
+                                                @foreach ($shelfLifeSamplingDetails->unique('variant_fg')->pluck('variant_fg') as $variant)
+                                                    <option value="{{ $variant }}">{{ $variant }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="button" class="btn btn-sm btn-secondary w-100"
+                                                id="btnResetFilter">
+                                                <i class="mdi mdi-refresh me-1"></i> Reset
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -112,6 +134,7 @@
                                             <th class="fw-semibold ps-4">Bulan Ke-</th>
                                             <th class="fw-semibold">Kelompok Tanggal</th>
                                             <th class="fw-semibold">Tanggal Filling</th>
+                                            <th class="fw-semibold">Tanggal Analisa</th>
                                             <th class="fw-semibold">Variant FG</th>
                                             <th class="fw-semibold">Koding</th>
                                             <th class="fw-semibold">Jam Koding</th>
@@ -121,7 +144,7 @@
                                     </thead>
                                     <tbody id="tbody">
                                         @forelse ($shelfLifeSamplingDetails as $item)
-                                            <tr>
+                                            <tr class="data-row" data-variant="{{ $item->variant_fg }}">
                                                 <td class="ps-4">
                                                     <span class="badge bg-primary-subtle text-primary px-3 py-2">
                                                         {{ $item->bulan_ke }}
@@ -135,6 +158,11 @@
                                                 <td>
                                                     <div class="fw-medium text-dark">
                                                         {{ \Carbon\Carbon::parse($item->tanggal_filling)->locale('id')->translatedFormat('d F Y') }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-medium text-dark">
+                                                        {{ \Carbon\Carbon::parse($item->tanggal_analisa)->locale('id')->translatedFormat('d F Y') }}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -205,8 +233,8 @@
                                                 </td>
                                             </tr>
                                         @empty
-                                            <tr>
-                                                <td colspan="8" class="text-center py-5">
+                                            <tr id="emptyRow">
+                                                <td colspan="9" class="text-center py-5">
                                                     <div class="text-muted">
                                                         <p class="mb-1">Belum ada data sample</p>
                                                         <small>Klik tombol "Tambah Data" untuk menambahkan sample
@@ -215,6 +243,15 @@
                                                 </td>
                                             </tr>
                                         @endforelse
+                                        <tr id="noDataRow" style="display: none;">
+                                            <td colspan="8" class="text-center py-5">
+                                                <div class="text-muted">
+                                                    <i class="mdi mdi-information-outline fs-2 d-block mb-2"></i>
+                                                    <p class="mb-1">Tidak ada data untuk variant yang dipilih</p>
+                                                    <small>Pilih variant lain atau reset filter</small>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -364,25 +401,132 @@
                 dropdownParent: $('#modal')
             });
 
+            var today = new Date().toISOString().split('T')[0];
+            $('#tanggal_filling').attr('max', today);
+
+            // Data bulan yang sudah digunakan per variant
+            var usedBulanPerVariant = @json($usedBulanPerVariant);
+            var kelompokTanggalPerVariant = @json($kelompokTanggalPerVariant);
+            var currentVariantFg = '';
+            var isEditMode = false;
+            var editingBulanKe = null;
+
+            // Filter functionality
+            function filterTable() {
+                var selectedVariant = $('#filterVariantFg').val();
+                var visibleCount = 0;
+
+                $('.data-row').each(function() {
+                    var rowVariant = $(this).data('variant');
+
+                    if (selectedVariant === '' || rowVariant === selectedVariant) {
+                        $(this).show();
+                        visibleCount++;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                // Show/hide no data message
+                if (visibleCount === 0 && selectedVariant !== '') {
+                    $('#noDataRow').show();
+                    $('#emptyRow').hide();
+                } else {
+                    $('#noDataRow').hide();
+                    if (visibleCount === 0) {
+                        $('#emptyRow').show();
+                    } else {
+                        $('#emptyRow').hide();
+                    }
+                }
+            }
+
+            // Event handler untuk filter
+            $('#filterVariantFg').on('change', function() {
+                filterTable();
+            });
+
+            // Event handler untuk reset filter
+            $('#btnResetFilter').on('click', function() {
+                $('#filterVariantFg').val('').trigger('change');
+                filterTable();
+            });
+
+            // Function untuk update opsi bulan_ke berdasarkan variant_fg
+            function updateBulanKeOptions(variantFg, keepCurrentValue = false) {
+                var allBulan = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 21, 24];
+                var usedBulan = usedBulanPerVariant[variantFg] || [];
+                var currentValue = $('#bulan_ke').val();
+
+                // Reset select options
+                $('#bulan_ke').empty();
+                $('#bulan_ke').append('<option value="">Pilih Bulan Ke-</option>');
+
+                // Tambahkan opsi yang belum digunakan
+                allBulan.forEach(function(bulan) {
+                    // Jika edit mode dan ini adalah bulan yang sedang diedit, tetap tampilkan
+                    if (isEditMode && editingBulanKe == bulan) {
+                        $('#bulan_ke').append(new Option(bulan, bulan));
+                    }
+                    // Jika bukan bulan yang digunakan, tampilkan
+                    else if (!usedBulan.includes(bulan)) {
+                        $('#bulan_ke').append(new Option(bulan, bulan));
+                    }
+                });
+
+                // Set nilai yang sesuai
+                if (keepCurrentValue && currentValue) {
+                    $('#bulan_ke').val(currentValue);
+                } else if (!isEditMode) {
+                    // Cari bulan berikutnya yang belum digunakan
+                    var nextBulan = null;
+                    for (var i = 0; i < allBulan.length; i++) {
+                        if (!usedBulan.includes(allBulan[i])) {
+                            nextBulan = allBulan[i];
+                            break;
+                        }
+                    }
+                    if (nextBulan !== null) {
+                        $('#bulan_ke').val(nextBulan);
+                    }
+                }
+
+                $('#bulan_ke').trigger('change');
+            }
+
+            // Event handler untuk perubahan variant_fg
             $('#variant_fg').on('change', function() {
                 var selectedOption = $(this).find('option:selected');
                 var kelompok = selectedOption.data('kelompok');
+                currentVariantFg = $(this).val();
 
+                // Set kelompok sample
                 if (kelompok) {
                     $('#kelompok_sample').val(kelompok);
                 } else {
                     $('#kelompok_sample').val('');
                 }
+
+                // Set kelompok tanggal
+                if (currentVariantFg && kelompokTanggalPerVariant[currentVariantFg]) {
+                    $('#kelompok_tanggal').val(kelompokTanggalPerVariant[currentVariantFg]);
+                    $('#kelompok_tanggal').prop('readonly', true).addClass('bg-light');
+                } else {
+                    $('#kelompok_tanggal').prop('readonly', false).removeClass('bg-light');
+                }
+
+                // Update opsi bulan_ke berdasarkan variant yang dipilih
+                if (currentVariantFg) {
+                    updateBulanKeOptions(currentVariantFg);
+                }
             });
 
-            var usedBulan = @json($shelfLifeSamplingDetails->pluck('bulan_ke')->toArray());
-            var firstKelompokTanggal = @json($shelfLifeSamplingDetails->first()->kelompok_tanggal ?? '');
-
-            usedBulan.forEach(function(bulan) {
-                $('#bulan_ke option[value="' + bulan + '"]').remove();
-            });
-
+            // Event handler untuk tombol Tambah
             $(document).on('click', '#btnAdd', function() {
+                isEditMode = false;
+                editingBulanKe = null;
+                currentVariantFg = '';
+
                 $('#form')[0].reset();
                 $('#variant_fg').val('').trigger('change');
                 $('#bulan_ke').val('').trigger('change');
@@ -390,31 +534,22 @@
                 $('.form-control').removeClass('is-invalid');
                 $('.text-danger').html('');
 
-                if (firstKelompokTanggal) {
-                    $('#kelompok_tanggal').val(firstKelompokTanggal);
-                    $('#kelompok_tanggal').prop('readonly', true).addClass('bg-light');
-                } else {
-                    $('#kelompok_tanggal').prop('readonly', false).removeClass('bg-light');
-                }
+                $('#variant_fg').prop('disabled', false);
+                $('#bulan_ke').prop('disabled', false);
 
                 var allBulan = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 21, 24];
-                var nextBulan = null;
+                $('#bulan_ke').empty();
+                $('#bulan_ke').append('<option value="">Pilih Bulan Ke-</option>');
+                allBulan.forEach(function(bulan) {
+                    $('#bulan_ke').append(new Option(bulan, bulan));
+                });
 
-                for (var i = 0; i < allBulan.length; i++) {
-                    if (!usedBulan.includes(allBulan[i])) {
-                        nextBulan = allBulan[i];
-                        break;
-                    }
-                }
-
-                if (nextBulan !== null) {
-                    $('#bulan_ke').val(nextBulan).trigger('change');
-                }
-
+                $('#tanggal_filling').attr('max', today);
                 $('#modalTitle').text('Tambah Sample Detail');
                 $('#modal').modal('show');
             });
 
+            // Event handler untuk tombol Edit
             $(document).on('click', '#btnEdit', function() {
                 var id = $(this).data('id');
 
@@ -423,6 +558,10 @@
                     url: "{{ url('shelf-life/sample/detail/edit') }}/" + id,
                     dataType: "json",
                     success: function(response) {
+                        isEditMode = true;
+                        editingBulanKe = response.bulan_ke;
+                        currentVariantFg = response.variant_fg;
+
                         $('#save').val("edit-data");
                         $('#form')[0].reset();
                         $('.form-control').removeClass('is-invalid');
@@ -434,8 +573,13 @@
                         $('#id').val(response.id);
                         $('#shelf_life_sample_id').val(response.shelf_life_sample_id);
                         $('#variant_fg').val(response.variant_fg).trigger('change');
+                        $('#variant_fg').prop('disabled', true);
+
                         setTimeout(function() {
                             $('#kelompok_sample').val(response.kelompok_sample);
+                            updateBulanKeOptions(response.variant_fg, true);
+                            $('#bulan_ke').val(response.bulan_ke).trigger('change');
+                            $('#bulan_ke').prop('disabled', true);
                         }, 100);
 
                         if (response.tanggal_filling) {
@@ -445,21 +589,14 @@
                         $('#kelompok_tanggal').val(response.kelompok_tanggal);
                         $('#koding').val(response.koding);
                         $('#jam_koding').val(response.jam_koding);
-
-                        var bulanKeOption = $('#bulan_ke option[value="' + response.bulan_ke +
-                            '"]');
-                        if (bulanKeOption.length === 0) {
-                            $('#bulan_ke').append(new Option(response.bulan_ke, response
-                                .bulan_ke, true, true));
-                        } else {
-                            $('#bulan_ke').val(response.bulan_ke);
-                        }
-                        $('#bulan_ke').trigger('change');
                         $('#ruang_sl').val(response.ruang_sl).trigger('change');
                         $('#bin_location').val(response.bin_location);
-                        if (firstKelompokTanggal) {
+
+                        if (kelompokTanggalPerVariant[response.variant_fg]) {
                             $('#kelompok_tanggal').prop('readonly', true).addClass('bg-light');
                         }
+
+                        $('#tanggal_filling').attr('max', today);
                     },
                     error: function(xhr) {
                         console.error('Error fetching data:', xhr);
@@ -474,6 +611,24 @@
 
             $('#form').on('submit', function(e) {
                 e.preventDefault();
+
+                var selectedDate = new Date($('#tanggal_filling').val());
+                var todayDate = new Date(today);
+
+                if (selectedDate > todayDate) {
+                    e.preventDefault();
+
+                    $('#tanggal_filling').addClass('is-invalid');
+                    $('.errorTanggalFilling').html('Tanggal filling tidak boleh melebihi hari ini');
+                    $('#save').prop('disabled', false).text('Simpan');
+                    return false;
+                }
+
+                var variantFgDisabled = $('#variant_fg').prop('disabled');
+                var bulanKeDisabled = $('#bulan_ke').prop('disabled');
+
+                if (variantFgDisabled) $('#variant_fg').prop('disabled', false);
+                if (bulanKeDisabled) $('#bulan_ke').prop('disabled', false);
 
                 $.ajax({
                     data: $(this).serialize(),
@@ -595,6 +750,9 @@
                     }
                 });
             });
+
+            // Initialize filter on page load
+            filterTable();
         });
     </script>
 @endsection

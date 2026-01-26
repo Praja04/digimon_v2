@@ -296,7 +296,7 @@ class AnalysisMikroController extends Controller
                     ], 409);
                 }
 
-                $rules['sa'] = 'required|numeric|min:0';
+                $rules['sa'] = 'required';
                 $updateData['sa'] = $request->sa;
             }
 
@@ -376,8 +376,6 @@ class AnalysisMikroController extends Controller
                     'eb.numeric' => 'EB harus berupa angka.',
                     'eb.min' => 'EB tidak boleh negatif.',
                     'sa.required' => 'SA wajib diisi.',
-                    'sa.numeric' => 'SA harus berupa angka.',
-                    'sa.min' => 'SA tidak boleh negatif.',
                     'tpc.required' => 'TPC wajib diisi.',
                     'tpc.numeric' => 'TPC harus berupa angka.',
                     'tpc.min' => 'TPC tidak boleh negatif.',

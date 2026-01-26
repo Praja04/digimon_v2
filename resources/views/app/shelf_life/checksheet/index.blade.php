@@ -38,10 +38,8 @@
                                     </select>
                                 </div>
                                 <div class="col-12 col-sm-6 col-md-4">
-                                    <label for="kelompok_tanggal" class="form-label">Kelompok Tanggal</label>
-                                    <select id="kelompok_tanggal" class="form-select select2" disabled>
-                                        <option value="">Pilih Kelompok Tanggal</option>
-                                    </select>
+                                    <label for="tanggal_analisa" class="form-label">Tanggal Analisa</label>
+                                    <input type="date" id="tanggal_analisa" class="form-control" disabled>
                                 </div>
                                 <div class="col-12 col-sm-6 col-md-4 d-flex align-items-end">
                                     <button type="button" id="btnReset" class="btn btn-secondary w-100">
@@ -56,12 +54,14 @@
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Kelompok Sample</th>
-                                            <th>Kelompok Tanggal</th>
+                                            <th>Tanggal Produksi</th>
+                                            <th>Nomor PO</th>
                                             <th>Varian FG</th>
-                                            <th>Bulan Ke-</th>
+                                            <th>Kelompok Sample</th>
                                             <th>Ruang SL</th>
                                             <th>Bin</th>
+                                            <th>Bulan Ke-</th>
+                                            <th>Tanggal Analisa</th>
                                             <th class="text-center">Check</th>
                                         </tr>
                                     </thead>
@@ -89,7 +89,11 @@
             $('.select2').select2({
                 placeholder: '-- Pilih Opsi --'
             });
-            
+
+            // Set max date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#tanggal_analisa').attr('max', today);
+
             var table = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -98,7 +102,7 @@
                     url: "{{ route('shelf-life.checksheet.index') }}",
                     data: function(d) {
                         d.kelompok_sample = $('#kelompok_sample').val();
-                        d.kelompok_tanggal = $('#kelompok_tanggal').val();
+                        d.tanggal_analisa = $('#tanggal_analisa').val();
                     }
                 },
                 columns: [{
@@ -108,21 +112,25 @@
                         searchable: false
                     },
                     {
-                        data: 'kelompok_sample',
-                        name: 'kelompok_sample'
+                        data: 'tanggal_produksi_formatted',
+                        name: 'tanggal_produksi',
+                        render: function(data, type, row) {
+                            return data;
+                        }
                     },
                     {
-                        data: 'kelompok_tanggal',
-                        name: 'kelompok_tanggal'
+                        data: 'nomor_po',
+                        name: 'nomor_po'
                     },
                     {
                         data: 'variant_fg',
                         name: 'variant_fg'
                     },
                     {
-                        data: 'bulan_ke',
-                        name: 'bulan_ke'
+                        data: 'kelompok_sample',
+                        name: 'kelompok_sample'
                     },
+
                     {
                         data: 'ruang_sl',
                         name: 'ruang_sl'
@@ -130,6 +138,17 @@
                     {
                         data: 'bin_location',
                         name: 'bin_location'
+                    },
+                    {
+                        data: 'bulan_ke',
+                        name: 'bulan_ke'
+                    },
+                    {
+                        data: 'tanggal_analisa_formatted',
+                        name: 'tanggal_analisa',
+                        render: function(data, type, row) {
+                            return data;
+                        }
                     },
                     {
                         data: 'action',
@@ -148,76 +167,45 @@
                 }
             });
 
-            // Event ketika kelompok sample berubah
             $('#kelompok_sample').on('change', function() {
                 var kelompokSample = $(this).val();
-                var kelompokTanggalSelect = $('#kelompok_tanggal');
-
-                // Reset kelompok tanggal
-                kelompokTanggalSelect.val('').trigger('change');
-                kelompokTanggalSelect.html('<option value="">Pilih Kelompok Tanggal</option>');
 
                 if (kelompokSample) {
-                    // Disable dropdown sementara
-                    kelompokTanggalSelect.prop('disabled', true);
-
-                    $.ajax({
-                        url: "{{ route('shelf-life.checksheet.index') }}",
-                        type: 'GET',
-                        data: {
-                            get_kelompok_tanggal: true,
-                            kelompok_sample: kelompokSample
-                        },
-                        success: function(response) {
-                            if (response.length > 0) {
-                                $.each(response, function(index, value) {
-                                    kelompokTanggalSelect.append(
-                                        $('<option></option>').val(value).text(
-                                            value)
-                                    );
-                                });
-                                kelompokTanggalSelect.prop('disabled', false);
-                            } else {
-                                kelompokTanggalSelect.append(
-                                    '<option value="">Tidak ada data</option>'
-                                );
-                                kelompokTanggalSelect.prop('disabled', true);
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: 'Gagal memuat kelompok tanggal',
-                            });
-                            kelompokTanggalSelect.prop('disabled', true);
-                        }
-                    });
+                    $('#tanggal_analisa').prop('disabled', false);
                 } else {
-                    kelompokTanggalSelect.prop('disabled', true);
-                }
-            });
-
-            // Event ketika kelompok tanggal berubah
-            $('#kelompok_tanggal').on('change', function() {
-                var kelompokSample = $('#kelompok_sample').val();
-                var kelompokTanggal = $(this).val();
-
-                if (kelompokSample && kelompokTanggal) {
+                    $('#tanggal_analisa').prop('disabled', true).val('');
                     table.ajax.reload();
                 }
             });
 
-            // Reset button
+            $('#tanggal_analisa').on('change', function() {
+                var kelompokSample = $('#kelompok_sample').val();
+                var tanggalAnalisa = $(this).val();
+
+                if (kelompokSample && tanggalAnalisa) {
+                    var selectedDate = new Date(tanggalAnalisa);
+                    var todayDate = new Date(today);
+
+                    if (selectedDate > todayDate) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Perhatian',
+                            text: 'Tanggal analisa tidak boleh melebihi hari ini',
+                        });
+                        $(this).val('');
+                        return;
+                    }
+
+                    table.ajax.reload();
+                }
+            });
+
             $('#btnReset').on('click', function() {
                 $('#kelompok_sample').val('').trigger('change');
-                $('#kelompok_tanggal').val('').trigger('change');
-                $('#kelompok_tanggal').html('<option value="">Pilih Kelompok Tanggal</option>');
-                $('#kelompok_tanggal').prop('disabled', true);
+                $('#tanggal_analisa').val('').prop('disabled', true);
                 table.ajax.reload();
             });
 
-            // Update checkbox status
             $(document).on('change', '.checksheet-checkbox', function() {
                 var checkbox = $(this);
                 var id = checkbox.data('id');
@@ -240,11 +228,13 @@
                             icon: 'success',
                             title: 'Berhasil',
                             text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
                         });
                     },
                     error: function(xhr) {
                         checkbox.prop('disabled', false);
-                        checkbox.prop('checked', isChecked === 0);
+                        checkbox.prop('checked', !isChecked);
 
                         Swal.fire({
                             icon: 'error',

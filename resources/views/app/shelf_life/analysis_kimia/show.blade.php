@@ -110,9 +110,9 @@
                                                 <label class="form-label">Shift <span style="color: red;">*</span></label>
                                                 <select name="shift_analis" id="shift_analis" class="form-control">
                                                     <option value="">-- Pilih Shift --</option>
-                                                    <option value="1">Shift 1 (06:00 - 14:00)</option>
-                                                    <option value="2">Shift 2 (14:00 - 22:00)</option>
-                                                    <option value="3">Shift 3 (22:00 - 06:00)</option>
+                                                    <option value="1">Shift 1</option>
+                                                    <option value="2">Shift 2</option>
+                                                    <option value="3">Shift 3</option>
                                                 </select>
                                                 <small class="text-danger errorShiftAnalis"></small>
                                             </div>

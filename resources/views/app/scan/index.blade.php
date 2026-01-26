@@ -106,7 +106,7 @@
                             </div>
 
                             <div class="alert-simple mt-3">
-                                Mengalihkan dalam <strong><span id="countdown">3</span></strong> detik...
+                                Mengalihkan halaman...
                             </div>
                         </div>
                     </div>
@@ -126,9 +126,7 @@
         $(document).ready(function() {
             let html5QrCode;
             let isScanning = false;
-            let redirectTimer = null;
 
-            // Mapping nama type QC yang lengkap
             const typeNames = {
                 'gga': 'GGA',
                 'ggas': 'GGAS',
@@ -146,17 +144,14 @@
                 'shelf-life-sampling': 'Shelf Life Analisis'
             };
 
-            // Setup AJAX
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
 
-            // Initialize Scanner
             initializeScanner();
 
-            // Event: Manual Scan Form Submit
             $('#manualScanForm').on('submit', function(e) {
                 e.preventDefault();
                 const url = $('#manualUrl').val().trim();
@@ -165,13 +160,11 @@
                 }
             });
 
-            // Event: Camera Select Change
             $('#cameraSelect').on('change', function() {
                 stopScanning();
                 startScanning($(this).val());
             });
 
-            // Function: Initialize Scanner
             function initializeScanner() {
                 html5QrCode = new Html5Qrcode("reader");
 
@@ -192,7 +185,6 @@
                 });
             }
 
-            // Function: Update Camera List
             function updateCameraList(cameras) {
                 const $select = $('#cameraSelect');
                 $select.empty();
@@ -203,7 +195,6 @@
                 });
             }
 
-            // Function: Start Scanning
             function startScanning(cameraId) {
                 if (isScanning) return;
 
@@ -225,7 +216,6 @@
                 });
             }
 
-            // Function: Stop Scanning
             function stopScanning() {
                 if (isScanning && html5QrCode) {
                     html5QrCode.stop().then(function() {
@@ -243,7 +233,6 @@
                 processQRCode(decodedText);
             }
 
-            // Function: Process QR Code
             function processQRCode(url) {
                 updateScannerStatus("Memproses QR Code...", false);
 
@@ -267,8 +256,7 @@
 
                         if (xhr.status === 403 && xhr.responseJSON) {
                             const response = xhr.responseJSON;
-                            let timeLeft = 5;
-                            const swal = Swal.fire({
+                            Swal.fire({
                                 icon: 'warning',
                                 title: 'Akses Ditolak',
                                 text: response.message,
@@ -290,7 +278,6 @@
                 });
             }
 
-            // Function: Show Scan Result
             function showScanResult(type, id, redirectUrl) {
                 const typeName = typeNames[type] || type;
 
@@ -300,30 +287,7 @@
 
                 $('#resultCard').slideDown(200);
 
-                startRedirect(redirectUrl);
-            }
-
-            // Function: Start Redirect Countdown
-            function startRedirect(url) {
-                let time = 3;
-                const $countdown = $('#countdown');
-                $countdown.text(time);
-
-                // Clear previous timer if exists
-                if (redirectTimer) {
-                    clearInterval(redirectTimer);
-                }
-
-                redirectTimer = setInterval(function() {
-                    time--;
-                    $countdown.text(time);
-
-                    if (time <= 0) {
-                        clearInterval(redirectTimer);
-                        redirectTimer = null;
-                        window.location.href = url;
-                    }
-                }, 1000);
+                window.location.href = redirectUrl;
             }
 
             function restartCamera() {
@@ -347,15 +311,9 @@
                 }
             }
 
-            // Function: Show Error
             function showError(message) {
                 updateScannerStatus(message, true);
                 $('#resultCard').slideUp(200);
-
-                if (redirectTimer) {
-                    clearInterval(redirectTimer);
-                    redirectTimer = null;
-                }
             }
         });
     </script>

@@ -60,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/shelf-life', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'index'])->name('dashboard.shelf-life.index');
         Route::get('/dashboard/shelf-life/chart-data', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getChartData'])->name('dashboard.shelf-life.chart-data');
         Route::get('/dashboard/shelf-life/kelompok-tanggal', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getKelompokTanggal'])->name('dashboard.shelf-life.kelompok-tanggal');
+        Route::get('/dashboard/shelf-life/filter-options', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getFilterOptions'])->name('dashboard.shelf-life.filter-options');
     });
 
     /*------------------------------------------
@@ -106,7 +107,7 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Main Index
-    Roles: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Kimia, Analis Mikro
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Mikro
     --------------------------------------------*/
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper,Analis Kimia,Analis Mikro'])->group(function () {
         Route::get('/shelf-life', [App\Http\Controllers\ShelfLife\ShelfLifeController::class, 'index'])->name('shelf-life.index');
@@ -139,9 +140,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Analisis Kimia
-    Roles: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Kimia
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Kimia
     --------------------------------------------*/
-    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper,Analis Kimia'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia'])->group(function () {
         Route::get('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'index'])->name('shelf-life.analysis-kimia.index');
         Route::get('/shelf-life/analisis-kimia/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'show'])->name('shelf-life.analysis-kimia.show');
         Route::post('/shelf-life/analisis-kimia', [App\Http\Controllers\ShelfLife\AnalysisKimiaController::class, 'store'])->name('shelf-life.analysis-kimia.store');
@@ -150,9 +151,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Shelf Life - Analisis Mikro
-    Roles: Head Of Dapartement, Supervisor, Foreman, Helper, Analis Mikro
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis Mikro
     --------------------------------------------*/
-    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Helper,Analis Mikro'])->group(function () {
+    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Mikro'])->group(function () {
         Route::get('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'index'])->name('shelf-life.analysis-mikro.index');
         Route::get('/shelf-life/analisis-mikro/show/{id}', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'show'])->name('shelf-life.analysis-mikro.show');
         Route::post('/shelf-life/analisis-mikro', [App\Http\Controllers\ShelfLife\AnalysisMikroController::class, 'store'])->name('shelf-life.analysis-mikro.store');

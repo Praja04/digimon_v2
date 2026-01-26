@@ -40,6 +40,9 @@ class SampleController extends Controller
                         ->locale('id')
                         ->translatedFormat('d F Y');
                 })
+                ->addColumn('variant', function ($data) {
+                    return $data->productionBatch->variant ?? '-';
+                })
                 ->addColumn('progress', function ($data) {
                     $maxBulan = $data->shelfLifeSamplingDetails->max('bulan_ke') ?? 0;
                     $totalDetails = $data->shelfLifeSamplingDetails->count();
@@ -239,10 +242,6 @@ class SampleController extends Controller
     {
         $data = ShelfLifeSamples::with('productionBatch')->find($id);
 
-        if (!$data) {
-            abort(404, 'Data tidak ditemukan');
-        }
-
         $kecapCode = $data->productionBatch->variant ?? null;
 
         $response = Http::timeout(10)->get(env('PRODUCTION_URL') . 'api/varian/kecap/by-code', [
@@ -259,33 +258,67 @@ class SampleController extends Controller
             ];
         }
 
-        $shelfLifeSamplingDetails = ShelfLifeSamplingDetail::where('shelf_life_sample_id', $data->id)->orderBy('bulan_ke', 'asc')->get();
+        $shelfLifeSamplingDetails = ShelfLifeSamplingDetail::where('shelf_life_sample_id', $data->id)
+            ->orderBy('bulan_ke', 'asc')
+            ->orderBy('variant_fg', 'asc')
+            ->get();
 
-        return view('app.shelf_life.sample.show', compact('data', 'kecap', 'shelfLifeSamplingDetails'));
+        $usedBulanPerVariant = $shelfLifeSamplingDetails->groupBy('variant_fg')->map(function ($items) {
+            return $items->pluck('bulan_ke')->toArray();
+        });
+
+        $kelompokTanggalPerVariant = $shelfLifeSamplingDetails->groupBy('variant_fg')->map(function ($items) {
+            return $items->first()->kelompok_tanggal ?? '';
+        });
+
+        return view('app.shelf_life.sample.show', compact('data', 'kecap', 'shelfLifeSamplingDetails', 'usedBulanPerVariant', 'kelompokTanggalPerVariant'));
     }
 
     public function storeSamplingDetail(SampleDetailStoreRequest $request)
     {
+        $hari = (int) $request->kelompok_tanggal;
+        $bulanKe = (int) $request->bulan_ke;
+
+        $urutanBulan = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 21, 24];
+
+        if (!in_array($bulanKe, $urutanBulan)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Bulan ke- tidak valid',
+            ], 422);
+        }
+
+        $tanggalFilling = \Carbon\Carbon::parse($request->tanggal_filling);
+        $tanggalAnalisa = $tanggalFilling->copy()->day(1)->addMonths($bulanKe);
+
+        $maxHariDiBulan = $tanggalAnalisa->daysInMonth;
+        $hariFinal = min($hari, $maxHariDiBulan);
+        $tanggalAnalisa->day($hariFinal);
+
         try {
+            $updateData = [
+                'shelf_life_sample_id' => $request->shelf_life_sample_id,
+                'kelompok_sample' => $request->kelompok_sample,
+                'kelompok_tanggal' => $request->kelompok_tanggal,
+                'koding' => $request->koding,
+                'jam_koding' => $request->jam_koding,
+                'tanggal_filling' => $request->tanggal_filling,
+                'ruang_sl' => $request->ruang_sl,
+                'bin_location' => $request->bin_location,
+                'tanggal_analisa' => $tanggalAnalisa->format('Y-m-d'),
+            ];
+
+            if (!$request->filled('id')) {
+                $updateData['variant_fg'] = $request->variant_fg;
+                $updateData['bulan_ke'] = $request->bulan_ke;
+            }
+
             $data = ShelfLifeSamplingDetail::updateOrCreate(
                 ['id' => $request->id],
-                [
-                    'shelf_life_sample_id' => $request->shelf_life_sample_id,
-                    'variant_fg' => $request->variant_fg,
-                    'kelompok_sample' => $request->kelompok_sample,
-                    'kelompok_tanggal' => $request->kelompok_tanggal,
-                    'koding' => $request->koding,
-                    'jam_koding' => $request->jam_koding,
-                    'bulan_ke' => $request->bulan_ke,
-                    'tanggal_filling' => $request->tanggal_filling,
-                    'ruang_sl' => $request->ruang_sl,
-                    'bin_location' => $request->bin_location,
-                ]
+                $updateData
             );
 
-            $message = $data->wasRecentlyCreated
-                ? 'Data berhasil disimpan'
-                : 'Data berhasil diperbarui';
+            $message = $data->wasRecentlyCreated ? 'Data berhasil disimpan' : 'Data berhasil diperbarui';
 
             return response()->json([
                 'message' => $message,

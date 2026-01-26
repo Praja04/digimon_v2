@@ -12,30 +12,40 @@ class ChecksheetController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            if ($request->has('get_kelompok_tanggal')) {
-                $kelompokTanggal = ShelfLifeSamplingDetail::select('kelompok_tanggal')
+            if ($request->has('get_tanggal_analisa')) {
+                $tanggalAnalisa = ShelfLifeSamplingDetail::select('tanggal_analisa')
                     ->distinct()
-                    ->whereNotNull('kelompok_tanggal')
+                    ->whereNotNull('tanggal_analisa')
                     ->where('kelompok_sample', $request->kelompok_sample)
-                    ->orderBy('kelompok_tanggal', 'asc')
-                    ->pluck('kelompok_tanggal');
+                    ->orderBy('tanggal_analisa', 'asc')
+                    ->pluck('tanggal_analisa');
 
-                return response()->json($kelompokTanggal);
+                return response()->json($tanggalAnalisa);
             }
 
-            if (empty($request->kelompok_sample) || empty($request->kelompok_tanggal)) {
+            if (empty($request->kelompok_sample) || empty($request->tanggal_analisa)) {
                 return DataTables::of(collect([]))
                     ->addIndexColumn()
                     ->make(true);
             }
 
-            $query = ShelfLifeSamplingDetail::query()
+            $query = ShelfLifeSamplingDetail::with('shelfLifeSample.productionBatch')
                 ->where('kelompok_sample', $request->kelompok_sample)
-                ->where('kelompok_tanggal', $request->kelompok_tanggal)
-                ->orderBy('bulan_ke', 'asc');
+                ->where('tanggal_analisa', $request->tanggal_analisa)
+                ->orderBy('bulan_ke', 'asc')
+                ->orderBy('variant_fg', 'asc');
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('tanggal_produksi_formatted', function ($data) {
+                    return \Carbon\Carbon::parse($data->shelfLifeSample->productionBatch->date)->locale('id')->translatedFormat('d F Y');
+                })
+                ->addColumn('nomor_po', function ($data) {
+                    return $data->shelfLifeSample->productionBatch->po_number;
+                })  
+                ->addColumn('tanggal_analisa_formatted', function ($data) {
+                    return \Carbon\Carbon::parse($data->tanggal_analisa)->locale('id')->translatedFormat('d F Y');
+                })
                 ->addColumn('action', function ($data) {
                     $checked = $data->is_checked ? 'checked' : '';
                     return '

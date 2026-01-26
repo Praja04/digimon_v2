@@ -13,14 +13,16 @@ class SampleDetailStoreRequest extends FormRequest
      */
     public function rules(): array
     {
+        $isUpdate = $this->filled('id');
+
         return [
-            'variant_fg' => 'required|string',
+            'variant_fg' => $isUpdate ? 'sometimes|string' : 'required|string',
             'kelompok_sample' => 'required|string',
             'tanggal_filling' => 'required|date',
             'kelompok_tanggal' => 'required',
             'koding' => 'required|max:5',
             'jam_koding' => 'required|string',
-            'bulan_ke' => 'required|integer',
+            'bulan_ke' => $isUpdate ? 'sometimes|integer' : 'required|integer',
             'ruang_sl' => 'required|string',
             'bin_location' => 'required|string',
         ];

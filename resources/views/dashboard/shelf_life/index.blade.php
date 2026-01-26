@@ -31,13 +31,6 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
-        .chart-subtitle {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-top: 4px;
-            font-weight: 400;
-        }
-
         .filter-section {
             background: #ffffff;
             padding: 20px;
@@ -92,6 +85,19 @@
             color: #212529;
         }
 
+        .btn-apply {
+            background: #5a67d8;
+            border: 1px solid #5a67d8;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .btn-apply:hover {
+            background: #4c51bf;
+            border-color: #4c51bf;
+            color: #ffffff;
+        }
+
         .data-info-panel {
             background: #5a67d8;
             color: white;
@@ -143,18 +149,6 @@
                 height: 280px;
             }
         }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #7f8c8d;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.3;
-        }
     </style>
 @endsection
 
@@ -184,23 +178,77 @@
                     <div class="filter-section">
                         <div class="filter-header">Filter Data</div>
                         <div class="row g-3">
-                            <div class="col-12 col-md-5">
-                                <label for="kelompok_sample" class="form-label">Kelompok Sample</label>
-                                <select id="kelompok_sample" class="form-select select2">
-                                    <option value="">Pilih Kelompok Sample</option>
-                                    <option value="Retail">Retail</option>
-                                    <option value="Non Retail">Non Retail</option>
+                            <!-- Variant (Multiple Select) -->
+                            <div class="col-12 col-md-3">
+                                <label for="variant_fg" class="form-label">Variant</label>
+                                <select id="variant_fg" class="form-select select2" multiple="multiple">
+                                    <option value="">-- Semua Variant --</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-md-5">
-                                <label for="kelompok_tanggal" class="form-label">Kelompok Tanggal</label>
-                                <select id="kelompok_tanggal" class="form-select select2">
-                                    <option value="">Pilih Kelompok Tanggal</option>
+
+                            <!-- Bulan Ke -->
+                            <div class="col-12 col-md-3">
+                                <label for="bulan_ke" class="form-label">Bulan Ke-</label>
+                                <select id="bulan_ke" class="form-select select2">
+                                    <option value="">-- Semua Bulan --</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-md-2 d-flex align-items-end">
-                                <button type="button" id="btnReset" class="btn btn-reset w-100">
-                                    Reset Filter
+
+                            <!-- Tanggal (Tanggal Produksi) -->
+                            <div class="col-12 col-md-3">
+                                <label for="tanggal_produksi" class="form-label">Tanggal Produksi</label>
+                                <input type="date" id="tanggal_produksi" class="form-control">
+                            </div>
+
+                            <!-- STK (Storage) -->
+                            <div class="col-12 col-md-3">
+                                <label for="stk" class="form-label">STK (Storage)</label>
+                                <select id="stk" class="form-select select2">
+                                    <option value="">-- Semua STK --</option>
+                                </select>
+                            </div>
+
+                            <!-- Tanggal Filling -->
+                            <div class="col-12 col-md-3">
+                                <label for="tanggal_filling" class="form-label">Tanggal Filling</label>
+                                <input type="date" id="tanggal_filling" class="form-control">
+                            </div>
+
+                            <!-- Tanggal Filling (Bulan) -->
+                            <div class="col-12 col-md-3">
+                                <label for="bulan_filling" class="form-label">Tanggal Filling (Bulan)</label>
+                                <select id="bulan_filling" class="form-select select2">
+                                    <option value="">-- Semua Bulan --</option>
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                            </div>
+
+                            <!-- Tanggal Filling (Tahun) -->
+                            <div class="col-12 col-md-3">
+                                <label for="tahun_filling" class="form-label">Tanggal Filling (Tahun)</label>
+                                <select id="tahun_filling" class="form-select select2">
+                                    <option value="">-- Semua Tahun --</option>
+                                </select>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+                                <button type="button" id="btnApply" class="btn btn-apply flex-fill">
+                                    <i class="mdi mdi-filter"></i> Apply Filter
+                                </button>
+                                <button type="button" id="btnReset" class="btn btn-reset flex-fill">
+                                    <i class="mdi mdi-refresh"></i> Reset
                                 </button>
                             </div>
                         </div>
@@ -210,25 +258,33 @@
             <!-- End Filter Section -->
 
             <!-- Data Info Panel -->
-            <div id="dataInfoPanel" class="data-info-panel">
+            <div id="dataInfoPanel" class="data-info-panel" style="display: none;">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="info-item">
                             <div>
-                                <div class="info-label">Kelompok Sample</div>
-                                <div class="info-value" id="infoKelompokSample">-</div>
+                                <div class="info-label">Variant Terpilih</div>
+                                <div class="info-value" id="infoVariant">-</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="info-item">
                             <div>
-                                <div class="info-label">Kelompok Tanggal</div>
-                                <div class="info-value" id="infoKelompokTanggal">-</div>
+                                <div class="info-label">Bulan Ke</div>
+                                <div class="info-value" id="infoBulanKe">-</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="info-item">
+                            <div>
+                                <div class="info-label">Storage</div>
+                                <div class="info-value" id="infoSTK">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="info-item">
                             <div>
                                 <div class="info-label">Periode Data</div>
@@ -251,9 +307,7 @@
                     <!-- NaCl Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                NaCl
-                            </h6>
+                            <h6 class="chart-title">NaCl</h6>
                             <div class="chart-container">
                                 <canvas id="naclChart"></canvas>
                             </div>
@@ -263,9 +317,7 @@
                     <!-- Brix Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                Brix (°Bx)
-                            </h6>
+                            <h6 class="chart-title">Brix (°Bx)</h6>
                             <div class="chart-container">
                                 <canvas id="brixChart"></canvas>
                             </div>
@@ -275,9 +327,7 @@
                     <!-- Aw Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                Aw
-                            </h6>
+                            <h6 class="chart-title">Aw</h6>
                             <div class="chart-container">
                                 <canvas id="awChart"></canvas>
                             </div>
@@ -287,9 +337,7 @@
                     <!-- pH Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                pH
-                            </h6>
+                            <h6 class="chart-title">pH</h6>
                             <div class="chart-container">
                                 <canvas id="phChart"></canvas>
                             </div>
@@ -299,9 +347,7 @@
                     <!-- BJ Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                BJ
-                            </h6>
+                            <h6 class="chart-title">BJ</h6>
                             <div class="chart-container">
                                 <canvas id="bjChart"></canvas>
                             </div>
@@ -311,9 +357,7 @@
                     <!-- Buih Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                Buih
-                            </h6>
+                            <h6 class="chart-title">Buih</h6>
                             <div class="chart-container">
                                 <canvas id="buihChart"></canvas>
                             </div>
@@ -323,9 +367,7 @@
                     <!-- Visco Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                Visco
-                            </h6>
+                            <h6 class="chart-title">Visco</h6>
                             <div class="chart-container">
                                 <canvas id="viscoChart"></canvas>
                             </div>
@@ -335,9 +377,7 @@
                     <!-- Total Nitrogen Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                Total Nitrogen
-                            </h6>
+                            <h6 class="chart-title">Total Nitrogen</h6>
                             <div class="chart-container">
                                 <canvas id="totalNitrogenChart"></canvas>
                             </div>
@@ -354,9 +394,7 @@
                     <!-- EB Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                EB
-                            </h6>
+                            <h6 class="chart-title">EB</h6>
                             <div class="chart-container">
                                 <canvas id="ebChart"></canvas>
                             </div>
@@ -366,9 +404,7 @@
                     <!-- SA Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                SA
-                            </h6>
+                            <h6 class="chart-title">SA</h6>
                             <div class="chart-container">
                                 <canvas id="saChart"></canvas>
                             </div>
@@ -378,9 +414,7 @@
                     <!-- TPC Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                TPC
-                            </h6>
+                            <h6 class="chart-title">TPC</h6>
                             <div class="chart-container">
                                 <canvas id="tpcChart"></canvas>
                             </div>
@@ -390,9 +424,7 @@
                     <!-- YM Chart -->
                     <div class="card card-chart">
                         <div class="card-body">
-                            <h6 class="chart-title">
-                                YM
-                            </h6>
+                            <h6 class="chart-title">YM</h6>
                             <div class="chart-container">
                                 <canvas id="ymChart"></canvas>
                             </div>
@@ -419,74 +451,123 @@
 
             let charts = {};
 
+            // Initialize Select2
             $('.select2').select2({
                 placeholder: '-- Pilih Opsi --',
                 width: '100%'
             });
 
-            // Load all data on page load
-            loadKelompokTanggal();
+            // Load initial data
+            loadFilterOptions();
             loadChartData();
 
-            // Event: Kelompok Sample Change
-            $('#kelompok_sample').on('change', function() {
-                loadKelompokTanggal();
+            // Event: Apply Filter Button
+            $('#btnApply').on('click', function() {
                 loadChartData();
             });
 
-            // Event: Kelompok Tanggal Change
-            $('#kelompok_tanggal').on('change', function() {
-                loadChartData();
-            });
-
-            // Event: Reset
+            // Event: Reset Button
             $('#btnReset').on('click', function() {
-                $('#kelompok_sample').val('').trigger('change');
-                $('#kelompok_tanggal').val('').trigger('change');
-                loadKelompokTanggal();
+                $('#variant_fg').val(null).trigger('change');
+                $('#bulan_ke').val('').trigger('change');
+                $('#tanggal_produksi').val('');
+                $('#stk').val('').trigger('change');
+                $('#tanggal_filling').val('');
+                $('#bulan_filling').val('').trigger('change');
+                $('#tahun_filling').val('').trigger('change');
                 loadChartData();
             });
 
-            // Function: Load Kelompok Tanggal
-            function loadKelompokTanggal() {
-                const kelompokSample = $('#kelompok_sample').val();
-                const $kelompokTanggal = $('#kelompok_tanggal');
-
+            // Function: Load Filter Options
+            function loadFilterOptions() {
+                // Load Variants
                 $.ajax({
-                    url: "{{ route('dashboard.shelf-life.kelompok-tanggal') }}",
+                    url: "{{ route('dashboard.shelf-life.filter-options') }}",
                     type: 'GET',
                     data: {
-                        kelompok_sample: kelompokSample
+                        type: 'variant'
                     },
                     success: function(response) {
-                        $kelompokTanggal.html('<option value="">Pilih Kelompok Tanggal</option>');
-
+                        const $variantFg = $('#variant_fg');
+                        $variantFg.empty();
                         if (response.length > 0) {
                             $.each(response, function(index, value) {
-                                $kelompokTanggal.append(
+                                $variantFg.append(
                                     $('<option></option>').val(value).text(value)
                                 );
                             });
                         }
-                    },
-                    error: function() {
-                        console.error('Gagal memuat kelompok tanggal');
                     }
                 });
+
+                // Load Bulan Ke
+                $.ajax({
+                    url: "{{ route('dashboard.shelf-life.filter-options') }}",
+                    type: 'GET',
+                    data: {
+                        type: 'bulan_ke'
+                    },
+                    success: function(response) {
+                        const $bulanKe = $('#bulan_ke');
+                        $bulanKe.html('<option value="">-- Semua Bulan --</option>');
+                        if (response.length > 0) {
+                            $.each(response, function(index, value) {
+                                $bulanKe.append(
+                                    $('<option></option>').val(value).text('Bulan ' + value)
+                                );
+                            });
+                        }
+                    }
+                });
+
+                // Load STK (Storage)
+                $.ajax({
+                    url: "{{ route('dashboard.shelf-life.filter-options') }}",
+                    type: 'GET',
+                    data: {
+                        type: 'stk'
+                    },
+                    success: function(response) {
+                        const $stk = $('#stk');
+                        $stk.html('<option value="">-- Semua STK --</option>');
+                        if (response.length > 0) {
+                            $.each(response, function(index, value) {
+                                $stk.append(
+                                    $('<option></option>').val(value).text(value)
+                                );
+                            });
+                        }
+                    }
+                });
+
+                // Load Tahun Filling (Last 5 years)
+                const currentYear = new Date().getFullYear();
+                const $tahunFilling = $('#tahun_filling');
+                $tahunFilling.html('<option value="">-- Semua Tahun --</option>');
+                for (let i = 0; i < 5; i++) {
+                    const year = currentYear - i;
+                    $tahunFilling.append(
+                        $('<option></option>').val(year).text(year)
+                    );
+                }
             }
 
             // Function: Load Chart Data
             function loadChartData() {
-                const kelompokSample = $('#kelompok_sample').val();
-                const kelompokTanggal = $('#kelompok_tanggal').val();
+                const filterData = {
+                    variant_fg: $('#variant_fg').val(),
+                    bulan_ke: $('#bulan_ke').val(),
+                    tanggal_produksi: $('#tanggal_produksi').val(),
+                    stk: $('#stk').val(),
+                    tanggal_filling: $('#tanggal_filling').val(),
+                    bulan_filling: $('#bulan_filling').val(),
+                    tahun_filling: $('#tahun_filling').val()
+                };
 
                 $.ajax({
                     url: "{{ route('dashboard.shelf-life.chart-data') }}",
                     type: 'GET',
-                    data: {
-                        kelompok_sample: kelompokSample,
-                        kelompok_tanggal: kelompokTanggal
-                    },
+                    data: filterData,
                     beforeSend: function() {
                         Swal.fire({
                             title: 'Loading...',
@@ -504,7 +585,7 @@
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Data Kosong',
-                                text: 'Tidak ada data untuk ditampilkan',
+                                text: 'Tidak ada data untuk ditampilkan dengan filter yang dipilih',
                             });
                             $('#dataInfoPanel').hide();
                             destroyAllCharts();
@@ -512,9 +593,15 @@
                         }
 
                         // Update info panel
-                        $('#infoKelompokSample').text(kelompokSample || 'Semua Kelompok Sample');
-                        $('#infoKelompokTanggal').text(kelompokTanggal || 'Semua Periode');
-                        $('#infoPeriode').text(data.bulan_ke.length + ' Bulan');
+                        const variantText = $('#variant_fg').val() ?
+                            $('#variant_fg').val().length + ' Variant dipilih' : 'Semua Variant';
+                        const bulanKeText = $('#bulan_ke').val() || 'Semua Bulan';
+                        const stkText = $('#stk').val() || 'Semua STK';
+
+                        $('#infoVariant').text(variantText);
+                        $('#infoBulanKe').text(bulanKeText);
+                        $('#infoSTK').text(stkText);
+                        $('#infoPeriode').text(data.bulan_ke.length + ' Data Point');
                         $('#dataInfoPanel').show();
 
                         destroyAllCharts();
@@ -550,8 +637,7 @@
                 charts.ph = createChart('phChart', 'pH', data.bulan_ke, data.ph, '#38b2ac', 'line');
                 charts.bj = createChart('bjChart', 'BJ', data.bulan_ke, data.bj, '#9f7aea', 'line');
                 charts.buih = createChart('buihChart', 'Buih', data.bulan_ke, data.buih, '#f56565', 'line');
-                charts.visco = createChart('viscoChart', 'Visco', data.bulan_ke, data.visco, '#667eea',
-                    'bar');
+                charts.visco = createChart('viscoChart', 'Visco', data.bulan_ke, data.visco, '#667eea', 'bar');
                 charts.totalNitrogen = createChart('totalNitrogenChart', 'Total Nitrogen', data.bulan_ke, data
                     .total_nitrogen, '#4299e1', 'bar');
 
@@ -562,7 +648,7 @@
                 charts.ym = createChart('ymChart', 'YM', data.bulan_ke, data.ym, '#fbd38d', 'line');
             }
 
-            // Function: Create Chart
+            // Function: Create Chart dengan Data Labels
             function createChart(canvasId, label, labels, data, color, type = 'line') {
                 const ctx = document.getElementById(canvasId);
 
@@ -654,7 +740,37 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'customDataLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+
+                            chart.data.datasets.forEach(function(dataset, i) {
+                                const meta = chart.getDatasetMeta(i);
+
+                                if (!meta.hidden) {
+                                    meta.data.forEach(function(element, index) {
+                                        ctx.fillStyle = '#2c3e50';
+                                        ctx.font = 'bold 10px Arial';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'bottom';
+
+                                        const value = dataset.data[index];
+                                        if (value !== null && value !== undefined) {
+                                            const text = value.toFixed(2);
+                                            const padding = 5;
+                                            const position = element
+                                                .tooltipPosition();
+
+                                            ctx.fillText(text, position.x, position
+                                                .y - padding);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }]
                 };
 
                 return new Chart(ctx, config);

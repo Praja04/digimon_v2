@@ -60,6 +60,7 @@
                                             <th>#</th>
                                             <th>Tanggal Produksi</th>
                                             <th>Nomor PO</th>
+                                            <th>Variant</th>
                                             <th>Storage</th>
                                             <th>Progress</th>
                                             <th>Detail</th>
@@ -191,6 +192,10 @@
                     {
                         data: 'nomor_po',
                         name: 'nomor_po'
+                    },
+                    {
+                        data: 'variant',
+                        name: 'variant'
                     },
                     {
                         data: 'storage',

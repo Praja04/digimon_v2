@@ -19,6 +19,7 @@ class ShelfLifeSamplingDetail extends Model
         'ruang_sl',
         'bin_location',
         'is_checked',
+        'tanggal_analisa',
     ];
 
     public function shelfLifeSample()

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\ShelfLifeSamples;
 use App\Models\ShelfLifeSamplingDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ShelfLifeController extends Controller
 {
@@ -13,20 +15,78 @@ class ShelfLifeController extends Controller
         return view('dashboard.shelf_life.index');
     }
 
-    public function getChartData(Request $request)
+    public function getFilterOptions(Request $request)
     {
-        $kelompokSample = $request->kelompok_sample;
-        $kelompokTanggal = $request->kelompok_tanggal;
+        $type = $request->type;
 
-        $query = ShelfLifeSamplingDetail::with(['shelfLifeSamplingKimia', 'shelfLifeSamplingMikro'])
-            ->where('is_checked', true);
+        switch ($type) {
+            case 'variant':
+                $data = ShelfLifeSamplingDetail::select('variant_fg')
+                    ->distinct()
+                    ->whereNotNull('variant_fg')
+                    ->where('is_checked', true)
+                    ->orderBy('variant_fg', 'asc')
+                    ->pluck('variant_fg');
+                break;
 
-        if ($kelompokSample) {
-            $query->where('kelompok_sample', $kelompokSample);
+            case 'bulan_ke':
+                $data = ShelfLifeSamplingDetail::select('bulan_ke')
+                    ->distinct()
+                    ->whereNotNull('bulan_ke')
+                    ->where('is_checked', true)
+                    ->orderBy('bulan_ke', 'asc')
+                    ->pluck('bulan_ke');
+                break;
+
+            case 'stk':
+                $data = ShelfLifeSamples::select('storage')
+                    ->distinct()
+                    ->whereNotNull('storage')
+                    ->orderBy('storage', 'asc')
+                    ->pluck('storage');
+                break;
+
+            default:
+                $data = [];
         }
 
-        if ($kelompokTanggal) {
-            $query->where('kelompok_tanggal', $kelompokTanggal);
+        return response()->json($data);
+    }
+
+    public function getChartData(Request $request)
+    {
+        $query = ShelfLifeSamplingDetail::with(['shelfLifeSample.productionBatch', 'shelfLifeSamplingKimia', 'shelfLifeSamplingMikro'])
+            ->where('is_checked', true);
+
+        if ($request->filled('variant_fg') && !empty($request->variant_fg)) {
+            $query->whereIn('variant_fg', $request->variant_fg);
+        }
+
+        if ($request->filled('bulan_ke')) {
+            $query->where('bulan_ke', $request->bulan_ke);
+        }
+
+        if ($request->filled('tanggal_produksi')) {
+            $query->whereHas('shelfLifeSample.productionBatch', function ($q) use ($request) {
+                $q->whereDate('date', $request->tanggal_produksi);
+            });
+        }
+        if ($request->filled('stk')) {
+            $query->whereHas('shelfLifeSample', function ($q) use ($request) {
+                $q->where('storage', $request->stk);
+            });
+        }
+
+        if ($request->filled('tanggal_filling')) {
+            $query->whereDate('tanggal_filling', $request->tanggal_filling);
+        }
+
+        if ($request->filled('bulan_filling')) {
+            $query->whereMonth('tanggal_filling', $request->bulan_filling);
+        }
+
+        if ($request->filled('tahun_filling')) {
+            $query->whereYear('tanggal_filling', $request->tahun_filling);
         }
 
         $details = $query->orderBy('bulan_ke', 'asc')->get();
@@ -54,7 +114,6 @@ class ShelfLifeController extends Controller
         foreach ($groupedData as $bulan => $items) {
             $bulanKe[] = $bulan;
 
-            // Collect all values for KIMIA parameters
             $naclValues = [];
             $brixValues = [];
             $awValues = [];
@@ -64,14 +123,12 @@ class ShelfLifeController extends Controller
             $viscoValues = [];
             $totalNitrogenValues = [];
 
-            // Collect all values for MIKRO parameters
             $ebValues = [];
             $saValues = [];
             $tpcValues = [];
             $ymValues = [];
 
             foreach ($items as $detail) {
-                // Collect KIMIA data
                 if ($detail->shelfLifeSamplingKimia) {
                     $kimia = $detail->shelfLifeSamplingKimia;
 
@@ -85,7 +142,6 @@ class ShelfLifeController extends Controller
                     if (!is_null($kimia->total_nitrogen)) $totalNitrogenValues[] = $kimia->total_nitrogen;
                 }
 
-                // Collect MIKRO data
                 if ($detail->shelfLifeSamplingMikro) {
                     $mikro = $detail->shelfLifeSamplingMikro;
 
@@ -96,7 +152,6 @@ class ShelfLifeController extends Controller
                 }
             }
 
-            // Calculate averages for KIMIA
             $naclData[] = !empty($naclValues) ? round(array_sum($naclValues) / count($naclValues), 2) : null;
             $brixData[] = !empty($brixValues) ? round(array_sum($brixValues) / count($brixValues), 2) : null;
             $awData[] = !empty($awValues) ? round(array_sum($awValues) / count($awValues), 4) : null;
@@ -106,7 +161,6 @@ class ShelfLifeController extends Controller
             $viscoData[] = !empty($viscoValues) ? round(array_sum($viscoValues) / count($viscoValues), 2) : null;
             $totalNitrogenData[] = !empty($totalNitrogenValues) ? round(array_sum($totalNitrogenValues) / count($totalNitrogenValues), 2) : null;
 
-            // Calculate averages for MIKRO
             $ebData[] = !empty($ebValues) ? round(array_sum($ebValues) / count($ebValues), 2) : null;
             $saData[] = !empty($saValues) ? round(array_sum($saValues) / count($saValues), 2) : null;
             $tpcData[] = !empty($tpcValues) ? round(array_sum($tpcValues) / count($tpcValues), 2) : null;
@@ -132,6 +186,9 @@ class ShelfLifeController extends Controller
         ]);
     }
 
+    /**
+     * Legacy method - kept for backward compatibility
+     */
     public function getKelompokTanggal(Request $request)
     {
         $kelompokSample = $request->kelompok_sample;
