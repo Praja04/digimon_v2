@@ -52,15 +52,18 @@ Route::middleware(['auth'])->group(function () {
         // Monitoring - Storage Mikro
         Route::get('/dashboard/monitoring-storage-mikro', [App\Http\Controllers\Dashboard\MonitoringStorageMikroController::class, 'index'])->name('dashboard.monitoring-storage-mikro.index');
 
-        // Dashboard - Press Test Mesin
-        Route::get('/dashboard/press-test-mesin', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'index'])->name('dashboard.press-test-mesin.index');
-        Route::get('/dashboard/press-test-mesin/export', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'export'])->name('dashboard.press-test-mesin.export');
-
         // Dashboard - Shelf Life
         Route::get('/dashboard/shelf-life', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'index'])->name('dashboard.shelf-life.index');
         Route::get('/dashboard/shelf-life/chart-data', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getChartData'])->name('dashboard.shelf-life.chart-data');
         Route::get('/dashboard/shelf-life/kelompok-tanggal', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getKelompokTanggal'])->name('dashboard.shelf-life.kelompok-tanggal');
         Route::get('/dashboard/shelf-life/filter-options', [App\Http\Controllers\Dashboard\ShelfLifeController::class, 'getFilterOptions'])->name('dashboard.shelf-life.filter-options');
+
+        // Dashboard - Press Test Mesin
+        Route::get('/dashboard/press-test-mesin', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'index'])->name('dashboard.press-test-mesin.index');
+        Route::get('/dashboard/press-test-mesin/export', [App\Http\Controllers\Dashboard\PressTestMesinController::class, 'export'])->name('dashboard.press-test-mesin.export');
+
+        // Dashboard - Timbangan Retail
+        Route::get('/dashboard/timbangan-retail', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'index'])->name('dashboard.timbangan-retail.index');
     });
 
     /*------------------------------------------

@@ -95,7 +95,7 @@
                                         aria-controls="Mesin">
                                         <i class="mdi mdi-cog-outline"></i> <span>Mesin</span>
                                     </a>
-                                    <div class="collapse menu-dropdown {{ request()->routeIs(['dashboard.press-test-mesin.index']) ? 'show' : '' }}"
+                                    <div class="collapse menu-dropdown {{ request()->routeIs(['dashboard.press-test-mesin.index', 'dashboard.timbangan-retail.index']) ? 'show' : '' }}"
                                         id="Mesin">
                                         <ul class="nav nav-sm flex-column">
                                             <li class="nav-item">
@@ -105,7 +105,8 @@
                                                 </a>
                                             </li>
                                             <li class="nav-item">
-                                                <a href="#" class="nav-link">
+                                                <a href="{{ route('dashboard.timbangan-retail.index') }}"
+                                                    class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.index') ? 'active' : '' }}">
                                                     <i class="mdi mdi-scale-bathroom"></i> Timbangan Retail
                                                 </a>
                                             </li>
