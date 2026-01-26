@@ -1,7 +1,7 @@
 @extends('layouts.component.main')
 @section('title', 'Dashboard - Press Test Mesin')
 
-@section('styles')
+@push('styles')
     <style>
         .chart-container {
             position: relative;
@@ -64,31 +64,11 @@
             background: white;
         }
 
-        .shift-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        .shift-1 {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-
-        .shift-2 {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-
-        .shift-3 {
-            background-color: #e0e7ff;
-            color: #3730a3;
+        .multiselect-container {
+            position: relative;
         }
     </style>
-@endsection
+@endpush
 
 @section('content')
     <div class="page-content">
@@ -111,38 +91,41 @@
             <!-- end page title -->
 
             <!-- Filter Card -->
-            <div class="row">
+            <div class="row mb-3">
                 <div class="col-12">
-                    <div class="filter-card">
-                        <div class="row align-items-end">
-                            <div class="col-md-2">
-                                <div class="mb-3">
+                    <div class="card filter-card">
+                        <div class="card-body">
+
+                            <!-- Filter Fields -->
+                            <div class="row g-3 align-items-end">
+                                <!-- Tanggal -->
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <label for="filterTanggal" class="form-label">
                                         <i class="ri-calendar-line me-1"></i>Tanggal
                                     </label>
                                     <input type="date" class="form-control" id="filterTanggal">
                                 </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="mb-3">
+
+                                <!-- Shift -->
+                                <div class="col-12 col-sm-6 col-md-2">
                                     <label for="filterShift" class="form-label">
                                         <i class="ri-time-line me-1"></i>Shift
                                     </label>
                                     <select class="form-select" id="filterShift">
-                                        <option value="">Semua Shift</option>
-                                        <option value="1">Shift 1 (06:00 - 14:00)</option>
-                                        <option value="2">Shift 2 (14:00 - 22:00)</option>
-                                        <option value="3">Shift 3 (22:00 - 06:00)</option>
+                                        <option value="">Semua</option>
+                                        <option value="1">Shift 1</option>
+                                        <option value="2">Shift 2</option>
+                                        <option value="3">Shift 3</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="mb-3">
+
+                                <!-- Variant -->
+                                <div class="col-12 col-sm-6 col-md-2">
                                     <label for="filterVariant" class="form-label">
                                         <i class="ri-list-check me-1"></i>Variant
                                     </label>
                                     <select class="form-select" id="filterVariant">
-                                        <option value="">Semua Variant</option>
+                                        <option value="">Semua</option>
                                         <option value="P 77">P 77</option>
                                         <option value="P 250">P 250</option>
                                         <option value="P 270">P 270</option>
@@ -152,54 +135,44 @@
                                         <option value="P 1000">P 1000</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="mb-3">
+
+                                <!-- Status -->
+                                <div class="col-12 col-sm-6 col-md-2">
                                     <label for="filterStatus" class="form-label">
                                         <i class="ri-shield-check-line me-1"></i>Status
                                     </label>
                                     <select class="form-select" id="filterStatus">
-                                        <option value="">Semua Status</option>
+                                        <option value="">Semua</option>
                                         <option value="OK">OK</option>
                                         <option value="Bocor">Bocor</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="mb-3">
+
+                                <!-- Jumlah Data -->
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <label for="filterLimit" class="form-label">
                                         <i class="ri-database-2-line me-1"></i>Jumlah Data
                                     </label>
                                     <select class="form-select" id="filterLimit">
-                                        <option value="25">25</option>
-                                        <option value="50" selected>50</option>
+                                        <option value="25" selected>25</option>
+                                        <option value="50">50</option>
                                         <option value="100">100</option>
                                         <option value="250">250</option>
-                                        <option value="500">500</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <div class="mb-3 d-flex gap-2">
-                                    <button class="btn btn-primary flex-grow-1" id="btnApplyFilter">
-                                        <i class="ri-filter-3-line me-1"></i>Filter
-                                    </button>
-                                    <button class="btn btn-light" id="btnResetFilter">
-                                        <i class="ri-refresh-line"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-success" id="btnExport">
-                                        <i class="ri-file-excel-2-line me-1"></i>Export Excel
-                                    </button>
-                                    <button class="btn btn-info" id="btnRefresh">
-                                        <i class="ri-refresh-line me-1"></i>Refresh Data
-                                    </button>
-                                </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+                                <button class="btn btn-primary" id="btnApplyFilter">
+                                    <i class="ri-filter-3-line me-1"></i>Terapkan
+                                </button>
+                                <button class="btn btn-outline-secondary" id="btnResetFilter">
+                                    <i class="ri-refresh-line me-1"></i>Reset
+                                </button>
+                                <button class="btn btn-success" id="btnExport">
+                                    <i class="ri-file-excel-2-line me-1"></i>Export
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -296,7 +269,9 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">Grafik Jarak vs Batas - Mesin 1</h5>
-                            <div id="shiftInfo"></div>
+                            <button class="btn btn-sm btn-primary" id="btnRefresh">
+                                <i class="ri-refresh-line"></i> Refresh
+                            </button>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -340,6 +315,7 @@
     <script>
         let jarakChart, statusChart;
         let allData = [];
+        let filteredData = [];
         let isAutoRefresh = false;
 
         $(document).ready(function() {
@@ -354,14 +330,15 @@
             $('#filterTanggal').val(today);
 
             // Event handlers
-            $('#btnApplyFilter').on('click', applyFilter);
+            $('#btnApplyFilter').on('click', function() {
+                fetchData();
+            });
             $('#btnResetFilter').on('click', resetFilter);
             $('#btnRefresh').on('click', refreshData);
 
             $('#btnExport').on('click', function() {
                 const params = new URLSearchParams({
                     tanggal: $('#filterTanggal').val(),
-                    shift: $('#filterShift').val(),
                     variant: $('#filterVariant').val(),
                     status: $('#filterStatus').val(),
                     limit: $('#filterLimit').val(),
@@ -376,32 +353,25 @@
             // Initial fetch
             fetchData();
 
-            // Auto refresh setiap 30 detik
+            // Auto refresh setiap 10 detik
             setInterval(function() {
                 isAutoRefresh = true;
                 fetchData();
-            }, 30000);
+            }, 10000);
         });
 
-        // Fetch data dari API dengan parameter filter
+        // Fetch data dari API
         function fetchData() {
-            const params = {
-                tanggal: $('#filterTanggal').val(),
-                shift: $('#filterShift').val(),
-                variant: $('#filterVariant').val(),
-                status: $('#filterStatus').val(),
-                limit: $('#filterLimit').val()
-            };
-
-            // Hapus parameter yang kosong
-            Object.keys(params).forEach(key => {
-                if (!params[key]) delete params[key];
-            });
-
             $.ajax({
                 url: 'http://10.11.10.130:8081/api/press-test-mesin-1/all',
                 type: 'GET',
-                data: params,
+                data: {
+                    tanggal: $('#filterTanggal').val(),
+                    shift: $('#filterShift').val(),
+                    variant: $('#filterVariant').val(),
+                    status: $('#filterStatus').val(),
+                    limit: $('#filterLimit').val(),
+                },
                 dataType: 'json',
                 success: function(result) {
                     if (result.success) {
@@ -419,22 +389,15 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('Error fetching data:', error);
-                    if (!isAutoRefresh) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Koneksi Gagal',
-                            text: 'Tidak dapat terhubung ke server. Silakan cek koneksi Anda.',
-                            confirmButtonText: 'OK',
-                            confirmButtonColor: '#3085d6'
-                        });
-                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Koneksi Gagal',
+                        text: 'Tidak dapat terhubung ke server. Silakan cek koneksi Anda.',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3085d6'
+                    });
                 }
             });
-        }
-
-        // Apply filter
-        function applyFilter() {
-            fetchData();
         }
 
         // Reset filter
@@ -444,7 +407,7 @@
             $('#filterShift').val('');
             $('#filterVariant').val('');
             $('#filterStatus').val('');
-            $('#filterLimit').val('100');
+            $('#filterLimit').val('25');
             fetchData();
         }
 
@@ -461,39 +424,38 @@
                 }
             });
 
-            fetchData();
-
-            setTimeout(function() {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: 'Data berhasil diperbarui',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            }, 500);
-        }
-
-        // Update shift info badge
-        function updateShiftInfo() {
-            const shift = $('#filterShift').val();
-            let shiftText = '';
-
-            if (shift === '1') {
-                shiftText = '<span class="shift-badge shift-1">Shift 1: 06:00 - 14:00</span>';
-            } else if (shift === '2') {
-                shiftText = '<span class="shift-badge shift-2">Shift 2: 14:00 - 22:00</span>';
-            } else if (shift === '3') {
-                shiftText = '<span class="shift-badge shift-3">Shift 3: 22:00 - 06:00</span>';
-            }
-
-            $('#shiftInfo').html(shiftText);
+            $.ajax({
+                url: 'http://10.11.10.130:8081/api/press-test-mesin-1/all',
+                type: 'GET',
+                dataType: 'json',
+                success: function(result) {
+                    if (result.success) {
+                        allData = result.data;
+                        fetchData();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Data berhasil diperbarui',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Refresh',
+                        text: 'Tidak dapat memuat data terbaru',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            });
         }
 
         // Update dashboard dengan data
         function updateDashboard(data) {
-            updateShiftInfo();
-
             // Cek jika data kosong
             if (data.length === 0) {
                 showEmptyState();
@@ -507,11 +469,15 @@
 
         // Show empty state
         function showEmptyState() {
+            // Hide charts
             $('#jarakChart').hide();
             $('#statusChart').hide();
+
+            // Show empty state
             $('#emptyStateJarak').show();
             $('#emptyStateStatus').show();
 
+            // Reset statistics to 0
             $('#totalData').text(0);
             $('#statusOK').text(0);
             $('#statusBocor').text(0);
@@ -520,8 +486,11 @@
 
         // Hide empty state
         function hideEmptyState() {
+            // Show charts
             $('#jarakChart').show();
             $('#statusChart').show();
+
+            // Hide empty state
             $('#emptyStateJarak').hide();
             $('#emptyStateStatus').hide();
         }
@@ -529,10 +498,16 @@
         // Update statistics cards
         function updateStatistics(data) {
             const totalData = data.length;
-            const statusOK = data.filter(item => item.status === 'OK').length;
-            const statusBocor = data.filter(item => item.status === 'Bocor').length;
+            const statusOK = data.filter(function(item) {
+                return item.status === 'OK';
+            }).length;
+            const statusBocor = data.filter(function(item) {
+                return item.status === 'Bocor';
+            }).length;
             const avgJarak = totalData > 0 ?
-                (data.reduce((sum, item) => sum + parseFloat(item.jarak), 0) / totalData).toFixed(3) : 0;
+                (data.reduce(function(sum, item) {
+                    return sum + parseFloat(item.jarak);
+                }, 0) / totalData).toFixed(3) : 0;
 
             $('#totalData').text(totalData);
             $('#statusOK').text(statusOK);
@@ -542,34 +517,37 @@
 
         // Update charts
         function updateCharts(data) {
-            // Prepare data for line chart
+            // Prepare data for line chart - group by variant
             const variantGroups = {};
-            data.forEach(item => {
+            $.each(data, function(index, item) {
                 if (!variantGroups[item.variant]) {
                     variantGroups[item.variant] = [];
                 }
                 variantGroups[item.variant].push(item);
             });
 
+            // Sort variants
             const sortedVariants = Object.keys(variantGroups).sort();
+
             const labels = [];
             const jarakData = [];
             const batasData = [];
             const colors = [];
             const createdAtData = [];
 
-            sortedVariants.forEach(variant => {
+            $.each(sortedVariants, function(index, variant) {
                 const items = variantGroups[variant];
-                items.forEach((item, idx) => {
+                $.each(items, function(idx, item) {
                     labels.push(variant + ' #' + (idx + 1));
                     jarakData.push(parseFloat(item.jarak));
                     batasData.push(parseFloat(item.batas));
                     createdAtData.push(item.created_at);
+                    // Color based on status
                     colors.push(item.status === 'OK' ? '#22c55e' : '#ef4444');
                 });
             });
 
-            // Line Chart
+            // Line Chart - Jarak vs Batas dengan area fill
             const jarakOptions = {
                 series: [{
                     name: 'Jarak',
@@ -589,7 +567,15 @@
                         autoScaleYaxis: true
                     },
                     toolbar: {
-                        show: true
+                        show: true,
+                        tools: {
+                            download: true,
+                            zoom: true,
+                            zoomin: true,
+                            zoomout: true,
+                            pan: true,
+                            reset: true
+                        }
                     },
                     animations: {
                         enabled: !isAutoRefresh,
@@ -606,6 +592,15 @@
                     dashArray: [0, 8]
                 },
                 colors: ['#4bc0c0', '#ff6384'],
+                fill: {
+                    type: ['solid', 'solid'],
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1,
+                        stops: [0, 90, 100]
+                    }
+                },
                 markers: {
                     size: 5,
                     colors: colors,
@@ -623,6 +618,9 @@
                         style: {
                             fontSize: '11px'
                         }
+                    },
+                    tooltip: {
+                        enabled: false
                     }
                 },
                 yaxis: {
@@ -634,17 +632,34 @@
                         }
                     },
                     labels: {
-                        formatter: val => val.toFixed(2)
+                        formatter: function(val) {
+                            return val.toFixed(2);
+                        }
                     }
                 },
                 legend: {
                     position: 'top',
                     horizontalAlign: 'left',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    markers: {
+                        width: 12,
+                        height: 12,
+                        radius: 2
+                    }
                 },
                 grid: {
                     borderColor: '#f1f1f1',
-                    strokeDashArray: 3
+                    strokeDashArray: 3,
+                    xaxis: {
+                        lines: {
+                            show: true
+                        }
+                    },
+                    yaxis: {
+                        lines: {
+                            show: true
+                        }
+                    }
                 },
                 tooltip: {
                     shared: true,
@@ -668,9 +683,10 @@
                             second: '2-digit'
                         });
 
-                        return '<div class="apexcharts-tooltip-custom" style="padding: 12px; background: white; border: 1px solid #e3e3e3; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
-                        '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e3e3e3;">' +
-                        '<strong style="font-size: 13px; color: #333;">' + labels[dataPointIndex] + '</strong>' +
+                        return '<div class="apexcharts-tooltip-custom" style="padding: 12px; background: white; border: 1px solid #e3e3e3; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">' +
+                            '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e3e3e3;">' +
+                            '<strong style="font-size: 13px; color: #333;">' + labels[dataPointIndex] +
+                            '</strong>' +
                             '</div>' +
                             '<div style="margin-bottom: 6px;">' +
                             '<span style="display: inline-block; width: 10px; height: 10px; background: #4bc0c0; border-radius: 50%; margin-right: 6px;"></span>' +
@@ -685,7 +701,8 @@
                                 3) + ' cm</strong>' +
                             '</div>' +
                             '<div style="padding-top: 6px; border-top: 1px solid #e3e3e3; font-size: 11px; color: #999;">' +
-                            formattedDate + ' ' + formattedTime +
+                            formattedDate + ' ' +
+                            formattedTime +
                             '</div>' +
                             '</div>';
                     }
@@ -698,9 +715,19 @@
             jarakChart = new ApexCharts(document.querySelector("#jarakChart"), jarakOptions);
             jarakChart.render();
 
-            // Donut Chart
-            const statusOK = data.filter(item => item.status === 'OK').length;
-            const statusBocor = data.filter(item => item.status === 'Bocor').length;
+            if (isAutoRefresh) {
+                setTimeout(function() {
+                    isAutoRefresh = false;
+                }, 100);
+            }
+
+            // Donut Chart - Status Distribution
+            const statusOK = data.filter(function(item) {
+                return item.status === 'OK';
+            }).length;
+            const statusBocor = data.filter(function(item) {
+                return item.status === 'Bocor';
+            }).length;
 
             const statusOptions = {
                 series: [statusOK, statusBocor],
@@ -708,7 +735,9 @@
                     type: 'donut',
                     height: 350,
                     animations: {
-                        enabled: !isAutoRefresh
+                        enabled: !isAutoRefresh,
+                        easing: 'easeinout',
+                        speed: 800
                     }
                 },
                 labels: ['OK', 'Bocor'],
@@ -719,10 +748,30 @@
                             size: '70%',
                             labels: {
                                 show: true,
+                                name: {
+                                    show: true,
+                                    fontSize: '16px',
+                                    fontWeight: 600
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '24px',
+                                    fontWeight: 700,
+                                    formatter: function(val) {
+                                        return val;
+                                    }
+                                },
                                 total: {
                                     show: true,
                                     label: 'Total Data',
-                                    formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    color: '#6c757d',
+                                    formatter: function(w) {
+                                        return w.globals.seriesTotals.reduce(function(a, b) {
+                                            return a + b;
+                                        }, 0);
+                                    }
                                 }
                             }
                         }
@@ -730,12 +779,34 @@
                 },
                 legend: {
                     position: 'bottom',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    markers: {
+                        width: 12,
+                        height: 12,
+                        radius: 2
+                    }
                 },
                 dataLabels: {
                     enabled: true,
-                    formatter: (val, opts) => opts.w.config.series[opts.seriesIndex]
-                }
+                    formatter: function(val, opts) {
+                        return opts.w.config.series[opts.seriesIndex];
+                    },
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 600
+                    }
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            height: 300
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
             };
 
             if (statusChart) {
@@ -743,10 +814,6 @@
             }
             statusChart = new ApexCharts(document.querySelector("#statusChart"), statusOptions);
             statusChart.render();
-
-            if (isAutoRefresh) {
-                setTimeout(() => isAutoRefresh = false, 100);
-            }
         }
     </script>
 @endsection

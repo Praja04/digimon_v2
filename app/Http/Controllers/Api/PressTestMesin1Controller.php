@@ -33,19 +33,19 @@ class PressTestMesin1Controller extends Controller
         try {
             $query = PressTestMesin1::query();
 
-            if ($request->has('tanggal') && $request->tanggal) {
+            if ($request->filled('tanggal')) {
                 $query->whereDate('created_at', $request->tanggal);
             }
 
-            if ($request->has('variant') && $request->variant) {
+            if ($request->filled('variant')) {
                 $query->where('variant', $request->variant);
             }
 
-            if ($request->has('status') && $request->status) {
+            if ($request->filled('status')) {
                 $query->where('status', $request->status);
             }
 
-            if ($request->has('shift') && $request->shift) {
+            if ($request->filled('shift')) {
                 $shift = $request->shift;
 
                 if ($shift == '1') {
@@ -55,17 +55,17 @@ class PressTestMesin1Controller extends Controller
                     $query->whereTime('created_at', '>=', '14:00:00')
                         ->whereTime('created_at', '<', '22:00:00');
                 } elseif ($shift == '3') {
-                    if ($request->has('tanggal') && $request->tanggal) {
+                    if ($request->filled('tanggal')) {
                         $tanggal = $request->tanggal;
                         $tanggalBesok = date('Y-m-d', strtotime($tanggal . ' +1 day'));
 
                         $query->where(function ($q) use ($tanggal, $tanggalBesok) {
-                            $q->where(function ($subQ) use ($tanggal) {
-                                $subQ->whereDate('created_at', $tanggal)
+                            $q->where(function ($sub) use ($tanggal) {
+                                $sub->whereDate('created_at', $tanggal)
                                     ->whereTime('created_at', '>=', '22:00:00');
                             })
-                                ->orWhere(function ($subQ) use ($tanggalBesok) {
-                                    $subQ->whereDate('created_at', $tanggalBesok)
+                                ->orWhere(function ($sub) use ($tanggalBesok) {
+                                    $sub->whereDate('created_at', $tanggalBesok)
                                         ->whereTime('created_at', '<', '06:00:00');
                                 });
                         });
@@ -78,20 +78,17 @@ class PressTestMesin1Controller extends Controller
                 }
             }
 
-            $limit = $request->input('limit', 50);
-            if ($limit == 'all') {
-                $pressTests = $query->orderBy('created_at', 'desc')->get();
-            } else {
-                $pressTests = $query->orderBy('created_at', 'desc')
-                    ->limit((int)$limit)
-                    ->get();
-            }
+            $limit = $request->get('limit', 25);
+
+            $data = $query
+                ->orderBy('created_at', 'desc')
+                ->take($limit)
+                ->get();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data retrieved successfully.',
-                'data' => $pressTests,
-                'total' => $pressTests->count(),
+                'data' => $data,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
