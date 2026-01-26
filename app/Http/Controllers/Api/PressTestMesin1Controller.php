@@ -31,7 +31,7 @@ class PressTestMesin1Controller extends Controller
     public function getAll()
     {
         try {
-            $pressTests = PressTestMesin1::orderBy('created_at', 'desc')->get();
+            $pressTests = PressTestMesin1::orderBy('created_at', 'desc')->take(500)->get();
 
             return response()->json([
                 'success' => true,
