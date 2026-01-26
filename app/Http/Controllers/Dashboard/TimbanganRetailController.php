@@ -29,9 +29,12 @@ class TimbanganRetailController extends Controller
         $dataMesin = TimbanganRetailMesin::select('mesin', DB::raw('count(*) as total_transaksi'), DB::raw('sum(berat) as total_berat'))
             ->whereDate('waktu', today())
             ->groupBy('mesin')
+            ->orderBy('total_transaksi', 'desc')
+            ->limit(10)
             ->get();
 
-        $transaksiTerbaru = TimbanganRetailMesin::orderBy('waktu', 'desc')
+        $transaksiTerbaru = TimbanganRetailMesin::whereDate('waktu', today())
+            ->orderBy('waktu', 'desc')
             ->limit(10)
             ->get();
 
