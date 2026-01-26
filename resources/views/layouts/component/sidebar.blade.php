@@ -106,7 +106,7 @@
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#" class="nav-link">
-                                                    <i class="mdi mdi-package-variant"></i> Retail
+                                                    <i class="mdi mdi-scale-bathroom"></i> Timbangan Retail
                                                 </a>
                                             </li>
                                         </ul>
