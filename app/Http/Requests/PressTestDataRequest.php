@@ -14,20 +14,20 @@ class PressTestDataRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_analis' => 'required|string|max:255',
+            'nama_analis_field' => 'required|string|max:255',
             'variant' => 'required|string|max:255',
             'batas' => 'required',
-            'mesin' => 'required',
+            'mesin_press_test' => 'required',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'nama_analis' => 'Nama Analis',
+            'nama_analis_field' => 'Nama Analis Field',
             'variant' => 'Variant',
             'batas' => 'Batas',
-            'mesin' => 'Mesin',
+            'mesin_press_test' => 'Mesin Press Test',
         ];
     }
 }

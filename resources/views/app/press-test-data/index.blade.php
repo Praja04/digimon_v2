@@ -36,7 +36,7 @@
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Nama Analis</th>
+                                            <th>Nama Analis Field</th>
                                             <th>Shift</th>
                                             <th>Variant</th>
                                             <th>Batas</th>
@@ -67,10 +67,10 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <input type="hidden" name="id" id="id">
-                            <label for="nama_analis" class="form-label">Nama Analis <span
+                            <label for="nama_analis_field" class="form-label">Nama Analis Field <span
                                     style="color: red">*</span></label>
-                            <input type="text" id="nama_analis" name="nama_analis" class="form-control" autofocus>
-                            <small class="text-danger errorNamaAnalis"></small>
+                            <input type="text" id="nama_analis_field" name="nama_analis_field" class="form-control" autofocus>
+                            <small class="text-danger errorNamaAnalisField"></small>
                         </div>
                         <div class="mb-3">
                             <label for="variant" class="form-label">Variant <span style="color: red">*</span></label>
@@ -92,16 +92,48 @@
                             <small class="text-danger errorBatas"></small>
                         </div>
                         <div class="mb-3">
-                            <label for="mesin" class="form-label">Mesin <span style="color: red">*</span></label>
-                            <select id="mesin" name="mesin" class="form-control select2">
+                            <label for="mesin_press_test" class="form-label">Mesin Press Test <span
+                                    style="color: red">*</span></label>
+                            <select id="mesin_press_test" name="mesin_press_test" class="form-control select2">
                                 <option value="">Pilih Mesin</option>
-                                <option value="Mesin 1">Mesin 1</option>
-                                <option value="Mesin 2">Mesin 2</option>
-                                <option value="Mesin 3">Mesin 3</option>
-                                <option value="Mesin 4">Mesin 4</option>
-                                <option value="Mesin 5">Mesin 5</option>
+                                <option value="P5">P5</option>
+                                <option value="P6">P6</option>
+                                <option value="P7">P7</option>
+                                <option value="P8">P8</option>
+                                <option value="P9">P9</option>
                             </select>
-                            <small class="text-danger errorMesin"></small>
+                            <small class="text-danger errorMesinPressTest"></small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mesin_retail" class="form-label">Mesin Retail (Cooming Soon)</label>
+                            <select id="mesin_retail" name="mesin_retail" class="form-control select2">
+                                <option value="">Pilih Mesin</option>
+                                <option value="D1 : D">D1 : D</option>
+                                <option value="D2 : E">D2 : E</option>
+                                <option value="D3 : F">D3 : F</option>
+                                <option value="D4 : G">D4 : G</option>
+                                <option value="D5 : H">D5 : H</option>
+                                <option value="D6 : I">D6 : I</option>
+                                <option value="D7 : J">D7 : J</option>
+                                <option value="D8 : K">D8 : K</option>
+                                <option value="D9 : C">D9 : C</option>
+                                <option value="D10 : L">D10 : L</option>
+                                <option value="D11 : B">D11 : B</option>
+                                <option value="D12 : AE">D12 : AE</option>
+                                <option value="D13 : AF">D13 : AF</option>
+                                <option value="D14 : AG">D14 : AG</option>
+                                <option value="D15 : AH">D15 : AH</option>
+                                <option value="D16 : AI">D16 : AI</option>
+                                <option value="D17 : AJ">D17 : AJ</option>
+                                <option value="C1 : O">C1 : O</option>
+                                <option value="C2 : P">C2 : P</option>
+                                <option value="C3 : R">C3 : R</option>
+                                <option value="C7 : W">C7 : W</option>
+                                <option value="F1 : V">F1 : V</option>
+                                <option value="F2 : A">F2 : A</option>
+                                <option value="F3 : U">F3 : U</option>
+                            </select>
+                            <small class="text-danger errorMesinRetail"></small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -189,8 +221,8 @@
                         searchable: false
                     },
                     {
-                        data: 'nama_analis',
-                        name: 'nama_analis'
+                        data: 'nama_analis_field',
+                        name: 'nama_analis_field'
                     },
                     {
                         data: 'shift',
@@ -205,8 +237,8 @@
                         name: 'batas'
                     },
                     {
-                        data: 'mesin',
-                        name: 'mesin'
+                        data: 'mesin_press_test',
+                        name: 'mesin_press_test'
                     },
                     {
                         data: 'action',
@@ -224,7 +256,7 @@
                 $('#form').trigger("reset");
 
                 $('#variant').val('').trigger('change');
-                $('#mesin').val('').trigger('change');
+                $('#mesin_press_test').val('').trigger('change');
 
                 $('.form-control').removeClass('is-invalid');
                 $('.text-danger').html('');
@@ -245,10 +277,10 @@
                         $('.text-danger').html('');
 
                         $('#variant').val(response.variant).trigger('change');
-                        $('#mesin').val(response.mesin).trigger('change');
+                        $('#mesin_press_test').val(response.mesin_press_test).trigger('change');
 
                         $('#id').val(response.id);
-                        $('#nama_analis').val(response.nama_analis);
+                        $('#nama_analis_field').val(response.nama_analis_field);
                         $('#batas').val(response.batas);
                     }
                 });
@@ -285,9 +317,9 @@
                     error: function(xhr) {
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
-                            if (errors.nama_analis) {
-                                $('#nama_analis').addClass('is-invalid');
-                                $('.errorNamaAnalis').html(errors.nama_analis.join('<br>'));
+                            if (errors.nama_analis_field) {
+                                $('#nama_analis_field').addClass('is-invalid');
+                                $('.errorNamaAnalisField').html(errors.nama_analis_field.join('<br>'));
                             }
                             if (errors.batas) {
                                 $('#batas').addClass('is-invalid');
@@ -297,9 +329,10 @@
                                 $('#variant').addClass('is-invalid');
                                 $('.errorVariant').html(errors.variant.join('<br>'));
                             }
-                            if (errors.mesin) {
-                                $('#mesin').addClass('is-invalid');
-                                $('.errorMesin').html(errors.mesin.join('<br>'));
+                            if (errors.mesin_press_test) {
+                                $('#mesin_press_test').addClass('is-invalid');
+                                $('.errorMesinPressTest').html(errors.mesin_press_test.join(
+                                    '<br>'));
                             }
                         } else {
                             Swal.fire({

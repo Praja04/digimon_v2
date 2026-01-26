@@ -46,11 +46,11 @@ class PressTestDataController extends Controller
             }
 
             $data = [
-                'nama_analis'  => $request->nama_analis,
+                'nama_analis_field'  => $request->nama_analis_field,
                 'shift'  => $shift,
                 'variant'  => $request->variant,
                 'batas' => $request->batas,
-                'mesin' => $request->mesin,
+                'mesin_press_test' => $request->mesin_press_test,
             ];
 
             PressTestData::updateOrCreate(
