@@ -74,7 +74,7 @@ Route::post('/monitoring-storage-kimia/revisi', [App\Http\Controllers\Api\Monito
 Route::post('/monitoring-storage-mikro', [App\Http\Controllers\Api\MonitoringStorageMikroController::class, 'store'])->name('api.monitoring.storage.mikro.store');
 
 
-Route::post('mesin', [App\Http\Controllers\Api\MesinController::class, 'store']);
+Route::post('mesin', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'store']);
 
 // Press Test Data (CRUD)
 Route::get('/press-test-data', [App\Http\Controllers\Api\PressTestDataController::class, 'index'])->name('api.press-test-data.index');

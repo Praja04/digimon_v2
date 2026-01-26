@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Mesin;
+use App\Models\TimbanganRetailMesin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class MesinController extends Controller
+class TimbanganRetailMesinController extends Controller
 {
     public function store(Request $request)
     {
@@ -18,6 +18,13 @@ class MesinController extends Controller
             'status' => 'required|string',
             'berat' => 'required|numeric',
             'unit' => 'required|string|max:50'
+        ], [], [
+            'mesin' => 'Mesin',
+            'variant' => 'Variant',
+            'waktu' => 'Waktu',
+            'status' => 'Status',
+            'berat' => 'Berat',
+            'unit' => 'Unit',
         ]);
 
         if ($validator->fails()) {
@@ -28,7 +35,7 @@ class MesinController extends Controller
             ], 422);
         }
 
-        $mesin = Mesin::create([
+        $mesin = TimbanganRetailMesin::create([
             'mesin' => $request->mesin,
             'variant' => $request->variant,
             'waktu' => $request->waktu,
