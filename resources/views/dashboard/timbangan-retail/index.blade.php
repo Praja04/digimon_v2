@@ -21,6 +21,51 @@
             </div>
             <!-- end page title -->
 
+            <!-- Filter Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="filterForm" class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Tanggal</label>
+                                    <input type="date" class="form-control" id="tanggal" name="tanggal"
+                                        value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Shift</label>
+                                    <select class="form-select" id="shift" name="shift">
+                                        <option value="">Semua Shift</option>
+                                        <option value="1">Shift 1</option>
+                                        <option value="2">Shift 2</option>
+                                        <option value="3">Shift 3</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" id="status_hasil" name="status_hasil">
+                                        <option value="">Semua Status</option>
+                                        <option value="OK">OK</option>
+                                        <option value="NOT OK">NOT OK</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="d-flex align-items-end gap-2">
+                                        <button type="submit" class="btn btn-primary flex-fill">
+                                            <i class="mdi mdi-filter me-1"></i>Apply Filter
+                                        </button>
+                                        <button type="button" id="btnReset" class="btn btn-light flex-fill">
+                                            <i class="mdi mdi-refresh me-1"></i>Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Statistics Cards -->
             <div class="row">
                 <div class="col-xl-3 col-md-6">
@@ -30,9 +75,7 @@
                                 <div class="flex-grow-1">
                                     <p class="text-uppercase fw-medium text-muted mb-2">Total Berat Hari Ini</p>
                                     <h4 class="fs-22 fw-semibold mb-0">
-                                        <span class="counter-value"
-                                            data-target="{{ $beratHariIni }}">{{ number_format($beratHariIni, 2) }}</span>
-                                        kg
+                                        <span id="beratHariIni">0.00</span> kg
                                     </h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -54,8 +97,7 @@
                                 <div class="flex-grow-1">
                                     <p class="text-uppercase fw-medium text-muted mb-2">Transaksi Hari Ini</p>
                                     <h4 class="fs-22 fw-semibold mb-0">
-                                        <span class="counter-value"
-                                            data-target="{{ $transaksiHariIni }}">{{ $transaksiHariIni }}</span>
+                                        <span id="transaksiHariIni">0</span>
                                     </h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -77,9 +119,7 @@
                                 <div class="flex-grow-1">
                                     <p class="text-uppercase fw-medium text-muted mb-2">Rata-rata Berat</p>
                                     <h4 class="fs-22 fw-semibold mb-0">
-                                        <span class="counter-value"
-                                            data-target="{{ $rataRataBerat }}">{{ number_format($rataRataBerat ?? 0, 2) }}</span>
-                                        kg
+                                        <span id="rataRataBerat">0.00</span> kg
                                     </h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -100,10 +140,8 @@
                             <div class="d-flex align-items-center">
                                 <div class="flex-grow-1">
                                     <p class="text-uppercase fw-medium text-muted mb-2">Mesin Paling Aktif</p>
-                                    <h4 class="fs-22 fw-semibold mb-0">
-                                        {{ $mesinAktif->mesin ?? '-' }}
-                                    </h4>
-                                    <p class="text-muted mb-0"><small>{{ $mesinAktif->total ?? 0 }} transaksi</small></p>
+                                    <h4 class="fs-22 fw-semibold mb-0" id="mesinAktifNama">-</h4>
+                                    <p class="text-muted mb-0"><small id="mesinAktifTotal">0 transaksi</small></p>
                                 </div>
                                 <div class="flex-shrink-0">
                                     <div class="avatar-sm">
@@ -160,34 +198,12 @@
                                             <th scope="col" class="text-end">Total Berat (kg)</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @forelse($dataMesin as $mesin)
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-xs me-2">
-                                                            <div class="avatar-title bg-soft-secondary rounded-circle">
-                                                                <i class="bx bx-devices"></i>
-                                                            </div>
-                                                        </div>
-                                                        <h6 class="mb-0">{{ $mesin->mesin ?? '-' }}</h6>
-                                                    </div>
-                                                </td>
-                                                <td class="text-end">
-                                                    <span
-                                                        class="badge badge-soft-primary">{{ $mesin->total_transaksi }}</span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <strong>{{ number_format($mesin->total_berat, 2) }}</strong>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="3" class="text-center text-muted py-4">
-                                                    Tidak ada data hari ini
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                    <tbody id="dataMesinTable">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">
+                                                Memuat data...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -212,40 +228,12 @@
                                             <th scope="col">Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @forelse($transaksiTerbaru as $transaksi)
-                                            <tr>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        {{ $transaksi->waktu ? \Carbon\Carbon::parse($transaksi->waktu)->format('H:i') : '-' }}
-                                                    </small>
-                                                </td>
-                                                <td>{{ $transaksi->mesin ?? '-' }}</td>
-                                                <td>{{ $transaksi->variant ?? '-' }}</td>
-                                                <td class="text-end">
-                                                    <strong>{{ number_format($transaksi->berat, 2) }}</strong>
-                                                    <small class="text-muted">{{ $transaksi->unit ?? 'kg' }}</small>
-                                                </td>
-                                                <td>
-                                                    @if ($transaksi->status == 'success' || $transaksi->status == 'selesai')
-                                                        <span
-                                                            class="badge badge-soft-success">{{ $transaksi->status }}</span>
-                                                    @elseif($transaksi->status == 'pending' || $transaksi->status == 'proses')
-                                                        <span
-                                                            class="badge badge-soft-warning">{{ $transaksi->status }}</span>
-                                                    @else
-                                                        <span
-                                                            class="badge badge-soft-secondary">{{ $transaksi->status ?? '-' }}</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted py-4">
-                                                    Tidak ada transaksi
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                    <tbody id="transaksiTerbaruTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                Memuat data...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -261,22 +249,171 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
-        $(document).ready(function() {
-            var transaksiData = @json($transaksiPerJam);
+        let transaksiChart = null;
+        let variantChart = null;
 
-            var hours = Array.from({
-                length: 24
-            }, function(_, i) {
-                return i;
+        $(document).ready(function() {
+            loadDashboardData();
+
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                loadDashboardData();
             });
-            var transaksiCounts = hours.map(function(hour) {
-                var found = transaksiData.find(function(d) {
-                    return d.jam == hour;
-                });
+
+            $('#btnReset').on('click', function() {
+                $('#tanggal').val('{{ date('Y-m-d') }}');
+                $('#shift').val('');
+                $('#status_hasil').val('');
+                loadDashboardData();
+            });
+        });
+
+        function loadDashboardData() {
+            const tanggal = $('#tanggal').val();
+            const shift = $('#shift').val();
+            const statusHasil = $('#status_hasil').val();
+
+            $.ajax({
+                url: 'http://10.11.10.130:8081/api/mesin/dashboard',
+                method: 'GET',
+                data: {
+                    tanggal: tanggal,
+                    shift: shift,
+                    status: statusHasil
+                },
+                success: function(response) {
+                    if (response.success) {
+                        updateStatistics(response.data.statistics);
+                        updateDataMesinTable(response.data.data_mesin);
+                        updateTransaksiTerbaruTable(response.data.transaksi_terbaru);
+                        updateTransaksiChart(response.data.transaksi_per_jam);
+                        updateVariantChart(response.data.berat_per_variant);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading dashboard data:', error);
+                    showErrorState();
+                }
+            });
+        }
+
+        function formatNumber(number, decimals = 2) {
+            const num = parseFloat(number);
+            if (isNaN(num)) return '0.00';
+
+            return num.toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function updateStatistics(stats) {
+            $('#beratHariIni').text(formatNumber(stats.berat_hari_ini));
+            $('#transaksiHariIni').text(stats.transaksi_hari_ini);
+            $('#rataRataBerat').text(formatNumber(stats.rata_rata_berat));
+
+            if (stats.mesin_aktif && stats.mesin_aktif.mesin) {
+                $('#mesinAktifNama').text(stats.mesin_aktif.mesin);
+                $('#mesinAktifTotal').text(formatNumber(stats.mesin_aktif.total) + ' transaksi');
+            } else {
+                $('#mesinAktifNama').text('-');
+                $('#mesinAktifTotal').text('0 transaksi');
+            }
+        }
+
+        function updateDataMesinTable(dataMesin) {
+            const tbody = $('#dataMesinTable');
+            tbody.empty();
+
+            if (dataMesin.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            Tidak ada data hari ini
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            dataMesin.forEach(function(mesin) {
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-xs me-2">
+                                    <div class="avatar-title bg-soft-secondary rounded-circle">
+                                        <i class="bx bx-devices"></i>
+                                    </div>
+                                </div>
+                                <h6 class="mb-0">${mesin.mesin || '-'}</h6>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <span class="badge badge-soft-primary">${formatNumber(mesin.total_transaksi)}</span>
+                        </td>
+                        <td class="text-end">
+                            <strong>${formatNumber(mesin.total_berat)}</strong>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updateTransaksiTerbaruTable(transaksiTerbaru) {
+            const tbody = $('#transaksiTerbaruTable');
+            tbody.empty();
+
+            if (transaksiTerbaru.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Tidak ada transaksi
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            transaksiTerbaru.forEach(function(transaksi) {
+                const waktu = transaksi.waktu ? new Date(transaksi.waktu).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : '-';
+
+                const statusBadge = transaksi.status === 'OK' ?
+                    `<span class="badge badge-soft-success">${transaksi.status}</span>` :
+                    `<span class="badge badge-soft-danger">${transaksi.status || 'NOT OK'}</span>`;
+
+                const row = `
+                    <tr>
+                        <td>
+                            <small class="text-muted">${waktu}</small>
+                        </td>
+                        <td>${transaksi.mesin || '-'}</td>
+                        <td>${transaksi.variant || '-'}</td>
+                        <td class="text-end">
+                            <strong>${formatNumber(transaksi.berat)}</strong>
+                            <small class="text-muted">${transaksi.unit || 'kg'}</small>
+                        </td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updateTransaksiChart(transaksiPerJam) {
+            const hours = Array.from({
+                length: 24
+            }, (_, i) => i);
+            const transaksiCounts = hours.map(function(hour) {
+                const found = transaksiPerJam.find(d => d.jam == hour);
                 return found ? found.total : 0;
             });
 
-            var transaksiOptions = {
+            const options = {
                 series: [{
                     name: 'Jumlah Transaksi',
                     data: transaksiCounts
@@ -305,9 +442,7 @@
                 },
                 colors: ['#4285F4'],
                 xaxis: {
-                    categories: hours.map(function(h) {
-                        return h.toString().padStart(2, '0') + ':00';
-                    }),
+                    categories: hours.map(h => h.toString().padStart(2, '0') + ':00'),
                     labels: {
                         rotate: -45,
                         rotateAlways: false
@@ -318,9 +453,7 @@
                         text: 'Jumlah Transaksi'
                     },
                     labels: {
-                        formatter: function(val) {
-                            return Math.floor(val);
-                        }
+                        formatter: val => Math.floor(val)
                     }
                 },
                 fill: {
@@ -328,9 +461,7 @@
                 },
                 tooltip: {
                     y: {
-                        formatter: function(val) {
-                            return val + " transaksi";
-                        }
+                        formatter: val => val + " transaksi"
                     }
                 },
                 grid: {
@@ -338,22 +469,21 @@
                 }
             };
 
-            var transaksiChart = new ApexCharts($("#transaksiChart")[0], transaksiOptions);
+            if (transaksiChart) {
+                transaksiChart.destroy();
+            }
+            transaksiChart = new ApexCharts(document.querySelector("#transaksiChart"), options);
             transaksiChart.render();
+        }
 
-            var variantData = @json($beratPerVariant);
-
-            var variantOptions = {
-                series: variantData.map(function(v) {
-                    return parseFloat(v.total_berat);
-                }),
+        function updateVariantChart(beratPerVariant) {
+            const options = {
+                series: beratPerVariant.map(v => parseFloat(v.total_berat)),
                 chart: {
                     type: 'donut',
                     height: 300
                 },
-                labels: variantData.map(function(v) {
-                    return v.variant || 'Unknown';
-                }),
+                labels: beratPerVariant.map(v => v.variant || 'Unknown'),
                 colors: ['#4285F4', '#34A853', '#FBBC04', '#EA4335', '#9E9E9E'],
                 legend: {
                     position: 'bottom',
@@ -377,9 +507,7 @@
                                     fontSize: '20px',
                                     fontWeight: 600,
                                     offsetY: 5,
-                                    formatter: function(val) {
-                                        return parseFloat(val).toFixed(2) + ' kg';
-                                    }
+                                    formatter: val => formatNumber(val) + ' kg'
                                 },
                                 total: {
                                     show: true,
@@ -387,10 +515,8 @@
                                     fontSize: '14px',
                                     fontWeight: 600,
                                     formatter: function(w) {
-                                        var total = w.globals.seriesTotals.reduce(function(a, b) {
-                                            return a + b;
-                                        }, 0);
-                                        return total.toFixed(2) + ' kg';
+                                        const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                        return formatNumber(total) + ' kg';
                                     }
                                 }
                             }
@@ -402,15 +528,40 @@
                 },
                 tooltip: {
                     y: {
-                        formatter: function(val) {
-                            return val.toFixed(2) + " kg";
-                        }
+                        formatter: val => formatNumber(val) + " kg"
                     }
                 }
             };
 
-            var variantChart = new ApexCharts($("#variantChart")[0], variantOptions);
+            if (variantChart) {
+                variantChart.destroy();
+            }
+            variantChart = new ApexCharts(document.querySelector("#variantChart"), options);
             variantChart.render();
-        });
+        }
+
+        function showErrorState() {
+            $('#beratHariIni').text('0.00');
+            $('#transaksiHariIni').text('0');
+            $('#rataRataBerat').text('0.00');
+            $('#mesinAktifNama').text('-');
+            $('#mesinAktifTotal').text('0 transaksi');
+
+            $('#dataMesinTable').html(`
+                <tr>
+                    <td colspan="3" class="text-center text-danger py-4">
+                        Gagal memuat data
+                    </td>
+                </tr>
+            `);
+
+            $('#transaksiTerbaruTable').html(`
+                <tr>
+                    <td colspan="5" class="text-center text-danger py-4">
+                        Gagal memuat data
+                    </td>
+                </tr>
+            `);
+        }
     </script>
 @endsection

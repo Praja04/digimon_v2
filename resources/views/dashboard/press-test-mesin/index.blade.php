@@ -96,10 +96,10 @@
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
                                 <button class="btn btn-primary" id="btnApplyFilter">
-                                    <i class="ri-filter-3-line me-1"></i>Terapkan
+                                    <i class="mdi mdi-filter me-1"></i> Apply Filter
                                 </button>
-                                <button class="btn btn-outline-secondary" id="btnResetFilter">
-                                    <i class="ri-refresh-line me-1"></i>Reset
+                                <button class="btn btn-light" id="btnResetFilter">
+                                    <i class="mdi mdi-refresh me-1"></i>Reset
                                 </button>
                                 <button class="btn btn-success" id="btnExport">
                                     <i class="ri-file-excel-2-line me-1"></i>Export
@@ -438,7 +438,7 @@
             const avgJarak = totalData > 0 ?
                 (data.reduce(function(sum, item) {
                     return sum + parseFloat(item.jarak);
-                }, 0) / totalData).toFixed(3) : 0;
+                }, 0) / totalData).toFixed(2) : 0;
 
             $('#totalData').text(totalData);
             $('#statusOK').text(statusOK);
@@ -470,8 +470,8 @@
                 const items = variantGroups[variant];
                 $.each(items, function(idx, item) {
                     labels.push(variant + ' #' + (idx + 1));
-                    jarakData.push(parseFloat(item.jarak));
-                    batasData.push(parseFloat(item.batas));
+                    jarakData.push(parseFloat(parseFloat(item.jarak).toFixed(2)));
+                    batasData.push(parseFloat(parseFloat(item.batas).toFixed(2)));
                     createdAtData.push(item.created_at);
                     // Color based on status
                     colors.push(item.status === 'OK' ? '#22c55e' : '#ef4444');
@@ -623,13 +623,13 @@
                             '<span style="display: inline-block; width: 10px; height: 10px; background: #4bc0c0; border-radius: 50%; margin-right: 6px;"></span>' +
                             '<span style="color: #666; font-size: 12px;">Jarak: </span>' +
                             '<strong style="color: #333; font-size: 13px;">' + series[0][dataPointIndex].toFixed(
-                                3) + ' cm</strong>' +
+                                2) + ' cm</strong>' + // Ubah dari .toFixed(3) ke .toFixed(2)
                             '</div>' +
                             '<div style="margin-bottom: 8px;">' +
                             '<span style="display: inline-block; width: 10px; height: 10px; background: #ff6384; border-radius: 50%; margin-right: 6px;"></span>' +
                             '<span style="color: #666; font-size: 12px;">Batas: </span>' +
                             '<strong style="color: #333; font-size: 13px;">' + series[1][dataPointIndex].toFixed(
-                                3) + ' cm</strong>' +
+                                2) + ' cm</strong>' +
                             '</div>' +
                             '<div style="padding-top: 6px; border-top: 1px solid #e3e3e3; font-size: 11px; color: #999;">' +
                             formattedDate + ' ' +

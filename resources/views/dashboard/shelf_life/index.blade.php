@@ -72,32 +72,6 @@
             margin-left: 8px;
         }
 
-        .btn-reset {
-            background: #ffffff;
-            border: 1px solid #dee2e6;
-            color: #495057;
-            transition: all 0.3s ease;
-        }
-
-        .btn-reset:hover {
-            background: #f8f9fa;
-            border-color: #adb5bd;
-            color: #212529;
-        }
-
-        .btn-apply {
-            background: #5a67d8;
-            border: 1px solid #5a67d8;
-            color: #ffffff;
-            transition: all 0.3s ease;
-        }
-
-        .btn-apply:hover {
-            background: #4c51bf;
-            border-color: #4c51bf;
-            color: #ffffff;
-        }
-
         .data-info-panel {
             background: #5a67d8;
             color: white;
@@ -244,11 +218,11 @@
 
                             <!-- Action Buttons -->
                             <div class="col-12 col-md-3 d-flex align-items-end gap-2">
-                                <button type="button" id="btnApply" class="btn btn-apply flex-fill">
-                                    <i class="mdi mdi-filter"></i> Apply Filter
+                                <button type="button" id="btnApply" class="btn btn-primary flex-fill">
+                                    <i class="mdi mdi-filter me-1"></i>Apply Filter
                                 </button>
-                                <button type="button" id="btnReset" class="btn btn-reset flex-fill">
-                                    <i class="mdi mdi-refresh"></i> Reset
+                                <button type="button" id="btnReset" class="btn btn-light flex-fill">
+                                    <i class="mdi mdi-refresh me-1"></i>Reset
                                 </button>
                             </div>
                         </div>
