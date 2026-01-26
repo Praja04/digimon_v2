@@ -89,9 +89,28 @@
                                         class="nav-link {{ request()->routeIs('dashboard.shelf-life.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-calendar-clock"></i> Shelf Life</a>
                                 </li>
-                                <li class="nav-item"><a href="{{ route('dashboard.press-test-mesin.index') }}"
-                                        class="nav-link {{ request()->routeIs('dashboard.press-test-mesin.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-clipboard-text-play-outline"></i> Press Test Mesin</a>
+                                <li class="nav-item">
+                                    <a class="nav-link menu-link {{ request()->routeIs(['dashboard.press-test-mesin.index']) ? 'active' : '' }}"
+                                        href="#Mesin" data-bs-toggle="collapse" role="button" aria-expanded="false"
+                                        aria-controls="Mesin">
+                                        <i class="mdi mdi-cog-outline"></i> <span>Mesin</span>
+                                    </a>
+                                    <div class="collapse menu-dropdown {{ request()->routeIs(['dashboard.press-test-mesin.index']) ? 'show' : '' }}"
+                                        id="Mesin">
+                                        <ul class="nav nav-sm flex-column">
+                                            <li class="nav-item">
+                                                <a href="{{ route('dashboard.press-test-mesin.index') }}"
+                                                    class="nav-link {{ request()->routeIs('dashboard.press-test-mesin.index') ? 'active' : '' }}">
+                                                    <i class="mdi mdi-clipboard-text-play-outline"></i> Press Test
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="#" class="nav-link">
+                                                    <i class="mdi mdi-package-variant"></i> Retail
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </li>
                             </ul>
                         </div>
@@ -137,7 +156,14 @@
                     @endif
 
                     {{-- Blending Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Mikro, Analis Field --}}
-                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia', 'Analis Mikro', 'Analis Field']))
+                    @if (in_array($userRole, [
+                            'Head Of Dapartement',
+                            'Supervisor',
+                            'Foreman',
+                            'Analis Kimia',
+                            'Analis Mikro',
+                            'Analis Field',
+                        ]))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['analisa.blending-awal.menu', 'analisa.blending-awal.index', 'analisa.blending-awal.show', 'analisa.blending-awal.show_batch', 'analisa.blending-awal-mikro.index', 'analisa.blending-awal-mikro.show', 'analisa.blending-awal-mikro.show_batch']) ? 'active' : '' }}"
                                 href="{{ route('analisa.blending-awal.menu') }}">
@@ -147,7 +173,14 @@
                     @endif
 
                     {{-- Monitoring Pasteurisasi & Storage Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia, Analis Field, Analis Mikro --}}
-                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia', 'Analis Field', 'Analis Mikro']))
+                    @if (in_array($userRole, [
+                            'Head Of Dapartement',
+                            'Supervisor',
+                            'Foreman',
+                            'Analis Kimia',
+                            'Analis Field',
+                            'Analis Mikro',
+                        ]))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['monitoring-storage-kimia.index', 'monitoring-storage-kimia.show', 'analisa.monitoring-turun-blending.menu', 'analisa.monitoring-turun-blending.index', 'analisa.monitoring-turun-blending.show', 'analisa.monitoring-turun-blending.show_batch', 'analisa.monitoring-pasteurisasi.index', 'analisa.monitoring-pasteurisasi.show', 'analisa.monitoring-pasteurisasi.show_batch', 'analisa.monitoring-storage-kimia.index', 'analisa.monitoring-storage-kimia.show', 'analisa.monitoring-storage-kimia.show_batch', 'analisa.monitoring-storage-mikro.index', 'analisa.monitoring-storage-mikro.show', 'analisa.monitoring-storage-mikro.show_batch', 'monitoring-storage-before-use.index', 'monitoring-storage-before-use.analisa']) ? 'active' : '' }}"
                                 href="{{ route('analisa.monitoring-turun-blending.menu') }}">

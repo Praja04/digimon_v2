@@ -28,15 +28,70 @@ class PressTestMesin1Controller extends Controller
         }
     }
 
-    public function getAll()
+    public function getAll(Request $request)
     {
         try {
-            $pressTests = PressTestMesin1::orderBy('created_at', 'desc')->take(500)->get();
+            $query = PressTestMesin1::query();
+
+            if ($request->has('tanggal') && $request->tanggal) {
+                $query->whereDate('created_at', $request->tanggal);
+            }
+
+            if ($request->has('variant') && $request->variant) {
+                $query->where('variant', $request->variant);
+            }
+
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('shift') && $request->shift) {
+                $shift = $request->shift;
+
+                if ($shift == '1') {
+                    $query->whereTime('created_at', '>=', '06:00:00')
+                        ->whereTime('created_at', '<', '14:00:00');
+                } elseif ($shift == '2') {
+                    $query->whereTime('created_at', '>=', '14:00:00')
+                        ->whereTime('created_at', '<', '22:00:00');
+                } elseif ($shift == '3') {
+                    if ($request->has('tanggal') && $request->tanggal) {
+                        $tanggal = $request->tanggal;
+                        $tanggalBesok = date('Y-m-d', strtotime($tanggal . ' +1 day'));
+
+                        $query->where(function ($q) use ($tanggal, $tanggalBesok) {
+                            $q->where(function ($subQ) use ($tanggal) {
+                                $subQ->whereDate('created_at', $tanggal)
+                                    ->whereTime('created_at', '>=', '22:00:00');
+                            })
+                                ->orWhere(function ($subQ) use ($tanggalBesok) {
+                                    $subQ->whereDate('created_at', $tanggalBesok)
+                                        ->whereTime('created_at', '<', '06:00:00');
+                                });
+                        });
+                    } else {
+                        $query->where(function ($q) {
+                            $q->whereTime('created_at', '>=', '22:00:00')
+                                ->orWhereTime('created_at', '<', '06:00:00');
+                        });
+                    }
+                }
+            }
+
+            $limit = $request->input('limit', 50);
+            if ($limit == 'all') {
+                $pressTests = $query->orderBy('created_at', 'desc')->get();
+            } else {
+                $pressTests = $query->orderBy('created_at', 'desc')
+                    ->limit((int)$limit)
+                    ->get();
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data retrieved successfully.',
                 'data' => $pressTests,
+                'total' => $pressTests->count(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
