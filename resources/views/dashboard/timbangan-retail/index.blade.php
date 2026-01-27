@@ -75,7 +75,7 @@
                                 <div class="flex-grow-1">
                                     <p class="text-uppercase fw-medium text-muted mb-2">Total Berat Hari Ini</p>
                                     <h4 class="fs-22 fw-semibold mb-0">
-                                        <span id="beratHariIni">0.00</span> kg
+                                        <span id="beratHariIni">0.00</span> g
                                     </h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -119,7 +119,7 @@
                                 <div class="flex-grow-1">
                                     <p class="text-uppercase fw-medium text-muted mb-2">Rata-rata Berat</p>
                                     <h4 class="fs-22 fw-semibold mb-0">
-                                        <span id="rataRataBerat">0.00</span> kg
+                                        <span id="rataRataBerat">0.00</span> g
                                     </h4>
                                 </div>
                                 <div class="flex-shrink-0">
@@ -195,7 +195,7 @@
                                         <tr>
                                             <th scope="col">Mesin</th>
                                             <th scope="col" class="text-end">Transaksi</th>
-                                            <th scope="col" class="text-end">Total Berat (kg)</th>
+                                            <th scope="col" class="text-end">Total Berat (g)</th>
                                         </tr>
                                     </thead>
                                     <tbody id="dataMesinTable">
@@ -395,7 +395,7 @@
                         <td>${transaksi.variant || '-'}</td>
                         <td class="text-end">
                             <strong>${formatNumber(transaksi.berat)}</strong>
-                            <small class="text-muted">${transaksi.unit || 'kg'}</small>
+                            <small class="text-muted">${transaksi.unit || 'g'}</small>
                         </td>
                         <td>${statusBadge}</td>
                     </tr>
@@ -507,7 +507,7 @@
                                     fontSize: '20px',
                                     fontWeight: 600,
                                     offsetY: 5,
-                                    formatter: val => formatNumber(val) + ' kg'
+                                    formatter: val => formatNumber(val) + ' g'
                                 },
                                 total: {
                                     show: true,
@@ -516,7 +516,7 @@
                                     fontWeight: 600,
                                     formatter: function(w) {
                                         const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                                        return formatNumber(total) + ' kg';
+                                        return formatNumber(total) + ' g';
                                     }
                                 }
                             }
@@ -528,7 +528,7 @@
                 },
                 tooltip: {
                     y: {
-                        formatter: val => formatNumber(val) + " kg"
+                        formatter: val => formatNumber(val) + " g"
                     }
                 }
             };
