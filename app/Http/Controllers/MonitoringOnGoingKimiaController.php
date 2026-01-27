@@ -280,7 +280,7 @@ class MonitoringOnGoingKimiaController extends Controller
             event(new ProcessOutsideDisposition(
                 $notificationTitle,
                 $monitoring->productionBatch->id,
-                'Monitoring On Going Kimia',
+                'Monitoring On Going - Kimia',
                 $request->status_disposition,
                 $message,
                 route('monitoring-ongoing-kimia.analisa', $monitoring->id)

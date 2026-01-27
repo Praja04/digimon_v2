@@ -37,6 +37,21 @@ class MonitoringOnGoingMikroController extends Controller
                         ->locale('id')
                         ->translatedFormat('d F Y');
                 })
+                ->addColumn('hasil', function ($data) {
+                    if ($data->hasil && $data->disposition == null) {
+                        return '<span class="badge bg-primary">Menunggu Disposisi</span>';
+                    } elseif ($data->disposition) {
+                        $hasil = $data->hasil ?? '-';
+                        $badgeClass = match ($hasil) {
+                            'OK' => 'badge bg-success',
+                            'NOT OK' => 'badge bg-danger',
+                            default => 'badge bg-secondary',
+                        };
+                        return '<span class="' . $badgeClass . '">' . $hasil . '</span>';
+                    } else {
+                        return '<span class="badge bg-primary">Belum dianalisa</span>';
+                    }
+                })
                 ->addColumn('detail', function ($data) {
                     return '
                         <button class="btn btn-sm btn-info btn-detail" data-id="' . $data->id . '" title="Lihat Detail">
@@ -61,7 +76,7 @@ class MonitoringOnGoingMikroController extends Controller
                         </button>
                     ';
                 })
-                ->rawColumns(['action', 'detail', 'analisa'])
+                ->rawColumns(['action', 'detail', 'analisa', 'hasil'])
                 ->make(true);
         }
 

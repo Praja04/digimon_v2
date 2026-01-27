@@ -72,7 +72,6 @@ class NotificationController extends Controller
     {
         $process = $notification->process;
 
-        // Map process ke route yang sesuai
         $routeMap = [
             'GGA' => $notification->redirect,
             'GGAS' => $notification->redirect,
@@ -81,6 +80,9 @@ class NotificationController extends Controller
             'Monitoring Pasteurisasi' => $notification->redirect,
             'Monitoring Storage Kimia' => $notification->redirect,
             'Monitoring Daily Tank Kimia' => $notification->redirect,
+            'Monitoring On Going Kimia' => $notification->redirect,
+            'Monitoring On Going Mikro' => $notification->redirect,
+
         ];
 
         return $routeMap[$process] ?? route('notifications.index');

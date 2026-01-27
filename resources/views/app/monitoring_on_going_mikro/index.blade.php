@@ -65,6 +65,7 @@
                                             <th>Nomor PO</th>
                                             <th>Variant</th>
                                             <th>Tanggal Filling</th>
+                                            <th>Status</th>
                                             <th>Detail</th>
                                             <th>Analisa</th>
                                             <th width="1">Aksi</th>
@@ -663,6 +664,12 @@
                     {
                         data: 'filling_date',
                         name: 'filling_date'
+                    },
+                    {
+                        data: 'hasil',
+                        name: 'hasil',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'detail',
