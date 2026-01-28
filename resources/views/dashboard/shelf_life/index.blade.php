@@ -44,9 +44,24 @@
             font-size: 14px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             padding-bottom: 12px;
             border-bottom: 2px solid #f0f0f0;
+        }
+
+        .filter-info {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #5a67d8;
+        }
+
+        .filter-info i {
+            color: #5a67d8;
+            margin-right: 6px;
         }
 
         .section-header {
@@ -151,6 +166,11 @@
                 <div class="col-12">
                     <div class="filter-section">
                         <div class="filter-header">Filter Data</div>
+                        <div class="filter-info">
+                            <i class="mdi mdi-information"></i>
+                            <strong>Info:</strong> Secara default menampilkan data hari ini. Gunakan filter tanggal untuk
+                            melihat data periode lain.
+                        </div>
                         <div class="row g-3">
                             <!-- Variant (Multiple Select) -->
                             <div class="col-12 col-md-3">
@@ -230,44 +250,6 @@
                 </div>
             </div>
             <!-- End Filter Section -->
-
-            <!-- Data Info Panel -->
-            <div id="dataInfoPanel" class="data-info-panel" style="display: none;">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="info-item">
-                            <div>
-                                <div class="info-label">Variant Terpilih</div>
-                                <div class="info-value" id="infoVariant">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-item">
-                            <div>
-                                <div class="info-label">Bulan Ke</div>
-                                <div class="info-value" id="infoBulanKe">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-item">
-                            <div>
-                                <div class="info-label">Storage</div>
-                                <div class="info-value" id="infoSTK">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-item">
-                            <div>
-                                <div class="info-label">Periode Data</div>
-                                <div class="info-value" id="infoPeriode">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Charts Section -->
             <div id="chartSection">
@@ -556,12 +538,25 @@
                         Swal.close();
 
                         if (data.bulan_ke.length === 0) {
+                            // Check if any date filter is set
+                            const hasDateFilter = filterData.tanggal_produksi ||
+                                filterData.tanggal_filling ||
+                                filterData.bulan_filling ||
+                                filterData.tahun_filling;
+
+                            let message = 'Tidak ada data untuk ditampilkan';
+                            if (!hasDateFilter) {
+                                message =
+                                    'Tidak ada data untuk hari ini. Gunakan filter tanggal untuk melihat data periode lain.';
+                            } else {
+                                message = 'Tidak ada data untuk filter yang dipilih.';
+                            }
+
                             Swal.fire({
-                                icon: 'warning',
+                                icon: 'info',
                                 title: 'Data Kosong',
-                                text: 'Tidak ada data untuk ditampilkan dengan filter yang dipilih',
+                                text: message,
                             });
-                            $('#dataInfoPanel').hide();
                             destroyAllCharts();
                             return;
                         }
@@ -576,7 +571,6 @@
                         $('#infoBulanKe').text(bulanKeText);
                         $('#infoSTK').text(stkText);
                         $('#infoPeriode').text(data.bulan_ke.length + ' Data Point');
-                        $('#dataInfoPanel').show();
 
                         destroyAllCharts();
                         createCharts(data);
@@ -602,7 +596,6 @@
                 charts = {};
             }
 
-            // Function: Create Charts
             function createCharts(data) {
                 // KIMIA CHARTS
                 charts.nacl = createChart('naclChart', '%NaCl', data.bulan_ke, data.nacl, '#5a67d8', 'line');
@@ -622,7 +615,6 @@
                 charts.ym = createChart('ymChart', 'YM', data.bulan_ke, data.ym, '#fbd38d', 'line');
             }
 
-            // Function: Create Chart dengan Data Labels
             function createChart(canvasId, label, labels, data, color, type = 'line') {
                 const ctx = document.getElementById(canvasId);
 

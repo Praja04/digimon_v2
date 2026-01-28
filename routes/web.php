@@ -31,6 +31,9 @@ Route::middleware(['auth'])->group(function () {
     Roles: Head Of Dapartement, Supervisor, Foreman
     --------------------------------------------*/
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman'])->group(function () {
+        // Dashboard - RMPM
+        Route::get('/dashboard/rmpm', [App\Http\Controllers\Dashboard\RMPMController::class, 'index'])->name('dashboard.rmpm.index');
+
         // Dashboard - Analisis GGA GGAS
         Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
 

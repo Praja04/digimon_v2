@@ -58,6 +58,15 @@ class ShelfLifeController extends Controller
         $query = ShelfLifeSamplingDetail::with(['shelfLifeSample.productionBatch', 'shelfLifeSamplingKimia', 'shelfLifeSamplingMikro'])
             ->where('is_checked', true);
 
+        $hasDateFilter = $request->filled('tanggal_produksi') ||
+            $request->filled('tanggal_filling') ||
+            $request->filled('bulan_filling') ||
+            $request->filled('tahun_filling');
+
+        if (!$hasDateFilter) {
+            $query->whereDate('tanggal_filling', now()->toDateString());
+        }
+
         if ($request->filled('variant_fg') && !empty($request->variant_fg)) {
             $query->whereIn('variant_fg', $request->variant_fg);
         }
@@ -186,9 +195,6 @@ class ShelfLifeController extends Controller
         ]);
     }
 
-    /**
-     * Legacy method - kept for backward compatibility
-     */
     public function getKelompokTanggal(Request $request)
     {
         $kelompokSample = $request->kelompok_sample;

@@ -3,6 +3,16 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Dashboard - RMPM
+Route::get('/dashboard/rmpm/statistics', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getStatistics'])->name('api.dashboard.rmpm.statistics');
+Route::get('/dashboard/rmpm/trend-data', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getTrendData'])->name('api.dashboard.rmpm.trend-data');
+Route::get('/dashboard/rmpm/disposition-data', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getDispositionData'])->name('api.dashboard.rmpm.disposition-data');
+Route::get('/dashboard/rmpm/top-materials', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getTopMaterials'])->name('api.dashboard.rmpm.top-materials');
+Route::get('/dashboard/rmpm/supplier-performance', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getSupplierPerformance'])->name('api.dashboard.rmpm.supplier-performance');
+Route::get('/dashboard/rmpm/vehicle-condition', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getVehicleCondition'])->name('api.dashboard.rmpm.vehicle-condition');
+Route::get('/dashboard/rmpm/packaging-findings', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getPackagingFindings'])->name('api.dashboard.rmpm.packaging-findings');
+Route::get('/dashboard/rmpm/recent-data', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getRecentData'])->name('api.dashboard.rmpm.recent-data');
+
 // Dashboard - GGA GGAS
 Route::get('/dashboard/gga-ggas/analisa', [App\Http\Controllers\Api\Dashboard\GgaGgasController::class, 'analisaGgaGgas'])->name('api.dashboard.gga-ggas.analisa');
 Route::get('/dashboard/gga-ggas/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\GgaGgasController::class, 'analisaDisposisi'])->name('api.dashboard.gga-ggas.analisa.disposisi');
@@ -76,8 +86,6 @@ Route::post('/monitoring-storage-mikro', [App\Http\Controllers\Api\MonitoringSto
 
 Route::get('/mesin/dashboard', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'getDashboardData']);
 Route::post('mesin', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'store']);
-
-
 
 // Press Test Data (CRUD)
 Route::get('/press-test-data', [App\Http\Controllers\Api\PressTestDataController::class, 'index'])->name('api.press-test-data.index');

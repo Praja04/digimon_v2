@@ -82,9 +82,9 @@
                                         class="nav-link {{ request()->routeIs('dashboard.monitoring-storage-mikro.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-bacteria"></i> Monitoring Storage Mikro</a>
                                 </li>
-                                {{-- <li class="nav-item"><a href="{{ route('dashboard.rmpm.index') }}"
+                                <li class="nav-item"><a href="{{ route('dashboard.rmpm.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.rmpm.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-chemical-weapon"></i> Dashboard RMPM</a></li> --}}
+                                            class="mdi mdi-chemical-weapon"></i> RMPM</a></li>
                                 <li class="nav-item"><a href="{{ route('dashboard.shelf-life.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.shelf-life.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-calendar-clock"></i> Shelf Life</a>
