@@ -196,7 +196,7 @@
             </div>
             <!-- Statistics Cards -->
             <div class="row g-3 mb-4">
-                <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6 col-sm-6">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -213,7 +213,7 @@
                     </div>
                 </div>
 
-                <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6 col-sm-6">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -230,7 +230,7 @@
                     </div>
                 </div>
 
-                <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6 col-sm-6">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -247,41 +247,7 @@
                     </div>
                 </div>
 
-                <div class="col-xl-2 col-md-4 col-sm-6">
-                    <div class="card stats-card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="stats-icon bg-info-light">
-                                    <i class="ri-time-line"></i>
-                                </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Avg. Sampling</p>
-                                </div>
-                            </div>
-                            <h3 class="stats-value" id="avgSamplingTime">-</h3>
-                            <p class="stats-subtitle mb-0">Waktu proses</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-2 col-md-4 col-sm-6">
-                    <div class="card stats-card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="stats-icon bg-danger-light">
-                                    <i class="ri-building-line"></i>
-                                </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Supplier Aktif</p>
-                                </div>
-                            </div>
-                            <h3 class="stats-value" id="activeSuppliers">-</h3>
-                            <p class="stats-subtitle mb-0">Terverifikasi</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6 col-sm-6">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -503,8 +469,6 @@
                         $('#totalKedatangan').text(data.total_kedatangan);
                         $('#acceptanceRate').text(data.acceptance_rate + '%');
                         $('#rejectionRate').text(data.rejection_rate + '%');
-                        $('#avgSamplingTime').text(data.avg_sampling_time + ' jam');
-                        $('#activeSuppliers').text(data.active_suppliers);
                         $('#documentCompleteness').text(data.document_completeness + '%');
                     }
                 }

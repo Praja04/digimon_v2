@@ -53,8 +53,6 @@ class RMPMController extends Controller
                 'total_kedatangan' => $totalKedatangan,
                 'acceptance_rate' => $acceptanceRate,
                 'rejection_rate' => $rejectionRate,
-                'avg_sampling_time' => $avgSamplingTime,
-                'active_suppliers' => $activeSuppliers,
                 'document_completeness' => $documentCompleteness,
             ]
         ]);
