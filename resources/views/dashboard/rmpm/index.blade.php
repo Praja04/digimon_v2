@@ -274,6 +274,11 @@
                         </div>
                         <div class="card-body position-relative">
                             <div id="trendChart"></div>
+                            <div id="emptyStateTrend" class="text-center py-5 d-none">
+                                <i class="ri-inbox-line" style="font-size:64px;color:#ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
                             <div class="loading-overlay d-none" id="trendLoading">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -290,6 +295,11 @@
                         </div>
                         <div class="card-body position-relative">
                             <div id="dispositionChart"></div>
+                            <div id="emptyStateDisposition" class="text-center py-5 d-none">
+                                <i class="ri-inbox-line" style="font-size:64px;color:#ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
                             <div class="loading-overlay d-none" id="dispositionLoading">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -309,6 +319,11 @@
                         </div>
                         <div class="card-body position-relative">
                             <div id="topMaterialsChart"></div>
+                            <div id="emptyStateTopMaterials" class="text-center py-5 d-none">
+                                <i class="ri-inbox-line" style="font-size:64px;color:#ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
                             <div class="loading-overlay d-none" id="topMaterialsLoading">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -325,6 +340,11 @@
                         </div>
                         <div class="card-body position-relative">
                             <div id="supplierChart"></div>
+                            <div id="emptyStateSupplier" class="text-center py-5 d-none">
+                                <i class="ri-inbox-line" style="font-size:64px;color:#ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
                             <div class="loading-overlay d-none" id="supplierLoading">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -344,6 +364,11 @@
                         </div>
                         <div class="card-body position-relative">
                             <div id="vehicleChart"></div>
+                            <div id="emptyStateVehicle" class="text-center py-5 d-none">
+                                <i class="ri-inbox-line" style="font-size:64px;color:#ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
                             <div class="loading-overlay d-none" id="vehicleLoading">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -360,6 +385,11 @@
                         </div>
                         <div class="card-body position-relative">
                             <div id="packagingFindingsChart"></div>
+                            <div id="emptyStatePackagingFindings" class="text-center py-5 d-none">
+                                <i class="ri-inbox-line" style="font-size:64px;color:#ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
                             <div class="loading-overlay d-none" id="packagingLoading">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -435,6 +465,17 @@
             });
         });
 
+        function showEmptyState(chartId, emptyId) {
+            $(chartId).hide();
+            $(emptyId).removeClass('d-none');
+        }
+
+
+        function showChart(chartId, emptyId) {
+            $(emptyId).addClass('d-none');
+            $(chartId).show();
+        }
+
         // Load all dashboard data
         function loadAllData() {
             const params = getFilterParams();
@@ -485,6 +526,18 @@
                 data: params,
                 success: function(response) {
                     $('#trendLoading').addClass('d-none');
+
+                    if (
+                        !response.success ||
+                        response.data.labels.length === 0
+                    ) {
+                        if (trendChart) trendChart.destroy();
+                        showEmptyState('#trendChart', '#emptyStateTrend');
+                        return;
+                    }
+
+
+                    showChart('#trendChart', '#emptyStateTrend');
 
                     if (response.success) {
                         const options = {
@@ -548,6 +601,13 @@
                 success: function(response) {
                     $('#dispositionLoading').addClass('d-none');
 
+                    if (!response.success || response.data.values.length === 0) {
+                        if (dispositionChart) dispositionChart.destroy();
+                        showEmptyState('#dispositionChart', '#emptyStateDisposition');
+                        return;
+                    }
+                    showChart('#dispositionChart', '#emptyStateDisposition');
+
                     if (response.success) {
                         const options = {
                             series: response.data.values,
@@ -589,6 +649,13 @@
                 data: params,
                 success: function(response) {
                     $('#topMaterialsLoading').addClass('d-none');
+
+                    if (!response.success || response.data.values.length === 0) {
+                        if (topMaterialsChart) topMaterialsChart.destroy();
+                        showEmptyState('#topMaterialsChart', '#emptyStateTopMaterials');
+                        return;
+                    }
+                    showChart('#topMaterialsChart', '#emptyStateTopMaterials');
 
                     if (response.success) {
                         const options = {
@@ -647,6 +714,13 @@
                 data: params,
                 success: function(response) {
                     $('#supplierLoading').addClass('d-none');
+
+                    if (!response.success || response.data.values.length === 0) {
+                        if (supplierChart) supplierChart.destroy();
+                        showEmptyState('#supplierChart', '#emptyStateSupplier');
+                        return;
+                    }
+                    showChart('#supplierChart', '#emptyStateSupplier');
 
                     if (response.success) {
                         const options = {
@@ -719,11 +793,11 @@
                     $('#vehicleLoading').addClass('d-none');
 
                     if (!response.data) {
-                        $('#vehicleChart').html(
-                            '<p class="text-center text-muted mt-4">Tidak ada data kondisi kendaraan</p>'
-                        );
+                        if (vehicleChart) vehicleChart.destroy();
+                        showEmptyState('#vehicleChart', '#emptyStateVehicle');
                         return;
                     }
+                    showChart('#vehicleChart', '#emptyStateVehicle');
 
                     const options = {
                         series: [{
@@ -766,6 +840,13 @@
                 data: params,
                 success: function(response) {
                     $('#packagingLoading').addClass('d-none');
+
+                     if (!response.success || response.data.values.length === 0) {
+                        if (packagingFindingsChart) packagingFindingsChart.destroy();
+                        showEmptyState('#packagingFindingsChart', '#emptyStatePackagingFindings');
+                        return;
+                    }
+                    showChart('#packagingFindingsChart', '#emptyStatePackagingFindings');
 
                     if (response.success) {
                         const options = {

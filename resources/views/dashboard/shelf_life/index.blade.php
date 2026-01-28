@@ -129,6 +129,14 @@
             gap: 24px;
         }
 
+        .empty-state {
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
         @media (max-width: 768px) {
             .chart-grid {
                 grid-template-columns: 1fr;
@@ -166,12 +174,8 @@
                 <div class="col-12">
                     <div class="filter-section">
                         <div class="filter-header">Filter Data</div>
-                        <div class="filter-info">
-                            <i class="mdi mdi-information"></i>
-                            <strong>Info:</strong> Secara default menampilkan data hari ini. Gunakan filter tanggal untuk
-                            melihat data periode lain.
-                        </div>
-                        <div class="row g-3">
+
+                        <div class="row mt-2">
                             <!-- Variant (Multiple Select) -->
                             <div class="col-12 col-md-3">
                                 <label for="variant_fg" class="form-label">Variant</label>
@@ -264,7 +268,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">NaCl</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateNaCl" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerNaCl" class="chart-container">
                                 <canvas id="naclChart"></canvas>
                             </div>
                         </div>
@@ -274,7 +283,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">Brix (°Bx)</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateBrix" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerBrix" class="chart-container">
                                 <canvas id="brixChart"></canvas>
                             </div>
                         </div>
@@ -284,7 +298,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">Aw</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateAw" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerAw" class="chart-container">
                                 <canvas id="awChart"></canvas>
                             </div>
                         </div>
@@ -294,7 +313,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">pH</h6>
-                            <div class="chart-container">
+                            <div id="emptyStatePh" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerPh" class="chart-container">
                                 <canvas id="phChart"></canvas>
                             </div>
                         </div>
@@ -304,7 +328,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">BJ</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateBj" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerBj" class="chart-container">
                                 <canvas id="bjChart"></canvas>
                             </div>
                         </div>
@@ -314,7 +343,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">Buih</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateBuih" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerBuih" class="chart-container">
                                 <canvas id="buihChart"></canvas>
                             </div>
                         </div>
@@ -324,7 +358,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">Visco</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateVisco" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerVisco" class="chart-container">
                                 <canvas id="viscoChart"></canvas>
                             </div>
                         </div>
@@ -334,7 +373,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">Total Nitrogen</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateTotalNitrogen" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerTotalNitrogen" class="chart-container">
                                 <canvas id="totalNitrogenChart"></canvas>
                             </div>
                         </div>
@@ -351,7 +395,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">EB</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateEb" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerEb" class="chart-container">
                                 <canvas id="ebChart"></canvas>
                             </div>
                         </div>
@@ -361,7 +410,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">SA</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateSa" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerSa" class="chart-container">
                                 <canvas id="saChart"></canvas>
                             </div>
                         </div>
@@ -371,7 +425,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">TPC</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateTpc" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerTpc" class="chart-container">
                                 <canvas id="tpcChart"></canvas>
                             </div>
                         </div>
@@ -381,7 +440,12 @@
                     <div class="card card-chart">
                         <div class="card-body">
                             <h6 class="chart-title">YM</h6>
-                            <div class="chart-container">
+                            <div id="emptyStateYm" class="text-center py-5 d-none empty-state">
+                                <i class="ri-inbox-line" style="font-size: 64px; color: #ddd;"></i>
+                                <h5 class="mt-3 text-muted">Data Tidak Tersedia</h5>
+                                <p class="text-muted">Tidak ada data yang sesuai dengan filter yang dipilih</p>
+                            </div>
+                            <div id="chartContainerYm" class="chart-container">
                                 <canvas id="ymChart"></canvas>
                             </div>
                         </div>
@@ -524,40 +588,23 @@
                     url: "{{ route('dashboard.shelf-life.chart-data') }}",
                     type: 'GET',
                     data: filterData,
-                    beforeSend: function() {
-                        Swal.fire({
-                            title: 'Loading...',
-                            text: 'Memuat data chart',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                    },
                     success: function(data) {
-                        Swal.close();
+                        console.log('Chart data received:', data);
+                        console.log('bulan_ke length:', data.bulan_ke.length);
+
+                        destroyAllCharts();
 
                         if (data.bulan_ke.length === 0) {
-                            // Check if any date filter is set
-                            const hasDateFilter = filterData.tanggal_produksi ||
-                                filterData.tanggal_filling ||
-                                filterData.bulan_filling ||
-                                filterData.tahun_filling;
-
-                            let message = 'Tidak ada data untuk ditampilkan';
-                            if (!hasDateFilter) {
-                                message =
-                                    'Tidak ada data untuk hari ini. Gunakan filter tanggal untuk melihat data periode lain.';
-                            } else {
-                                message = 'Tidak ada data untuk filter yang dipilih.';
-                            }
+                            console.log('No data found, showing empty states');
+                            showAllEmptyStates();
 
                             Swal.fire({
                                 icon: 'info',
-                                title: 'Data Kosong',
-                                text: message,
+                                title: 'Data Tidak Ditemukan',
+                                text: 'Tidak ada data yang sesuai dengan filter yang dipilih. Silakan coba kombinasi filter lain.',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#5a67d8'
                             });
-                            destroyAllCharts();
                             return;
                         }
 
@@ -572,17 +619,35 @@
                         $('#infoSTK').text(stkText);
                         $('#infoPeriode').text(data.bulan_ke.length + ' Data Point');
 
-                        destroyAllCharts();
                         createCharts(data);
                     },
                     error: function() {
-                        Swal.close();
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
                             text: 'Gagal memuat data chart',
                         });
                     }
+                });
+            }
+
+            // Function: Show All Empty States
+            function showAllEmptyStates() {
+                console.log('Showing all empty states');
+                const chartNames = ['NaCl', 'Brix', 'Aw', 'Ph', 'Bj', 'Buih', 'Visco', 'TotalNitrogen',
+                    'Eb', 'Sa', 'Tpc', 'Ym'
+                ];
+
+                chartNames.forEach(name => {
+                    console.log('Showing empty state for: emptyState' + name);
+                    const emptyStateEl = $(`#emptyState${name}`);
+                    const chartContainerEl = $(`#chartContainer${name}`);
+
+                    console.log('Empty state element found:', emptyStateEl.length);
+                    console.log('Chart container element found:', chartContainerEl.length);
+
+                    emptyStateEl.removeClass('d-none').show();
+                    chartContainerEl.hide();
                 });
             }
 
@@ -596,23 +661,101 @@
                 charts = {};
             }
 
+            // Function: Check if data is empty or all null
+            function isDataEmpty(data) {
+                return !data || data.length === 0 || data.every(val => val === null || val === undefined);
+            }
+
+            // Function: Toggle Chart or Empty State
+            function toggleChartDisplay(chartName, isEmpty) {
+                console.log(`Toggle ${chartName}: isEmpty=${isEmpty}`);
+                const emptyStateEl = $(`#emptyState${chartName}`);
+                const chartContainerEl = $(`#chartContainer${chartName}`);
+
+                if (isEmpty) {
+                    emptyStateEl.removeClass('d-none').show();
+                    chartContainerEl.hide();
+                } else {
+                    emptyStateEl.addClass('d-none').hide();
+                    chartContainerEl.show();
+                }
+            }
+
             function createCharts(data) {
                 // KIMIA CHARTS
-                charts.nacl = createChart('naclChart', '%NaCl', data.bulan_ke, data.nacl, '#5a67d8', 'line');
-                charts.brix = createChart('brixChart', 'Brix', data.bulan_ke, data.brix, '#48bb78', 'line');
-                charts.aw = createChart('awChart', 'Aw', data.bulan_ke, data.aw, '#ed8936', 'line');
-                charts.ph = createChart('phChart', 'pH', data.bulan_ke, data.ph, '#38b2ac', 'line');
-                charts.bj = createChart('bjChart', 'BJ', data.bulan_ke, data.bj, '#9f7aea', 'line');
-                charts.buih = createChart('buihChart', 'Buih', data.bulan_ke, data.buih, '#f56565', 'line');
-                charts.visco = createChart('viscoChart', 'Visco', data.bulan_ke, data.visco, '#667eea', 'bar');
-                charts.totalNitrogen = createChart('totalNitrogenChart', 'Total Nitrogen', data.bulan_ke, data
-                    .total_nitrogen, '#4299e1', 'bar');
+                const naclEmpty = isDataEmpty(data.nacl);
+                toggleChartDisplay('NaCl', naclEmpty);
+                if (!naclEmpty) {
+                    charts.nacl = createChart('naclChart', '%NaCl', data.bulan_ke, data.nacl, '#5a67d8', 'line');
+                }
+
+                const brixEmpty = isDataEmpty(data.brix);
+                toggleChartDisplay('Brix', brixEmpty);
+                if (!brixEmpty) {
+                    charts.brix = createChart('brixChart', 'Brix', data.bulan_ke, data.brix, '#48bb78', 'line');
+                }
+
+                const awEmpty = isDataEmpty(data.aw);
+                toggleChartDisplay('Aw', awEmpty);
+                if (!awEmpty) {
+                    charts.aw = createChart('awChart', 'Aw', data.bulan_ke, data.aw, '#ed8936', 'line');
+                }
+
+                const phEmpty = isDataEmpty(data.ph);
+                toggleChartDisplay('Ph', phEmpty);
+                if (!phEmpty) {
+                    charts.ph = createChart('phChart', 'pH', data.bulan_ke, data.ph, '#38b2ac', 'line');
+                }
+
+                const bjEmpty = isDataEmpty(data.bj);
+                toggleChartDisplay('Bj', bjEmpty);
+                if (!bjEmpty) {
+                    charts.bj = createChart('bjChart', 'BJ', data.bulan_ke, data.bj, '#9f7aea', 'line');
+                }
+
+                const buihEmpty = isDataEmpty(data.buih);
+                toggleChartDisplay('Buih', buihEmpty);
+                if (!buihEmpty) {
+                    charts.buih = createChart('buihChart', 'Buih', data.bulan_ke, data.buih, '#f56565', 'line');
+                }
+
+                const viscoEmpty = isDataEmpty(data.visco);
+                toggleChartDisplay('Visco', viscoEmpty);
+                if (!viscoEmpty) {
+                    charts.visco = createChart('viscoChart', 'Visco', data.bulan_ke, data.visco, '#667eea', 'bar');
+                }
+
+                const totalNitrogenEmpty = isDataEmpty(data.total_nitrogen);
+                toggleChartDisplay('TotalNitrogen', totalNitrogenEmpty);
+                if (!totalNitrogenEmpty) {
+                    charts.totalNitrogen = createChart('totalNitrogenChart', 'Total Nitrogen', data.bulan_ke, data
+                        .total_nitrogen, '#4299e1', 'bar');
+                }
 
                 // MIKRO CHARTS
-                charts.eb = createChart('ebChart', 'EB', data.bulan_ke, data.eb, '#fc8181', 'line');
-                charts.sa = createChart('saChart', 'SA', data.bulan_ke, data.sa, '#63b3ed', 'line');
-                charts.tpc = createChart('tpcChart', 'TPC', data.bulan_ke, data.tpc, '#68d391', 'line');
-                charts.ym = createChart('ymChart', 'YM', data.bulan_ke, data.ym, '#fbd38d', 'line');
+                const ebEmpty = isDataEmpty(data.eb);
+                toggleChartDisplay('Eb', ebEmpty);
+                if (!ebEmpty) {
+                    charts.eb = createChart('ebChart', 'EB', data.bulan_ke, data.eb, '#fc8181', 'line');
+                }
+
+                const saEmpty = isDataEmpty(data.sa);
+                toggleChartDisplay('Sa', saEmpty);
+                if (!saEmpty) {
+                    charts.sa = createChart('saChart', 'SA', data.bulan_ke, data.sa, '#63b3ed', 'line');
+                }
+
+                const tpcEmpty = isDataEmpty(data.tpc);
+                toggleChartDisplay('Tpc', tpcEmpty);
+                if (!tpcEmpty) {
+                    charts.tpc = createChart('tpcChart', 'TPC', data.bulan_ke, data.tpc, '#68d391', 'line');
+                }
+
+                const ymEmpty = isDataEmpty(data.ym);
+                toggleChartDisplay('Ym', ymEmpty);
+                if (!ymEmpty) {
+                    charts.ym = createChart('ymChart', 'YM', data.bulan_ke, data.ym, '#fbd38d', 'line');
+                }
             }
 
             function createChart(canvasId, label, labels, data, color, type = 'line') {
