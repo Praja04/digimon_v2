@@ -17,35 +17,35 @@ class RMPMController extends Controller
 {
     public function getStatistics(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $type = $request->input('type', 'all');
-        $supplier = $request->input('supplier', 'all');
+        $date = $request->input('date');
 
-        $dateRange = $this->getDateRange($period);
+        $query = IdentitasRM::query();
 
-        $query = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange);
-
-        if ($type !== 'all') {
-            $query->where('jenis', $type);
-        }
-
-        if ($supplier !== 'all') {
-            $query->where('supplier', $supplier);
+        if ($date) {
+            $query->whereDate('tanggal_kedatangan', $date);
         }
 
         $totalKedatangan = $query->count();
+        $identitasIds = $query->pluck('id');
 
-        $acceptCount = $this->getAcceptanceCount($query->pluck('id'));
-        $acceptanceRate = $totalKedatangan > 0 ? round(($acceptCount / $totalKedatangan) * 100, 1) : 0;
-        $rejectionRate = 100 - $acceptanceRate;
+        $acceptCount = $this->getAcceptanceCount($identitasIds);
+        if ($totalKedatangan === 0) {
+            $acceptanceRate = 0;
+            $rejectionRate = 0;
+        } else {
+            $acceptanceRate = round(($acceptCount / $totalKedatangan) * 100, 1);
+            $rejectionRate = round((($totalKedatangan - $acceptCount) / $totalKedatangan) * 100, 1);
+        }
 
-        $avgSamplingTime = $this->calculateAverageSamplingTime($query->pluck('id'));
+        $avgSamplingTime = $this->calculateAverageSamplingTime($identitasIds);
 
-        $activeSuppliers = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange)
+        $activeSuppliers = IdentitasRM::when($date, function ($q) use ($date) {
+            return $q->whereDate('tanggal_kedatangan', $date);
+        })
             ->distinct('supplier')
             ->count('supplier');
 
-        $documentCompleteness = $this->calculateDocumentCompleteness($query->pluck('id'));
+        $documentCompleteness = $this->calculateDocumentCompleteness($identitasIds);
 
         return response()->json([
             'success' => true,
@@ -62,15 +62,19 @@ class RMPMController extends Controller
 
     public function getTrendData(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $dateRange = $this->getDateRange($period);
+        $date = $request->input('date');
 
-        $data = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange)
-            ->select(
-                DB::raw('DATE(tanggal_kedatangan) as date'),
-                DB::raw('COUNT(*) as total'),
-                'jenis'
-            )
+        $query = IdentitasRM::query();
+
+        if ($date) {
+            $query->whereDate('tanggal_kedatangan', $date);
+        }
+
+        $data = $query->select(
+            DB::raw('DATE(tanggal_kedatangan) as date'),
+            DB::raw('COUNT(*) as total'),
+            'jenis'
+        )
             ->groupBy('date', 'jenis')
             ->orderBy('date')
             ->get();
@@ -79,9 +83,9 @@ class RMPMController extends Controller
         $rawMaterial = [];
         $packaging = [];
 
-        foreach ($dates as $date) {
-            $rawCount = $data->where('date', $date)->where('jenis', '!=', 'Kemasan')->sum('total');
-            $packagingCount = $data->where('date', $date)->where('jenis', 'Kemasan')->sum('total');
+        foreach ($dates as $dateItem) {
+            $rawCount = $data->where('date', $dateItem)->where('jenis', '!=', 'Kemasan')->sum('total');
+            $packagingCount = $data->where('date', $dateItem)->where('jenis', 'Kemasan')->sum('total');
 
             $rawMaterial[] = $rawCount;
             $packaging[] = $packagingCount;
@@ -90,8 +94,8 @@ class RMPMController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'labels' => $dates->map(function ($date) {
-                    return Carbon::parse($date)->format('d M');
+                'labels' => $dates->map(function ($dateItem) {
+                    return Carbon::parse($dateItem)->format('d M');
                 }),
                 'raw_material' => $rawMaterial,
                 'packaging' => $packaging,
@@ -101,11 +105,15 @@ class RMPMController extends Controller
 
     public function getDispositionData(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $dateRange = $this->getDateRange($period);
+        $date = $request->input('date');
 
-        $identitasIds = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange)
-            ->pluck('id');
+        $query = IdentitasRM::query();
+
+        if ($date) {
+            $query->whereDate('tanggal_kedatangan', $date);
+        }
+
+        $identitasIds = $query->pluck('id');
 
         // Get disposition from analisa tables
         $garamGulaDisposisi = AnalisaGaramGula::whereIn('id_identitas', $identitasIds)
@@ -135,11 +143,15 @@ class RMPMController extends Controller
 
     public function getTopMaterials(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $dateRange = $this->getDateRange($period);
+        $date = $request->input('date');
 
-        $topMaterials = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange)
-            ->select('jenis', DB::raw('COUNT(*) as count'))
+        $query = IdentitasRM::query();
+
+        if ($date) {
+            $query->whereDate('tanggal_kedatangan', $date);
+        }
+
+        $topMaterials = $query->select('jenis', DB::raw('COUNT(*) as count'))
             ->groupBy('jenis')
             ->orderByDesc('count')
             ->limit(5)
@@ -156,11 +168,15 @@ class RMPMController extends Controller
 
     public function getSupplierPerformance(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $dateRange = $this->getDateRange($period);
+        $date = $request->input('date');
 
-        $suppliers = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange)
-            ->select('supplier')
+        $query = IdentitasRM::query();
+
+        if ($date) {
+            $query->whereDate('tanggal_kedatangan', $date);
+        }
+
+        $suppliers = $query->select('supplier')
             ->distinct()
             ->limit(5)
             ->get();
@@ -168,9 +184,13 @@ class RMPMController extends Controller
         $performance = [];
 
         foreach ($suppliers as $supplier) {
-            $identitasIds = IdentitasRM::where('supplier', $supplier->supplier)
-                ->whereBetween('tanggal_kedatangan', $dateRange)
-                ->pluck('id');
+            $identitasQuery = IdentitasRM::where('supplier', $supplier->supplier);
+
+            if ($date) {
+                $identitasQuery->whereDate('tanggal_kedatangan', $date);
+            }
+
+            $identitasIds = $identitasQuery->pluck('id');
 
             $total = $identitasIds->count();
             $accepted = $this->getAcceptanceCount($identitasIds);
@@ -199,38 +219,53 @@ class RMPMController extends Controller
 
     public function getVehicleCondition(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $dateRange = $this->getDateRange($period);
+        $date = $request->input('date');
 
-        $identitasIds = IdentitasRM::whereBetween('tanggal_kedatangan', $dateRange)
-            ->pluck('id');
+        $query = IdentitasRM::query();
 
-        $conditions = SamplingKondisiMobil::whereIn('id_identitas', $identitasIds)->get();
+        if ($date) {
+            $query->whereDate('tanggal_kedatangan', $date);
+        }
 
-        $total = $conditions->count();
+        $identitasIds = $query->pluck('id');
 
-        if ($total === 0) {
+        if ($identitasIds->isEmpty()) {
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'labels' => ['Bersih', 'Kering', 'Tidak Ada Benda Asing', 'Tidak Cacat', 'Segel Baik', 'Tidak Berbau'],
-                    'values' => [0, 0, 0, 0, 0, 0],
-                ]
+                'data' => null
             ]);
         }
 
-        $bersih = round(($conditions->where('bersih', 'yes')->count() / $total) * 100, 1);
-        $kering = round(($conditions->where('kering', 'yes')->count() / $total) * 100, 1);
-        $bendaAsing = round(($conditions->where('benda_asing', 'no')->count() / $total) * 100, 1);
-        $cacat = round(($conditions->where('cacat', 'no')->count() / $total) * 100, 1);
-        $segel = round(($conditions->where('segel', 'yes')->count() / $total) * 100, 1);
-        $berbau = round(($conditions->where('berbau', 'no')->count() / $total) * 100, 1);
+        $conditions = SamplingKondisiMobil::whereIn('id_identitas', $identitasIds)->get();
+
+        if ($conditions->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => null
+            ]);
+        }
+
+        $total = $conditions->count();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'labels' => ['Bersih', 'Kering', 'Tidak Ada Benda Asing', 'Tidak Cacat', 'Segel Baik', 'Tidak Berbau'],
-                'values' => [$bersih, $kering, $bendaAsing, $cacat, $segel, $berbau],
+                'labels' => [
+                    'Bersih',
+                    'Kering',
+                    'Tidak Ada Benda Asing',
+                    'Tidak Cacat',
+                    'Segel Baik',
+                    'Tidak Berbau'
+                ],
+                'values' => [
+                    round(($conditions->where('bersih', 'yes')->count() / $total) * 100, 1),
+                    round(($conditions->where('kering', 'yes')->count() / $total) * 100, 1),
+                    round(($conditions->where('benda_asing', 'no')->count() / $total) * 100, 1),
+                    round(($conditions->where('cacat', 'no')->count() / $total) * 100, 1),
+                    round(($conditions->where('segel', 'yes')->count() / $total) * 100, 1),
+                    round(($conditions->where('berbau', 'no')->count() / $total) * 100, 1),
+                ]
             ]
         ]);
     }
@@ -263,6 +298,7 @@ class RMPMController extends Controller
 
     public function getRecentData(Request $request)
     {
+        $date = $request->input('date');
         $limit = $request->input('limit', 10);
 
         $data = IdentitasRM::with([
@@ -270,6 +306,7 @@ class RMPMController extends Controller
             'analisaShortTerm:id,id_identitas,disposisi',
             'samplingDokumen'
         ])
+            ->whereDate('tanggal_kedatangan', $date)
             ->orderByDesc('tanggal_kedatangan')
             ->limit($limit)
             ->get()

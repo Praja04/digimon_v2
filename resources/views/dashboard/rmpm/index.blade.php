@@ -46,25 +46,6 @@
             margin-top: 4px;
         }
 
-        .trend-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-top: 8px;
-        }
-
-        .trend-up {
-            background-color: #d1f4e0;
-            color: #0f7b3f;
-        }
-
-        .trend-down {
-            background-color: #ffe0e0;
-            color: #c41e3a;
-        }
-
         .chart-card {
             border: none;
             border-radius: 8px;
@@ -106,41 +87,6 @@
             border-color: #dee2e6;
         }
 
-        .table-card {
-            background: #fff;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-
-        .table-card .card-header {
-            background: #fff;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 20px;
-        }
-
-        .table-card .table {
-            margin-bottom: 0;
-        }
-
-        .table-card th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            font-size: 13px;
-            color: #495057;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #dee2e6;
-            padding: 12px;
-        }
-
-        .table-card td {
-            font-size: 14px;
-            padding: 12px;
-            vertical-align: middle;
-        }
-
         .status-badge {
             padding: 4px 10px;
             border-radius: 4px;
@@ -162,11 +108,6 @@
         .status-pending {
             background-color: #fff4e6;
             color: #cc6600;
-        }
-
-        .status-conditional {
-            background-color: #e3f2fd;
-            color: #1565c0;
         }
 
         .bg-primary-light {
@@ -197,11 +138,6 @@
         .bg-secondary-light {
             background-color: #f5f5f5;
             color: #616161;
-        }
-
-        .apexcharts-tooltip {
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .loading-overlay {
@@ -241,38 +177,23 @@
 
             <!-- Filter Section -->
             <div class="filter-card">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Periode</label>
-                        <select class="form-select" id="periodFilter">
-                            <option value="today">Hari Ini</option>
-                            <option value="week">7 Hari Terakhir</option>
-                            <option value="month" selected>30 Hari Terakhir</option>
-                            <option value="quarter">3 Bulan Terakhir</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Jenis Bahan</label>
-                        <select class="form-select" id="typeFilter">
-                            <option value="all">Semua</option>
-                            <option value="raw">Raw Material</option>
-                            <option value="Kemasan">Packaging Material</option>
-                        </select>
-                    </div>
+                <div class="row g-3 justify-content-end">
                     <div class="col-md-4">
-                        <label class="form-label">Supplier</label>
-                        <select class="form-select" id="supplierFilter">
-                            <option value="all">Semua Supplier</option>
-                        </select>
+                        <label class="form-label">Tanggal Kedatangan</label>
+                        <input type="date" class="form-control" id="dateFilter" value="">
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button class="btn btn-primary w-100" id="applyFilter">
-                            <i class="ri-filter-3-line me-1"></i> Terapkan
+                            <i class="mdi mdi-filter me-1"></i>Apply Filter
+                        </button>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-light w-100" id="resetFilter">
+                            <i class="ri-restart-line me-1"></i> Reset
                         </button>
                     </div>
                 </div>
             </div>
-
             <!-- Statistics Cards -->
             <div class="row g-3 mb-4">
                 <div class="col-xl-2 col-md-4 col-sm-6">
@@ -448,7 +369,7 @@
                 </div>
             </div>
 
-            <!-- Charts Row 4 -->
+            <!-- Charts Row 3 -->
             <div class="row g-3 mb-4">
                 <div class="col-xl-6">
                     <div class="card chart-card">
@@ -506,7 +427,7 @@
                                     </thead>
                                     <tbody id="recentDataTable">
                                         <tr>
-                                            <td colspan="8" class="text-center py-4">
+                                            <td colspan="7" class="text-center py-4">
                                                 <div class="spinner-border text-primary" role="status">
                                                     <span class="visually-hidden">Loading...</span>
                                                 </div>
@@ -532,31 +453,21 @@
 
         // Initialize on page load
         $(document).ready(function() {
-            loadSuppliers();
+            // Set default date to today
+            $('#dateFilter').val(new Date().toISOString().split('T')[0]);
+
             loadAllData();
 
             // Event listeners
             $('#applyFilter').on('click', function() {
                 loadAllData();
             });
-        });
 
-        // Load all suppliers for filter
-        function loadSuppliers() {
-            $.ajax({
-                url: '/api/dashboard/rmpm/statistics',
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        let options = '<option value="all">Semua Supplier</option>';
-                        response.data.forEach(function(supplier) {
-                            options += `<option value="${supplier}">${supplier}</option>`;
-                        });
-                        $('#supplierFilter').html(options);
-                    }
-                }
+            $('#resetFilter').on('click', function() {
+                $('#dateFilter').val('');
+                loadAllData();
             });
-        }
+        });
 
         // Load all dashboard data
         function loadAllData() {
@@ -574,11 +485,10 @@
 
         // Get filter parameters
         function getFilterParams() {
-            return {
-                period: $('#periodFilter').val(),
-                type: $('#typeFilter').val(),
-                supplier: $('#supplierFilter').val()
-            };
+            const date = $('#dateFilter').val();
+            return date ? {
+                date: date
+            } : {};
         }
 
         // Load Statistics
@@ -833,8 +743,6 @@
             });
         }
 
-     
-
         // Load Vehicle Condition Chart
         function loadVehicleChart(params) {
             $('#vehicleLoading').removeClass('d-none');
@@ -846,41 +754,40 @@
                 success: function(response) {
                     $('#vehicleLoading').addClass('d-none');
 
-                    if (response.success) {
-                        const options = {
-                            series: [{
-                                name: 'Compliance Rate',
-                                data: response.data.values
-                            }],
-                            chart: {
-                                height: 300,
-                                type: 'radar',
-                                toolbar: {
-                                    show: false
-                                }
-                            },
-                            xaxis: {
-                                categories: response.data.labels
-                            },
-                            yaxis: {
-                                min: 0,
-                                max: 100
-                            },
-                            colors: ['#3f51b5'],
-                            fill: {
-                                opacity: 0.3
-                            },
-                            markers: {
-                                size: 4
-                            }
-                        };
-
-                        if (vehicleChart) {
-                            vehicleChart.destroy();
-                        }
-                        vehicleChart = new ApexCharts(document.querySelector("#vehicleChart"), options);
-                        vehicleChart.render();
+                    if (!response.data) {
+                        $('#vehicleChart').html(
+                            '<p class="text-center text-muted mt-4">Tidak ada data kondisi kendaraan</p>'
+                        );
+                        return;
                     }
+
+                    const options = {
+                        series: [{
+                            name: 'Compliance Rate',
+                            data: response.data.values
+                        }],
+                        chart: {
+                            height: 300,
+                            type: 'radar',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        xaxis: {
+                            categories: response.data.labels
+                        },
+                        yaxis: {
+                            min: 0,
+                            max: 100
+                        }
+                    };
+
+                    if (vehicleChart) vehicleChart.destroy();
+                    vehicleChart = new ApexCharts(
+                        document.querySelector("#vehicleChart"),
+                        options
+                    );
+                    vehicleChart.render();
                 }
             });
         }
@@ -950,7 +857,7 @@
                         let rows = '';
 
                         if (response.data.length === 0) {
-                            rows = '<tr><td colspan="8" class="text-center py-4">Tidak ada data</td></tr>';
+                            rows = '<tr><td colspan="7" class="text-center py-4">Tidak ada data</td></tr>';
                         } else {
                             response.data.forEach(function(item) {
                                 let disposisiBadge = '';
