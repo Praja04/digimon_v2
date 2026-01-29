@@ -138,7 +138,12 @@
                                                     </td>
                                                     <td>
                                                         @if ($pasteurisasi->revisi != null)
-                                                            {{ $pasteurisasi->batch_range }} ❗
+                                                            {{ $pasteurisasi->batch_range }}
+
+                                                            <span class="badge {{ $badgeClass }} ms-1"
+                                                                title="Revisi ke-{{ $pasteurisasi->revisi }}">
+                                                                Rev. {{ $pasteurisasi->revisi }}
+                                                            </span>
                                                         @else
                                                             {{ $pasteurisasi->batch_range }}
                                                         @endif

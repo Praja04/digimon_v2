@@ -20,12 +20,6 @@ Route::middleware(['auth'])->group(function () {
     --------------------------------------------*/
     Route::get('/halaman-utama', [App\Http\Controllers\HomepageController::class, 'index'])->name('homepage.index');
 
-    Route::get('/press-test-data', [App\Http\Controllers\PressTestDataController::class, 'index'])->name('press-test-data.index');
-    Route::post('/press-test-data', [App\Http\Controllers\PressTestDataController::class, 'store'])->name('press-test-data.store');
-    Route::get('/press-test-data/{id}', [App\Http\Controllers\PressTestDataController::class, 'edit'])->name('press-test-data.edit');
-    Route::delete('/press-test-data/{id}', [App\Http\Controllers\PressTestDataController::class, 'destroy'])->name('press-test-data.destroy');
-
-
     /*------------------------------------------
     Dashboard
     Roles: Head Of Dapartement, Supervisor, Foreman
@@ -133,6 +127,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/shelf-life/sample/detail', [App\Http\Controllers\ShelfLife\SampleController::class, 'storeSamplingDetail'])->name('shelf-life.sample.detail.store');
         Route::get('/shelf-life/sample/detail/edit/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'editSamplingDetail'])->name('shelf-life.sample.detail.edit');
         Route::delete('/shelf-life/sample/detail/{id}', [App\Http\Controllers\ShelfLife\SampleController::class, 'destroySamplingDetail'])->name('shelf-life.sample.detail.destroy');
+
+        Route::get('/press-test-data', [App\Http\Controllers\PressTestDataController::class, 'index'])->name('press-test-data.index');
+        Route::post('/press-test-data', [App\Http\Controllers\PressTestDataController::class, 'store'])->name('press-test-data.store');
+        Route::get('/press-test-data/{id}', [App\Http\Controllers\PressTestDataController::class, 'edit'])->name('press-test-data.edit');
+        Route::delete('/press-test-data/{id}', [App\Http\Controllers\PressTestDataController::class, 'destroy'])->name('press-test-data.destroy');
     });
 
     /*------------------------------------------

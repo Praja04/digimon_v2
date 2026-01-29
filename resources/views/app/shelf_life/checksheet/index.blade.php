@@ -113,7 +113,7 @@
                     },
                     {
                         data: 'tanggal_produksi_formatted',
-                        name: 'tanggal_produksi',
+                        name: 'tanggal_produksi_formatted',
                         render: function(data, type, row) {
                             return data;
                         }
@@ -145,7 +145,7 @@
                     },
                     {
                         data: 'tanggal_analisa_formatted',
-                        name: 'tanggal_analisa',
+                        name: 'tanggal_analisa_formatted',
                         render: function(data, type, row) {
                             return data;
                         }

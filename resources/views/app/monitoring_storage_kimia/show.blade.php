@@ -153,7 +153,12 @@
                                                                     <tr class="{{ $rowClass }}">
                                                                         <td>
                                                                             @if ($storageKimia->revisi != null)
-                                                                                {{ $storageKimia->batch_range }} ❗
+                                                                                {{ $storageKimia->batch_range }}
+                                                                                
+                                                                                <span class="badge {{ $badgeClass }} ms-1"
+                                                                                    title="Revisi ke-{{ $storageKimia->revisi }}">
+                                                                                    Rev. {{ $storageKimia->revisi }}
+                                                                                </span>
                                                                             @else
                                                                                 {{ $storageKimia->batch_range }}
                                                                             @endif
@@ -289,7 +294,12 @@
                                                                     <tr class="{{ $rowClass }}">
                                                                         <td>
                                                                             @if ($storageMikro->revisi != null)
-                                                                                {{ $storageMikro->batch_range }} ❗
+                                                                                {{ $storageMikro->batch_range }}
+                                                                                
+                                                                                <span class="badge {{ $badgeClass }} ms-1"
+                                                                                    title="Revisi ke-{{ $storageMikro->revisi }}">
+                                                                                    Rev. {{ $storageMikro->revisi }}
+                                                                                </span>
                                                                             @else
                                                                                 {{ $storageMikro->batch_range }}
                                                                             @endif
@@ -620,6 +630,10 @@
                     // Tampilkan nomor batch dan revisi
                     $('#batch_number_blending').val(batch);
                     $('#revisi_blending').val(res.revisi);
+                    $('#no_blending_revisi').val(res.nomor_blending);
+                    $('#volume_revisi').val(res.volume);
+                    $('#storage_revisi').val(res.storage);
+
 
                     // Handle berdasarkan disposition
                     if (disposition === 'Leveling') {

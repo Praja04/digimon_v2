@@ -137,7 +137,12 @@
                                                     </td>
                                                     <td>
                                                         @if ($blending->revisi != null)
-                                                            {{ $blending->batch_range }} ❗
+                                                            {{ $blending->batch_range }}
+
+                                                            <span class="badge {{ $badgeClass }} ms-1"
+                                                                title="Revisi ke-{{ $blending->revisi }}">
+                                                                Rev. {{ $blending->revisi }}
+                                                            </span>
                                                         @else
                                                             {{ $blending->batch_range }}
                                                         @endif
@@ -701,8 +706,9 @@
                             .text('-');
                         $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph, #detail_tn')
                             .text('-');
-                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_aroma, #detail_kristal').text(
-                            '-');
+                        $('#detail_buih, #detail_organo, #detail_endapan, #detail_aroma, #detail_kristal')
+                            .text(
+                                '-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
                         $('#detail_created_by, #detail_created_at, #detail_updated_at').text(
@@ -733,7 +739,7 @@
                         $('#detail_endapan').text(response.endapan || '-');
                         $('#detail_aroma').text(response.aroma || '-');
                         $('#detail_kristal').text(response.kristal || '-');
-                        
+
                         // Status & Disposisi
                         $('#detail_status').text(response.status || '-');
                         $('#detail_disposition').text(response.disposition || '-');

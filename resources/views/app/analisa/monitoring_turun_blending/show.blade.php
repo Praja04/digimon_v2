@@ -137,7 +137,12 @@
                                                     </td>
                                                     <td>
                                                         @if ($blending->revisi != null)
-                                                            {{ $blending->batch_range }} ❗
+                                                            {{ $blending->batch_range }}
+
+                                                            <span class="badge {{ $badgeClass }} ms-1"
+                                                                title="Revisi ke-{{ $blending->revisi }}">
+                                                                Rev. {{ $blending->revisi }}
+                                                            </span>
                                                         @else
                                                             {{ $blending->batch_range }}
                                                         @endif

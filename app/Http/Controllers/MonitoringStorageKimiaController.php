@@ -436,7 +436,17 @@ class MonitoringStorageKimiaController extends Controller
         // Jika belum ada, revisi dimulai dari 1
         $nextRevisi = is_null($lastRevisi) ? 1 : $lastRevisi + 1;
 
-        return response()->json(['revisi' => $nextRevisi]);
+        $data = MonitoringStorageKimia::where('production_batch_id', $request->production_batch_id)
+            ->where('batch_range', $request->batch_range)
+            ->where('revisi', $lastRevisi)
+            ->first();
+
+        return response()->json([
+            'revisi' => $nextRevisi,
+            'nomor_blending' => $data->nomor_blending,
+            'volume' => $data->volume,
+            'storage' => $data->storage,
+        ]);
     }
 
     public function getAvailableAdditionalBatch(Request $request)

@@ -208,13 +208,16 @@
                         </li>
                     @endif
 
-                    <li class="nav-item">
-                        <a class="nav-link menu-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}"
-                            href="{{ route('press-test-data.index') }}">
-                            <i class="mdi mdi-clipboard-text-play-outline"></i> <span data-key="t-widgets">Press Test
-                                Data</span>
-                        </a>
-                    </li>
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Helper']))
+                        <li class="nav-item">
+                            <a class="nav-link menu-link {{ request()->routeIs(['press-test-data.index']) ? 'active' : '' }}"
+                                href="{{ route('press-test-data.index') }}">
+                                <i class="mdi mdi-clipboard-text-play-outline"></i> <span data-key="t-widgets">Press
+                                    Test
+                                    Data</span>
+                            </a>
+                        </li>
+                    @endif
 
                     {{-- Scan Menu: Analis Kimia, Analis Mikro --}}
                     @if (in_array($userRole, ['Analis Kimia', 'Analis Mikro']))
