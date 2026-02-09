@@ -52,7 +52,6 @@ class AnalysisKimiaController extends Controller
                             ->where(function ($subQ) {
                                 $subQ->whereNull('nacl')
                                     ->orWhereNull('brix')
-                                    ->orWhereNull('aw')
                                     ->orWhereNull('ph')
                                     ->orWhereNull('bj')
                                     ->orWhereNull('buih')
@@ -69,7 +68,6 @@ class AnalysisKimiaController extends Controller
                             ->whereNotNull('nama_analis')
                             ->whereNotNull('nacl')
                             ->whereNotNull('brix')
-                            ->whereNotNull('aw')
                             ->whereNotNull('ph')
                             ->whereNotNull('bj')
                             ->whereNotNull('buih')
@@ -98,7 +96,7 @@ class AnalysisKimiaController extends Controller
                     $showTotalNitrogen = in_array($bulanKe, [6, 12, 18, 24]);
 
                     $isComplete = $kimia->shift_analis && $kimia->nama_analis &&
-                        $kimia->nacl && $kimia->brix && $kimia->aw &&
+                        $kimia->nacl && $kimia->brix &&
                         $kimia->ph && $kimia->bj && $kimia->buih &&
                         $kimia->aroma && $kimia->color_id && $kimia->organo;
 
@@ -128,7 +126,7 @@ class AnalysisKimiaController extends Controller
                     $showTotalNitrogen = in_array($bulanKe, [6, 12, 18, 24]);
 
                     $isComplete = $kimia && $kimia->shift_analis && $kimia->nama_analis &&
-                        $kimia->nacl && $kimia->brix && $kimia->aw &&
+                        $kimia->nacl && $kimia->brix &&
                         $kimia->ph && $kimia->bj && $kimia->buih &&
                         $kimia->aroma && $kimia->color_id && $kimia->organo;
 
@@ -233,7 +231,7 @@ class AnalysisKimiaController extends Controller
             $existingData = ShelfLifeSamplingKimia::where('shelf_life_sampling_detail_id', $request->shelf_life_sampling_detail_id)->first();
 
             $isComplete = $existingData &&
-                $existingData->nacl && $existingData->brix && $existingData->aw &&
+                $existingData->nacl && $existingData->brix &&
                 $existingData->ph && $existingData->bj && $existingData->buih &&
                 $existingData->aroma && $existingData->color_id && $existingData->organo;
 

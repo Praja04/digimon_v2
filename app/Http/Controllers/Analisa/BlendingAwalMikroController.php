@@ -111,6 +111,7 @@ class BlendingAwalMikroController extends Controller
                     'eb' => $blending->eb,
                     'tpc' => $blending->tpc,
                     'ym' => $blending->ym,
+                    'updated_at' => $blending->updated_at,
                 ]
             ]);
         } catch (\Exception $e) {

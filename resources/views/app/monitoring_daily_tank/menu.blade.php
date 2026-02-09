@@ -80,7 +80,7 @@
             <!-- end page title -->
             <div class="row g-4 mb-3">
                 <!-- Daily Tank Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
+                <div class="col-xl-6 col-lg-6">
                     <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                         <div class="card-header bg-gradient-primary text-white border-0 py-4">
                             <div class="d-flex align-items-center justify-content-between">
@@ -113,7 +113,7 @@
 
                 @if (in_array(auth()->user()->role, ['Foreman', 'Analis Field', 'Analis Kimia']))
                     <!-- On Going Kimia Card -->
-                    <div class="col-12 col-sm-6 col-xl-6">
+                    <div class="col-xl-6 col-lg-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                             <div class="card-header bg-gradient-success text-white border-0 py-4">
                                 <div class="d-flex align-items-center justify-content-between">
@@ -146,7 +146,7 @@
                 @endif
 
                 <!-- On Going Mikro Card -->
-                <div class="col-12 col-sm-6 col-xl-6">
+                <div class="col-xl-6 col-lg-6">
                     <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                         <div class="card-header bg-gradient-warning text-white border-0 py-4">
                             <div class="d-flex align-items-center justify-content-between">

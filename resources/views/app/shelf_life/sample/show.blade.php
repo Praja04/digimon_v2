@@ -404,14 +404,14 @@
             var today = new Date().toISOString().split('T')[0];
             $('#tanggal_filling').attr('max', today);
 
-            // Data bulan yang sudah digunakan per variant
             var usedBulanPerVariant = @json($usedBulanPerVariant);
             var kelompokTanggalPerVariant = @json($kelompokTanggalPerVariant);
             var currentVariantFg = '';
+            var binPerVariant = @json($binPerVariant);
+            var ruangPerVariant = @json($ruangPerVariant);
             var isEditMode = false;
             var editingBulanKe = null;
 
-            // Filter functionality
             function filterTable() {
                 var selectedVariant = $('#filterVariantFg').val();
                 var visibleCount = 0;
@@ -427,7 +427,6 @@
                     }
                 });
 
-                // Show/hide no data message
                 if (visibleCount === 0 && selectedVariant !== '') {
                     $('#noDataRow').show();
                     $('#emptyRow').hide();
@@ -441,44 +440,34 @@
                 }
             }
 
-            // Event handler untuk filter
             $('#filterVariantFg').on('change', function() {
                 filterTable();
             });
 
-            // Event handler untuk reset filter
             $('#btnResetFilter').on('click', function() {
                 $('#filterVariantFg').val('').trigger('change');
                 filterTable();
             });
 
-            // Function untuk update opsi bulan_ke berdasarkan variant_fg
             function updateBulanKeOptions(variantFg, keepCurrentValue = false) {
                 var allBulan = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 21, 24];
                 var usedBulan = usedBulanPerVariant[variantFg] || [];
                 var currentValue = $('#bulan_ke').val();
 
-                // Reset select options
                 $('#bulan_ke').empty();
                 $('#bulan_ke').append('<option value="">Pilih Bulan Ke-</option>');
 
-                // Tambahkan opsi yang belum digunakan
                 allBulan.forEach(function(bulan) {
-                    // Jika edit mode dan ini adalah bulan yang sedang diedit, tetap tampilkan
                     if (isEditMode && editingBulanKe == bulan) {
                         $('#bulan_ke').append(new Option(bulan, bulan));
-                    }
-                    // Jika bukan bulan yang digunakan, tampilkan
-                    else if (!usedBulan.includes(bulan)) {
+                    } else if (!usedBulan.includes(bulan)) {
                         $('#bulan_ke').append(new Option(bulan, bulan));
                     }
                 });
 
-                // Set nilai yang sesuai
                 if (keepCurrentValue && currentValue) {
                     $('#bulan_ke').val(currentValue);
                 } else if (!isEditMode) {
-                    // Cari bulan berikutnya yang belum digunakan
                     var nextBulan = null;
                     for (var i = 0; i < allBulan.length; i++) {
                         if (!usedBulan.includes(allBulan[i])) {
@@ -494,34 +483,49 @@
                 $('#bulan_ke').trigger('change');
             }
 
-            // Event handler untuk perubahan variant_fg
             $('#variant_fg').on('change', function() {
                 var selectedOption = $(this).find('option:selected');
                 var kelompok = selectedOption.data('kelompok');
                 currentVariantFg = $(this).val();
 
-                // Set kelompok sample
                 if (kelompok) {
                     $('#kelompok_sample').val(kelompok);
                 } else {
                     $('#kelompok_sample').val('');
                 }
 
-                // Set kelompok tanggal
                 if (currentVariantFg && kelompokTanggalPerVariant[currentVariantFg]) {
                     $('#kelompok_tanggal').val(kelompokTanggalPerVariant[currentVariantFg]);
                     $('#kelompok_tanggal').prop('readonly', true).addClass('bg-light');
                 } else {
-                    $('#kelompok_tanggal').prop('readonly', false).removeClass('bg-light');
+                    $('#kelompok_tanggal').val('').prop('readonly', false).removeClass('bg-light');
                 }
 
-                // Update opsi bulan_ke berdasarkan variant yang dipilih
+                if (currentVariantFg && binPerVariant[currentVariantFg]) {
+                    $('#bin_location').val(binPerVariant[currentVariantFg]).prop('readonly', true).addClass(
+                        'bg-light');
+                } else {
+                    $('#bin_location').val('').prop('readonly', false).removeClass('bg-light');
+                }
+
+                if (currentVariantFg && ruangPerVariant[currentVariantFg]) {
+                    $('#ruang_sl')
+                        .val(ruangPerVariant[currentVariantFg])
+                        .trigger('change')
+                        .attr('readonly', true)
+                        .addClass('bg-light');
+                } else {
+                    $('#ruang_sl')
+                        .val('')
+                        .trigger('change')
+                        .prop('disabled', false);
+                }
+
                 if (currentVariantFg) {
                     updateBulanKeOptions(currentVariantFg);
                 }
             });
 
-            // Event handler untuk tombol Tambah
             $(document).on('click', '#btnAdd', function() {
                 isEditMode = false;
                 editingBulanKe = null;
@@ -549,7 +553,6 @@
                 $('#modal').modal('show');
             });
 
-            // Event handler untuk tombol Edit
             $(document).on('click', '#btnEdit', function() {
                 var id = $(this).data('id');
 
@@ -586,6 +589,8 @@
                             $('#tanggal_filling').val(response.tanggal_filling);
                         }
 
+                        $('#tanggal_filling').attr('max', today);
+
                         $('#kelompok_tanggal').val(response.kelompok_tanggal);
                         $('#koding').val(response.koding);
                         $('#jam_koding').val(response.jam_koding);
@@ -594,6 +599,13 @@
 
                         if (kelompokTanggalPerVariant[response.variant_fg]) {
                             $('#kelompok_tanggal').prop('readonly', true).addClass('bg-light');
+                        }
+
+                        if (ruangPerVariant[response.variant_fg]) {
+                            $('#ruang_sl')
+                                .val(response.ruang_sl)
+                                .attr('readonly', true)
+                                .addClass('bg-light');
                         }
 
                         $('#tanggal_filling').attr('max', today);
@@ -751,7 +763,6 @@
                 });
             });
 
-            // Initialize filter on page load
             filterTable();
         });
     </script>

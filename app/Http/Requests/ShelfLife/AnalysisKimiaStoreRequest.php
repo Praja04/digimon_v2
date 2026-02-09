@@ -21,12 +21,12 @@ class AnalysisKimiaStoreRequest extends FormRequest
             $detail = \App\Models\ShelfLifeSamplingDetail::find($this->shelf_life_sampling_detail_id);
             $bulanKe = $detail ? $detail->bulan_ke : null;
 
-            $rules['nacl'] = 'required|string';
-            $rules['brix'] = 'required|string';
-            $rules['aw'] = 'required|string';
-            $rules['ph'] = 'required|string';
-            $rules['bj'] = 'required|string';
-            $rules['buih'] = 'required|string';
+            $rules['nacl'] = 'required|numeric';
+            $rules['brix'] = 'required|numeric';
+            $rules['aw'] = 'nullable|numeric';
+            $rules['ph'] = 'required|numeric';
+            $rules['bj'] = 'required|numeric';
+            $rules['buih'] = 'required|numeric';
             $rules['aroma'] = 'required|string|max:255';
             $rules['color'] = 'required|exists:colors,id';
             $rules['organo'] = 'required|string|max:255';

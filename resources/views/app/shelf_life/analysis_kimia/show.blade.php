@@ -143,7 +143,7 @@
                                                 <small class="text-danger errorBrix"></small>
                                             </div>
                                             <div class="col-lg-4">
-                                                <label class="form-label">Aw <span style="color: red">*</span></label>
+                                                <label class="form-label">Aw</label>
                                                 <input type="text" name="aw" id="aw"
                                                     class="form-control comma-input" placeholder="Contoh: 0,00">
                                                 <small class="text-danger errorAw"></small>
@@ -318,7 +318,7 @@
                 let shift = currentData.shift_analis;
                 let nama = currentData.nama_analis;
 
-                let requiredParams = ['nacl', 'brix', 'aw', 'ph', 'bj', 'buih', 'aroma', 'color_id', 'organo'];
+                let requiredParams = ['nacl', 'brix', 'ph', 'bj', 'buih', 'aroma', 'color_id', 'organo'];
 
                 if (!hideVisco) {
                     requiredParams.push('visco');
@@ -338,17 +338,6 @@
                     $('#analisContainer').removeClass('d-none');
                     $('#shift_analis, #nama_analis').prop('disabled', false);
 
-                    const currentHour = new Date().getHours();
-                    let suggestedShift = 1;
-                    if (currentHour >= 6 && currentHour < 14) {
-                        suggestedShift = 1;
-                    } else if (currentHour >= 14 && currentHour < 22) {
-                        suggestedShift = 2;
-                    } else {
-                        suggestedShift = 3;
-                    }
-                    $('#shift_analis').val(suggestedShift);
-                    $('#nama_analis').focus();
                     $('#save').prop('disabled', false);
                 } else if (!allParams) {
                     $('#statusText').html(`
@@ -421,18 +410,6 @@
 
                 $('#save').addClass('d-none');
 
-                $('#analisContainer label').first().html('Shift <span class="badge bg-success ms-2">Terisi</span>');
-                $('#analisContainer .col-lg-6:last-child label').html(
-                    'Nama Analis <span class="badge bg-success ms-2">Terisi</span>');
-
-                $('#parameterContainer label').each(function() {
-                    let currentLabel = $(this).html();
-                    currentLabel = currentLabel.replace(/<span style="color:\s*red[^>]*>\*<\/span>/gi, '');
-                    currentLabel = currentLabel.trim() +
-                        ' <span class="badge bg-success ms-2">Terisi</span>';
-                    $(this).html(currentLabel);
-                });
-
                 // Tambahkan styling untuk readonly fields
                 $('.form-control[readonly], .form-control:disabled, .select2-container').css({
                     'background-color': '#f8f9fa',
@@ -474,10 +451,10 @@
                             let nama = formData.get('nama_analis');
                             let allFilled = shift && nama &&
                                 formData.get('nacl') && formData.get('brix') &&
-                                formData.get('aw') && formData.get('ph') &&
-                                formData.get('bj') && formData.get('buih') &&
-                                formData.get('aroma') && formData.get('color') &&
-                                formData.get('organo') && formData.get('visco') &&
+                                formData.get('ph') && formData.get('bj') &&
+                                formData.get('buih') && formData.get('aroma') &&
+                                formData.get('color') && formData.get('organo') &&
+                                formData.get('visco') &&
                                 formData.get('total_nitrogen');
 
                             if (allFilled) {

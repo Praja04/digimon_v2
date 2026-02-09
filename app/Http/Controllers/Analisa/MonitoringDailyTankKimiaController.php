@@ -73,7 +73,7 @@ class MonitoringDailyTankKimiaController extends Controller
             $monitoringDailyTank->update($updateData);
 
             // Kirim notifikasi untuk semua status (OK maupun NOT OK)
-            $notificationTitle = "Monitoring Daily Tank Kimia - Batch " . $monitoringDailyTank->productionBatch->batch_number;
+            $notificationTitle = "Monitoring Daily Tank Kimia - " . $monitoringDailyTank->productionBatch->batch_number;
 
             // Buat message yang sesuai dengan status
             if ($request->status_parameter === 'OK') {

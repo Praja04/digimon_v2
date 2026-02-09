@@ -269,7 +269,7 @@ class MonitoringOnGoingKimiaController extends Controller
             $monitoring->remarks = $request->remark;
             $monitoring->save();
 
-            $notificationTitle = "Monitoring On Going Kimia - " . $monitoring->productionBatch->batch_number;
+            $notificationTitle = "Monitoring On Going Kimia " . $monitoring->productionBatch->batch_number;
 
             if ($request->status_disposition === 'OK') {
                 $message = "-";
@@ -277,14 +277,16 @@ class MonitoringOnGoingKimiaController extends Controller
                 $message = strtoupper($request->remark);
             }
 
-            event(new ProcessOutsideDisposition(
-                $notificationTitle,
-                $monitoring->productionBatch->id,
-                'Monitoring On Going - Kimia',
-                $request->status_disposition,
-                $message,
-                route('monitoring-ongoing-kimia.analisa', $monitoring->id)
-            ));
+            if (auth()->user()->role != 'Foreman') {
+                event(new ProcessOutsideDisposition(
+                    $notificationTitle,
+                    $monitoring->productionBatch->id,
+                    'Monitoring On Going - Kimia',
+                    $request->status_disposition,
+                    $message,
+                    route('monitoring-ongoing-kimia.analisa', $monitoring->id)
+                ));
+            }
 
             return response()->json([
                 'message' => 'Data analisa berhasil disimpan',

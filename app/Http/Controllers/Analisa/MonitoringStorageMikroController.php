@@ -113,6 +113,7 @@ class MonitoringStorageMikroController extends Controller
                     'eb' => $monitoringStorageMikro->eb,
                     'tpc' => $monitoringStorageMikro->tpc,
                     'ym' => $monitoringStorageMikro->ym,
+                    'updated_at' => $monitoringStorageMikro->updated_at,
                 ]
             ]);
         } catch (\Exception $e) {

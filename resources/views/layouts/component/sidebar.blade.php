@@ -125,7 +125,6 @@
                         'Supervisor',
                         'Foreman',
                         'Analis RM',
-                        'Operator',
                         'Analis Kimia',
                         'Analis Mikro',
                         'Analis Field',

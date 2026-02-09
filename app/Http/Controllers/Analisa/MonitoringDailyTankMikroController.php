@@ -35,6 +35,7 @@ class MonitoringDailyTankMikroController extends Controller
                     'eb' => $monitoringDailyTank->eb,
                     'tpc' => $monitoringDailyTank->tpc,
                     'ym' => $monitoringDailyTank->ym,
+                    'mikro_filled_at' => $monitoringDailyTank->mikro_filled_at,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -83,6 +84,7 @@ class MonitoringDailyTankMikroController extends Controller
 
                 $updateData['shift'] = $request->shift_analis;
                 $updateData['nama_analis'] = $request->nama_analis;
+                $updateData['mikro_filled_at'] = now();
             }
 
             if ($request->filled('eb')) {
@@ -94,6 +96,7 @@ class MonitoringDailyTankMikroController extends Controller
                 }
                 $rules['eb'] = 'required|numeric|min:0';
                 $updateData['eb'] = $request->eb;
+                $updateData['mikro_filled_at'] = now();
             }
 
             if ($request->filled('tpc')) {
@@ -105,6 +108,7 @@ class MonitoringDailyTankMikroController extends Controller
                 }
                 $rules['tpc'] = 'required|numeric|min:0';
                 $updateData['tpc'] = $request->tpc;
+                $updateData['mikro_filled_at'] = now();
             }
 
             if ($request->filled('ym')) {
@@ -116,6 +120,7 @@ class MonitoringDailyTankMikroController extends Controller
                 }
                 $rules['ym'] = 'required|numeric|min:0';
                 $updateData['ym'] = $request->ym;
+                $updateData['mikro_filled_at'] = now();
             }
 
             // ✅ Validasi hanya field yang ada di rules

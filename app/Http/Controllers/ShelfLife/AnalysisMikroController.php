@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ShelfLife;
 use App\Http\Controllers\Controller;
 use App\Models\ShelfLifeSamplingDetail;
 use App\Models\ShelfLifeSamplingMikro;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
@@ -79,14 +80,12 @@ class AnalysisMikroController extends Controller
 
                     $showSa = in_array($bulanKe, [1, 24]);
 
-                    // Cek kelengkapan parameter wajib
                     $isComplete = !is_null($mikro->shift_analis) &&
                         !is_null($mikro->nama_analis) &&
                         !is_null($mikro->eb) &&
                         !is_null($mikro->tpc) &&
                         !is_null($mikro->ym);
 
-                    // Tambahkan SA untuk bulan ke-1 dan ke-24
                     if ($showSa) {
                         $isComplete = $isComplete && !is_null($mikro->sa);
                     }
@@ -95,7 +94,6 @@ class AnalysisMikroController extends Controller
                         return '<span class="badge bg-success">Lengkap</span>';
                     }
 
-                    // Status proses jika minimal shift atau nama analis sudah diisi
                     if (!is_null($mikro->shift_analis) || !is_null($mikro->nama_analis)) {
                         return '<span class="badge bg-warning text-dark">Proses</span>';
                     }
@@ -116,14 +114,12 @@ class AnalysisMikroController extends Controller
 
                     $showSa = in_array($bulanKe, [1, 24]);
 
-                    // Cek kelengkapan parameter wajib
                     $isComplete = !is_null($mikro->shift_analis) &&
                         !is_null($mikro->nama_analis) &&
                         !is_null($mikro->eb) &&
                         !is_null($mikro->tpc) &&
                         !is_null($mikro->ym);
 
-                    // Tambahkan SA untuk bulan ke-1 dan ke-24
                     if ($showSa) {
                         $isComplete = $isComplete && !is_null($mikro->sa);
                     }
@@ -177,7 +173,6 @@ class AnalysisMikroController extends Controller
             $detail = ShelfLifeSamplingDetail::findOrFail($request->id);
             $mikro = ShelfLifeSamplingMikro::where('shelf_life_sampling_detail_id', $request->id)->first();
 
-            // Jika belum ada data, buat record baru
             if (!$mikro) {
                 $mikro = ShelfLifeSamplingMikro::create([
                     'shelf_life_sampling_detail_id' => $request->id
@@ -195,7 +190,8 @@ class AnalysisMikroController extends Controller
                     'sa' => $mikro->sa,
                     'tpc' => $mikro->tpc,
                     'ym' => $mikro->ym,
-                    'bulan_ke' => $detail->bulan_ke
+                    'bulan_ke' => $detail->bulan_ke,
+                    'updated_at' => $mikro->updated_at,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -252,7 +248,6 @@ class AnalysisMikroController extends Controller
             $rules = [];
             $updateData = [];
 
-            // Step 1: Shift & Nama Analis
             if ($request->filled('shift_analis') || $request->filled('nama_analis')) {
                 $rules['shift_analis'] = 'required|integer|min:1|max:3';
                 $rules['nama_analis'] = 'required|string|max:255';
@@ -261,46 +256,41 @@ class AnalysisMikroController extends Controller
                 $updateData['nama_analis'] = $request->nama_analis;
             }
 
-            // Step 2: EB
-            if ($request->filled('eb')) {
+            if ($request->filled('eb') || ($showSa && $request->filled('sa'))) {
+                // Validasi shift & nama analis sudah diisi
                 if (is_null($mikro->shift_analis) || is_null($mikro->nama_analis)) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input EB.'
+                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu.'
                     ], 409);
                 }
-                $rules['eb'] = 'required|numeric|min:0';
-                $updateData['eb'] = $request->eb;
+
+                if ($request->filled('eb')) {
+                    $rules['eb'] = 'required|numeric|min:0';
+                    $updateData['eb'] = $request->eb;
+                }
+
+                if ($showSa && $request->filled('sa')) {
+                    $rules['sa'] = 'required|string|max:255';
+                    $updateData['sa'] = $request->sa;
+                }
+
+                if ($showSa) {
+                    if ($request->filled('eb') && !$request->filled('sa')) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'EB dan SA harus diisi bersamaan untuk bulan ke-' . $bulanKe . '.'
+                        ], 409);
+                    }
+                    if ($request->filled('sa') && !$request->filled('eb')) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'EB dan SA harus diisi bersamaan untuk bulan ke-' . $bulanKe . '.'
+                        ], 409);
+                    }
+                }
             }
 
-            // Step 3: SA (hanya untuk bulan ke-1 dan ke-24)
-            if ($request->filled('sa')) {
-                if (is_null($mikro->shift_analis) || is_null($mikro->nama_analis)) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Shift dan Nama Analis harus diisi terlebih dahulu sebelum input SA.'
-                    ], 409);
-                }
-
-                if (is_null($mikro->eb)) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'EB harus diisi terlebih dahulu sebelum input SA.'
-                    ], 409);
-                }
-
-                if (!$showSa) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'SA hanya bisa diinput pada bulan ke-1 dan ke-24.'
-                    ], 409);
-                }
-
-                $rules['sa'] = 'required';
-                $updateData['sa'] = $request->sa;
-            }
-
-            // Step 4: TPC
             if ($request->filled('tpc')) {
                 if (is_null($mikro->shift_analis) || is_null($mikro->nama_analis)) {
                     return response()->json([
@@ -316,7 +306,6 @@ class AnalysisMikroController extends Controller
                     ], 409);
                 }
 
-                // Jika bulan ke-1 atau ke-24, SA harus diisi dulu
                 if ($showSa && is_null($mikro->sa)) {
                     return response()->json([
                         'status' => 'error',
@@ -328,7 +317,6 @@ class AnalysisMikroController extends Controller
                 $updateData['tpc'] = $request->tpc;
             }
 
-            // Step 5: YM
             if ($request->filled('ym')) {
                 if (is_null($mikro->shift_analis) || is_null($mikro->nama_analis)) {
                     return response()->json([
@@ -362,7 +350,6 @@ class AnalysisMikroController extends Controller
                 $updateData['ym'] = $request->ym;
             }
 
-            // Validasi
             if (!empty($rules)) {
                 $validator = Validator::make($request->only(array_keys($rules)), $rules, [
                     'shift_analis.required' => 'Shift wajib diisi.',
@@ -399,7 +386,6 @@ class AnalysisMikroController extends Controller
                 ], 409);
             }
 
-            // Update waktu analisa jika belum ada
             if (is_null($mikro->waktu_analisa)) {
                 $updateData['waktu_analisa'] = now();
             }
@@ -407,13 +393,20 @@ class AnalysisMikroController extends Controller
             $mikro->update($updateData);
             $mikro->refresh();
 
-            // Tentukan nama field untuk pesan
             $fieldName = '';
-            if (isset($updateData['shift_analis'])) $fieldName = 'Shift dan Nama Analis';
-            if (isset($updateData['eb'])) $fieldName = 'EB';
-            if (isset($updateData['sa'])) $fieldName = 'SA';
-            if (isset($updateData['tpc'])) $fieldName = 'TPC';
-            if (isset($updateData['ym'])) $fieldName = 'YM';
+            if (isset($updateData['shift_analis'])) {
+                $fieldName = 'Shift dan Nama Analis';
+            } elseif (isset($updateData['eb']) && isset($updateData['sa'])) {
+                $fieldName = 'EB dan SA';
+            } elseif (isset($updateData['eb'])) {
+                $fieldName = 'EB';
+            } elseif (isset($updateData['sa'])) {
+                $fieldName = 'SA';
+            } elseif (isset($updateData['tpc'])) {
+                $fieldName = 'TPC';
+            } elseif (isset($updateData['ym'])) {
+                $fieldName = 'YM';
+            }
 
             $message = "Data {$fieldName} berhasil disimpan.";
 

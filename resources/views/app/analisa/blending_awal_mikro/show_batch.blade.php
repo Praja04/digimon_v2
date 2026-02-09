@@ -166,9 +166,9 @@
                                                             style="color: red;">*</span></label>
                                                     <select name="shift_analis" id="shift_analis" class="form-control">
                                                         <option value="">-- Pilih Shift --</option>
-                                                        <option value="1">Shift 1 (06:00 - 14:00)</option>
-                                                        <option value="2">Shift 2 (14:00 - 22:00)</option>
-                                                        <option value="3">Shift 3 (22:00 - 06:00)</option>
+                                                        <option value="1">Shift 1</option>
+                                                        <option value="2">Shift 2</option>
+                                                        <option value="3">Shift 3</option>
                                                     </select>
                                                     <small class="text-danger errorShiftAnalis"></small>
                                                 </div>
@@ -282,79 +282,123 @@
                 });
             }
 
+            function canInputByDay(baseTime, plusDay) {
+                const base = new Date(baseTime);
+                const now = new Date();
+
+                base.setDate(base.getDate() + plusDay);
+
+                return now >= base;
+            }
+
+            function formatDate(dateStr, plusDay) {
+                const d = new Date(dateStr);
+                d.setDate(d.getDate() + plusDay);
+
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+
+
             function showNextField() {
                 let shift = currentBlendingData.shift;
                 let nama_analis = currentBlendingData.nama_analis;
                 let eb = currentBlendingData.eb;
                 let tpc = currentBlendingData.tpc;
                 let ym = currentBlendingData.ym;
+                let baseTime = currentBlendingData.updated_at;
 
-                // Sembunyikan semua field dulu
+                // Reset semua field
                 $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
                 $('#shift_analis, #nama_analis, #eb, #tpc, #ym').val('').prop('disabled', true);
                 $('#btnSave').prop('disabled', true);
 
-                // ✅ STEP 1: Input Shift & Nama Analis terlebih dahulu
+                // ===== STEP 1 : Shift & Nama Analis =====
                 if (!shift || !nama_analis) {
-                    $('#statusText').text('Langkah 1/4 - Input Shift dan Nama Analis terlebih dahulu');
+                    $('#statusText').text('Langkah 1/4 - Input Shift dan Nama Analis');
                     $('#analisContainer').removeClass('d-none');
                     $('#shift_analis, #nama_analis').prop('disabled', false);
-
-                    // Auto-set shift berdasarkan jam saat ini (opsional, bisa di-skip jika user ingin pilih manual)
-                    const currentHour = new Date().getHours();
-                    let suggestedShift = 1;
-                    if (currentHour >= 6 && currentHour < 14) {
-                        suggestedShift = 1;
-                    } else if (currentHour >= 14 && currentHour < 22) {
-                        suggestedShift = 2;
-                    } else {
-                        suggestedShift = 3;
-                    }
-                    $('#shift_analis').val(suggestedShift);
-
-                    $('#nama_analis').focus();
                     $('#btnSave').prop('disabled', false);
+                    return;
+                }
 
-                    // ✅ STEP 2: Jika Shift & Nama Analis sudah, input EB
-                } else if (eb === null || eb === undefined) {
+                // ===== STEP 2 : EB (H + 1) =====
+                if (eb === null || eb === undefined) {
+                    if (!canInputByDay(baseTime, 1)) {
+                        $('#statusText').html(
+                            `EB dapat diinput mulai tanggal <strong>${formatDate(baseTime, 1)}</strong>`
+                        );
+                        return;
+                    }
+
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>Langkah 2/4 - Input EB`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>
+                        Langkah 2/4 - Input EB`
                     );
+
                     $('#ebContainer').removeClass('d-none');
                     $('#eb').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
+                    return;
+                }
 
-                    // ✅ STEP 3: Jika EB sudah, input TPC
-                } else if (tpc === null || tpc === undefined) {
+                // ===== STEP 3 : TPC (H + 3) =====
+                if (tpc === null || tpc === undefined) {
+                    if (!canInputByDay(baseTime, 3)) {
+                        $('#statusText').html(
+                            `TPC dapat diinput mulai tanggal <strong>${formatDate(baseTime, 3)}</strong>`
+                        );
+                        return;
+                    }
+
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong><br>Langkah 3/4 - Input TPC`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>
+                        EB: <strong>${eb}</strong><br>
+                        Langkah 3/4 - Input TPC`
                     );
+
                     $('#tpcContainer').removeClass('d-none');
                     $('#tpc').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
+                    return;
+                }
 
-                    // ✅ STEP 4: Jika TPC sudah, input YM (terakhir)
-                } else if (ym === null || ym === undefined) {
+                // ===== STEP 4 : YM (H + 5) =====
+                if (ym === null || ym === undefined) {
+                    if (!canInputByDay(baseTime, 5)) {
+                        $('#statusText').html(
+                            `YM dapat diinput mulai tanggal <strong>${formatDate(baseTime, 5)}</strong>`
+                        );
+                        return;
+                    }
+
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>Langkah 4/4 - Input YM (terakhir)`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>
+                        EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>
+                        Langkah 4/4 - Input YM`
                     );
+
                     $('#ymContainer').removeClass('d-none');
                     $('#ym').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
-
-                    // ✅ Semua sudah lengkap
-                } else {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Data Lengkap',
-                        text: 'Semua parameter analisa sudah diisi.'
-                    }).then(() => {
-                        window.location.href =
-                            "{{ route('analisa.blending-awal-mikro.show', '') }}/" +
-                            {{ $blending->productionBatch->id }};
-                    });
+                    return;
                 }
+
+                // ===== SEMUA SUDAH LENGKAP =====
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Data Lengkap',
+                    text: 'Semua parameter analisa sudah diisi.'
+                }).then(() => {
+                    window.location.href =
+                        "{{ route('analisa.blending-awal-mikro.show', '') }}/" +
+                        {{ $blending->productionBatch->id }};
+                });
             }
+
 
             loadBlendingData();
 

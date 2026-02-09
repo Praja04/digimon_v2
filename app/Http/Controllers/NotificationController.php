@@ -80,7 +80,7 @@ class NotificationController extends Controller
             'Monitoring Pasteurisasi' => $notification->redirect,
             'Monitoring Storage Kimia' => $notification->redirect,
             'Monitoring Daily Tank Kimia' => $notification->redirect,
-            'Monitoring On Going Kimia' => $notification->redirect,
+            'Monitoring On Going - Kimia' => $notification->redirect,
             'Monitoring On Going Mikro' => $notification->redirect,
 
         ];

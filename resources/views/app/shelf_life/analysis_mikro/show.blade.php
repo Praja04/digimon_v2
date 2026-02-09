@@ -119,23 +119,25 @@
                                         </div>
                                     </div>
 
-                                    <!-- EB Field -->
-                                    <div id="ebContainer" class="col-lg-12 d-none">
-                                        <label class="form-label">EB <span style="color: red;">*</span></label>
-                                        <input type="text" name="eb" id="eb" class="form-control comma-input"
-                                            placeholder="Masukkan nilai EB">
-                                        <small class="text-danger errorEb"></small>
+                                    <!-- EB & SA Field (H+1) - Digabung dalam 1 row -->
+                                    <div id="ebSaContainer" class="col-lg-12 d-none">
+                                        <div class="row g-3">
+                                            <div class="col-lg-6">
+                                                <label class="form-label">EB <span style="color: red;">*</span></label>
+                                                <input type="text" name="eb" id="eb"
+                                                    class="form-control comma-input" placeholder="Masukkan nilai EB">
+                                                <small class="text-danger errorEb"></small>
+                                            </div>
+                                            <div class="col-lg-6" id="saFieldContainer">
+                                                <label class="form-label">SA <span style="color: red;">*</span></label>
+                                                <input type="text" name="sa" id="sa"
+                                                    class="form-control comma-input" placeholder="Masukkan nilai SA">
+                                                <small class="text-danger errorSa"></small>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <!-- SA Field (hanya untuk bulan ke-1 dan ke-24) -->
-                                    <div id="saContainer" class="col-lg-12 d-none">
-                                        <label class="form-label">SA <span style="color: red;">*</span></label>
-                                        <input type="text" name="sa" id="sa"
-                                            class="form-control comma-input" placeholder="Masukkan nilai SA">
-                                        <small class="text-danger errorSa"></small>
-                                    </div>
-
-                                    <!-- TPC Field -->
+                                    <!-- TPC Field (H+3) -->
                                     <div id="tpcContainer" class="col-lg-12 d-none">
                                         <label class="form-label">TPC <span style="color: red;">*</span></label>
                                         <input type="text" name="tpc" id="tpc"
@@ -143,7 +145,7 @@
                                         <small class="text-danger errorTpc"></small>
                                     </div>
 
-                                    <!-- YM Field -->
+                                    <!-- YM Field (H+5) -->
                                     <div id="ymContainer" class="col-lg-12 d-none">
                                         <label class="form-label">YM <span style="color: red;">*</span></label>
                                         <input type="text" name="ym" id="ym"
@@ -193,10 +195,14 @@
             let bulanKe = parseInt($('#bulan_ke').val());
             let showSa = [1, 24].includes(bulanKe);
 
+            if (!showSa) {
+                $('#saFieldContainer').addClass('d-none');
+            }
+
             function loadMikroData() {
                 $('#loadingContainer').removeClass('d-none');
                 $('#statusContainer').addClass('d-none');
-                $('#analisContainer, #ebContainer, #saContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#analisContainer, #ebSaContainer, #tpcContainer, #ymContainer').addClass('d-none');
                 $('#btnSave').prop('disabled', true);
 
                 $.ajax({
@@ -223,6 +229,26 @@
                 });
             }
 
+            function canInputByDay(baseTime, plusDay) {
+                const base = new Date(baseTime);
+                const now = new Date();
+
+                base.setDate(base.getDate() + plusDay);
+
+                return now >= base;
+            }
+
+            function formatDate(dateStr, plusDay) {
+                const d = new Date(dateStr);
+                d.setDate(d.getDate() + plusDay);
+
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+
             function showNextField() {
                 let shift = currentMikroData.shift_analis;
                 let nama_analis = currentMikroData.nama_analis;
@@ -230,112 +256,118 @@
                 let sa = currentMikroData.sa;
                 let tpc = currentMikroData.tpc;
                 let ym = currentMikroData.ym;
+                let baseTime = currentMikroData.updated_at;
 
-                // Sembunyikan semua field dulu
-                $('#analisContainer, #ebContainer, #saContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#analisContainer, #ebSaContainer, #tpcContainer, #ymContainer').addClass('d-none');
                 $('#shift_analis, #nama_analis, #eb, #sa, #tpc, #ym').val('').prop('disabled', true);
                 $('#btnSave').prop('disabled', true);
 
-                // Hitung total steps
-                let totalSteps = showSa ? 5 : 4;
+                $('.text-danger').text('');
+                $('.form-control').removeClass('is-invalid');
 
-                // ✅ STEP 1: Input Shift & Nama Analis terlebih dahulu
                 if (!shift || !nama_analis) {
-                    $('#statusText').text('Langkah 1/' + totalSteps +
-                        ' - Input Shift dan Nama Analis terlebih dahulu');
+                    $('#statusText').text('Langkah 1/4 - Input Shift dan Nama Analis terlebih dahulu');
                     $('#analisContainer').removeClass('d-none');
                     $('#shift_analis, #nama_analis').prop('disabled', false);
 
-                    // Auto-set shift berdasarkan jam saat ini
-                    const currentHour = new Date().getHours();
-                    let suggestedShift = 1;
-                    if (currentHour >= 6 && currentHour < 14) {
-                        suggestedShift = 1;
-                    } else if (currentHour >= 14 && currentHour < 22) {
-                        suggestedShift = 2;
-                    } else {
-                        suggestedShift = 3;
+                    $('#btnSave').prop('disabled', false);
+                    return;
+                }
+
+                if (eb === null || eb === undefined || (showSa && (sa === null || sa === undefined))) {
+                    if (!canInputByDay(baseTime, 1)) {
+                        $('#statusText').html(
+                            `EB ${showSa ? 'dan SA' : ''} dapat diinput mulai tanggal <strong>${formatDate(baseTime, 1)}</strong>`
+                        );
+                        return;
                     }
-                    $('#shift_analis').val(suggestedShift);
 
-                    $('#nama_analis').focus();
-                    $('#btnSave').prop('disabled', false);
-
-                    // ✅ STEP 2: Jika Shift & Nama Analis sudah, input EB
-                } else if (eb === null || eb === undefined) {
-                    $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>Langkah 2/${totalSteps} - Input EB`
-                    );
-                    $('#ebContainer').removeClass('d-none');
-                    $('#eb').prop('disabled', false).focus();
-                    $('#btnSave').prop('disabled', false);
-
-                    // ✅ STEP 3: Jika EB sudah, input SA (hanya untuk bulan ke-1 dan ke-24)
-                } else if (showSa && (sa === null || sa === undefined)) {
-                    $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong><br>Langkah 3/5 - Input SA (Bulan ke-${bulanKe})`
-                    );
-                    $('#saContainer').removeClass('d-none');
-                    $('#sa').prop('disabled', false).focus();
-                    $('#btnSave').prop('disabled', false);
-
-                    // ✅ STEP 4: Jika EB (dan SA untuk bulan 1/24) sudah, input TPC
-                } else if (tpc === null || tpc === undefined) {
-                    let currentStep = showSa ? 4 : 3;
                     let statusHtml =
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong>`;
+                    `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>`;
+                    statusHtml += `Langkah 2/4 - Input EB${showSa ? ' dan SA' : ''} (H+1)`;
+
+                    $('#statusText').html(statusHtml);
+                    $('#ebSaContainer').removeClass('d-none');
+                    $('#eb').prop('disabled', false);
+
+                    if (showSa) {
+                        $('#sa').prop('disabled', false);
+                    }
+
+                    $('#eb').focus();
+                    $('#btnSave').prop('disabled', false);
+                    return;
+                }
+
+                if (tpc === null || tpc === undefined) {
+                    if (!canInputByDay(baseTime, 3)) {
+                        $('#statusText').html(
+                            `TPC dapat diinput mulai tanggal <strong>${formatDate(baseTime, 3)}</strong>`
+                        );
+                        return;
+                    }
+
+                    let statusHtml =
+                    `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>`;
+                    statusHtml += `EB: <strong>${eb}</strong>`;
 
                     if (showSa) {
                         statusHtml += ` | SA: <strong>${sa}</strong>`;
                     }
 
-                    statusHtml += `<br>Langkah ${currentStep}/${totalSteps} - Input TPC`;
+                    statusHtml += `<br>Langkah 3/4 - Input TPC (H+3)`;
 
                     $('#statusText').html(statusHtml);
                     $('#tpcContainer').removeClass('d-none');
                     $('#tpc').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
+                    return;
+                }
 
-                    // ✅ STEP 5: Jika TPC sudah, input YM (terakhir)
-                } else if (ym === null || ym === undefined) {
+                if (ym === null || ym === undefined) {
+                    if (!canInputByDay(baseTime, 5)) {
+                        $('#statusText').html(
+                            `YM dapat diinput mulai tanggal <strong>${formatDate(baseTime, 5)}</strong>`
+                        );
+                        return;
+                    }
+
                     let statusHtml =
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>EB: <strong>${eb}</strong>`;
+                    `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>`;
+                    statusHtml += `EB: <strong>${eb}</strong>`;
 
                     if (showSa) {
                         statusHtml += ` | SA: <strong>${sa}</strong>`;
                     }
 
-                    statusHtml +=
-                        ` | TPC: <strong>${tpc}</strong><br>Langkah ${totalSteps}/${totalSteps} - Input YM (terakhir)`;
+                    statusHtml += ` | TPC: <strong>${tpc}</strong><br>Langkah 4/4 - Input YM (H+5)`;
 
                     $('#statusText').html(statusHtml);
                     $('#ymContainer').removeClass('d-none');
                     $('#ym').prop('disabled', false).focus();
                     $('#btnSave').prop('disabled', false);
-
-                    // ✅ Semua sudah lengkap - Tampilkan mode readonly
-                } else {
-                    showCompleteData(shift, nama_analis, eb, sa, tpc, ym);
+                    return;
                 }
+
+                showCompleteData(shift, nama_analis, eb, sa, tpc, ym);
             }
 
             function showCompleteData(shift, nama_analis, eb, sa, tpc, ym) {
-                // Update status
-                $('#statusContainer').removeClass('d-none');
-                $('#statusContainer .alert').removeClass('alert-info').addClass('alert-success');
-                $('#statusText').html('<strong>✓ Data Lengkap</strong> - Semua parameter analisa sudah diisi');
+                $('#statusText').html(`
+                    <div class="text-success">
+                        <i class="mdi mdi-check-all"></i> <strong>Semua parameter analisa sudah lengkap!</strong>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-success me-2">Shift: ${shift}</span>
+                        <span class="badge bg-success me-2">Analis: ${nama_analis}</span>
+                        <span class="badge bg-success me-2">EB: ${eb}</span>
+                        ${showSa ? `<span class="badge bg-success me-2">SA: ${sa}</span>` : ''}
+                        <span class="badge bg-success me-2">TPC: ${tpc}</span>
+                        <span class="badge bg-success">YM: ${ym}</span>
+                    </div>
+                `);
 
-                // Tampilkan semua field dalam mode readonly
-                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').removeClass('d-none');
-
-                if (showSa) {
-                    $('#saContainer').removeClass('d-none');
-                }
-
-                // Set nilai dan readonly
-                const shiftText = shift == 1 ? 'Shift 1 (06:00 - 14:00)' :
-                    shift == 2 ? 'Shift 2 (14:00 - 22:00)' :
-                    'Shift 3 (22:00 - 06:00)';
+                $('#analisContainer, #ebSaContainer, #tpcContainer, #ymContainer').removeClass('d-none');
 
                 $('#shift_analis').val(shift).prop('disabled', true);
                 $('#nama_analis').val(nama_analis).prop('readonly', true);
@@ -347,22 +379,8 @@
                     $('#sa').val(sa).prop('readonly', true);
                 }
 
-                // Sembunyikan tombol simpan
                 $('#btnSave').addClass('d-none');
 
-                // Ubah label untuk menunjukkan readonly
-                $('#analisContainer label').html('Shift <span class="badge bg-success ms-2">Terisi</span>');
-                $('#analisContainer .col-lg-6:last-child label').html(
-                    'Nama Analis <span class="badge bg-success ms-2">Terisi</span>');
-                $('#ebContainer label').html('EB <span class="badge bg-success ms-2">Terisi</span>');
-                $('#tpcContainer label').html('TPC <span class="badge bg-success ms-2">Terisi</span>');
-                $('#ymContainer label').html('YM <span class="badge bg-success ms-2">Terisi</span>');
-
-                if (showSa) {
-                    $('#saContainer label').html('SA <span class="badge bg-success ms-2">Terisi</span>');
-                }
-
-                // Tambahkan styling untuk readonly
                 $('.form-control[readonly], .form-control:disabled').css({
                     'background-color': '#f8f9fa',
                     'cursor': 'not-allowed',
@@ -388,7 +406,9 @@
                         $('.text-danger').html('');
                     },
                     complete: function() {
-                        $('#btnSave').prop('disabled', false).text('Simpan');
+                        $('#btnSave').prop('disabled', false).html(
+                            '<i class="mdi mdi-content-save me-1"></i> Simpan'
+                        );
                     },
                     success: function(response) {
                         Swal.fire({

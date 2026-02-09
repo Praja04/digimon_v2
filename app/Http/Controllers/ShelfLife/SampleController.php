@@ -83,8 +83,8 @@ class SampleController extends Controller
                         </div>
                         <small class="text-muted">
                             <span class="badge bg-' . $badgeColor . '">' . $statusText . '</span>
-                            Bulan ke-' . $maxBulan . ' dari ' . $targetBulan . ' 
-                            <span class="text-muted">(' . $totalDetails . ' detail)</span>
+                            Bulan ke-' . $maxBulan . '
+                            <span class="text-muted">(' . $totalDetails . ' data)</span>
                         </small>
                     </div>
                 ';
@@ -267,18 +267,31 @@ class SampleController extends Controller
             return $items->pluck('bulan_ke')->toArray();
         });
 
-        $kelompokTanggalPerVariant = $shelfLifeSamplingDetails->groupBy('variant_fg')->map(function ($items) {
-            return $items->first()->kelompok_tanggal ?? '';
-        });
+        $kelompokTanggalPerVariant = $shelfLifeSamplingDetails
+            ->groupBy('variant_fg')
+            ->map(function ($items) {
+                return $items->first()->kelompok_tanggal ?? '';
+            });
 
-        return view('app.shelf_life.sample.show', compact('data', 'kecap', 'shelfLifeSamplingDetails', 'usedBulanPerVariant', 'kelompokTanggalPerVariant'));
+        $binPerVariant = $shelfLifeSamplingDetails
+            ->groupBy('variant_fg')
+            ->map(function ($items) {
+                return $items->first()->bin_location ?? '';
+            });
+
+        $ruangPerVariant = $shelfLifeSamplingDetails
+            ->groupBy('variant_fg')
+            ->map(function ($items) {
+                return $items->first()->ruang_sl ?? '';
+            });
+
+        return view('app.shelf_life.sample.show', compact('data', 'kecap', 'shelfLifeSamplingDetails', 'usedBulanPerVariant', 'kelompokTanggalPerVariant', 'binPerVariant', 'ruangPerVariant'));
     }
 
     public function storeSamplingDetail(SampleDetailStoreRequest $request)
     {
         $hari = (int) $request->kelompok_tanggal;
         $bulanKe = (int) $request->bulan_ke;
-
         $urutanBulan = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 21, 24];
 
         if (!in_array($bulanKe, $urutanBulan)) {
@@ -288,14 +301,35 @@ class SampleController extends Controller
             ], 422);
         }
 
-        $tanggalFilling = \Carbon\Carbon::parse($request->tanggal_filling);
-        $tanggalAnalisa = $tanggalFilling->copy()->day(1)->addMonths($bulanKe);
-
-        $maxHariDiBulan = $tanggalAnalisa->daysInMonth;
-        $hariFinal = min($hari, $maxHariDiBulan);
-        $tanggalAnalisa->day($hariFinal);
-
         try {
+            if ($bulanKe == 1) {
+                $tanggalFillingAsli = \Carbon\Carbon::parse($request->tanggal_filling);
+            } else {
+                $recordBulanPertama = ShelfLifeSamplingDetail::where('shelf_life_sample_id', $request->shelf_life_sample_id)
+                    ->where('bulan_ke', 1)
+                    ->first();
+
+                if (!$recordBulanPertama) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Data bulan ke-1 belum ada. Silakan input bulan ke-1 terlebih dahulu.',
+                    ], 422);
+                }
+
+                $tanggalFillingAsli = \Carbon\Carbon::parse($recordBulanPertama->tanggal_filling);
+            }
+
+            $bulanTarget = \Carbon\Carbon::create(
+                $tanggalFillingAsli->year,
+                $tanggalFillingAsli->month,
+                1
+            )->addMonths($bulanKe);
+
+            $maxHariBulanTarget = $bulanTarget->daysInMonth;
+
+            $tanggalAnalisaDipakai = min($hari, $maxHariBulanTarget);
+            $tanggalAnalisa = $bulanTarget->copy()->day($tanggalAnalisaDipakai);
+
             $updateData = [
                 'shelf_life_sample_id' => $request->shelf_life_sample_id,
                 'kelompok_sample' => $request->kelompok_sample,
@@ -310,7 +344,7 @@ class SampleController extends Controller
 
             if (!$request->filled('id')) {
                 $updateData['variant_fg'] = $request->variant_fg;
-                $updateData['bulan_ke'] = $request->bulan_ke;
+                $updateData['bulan_ke'] = $bulanKe;
             }
 
             $data = ShelfLifeSamplingDetail::updateOrCreate(

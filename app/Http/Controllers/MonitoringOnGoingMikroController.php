@@ -38,9 +38,7 @@ class MonitoringOnGoingMikroController extends Controller
                         ->translatedFormat('d F Y');
                 })
                 ->addColumn('hasil', function ($data) {
-                    if ($data->hasil && $data->disposition == null) {
-                        return '<span class="badge bg-primary">Menunggu Disposisi</span>';
-                    } elseif ($data->disposition) {
+                    if ($data->hasil) {
                         $hasil = $data->hasil ?? '-';
                         $badgeClass = match ($hasil) {
                             'OK' => 'badge bg-success',

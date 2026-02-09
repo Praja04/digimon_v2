@@ -126,6 +126,7 @@
         $(document).ready(function() {
             let html5QrCode;
             let isScanning = false;
+            let isSwitchingCamera = false;
 
             const typeNames = {
                 'gga': 'GGA',
@@ -161,8 +162,10 @@
             });
 
             $('#cameraSelect').on('change', function() {
-                stopScanning();
-                startScanning($(this).val());
+                if (isSwitchingCamera) return;
+
+                const newCameraId = $(this).val();
+                switchCamera(newCameraId);
             });
 
             function initializeScanner() {
@@ -175,7 +178,16 @@
                     }
 
                     updateCameraList(cameras);
-                    const selectedCamera = cameras[0].id;
+
+                    let selectedCamera = cameras[0].id;
+                    for (let i = 0; i < cameras.length; i++) {
+                        if (cameras[i].label.toLowerCase().includes('back') ||
+                            cameras[i].label.toLowerCase().includes('environment')) {
+                            selectedCamera = cameras[i].id;
+                            break;
+                        }
+                    }
+
                     $('#cameraSelect').val(selectedCamera);
                     startScanning(selectedCamera);
 
@@ -190,21 +202,56 @@
                 $select.empty();
 
                 $.each(cameras, function(index, camera) {
-                    const label = camera.label || ('Camera ' + (index + 1));
+                    let label = camera.label || ('Camera ' + (index + 1));
+
+                    if (label.toLowerCase().includes('back') || label.toLowerCase().includes(
+                            'environment')) {
+                        label = '📷 Kamera Belakang';
+                    } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes(
+                            'user')) {
+                        label = '🤳 Kamera Depan';
+                    }
+
                     $select.append($('<option></option>').val(camera.id).text(label));
                 });
             }
 
-            function startScanning(cameraId) {
-                if (isScanning) return;
+            function switchCamera(cameraId) {
+                if (isSwitchingCamera) return;
 
-                html5QrCode.start(
+                isSwitchingCamera = true;
+                updateScannerStatus("Mengganti kamera...", false);
+                $('#cameraSelect').prop('disabled', true);
+
+                stopScanning().then(function() {
+                    setTimeout(function() {
+                        startScanning(cameraId).finally(function() {
+                            isSwitchingCamera = false;
+                            $('#cameraSelect').prop('disabled', false);
+                        });
+                    }, 500);
+                }).catch(function(err) {
+                    console.error("Error switching camera:", err);
+                    isSwitchingCamera = false;
+                    $('#cameraSelect').prop('disabled', false);
+                    showError("Gagal mengganti kamera");
+                });
+            }
+
+            function startScanning(cameraId) {
+                if (isScanning) {
+                    return Promise.reject("Already scanning");
+                }
+
+                return html5QrCode.start(
                     cameraId, {
                         fps: 10,
                         qrbox: {
                             width: 250,
                             height: 250
-                        }
+                        },
+                        aspectRatio: 1.0,
+                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
                     },
                     onScanSuccess
                 ).then(function() {
@@ -212,25 +259,32 @@
                     updateScannerStatus("Kamera aktif, arahkan ke QR Code", false);
                 }).catch(function(err) {
                     console.error("Scanner start error:", err);
-                    showError("Scanner gagal dijalankan");
+                    showError("Scanner gagal dijalankan: " + err);
+                    throw err;
                 });
             }
 
             function stopScanning() {
-                if (isScanning && html5QrCode) {
-                    html5QrCode.stop().then(function() {
-                        isScanning = false;
-                    }).catch(function(err) {
-                        console.error("Scanner stop error:", err);
-                        isScanning = false;
-                    });
+                if (!isScanning || !html5QrCode) {
+                    return Promise.resolve();
                 }
+
+                return html5QrCode.stop().then(function() {
+                    isScanning = false;
+                    console.log("Scanner stopped successfully");
+                }).catch(function(err) {
+                    console.error("Scanner stop error:", err);
+                    isScanning = false;
+                    throw err;
+                });
             }
 
-            // Function: On Scan Success
             function onScanSuccess(decodedText) {
-                stopScanning();
-                processQRCode(decodedText);
+                if (!isScanning) return;
+
+                stopScanning().then(function() {
+                    processQRCode(decodedText);
+                });
             }
 
             function processQRCode(url) {
@@ -287,13 +341,15 @@
 
                 $('#resultCard').slideDown(200);
 
-                window.location.href = redirectUrl;
+                setTimeout(function() {
+                    window.location.href = redirectUrl;
+                }, 500);
             }
 
             function restartCamera() {
                 setTimeout(function() {
                     const selectedCamera = $('#cameraSelect').val();
-                    if (selectedCamera) {
+                    if (selectedCamera && !isScanning) {
                         updateScannerStatus("Mengaktifkan kembali kamera...", false);
                         startScanning(selectedCamera);
                     }
