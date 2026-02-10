@@ -156,7 +156,7 @@
                         <div class="col-lg-4" id="no_filler_wrapper">
                             <label for="no_filler" class="form-label">No Filler / Mesin <span
                                     style="color: red;">*</span></label>
-                            <input type="number" name="no_filler" id="no_filler" class="form-control">
+                            <input type="text" name="no_filler" id="no_filler" class="form-control">
                             <small class="text-danger errorNoFiller"></small>
                         </div>
 
@@ -804,7 +804,9 @@
                             $('#qr_code_container').html('<img src="data:image/png;base64,' +
                                 response.qr_code +
                                 '" alt="QR Code" style="max-width: 150px;">');
-                            let qrText = response.storage + '/' + response.variant;
+                            let qrText = 'MONITORING-ONGOING-MIKRO/' + response.po_number +
+                                '/' + response
+                                .date + '/' + response.id;
                             $('#qr_code_text').text(qrText);
                         } else {
                             $('#qr_code_container').html(

@@ -11,7 +11,7 @@
 
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.menu')}}">Menu</a></li>
+                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.menu') }}">Menu</a></li>
                                 <li class="breadcrumb-item active">@yield('title')</li>
                             </ol>
                         </div>
@@ -704,12 +704,25 @@
                     success: function(response) {
                         // QR Code
                         if (response.qr_code) {
-                            $('#qr_code_container').html('<img src="data:image/png;base64,' +
-                                response.qr_code +
-                                '" alt="QR Code" style="max-width: 150px;">');
-                            let qrText = 'MDT-' + response.storage + '/' + response
-                                .jenis_analisa + '/' + response.id;
-                            $('#qr_code_text').text(qrText);
+                            if (response.jenis_analisa == 'Mikro') {
+                                $('#qr_code_container').html(
+                                    '<img src="data:image/png;base64,' +
+                                    response.qr_code +
+                                    '" alt="QR Code" style="max-width: 150px;">');
+                                let qrText = 'MONITORING-DAILY-TANK-MIKRO/' + response
+                                    .po_number + '/' + response
+                                    .date + '/' + response.id;
+                                $('#qr_code_text').text(qrText);
+                            } else {
+                                $('#qr_code_container').html(
+                                    '<img src="data:image/png;base64,' +
+                                    response.qr_code +
+                                    '" alt="QR Code" style="max-width: 150px;">');
+                                let qrText = 'MONITORING-DAILY-TANK-KIMIA/' + response
+                                    .po_number + '/' + response
+                                    .date + '/' + response.id;
+                                $('#qr_code_text').text(qrText);
+                            }
                         } else {
                             $('#qr_code_container').html(
                                 '<p class="text-muted small">QR Code tidak tersedia</p>');
@@ -793,7 +806,7 @@
                                 let statusParamHtml = '-';
                                 if (response.status === 'OK') {
                                     statusParamHtml =
-                                    '<span class="badge bg-success">OK</span>';
+                                        '<span class="badge bg-success">OK</span>';
                                 } else if (response.status === 'NOT OK') {
                                     statusParamHtml =
                                         '<span class="badge bg-danger">NOT OK</span>';
@@ -1001,7 +1014,7 @@
                                 response.po_list.forEach(item => {
                                     $nomorPO.append(
                                         `<option value="${item.id}">${item.po_number}</option>`
-                                        );
+                                    );
                                 });
 
                                 if (response.count === 1 && response.selected_id) {
@@ -1012,7 +1025,7 @@
                                     '<option value="">-- Tidak Ada PO Release --</option>');
                                 $('.errorNomorPO').html(
                                     '<small class="text-danger">Tidak ada Nomor PO yang Release.</small>'
-                                    );
+                                );
                             }
                         },
                         error: function(xhr) {
@@ -1022,7 +1035,7 @@
                                 '<option value="">-- Gagal mengambil data --</option>');
                             $('.errorNomorPO').html(
                                 '<small class="text-danger">Terjadi kesalahan saat mengambil data PO.</small>'
-                                );
+                            );
                         }
                     });
                 }

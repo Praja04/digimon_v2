@@ -56,7 +56,6 @@ class ScanController extends Controller
 
     private function validateAccess($type, $userRole)
     {
-        // Jika role tidak ada dalam mapping, tolak akses
         if (!isset($this->rolePermissions[$userRole])) {
             return [
                 'valid' => false,
@@ -64,7 +63,6 @@ class ScanController extends Controller
             ];
         }
 
-        // Cek apakah tipe QC ada dalam daftar permission role tersebut
         if (!in_array($type, $this->rolePermissions[$userRole])) {
             return [
                 'valid' => false,
@@ -77,13 +75,95 @@ class ScanController extends Controller
 
     public function store(Request $request)
     {
-        $fullUrl = $request->url;
-        $path = parse_url($fullUrl, PHP_URL_PATH);
-        $segments = array_values(array_filter(explode('/', trim($path, '/'))));
+        $input = $request->url;
 
-        $type = $segments[count($segments) - 2] ?? null;
-        $id   = $segments[count($segments) - 1] ?? null;
+        // Mapping prefix kode manual ke type sistem
+        $prefixMapping = [
+            'GGA' => 'gga',
+            'GGAS' => 'ggas',
+            'BLENDING-AWAL' => 'blending-awal',
+            'BLENDING-AFTER-ADJUST-MIKRO' => 'blending-awal-mikro',
+            'MONITORING-TURUN-BLENDING' => 'monitoring-turun-blending',
+            'MONITORING-PASTEURISASI' => 'monitoring-pasteurisasi',
+            'MONITORING-STORAGE-KIMIA' => 'monitoring-storage-kimia',
+            'MONITORING-STORAGE-MIKRO' => 'monitoring-storage-mikro',
+            'MONITORING-STORAGE-BEFORE-USE' => 'monitoring-storage-before-use',
+            'MONITORING-DAILY-TANK-KIMIA' => 'monitoring-daily-tank-kimia',
+            'MONITORING-DAILY-TANK-MIKRO' => 'monitoring-daily-tank-mikro',
+            'MONITORING-ONGOING-KIMIA' => 'monitoring-ongoing-kimia',
+            'MONITORING-ONGOING-MIKRO' => 'monitoring-ongoing-mikro',
+            'SHELF-LIFE-SAMPLING' => 'shelf-life-sampling',
+        ];
 
+        // Cek apakah input berupa URL atau kode manual
+        if (filter_var($input, FILTER_VALIDATE_URL)) {
+            // ===== FORMAT URL =====
+            $path = parse_url($input, PHP_URL_PATH);
+            $segments = array_values(array_filter(explode('/', trim($path, '/'))));
+            $type = $segments[count($segments) - 2] ?? null;
+            $id   = $segments[count($segments) - 1] ?? null;
+
+            Log::info("URL Scan - Type: {$type}, ID: {$id}");
+        } else {
+            // ===== FORMAT KODE MANUAL: PROSES/PO/DATE/ID =====
+            $segments = explode('/', trim($input));
+
+            // Validasi HARUS 4 segment
+            if (count($segments) !== 4) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Format kode tidak valid. Gunakan format: PROSES/PO/DATE/ID' . "\n\n" .
+                        'Contoh: GGA/1002001/2026-02-10/3'
+                ], 400);
+            }
+
+            $prefix = strtoupper($segments[0]); // PROSES
+            $po = $segments[1];                  // PO/BATCH
+            $date = $segments[2];                // DATE
+            $id = $segments[3];                  // ID
+
+            // Validasi prefix apakah ada di mapping
+            if (!isset($prefixMapping[$prefix])) {
+                $validPrefixes = array_keys($prefixMapping);
+                $prefixList = implode(', ', $validPrefixes);
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Prefix '{$prefix}' tidak dikenali.\n\nPrefix yang valid:\n{$prefixList}"
+                ], 400);
+            }
+
+            // Validasi DATE format (YYYY-MM-DD)
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Format tanggal tidak valid. Gunakan format: YYYY-MM-DD' . "\n\n" .
+                        'Contoh: 2026-02-10'
+                ], 400);
+            }
+
+            // Validasi ID harus numerik
+            if (!is_numeric($id)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'ID harus berupa angka.'
+                ], 400);
+            }
+
+            $type = $prefixMapping[$prefix];
+
+            Log::info("Manual Code Scan - Prefix: {$prefix}, PO: {$po}, Date: {$date}, ID: {$id}, Type: {$type}");
+        }
+
+        // Validasi type dan id tidak boleh kosong
+        if (!$type || !$id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Format kode tidak valid. Type atau ID tidak ditemukan.'
+            ], 400);
+        }
+
+        // Mapping semua QC type dengan konfigurasi masing-masing
         $qcMapping = [
             'gga' => [
                 'model' => GGA::class,
@@ -168,7 +248,7 @@ class ScanController extends Controller
                         'id' => $shelfLifeSamplingId
                     ];
                 },
-                'validate_before_scan' => function ($id, $qcData) {
+                'validate_before_scan' => function ($qcData) {
                     if (!$qcData->is_checked) {
                         return [
                             'valid' => false,
@@ -180,8 +260,6 @@ class ScanController extends Controller
                 },
                 'update_scanned_resolver' => function ($id, $qcData) {
                     $userRole = auth()->user()->role;
-
-                    $shelfLifeSamplingId = $qcData->shelf_life_sampling_detail_id;
 
                     $modelClass = $userRole === 'Analis Kimia'
                         ? ShelfLifeSamplingKimia::class
@@ -197,6 +275,7 @@ class ScanController extends Controller
             ],
         ];
 
+        // Validasi apakah type ada di mapping
         if (!isset($qcMapping[$type])) {
             return response()->json([
                 'status' => 'error',
@@ -204,11 +283,12 @@ class ScanController extends Controller
             ], 400);
         }
 
-        // Validasi hak akses berdasarkan role
+        // Validasi akses berdasarkan role user
         $userRole = auth()->user()->role;
         $accessValidation = $this->validateAccess($type, $userRole);
 
         if (!$accessValidation['valid']) {
+            Log::warning("Access Denied - User: {$userRole}, Type: {$type}, ID: {$id}");
             return response()->json([
                 'status' => 'error',
                 'message' => $accessValidation['message']
@@ -220,19 +300,23 @@ class ScanController extends Controller
         try {
             DB::beginTransaction();
 
+            // Resolve model class jika ada custom resolver
             if (isset($config['model_resolver']) && is_callable($config['model_resolver'])) {
                 $modelClass = $config['model_resolver']();
             } else {
                 $modelClass = $config['model'];
             }
 
+            // Cari data berdasarkan ID
             $qcData = $modelClass::findOrFail($id);
 
+            // Validasi khusus sebelum scan (jika ada)
             if (isset($config['validate_before_scan']) && is_callable($config['validate_before_scan'])) {
-                $validation = $config['validate_before_scan']($id, $qcData);
+                $validation = $config['validate_before_scan']($qcData);
 
                 if (!$validation['valid']) {
                     DB::rollBack();
+                    Log::warning("Validation Failed - Type: {$type}, ID: {$id}, Reason: {$validation['message']}");
                     return response()->json([
                         'status' => 'error',
                         'message' => $validation['message'],
@@ -241,6 +325,7 @@ class ScanController extends Controller
                 }
             }
 
+            // Resolve route name dan redirect ID (jika ada custom resolver)
             if (isset($config['route_resolver']) && is_callable($config['route_resolver'])) {
                 $routeData = $config['route_resolver']($id, $qcData);
                 $routeName = $routeData['route'];
@@ -250,6 +335,17 @@ class ScanController extends Controller
                 $redirectId = $id;
             }
 
+            // Validasi route harus ada
+            if (!$routeName) {
+                DB::rollBack();
+                Log::error("Route not found for type: {$type}, User Role: {$userRole}");
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Route tidak ditemukan untuk role Anda.'
+                ], 500);
+            }
+
+            // Simpan log scan ke database
             QRScanLog::create([
                 'qc_type'    => $type,
                 'qc_id'      => $id,
@@ -257,17 +353,23 @@ class ScanController extends Controller
                 'user_id'    => auth()->id(),
             ]);
 
+            // Update scanned_at pada data QC
             try {
                 if (isset($config['update_scanned_resolver']) && is_callable($config['update_scanned_resolver'])) {
+                    // Jika ada custom resolver untuk update (contoh: shelf-life)
                     $config['update_scanned_resolver']($id, $qcData);
                 } else {
+                    // Update scanned_at default (hanya jika belum pernah di-scan)
                     $modelClass::where('id', $id)
                         ->whereNull('scanned_at')
                         ->update([
                             'scanned_at' => Carbon::now(),
                         ]);
                 }
+
+                Log::info("Scan Success - Type: {$type}, ID: {$id}, User: " . auth()->user()->name);
             } catch (\Exception $e) {
+                // Jika table tidak punya kolom scanned_at, skip saja (tidak perlu rollback)
                 Log::info("scanned_at update skipped for {$type}: " . $e->getMessage());
             }
 
@@ -283,14 +385,14 @@ class ScanController extends Controller
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
-            Log::error("Scan Error - Data not found: " . $e->getMessage());
+            Log::error("Scan Error - Data not found: Type: {$type}, ID: {$id}");
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data tidak ditemukan.'
+                'message' => 'Data tidak ditemukan. Pastikan ID yang Anda masukkan benar.'
             ], 404);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Scan Error: " . $e->getMessage());
+            Log::error("Scan Error: " . $e->getMessage() . " | Type: {$type}, ID: {$id}");
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal memproses data: ' . $e->getMessage()

@@ -353,7 +353,7 @@ class MonitoringTurunBlendingController extends Controller
             DB::commit();
 
             $shouldSendNotification = false;
-            $notificationTitle = "Monitoring Turun Blending - Batch " . $blending->batch_range . " (Shift " . $shift . ")";
+            $notificationTitle = "Monitoring Turun Blending - Batch " . $blending->batch_range;
 
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;

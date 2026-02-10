@@ -205,8 +205,7 @@
                                                                         alt="QR" class="img-fluid mb-2"
                                                                         style="max-width:180px;">
                                                                     <div class="small text-muted">
-                                                                        Shelf
-                                                                        Life_{{ $item->bin_location }}_{{ $item->id }}
+                                                                        SHELF-LIFE-SAMPLING/{{ $item->shelfLifeSample->productionBatch->po_number }}/{{ $item->shelfLifeSample->productionBatch->date }}/{{ $item->id }}
                                                                     </div>
                                                                 </div>
                                                                 <div class="modal-footer bg-light py-2">

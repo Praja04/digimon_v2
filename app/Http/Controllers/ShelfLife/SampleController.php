@@ -258,7 +258,8 @@ class SampleController extends Controller
             ];
         }
 
-        $shelfLifeSamplingDetails = ShelfLifeSamplingDetail::where('shelf_life_sample_id', $data->id)
+        $shelfLifeSamplingDetails = ShelfLifeSamplingDetail::with('shelfLifeSample.productionBatch')
+            ->where('shelf_life_sample_id', $data->id)
             ->orderBy('bulan_ke', 'asc')
             ->orderBy('variant_fg', 'asc')
             ->get();

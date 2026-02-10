@@ -37,6 +37,14 @@
             background: #e5f6e5;
             border-bottom: 1px solid #cce5cc;
         }
+
+        .format-example {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #495057;
+        }
     </style>
 @endsection
 
@@ -51,7 +59,9 @@
                     {{-- Scanner Card --}}
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Scan QR Code</h5>
+                            <h5 class="card-title mb-0">
+                                <i class="ri-qr-scan-2-line me-2"></i>Scan QR Code
+                            </h5>
                         </div>
 
                         <div class="card-body">
@@ -68,17 +78,21 @@
                                     <option value="">Memuat kamera...</option>
                                 </select>
 
-                                <button type="button" class="btn btn-sm btn-light w-100" data-bs-toggle="collapse"
-                                    data-bs-target="#manualInput">
-                                    Input Manual
+                                <button type="button" class="btn btn-sm btn-outline-primary w-100"
+                                    data-bs-toggle="collapse" data-bs-target="#manualInput">
+                                    <i class="ri-keyboard-line me-1"></i> Input Manual
                                 </button>
 
                                 <div class="collapse mt-3" id="manualInput">
                                     <form id="manualScanForm">
+                                        <label class="form-label small text-muted mb-1">
+                                            <strong><i class="ri-edit-line"></i> Input Manual Kode</strong>
+                                        </label>
                                         <input type="text" class="form-control form-control-sm mb-2" id="manualUrl"
-                                            placeholder="Paste URL QR di sini">
+                                            style="text-transform: uppercase;">
+
                                         <button type="submit" class="btn btn-dark btn-sm w-100">
-                                            Proses
+                                            <i class="ri-send-plane-line me-1"></i> Proses Kode
                                         </button>
                                     </form>
                                 </div>
@@ -90,7 +104,7 @@
                     {{-- Hasil Scan --}}
                     <div class="card mt-3" id="resultCard" style="display: none;">
                         <div class="card-header">
-                            <h6 class="mb-0">Scan Berhasil</h6>
+                            <h6 class="mb-0"><i class="ri-checkbox-circle-line me-1"></i> Scan Berhasil</h6>
                         </div>
                         <div class="card-body">
                             <p class="mb-1 small text-muted">Detail:</p>
@@ -106,7 +120,7 @@
                             </div>
 
                             <div class="alert-simple mt-3">
-                                Mengalihkan halaman...
+                                <i class="ri-loader-4-line"></i> Mengalihkan halaman...
                             </div>
                         </div>
                     </div>
@@ -145,6 +159,17 @@
                 'shelf-life-sampling': 'Shelf Life Analisis'
             };
 
+            const validPrefixes = [
+                'GGA', 'GGAS',
+                'BLENDING-AWAL', 'BLENDING-AFTER-ADJUST-MIKRO',
+                'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI',
+                'MONITORING-STORAGE-KIMIA', 'MONITORING-STORAGE-MIKRO',
+                'MONITORING-STORAGE-BEFORE-USE',
+                'MONITORING-DAILY-TANK-KIMIA', 'MONITORING-DAILY-TANK-MIKRO',
+                'MONITORING-ONGOING-KIMIA', 'MONITORING-ONGOING-MIKRO',
+                'SHELF-LIFE-SAMPLING'
+            ];
+
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -153,12 +178,80 @@
 
             initializeScanner();
 
+            // Auto uppercase saat mengetik
+            $('#manualUrl').on('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+
             $('#manualScanForm').on('submit', function(e) {
                 e.preventDefault();
-                const url = $('#manualUrl').val().trim();
-                if (url) {
-                    processQRCode(url);
+                const input = $('#manualUrl').val().trim().toUpperCase();
+
+                if (!input) {
+                    showError('Masukkan kode atau URL');
+                    return;
                 }
+
+                // Validasi format jika bukan URL
+                if (!input.startsWith('HTTP')) {
+                    const parts = input.split('/');
+
+                    // HARUS 4 segment: PROSES/PO/DATE/ID
+                    if (parts.length !== 4) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Format Tidak Valid',
+                            html: '<strong>Format wajib 4 bagian:</strong><br>' +
+                                '<code>PROSES/PO/TANGGAL/ID</code><br><br>' +
+                                '<strong>Contoh:</strong><br>' +
+                                '<small>GGA/1002001/2026-02-10/3</small>',
+                            confirmButtonText: 'Mengerti'
+                        });
+                        return;
+                    }
+
+                    const prefix = parts[0];
+                    const po = parts[1];
+                    const date = parts[2];
+                    const id = parts[3];
+
+                    // Validasi prefix
+                    if (!validPrefixes.includes(prefix)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Prefix Tidak Valid',
+                            html: '<strong>Prefix yang valid:</strong><br><small>' +
+                                validPrefixes.join('<br>') + '</small>',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $('#formatHelper').modal('show');
+                            }
+                        });
+                        return;
+                    }
+
+                    // Validasi format tanggal (YYYY-MM-DD)
+                    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                    if (!dateRegex.test(date)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Format Tanggal Salah',
+                            html: '<strong>Format tanggal harus:</strong><br>' +
+                                '<code>YYYY-MM-DD</code><br><br>' +
+                                '<strong>Contoh:</strong> 2026-02-10',
+                            confirmButtonText: 'Mengerti'
+                        });
+                        return;
+                    }
+
+                    // Validasi ID harus angka
+                    if (isNaN(id)) {
+                        showError('ID harus berupa angka');
+                        return;
+                    }
+                }
+
+                processQRCode(input);
             });
 
             $('#cameraSelect').on('change', function() {
@@ -322,6 +415,8 @@
 
                         if (xhr.status === 404) {
                             message = "Data tidak ditemukan";
+                        } else if (xhr.status === 400 && xhr.responseJSON) {
+                            message = xhr.responseJSON.message;
                         } else if (xhr.responseJSON && xhr.responseJSON.message) {
                             message = xhr.responseJSON.message;
                         }

@@ -233,6 +233,9 @@ class MonitoringOnGoingMikroController extends Controller
                 'remarks' => $monitoring->remarks ?? '-',
                 'updated_at_formatted' => $monitoring->updated_at ?
                     $monitoring->updated_at->locale('id')->translatedFormat('d F Y, H:i') : '-',
+
+                'po_number' => $monitoring->productionBatch->po_number ?? '-',
+                'date' => $monitoring->productionBatch->date ?? '-',
             ];
 
             return response()->json($response);

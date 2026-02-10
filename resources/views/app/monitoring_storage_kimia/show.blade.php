@@ -154,7 +154,7 @@
                                                                         <td>
                                                                             @if ($storageKimia->revisi != null)
                                                                                 {{ $storageKimia->batch_range }}
-                                                                                
+
                                                                                 <span class="badge {{ $badgeClass }} ms-1"
                                                                                     title="Revisi ke-{{ $storageKimia->revisi }}">
                                                                                     Rev. {{ $storageKimia->revisi }}
@@ -206,9 +206,7 @@
                                                                                                 <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-kimia.show_batch', $storageKimia->id), 'QRCODE') }}"
                                                                                                     alt="QR Code">
                                                                                             </div>
-                                                                                            <p>Monitoring
-                                                                                                Storage
-                                                                                                Kimia/{{ $productionBatch->po_number }}/{{ $productionBatch->variant }}/{{ $storageKimia->batch_range }}
+                                                                                            <p>MONITORING-STORAGE-KIMIA/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageKimia->id }}
                                                                                             </p>
                                                                                         </div>
                                                                                         <div
@@ -295,8 +293,9 @@
                                                                         <td>
                                                                             @if ($storageMikro->revisi != null)
                                                                                 {{ $storageMikro->batch_range }}
-                                                                                
-                                                                                <span class="badge {{ $badgeClass }} ms-1"
+
+                                                                                <span
+                                                                                    class="badge {{ $badgeClass }} ms-1"
                                                                                     title="Revisi ke-{{ $storageMikro->revisi }}">
                                                                                     Rev. {{ $storageMikro->revisi }}
                                                                                 </span>
@@ -347,9 +346,7 @@
                                                                                                 <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-mikro.show_batch', $storageMikro->id), 'QRCODE') }}"
                                                                                                     alt="QR Code">
                                                                                             </div>
-                                                                                            <p>Monitoring
-                                                                                                Storage
-                                                                                                Mikro/{{ $productionBatch->po_number }}/{{ $productionBatch->variant }}/{{ $storageMikro->batch_range }}
+                                                                                            <p>MONITORING-STORAGE-MIKRO/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageMikro->id }}
                                                                                             </p>
                                                                                         </div>
                                                                                         <div

@@ -82,14 +82,16 @@ class MonitoringDailyTankKimiaController extends Controller
                 $message =  strtoupper($alasanDisposisi);
             }
 
-            event(new ProcessOutsideDisposition(
-                $notificationTitle,
-                $monitoringDailyTank->productionBatch->id,
-                'Monitoring Daily Tank Kimia',
-                $request->status_parameter,
-                $message,
-                route('analisa.monitoring-daily-tank-kimia.show', $monitoringDailyTank->id)
-            ));
+            if (auth()->user()->role != 'Foreman') {
+                event(new ProcessOutsideDisposition(
+                    $notificationTitle,
+                    $monitoringDailyTank->productionBatch->id,
+                    'Monitoring Daily Tank Kimia',
+                    $request->status_parameter,
+                    $message,
+                    route('analisa.monitoring-daily-tank-kimia.show', $monitoringDailyTank->id)
+                ));
+            }
 
             return response()->json([
                 'status' => 'success',

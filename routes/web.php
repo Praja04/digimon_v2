@@ -5,6 +5,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 
+Route::get('/welcome', function () {
+    return view('welcome');
+});
+
+Route::get('/informasi-storage', [App\Http\Controllers\StorageInformationController::class, 'index'])->name('storage-information.index');
+Route::get('/informasi-storage/get-data', [App\Http\Controllers\StorageInformationController::class, 'getData'])->name('storage-information.get-data');
+
 Auth::routes();
 
 /*------------------------------------------
@@ -61,6 +68,12 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard - Timbangan Retail
         Route::get('/dashboard/timbangan-retail', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'index'])->name('dashboard.timbangan-retail.index');
+
+        // Dashboard - Proses Masak
+        Route::get('/dashboard/proses-masak', [App\Http\Controllers\Dashboard\ProsesMasakController::class, 'index'])->name('dashboard.proses-masak.index');
+
+        // Dashboard - Monitoring On Going Mikro
+        Route::get('/dashboard/monitoring-on-going-mikro', [App\Http\Controllers\Dashboard\MonitoringOnGoingMikroController::class, 'index'])->name('dashboard.monitoring-on-going-mikro.index');
     });
 
     /*------------------------------------------
@@ -211,64 +224,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sampling/raw/{id}', [App\Http\Controllers\Sampling\RawController::class, 'show'])->name('sampling-raw.show');
         Route::post('/sampling/raw', [App\Http\Controllers\Sampling\RawController::class, 'store'])->name('sampling-raw.store');
         Route::post('/sampling/raw/update', [App\Http\Controllers\Sampling\RawController::class, 'update'])->name('sampling-raw.update');
-    });
-
-    /*------------------------------------------
-    Persiapan Masak
-    Roles: Head Of Dapartement, Supervisor, Foreman, Operator
-    --------------------------------------------*/
-    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Operator'])->group(function () {
-        Route::get('/persiapan-masak', [App\Http\Controllers\ProductionBatchController::class, 'index'])->name('productionbatch.index');
-        Route::get('/persiapan-masak/tambah', [App\Http\Controllers\ProductionBatchController::class, 'create'])->name('productionbatch.create');
-        Route::post('/persiapan-masak', [App\Http\Controllers\ProductionBatchController::class, 'store'])->name('productionbatch.store');
-
-        // GGA - GGAS
-        Route::get('/gga-ggas', [App\Http\Controllers\GgaGgasController::class, 'index'])->name('gga-ggas.index');
-        Route::post('/gga-ggas', [App\Http\Controllers\GgaGgasController::class, 'store'])->name('gga-ggas.store');
-        Route::post('/gga-ggas/update', [App\Http\Controllers\GgaGgasController::class, 'update'])->name('gga-ggas.update');
-        Route::get('/gga-ggas/{id}', [App\Http\Controllers\GgaGgasController::class, 'edit'])->name('gga-ggas.edit');
-        Route::get('/gga-ggas/detail/{id}', [App\Http\Controllers\GgaGgasController::class, 'show'])->name('gga-ggas.show');
-        Route::delete('/gga-ggas/{id}', [App\Http\Controllers\GgaGgasController::class, 'destroy'])->name('gga-ggas.destroy');
-        Route::get('/gga-ggas/revisi/gga/{id}', [App\Http\Controllers\GgaGgasController::class, 'show_revisi_gga'])->name('gga-ggas.show_revisi_gga');
-        Route::post('/gga-ggas/revisi/gga', [App\Http\Controllers\GgaGgasController::class, 'update_revisi_gga'])->name('gga-ggas.update_revisi_gga');
-        Route::get('/gga-ggas/revisi/ggas/{id}', [App\Http\Controllers\GgaGgasController::class, 'show_revisi_ggas'])->name('gga-ggas.show_revisi_ggas');
-        Route::post('/gga-ggas/revisi/ggas', [App\Http\Controllers\GgaGgasController::class, 'update_revisi_ggas'])->name('gga-ggas.update_revisi_ggas');
-
-        // Blending Awal (Foreman/Operator Input)
-        Route::get('/blending-awal', [App\Http\Controllers\BlendingAwalController::class, 'index'])->name('blending-awal.index');
-        Route::get('/blending-awal/get-last-revisi', [App\Http\Controllers\BlendingAwalController::class, 'getLastRevisiBlendingAwal'])->name('blending-awal.getLastRevisiBlendingAwal');
-        Route::get('/blending-awal/get-available-additional-batch', [App\Http\Controllers\BlendingAwalController::class, 'getAvailableAdditionalBatch'])->name('blending-awal.getAvailableAdditionalBatch');
-        Route::get('/blending-awal/get-jalan-bareng', [App\Http\Controllers\BlendingAwalController::class, 'getJalanBareng'])->name('blending-awal.getJalanBareng');
-        Route::get('/blending-awal/edit/{id}', [App\Http\Controllers\BlendingAwalController::class, 'edit'])->name('blending-awal.edit');
-        Route::post('/blending-awal/update', [App\Http\Controllers\BlendingAwalController::class, 'update'])->name('blending-awal.update');
-        Route::delete('/blending-awal/{id}', [App\Http\Controllers\BlendingAwalController::class, 'destroy'])->name('blending-awal.destroy');
-        Route::get('/blending-awal/{id}', [App\Http\Controllers\BlendingAwalController::class, 'show'])->name('blending-awal.show');
-        Route::post('/blending-awal', [App\Http\Controllers\BlendingAwalController::class, 'store'])->name('blending-awal.store');
-        Route::post('/blending-awal/revisi', [App\Http\Controllers\BlendingAwalController::class, 'storeRevisi'])->name('blending-awal.storeRevisi');
-
-        // Monitoring Turun Blending
-        Route::get('/monitoring-turun-blending', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'index'])->name('monitoring-turun-blending.index');
-        Route::get('/monitoring-turun-blending/get-last-revisi', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'getLastRevisi'])->name('monitoring-turun-blending.getLastRevisi');
-        Route::get('/monitoring-turun-blending/get-available-additional-batch', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'getAvailableAdditionalBatch'])->name('monitoring-turun-blending.getAvailableAdditionalBatch');
-        Route::get('/monitoring-turun-blending/get-jalan-bareng', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'getJalanBareng'])->name('monitoring-turun-blending.getJalanBareng');
-        Route::get('/monitoring-turun-blending/edit/{id}', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'edit'])->name('monitoring-turun-blending.edit');
-        Route::post('/monitoring-turun-blending/update', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'update'])->name('monitoring-turun-blending.update');
-        Route::delete('/monitoring-turun-blending/{id}', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'destroy'])->name('monitoring-turun-blending.destroy');
-        Route::get('/monitoring-turun-blending/{id}', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'show'])->name('monitoring-turun-blending.show');
-        Route::post('/monitoring-turun-blending', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'store'])->name('monitoring-turun-blending.store');
-        Route::post('/monitoring-turun-blending/revisi', [App\Http\Controllers\MonitoringTurunBlendingController::class, 'storeRevisi'])->name('monitoring-turun-blending.storeRevisi');
-
-        // Monitoring Pasteurisasi
-        Route::get('/monitoring-pasteurisasi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'index'])->name('monitoring-pasteurisasi.index');
-        Route::get('/monitoring-pasteurisasi/get-last-revisi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'getLastRevisi'])->name('monitoring-pasteurisasi.getLastRevisi');
-        Route::get('/monitoring-pasteurisasi/get-available-additional-batch', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'getAvailableAdditionalBatch'])->name('monitoring-pasteurisasi.getAvailableAdditionalBatch');
-        Route::get('/monitoring-pasteurisasi/get-jalan-bareng', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'getJalanBareng'])->name('monitoring-pasteurisasi.getJalanBareng');
-        Route::get('/monitoring-pasteurisasi/edit/{id}', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'edit'])->name('monitoring-pasteurisasi.edit');
-        Route::post('/monitoring-pasteurisasi/update', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'update'])->name('monitoring-pasteurisasi.update');
-        Route::delete('/monitoring-pasteurisasi/{id}', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'destroy'])->name('monitoring-pasteurisasi.destroy');
-        Route::get('/monitoring-pasteurisasi/{id}', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'show'])->name('monitoring-pasteurisasi.show');
-        Route::post('/monitoring-pasteurisasi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'store'])->name('monitoring-pasteurisasi.store');
-        Route::post('/monitoring-pasteurisasi/revisi', [App\Http\Controllers\MonitoringPasteurisasiController::class, 'storeRevisi'])->name('monitoring-pasteurisasi.storeRevisi');
     });
 
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Field'])->group(function () {

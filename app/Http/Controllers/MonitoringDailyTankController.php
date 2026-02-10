@@ -171,7 +171,7 @@ class MonitoringDailyTankController extends Controller
     public function show($id)
     {
         try {
-            $data = MonitoringDailyTank::with(['qcField', 'qcAnalisa', 'color'])->find($id);
+            $data = MonitoringDailyTank::with(['qcField', 'qcAnalisa', 'color', 'productionBatch'])->find($id);
 
             if (!$data) {
                 return response()->json([
@@ -239,6 +239,9 @@ class MonitoringDailyTankController extends Controller
 
                 // Created At
                 'created_at_formatted' => $data->created_at ? \Carbon\Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y, H:i') : null,
+
+                'po_number' => $data->productionBatch ? $data->productionBatch->po_number : null,
+                'date' => $data->productionBatch ? $data->productionBatch->date : null,
             ];
 
             return response()->json($response);

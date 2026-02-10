@@ -355,7 +355,7 @@ class MonitoringPasteurisasiController extends Controller
             DB::commit();
 
             $shouldSendNotification = false;
-            $notificationTitle = "Monitoring Pasteurisasi - Batch " . $pasteurisasi->batch_range . " (Shift " . $shift . ")";
+            $notificationTitle = "Monitoring Pasteurisasi - Batch " . $pasteurisasi->batch_range;
 
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;

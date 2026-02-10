@@ -11,7 +11,7 @@
 
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.menu')}}">Menu</a></li>
+                                <li class="breadcrumb-item"><a href="{{ route('monitoring-daily-tank.menu') }}">Menu</a></li>
                                 <li class="breadcrumb-item active">@yield('title')</li>
                             </ol>
                         </div>
@@ -563,7 +563,9 @@
                             $('#qr_code_container').html('<img src="data:image/png;base64,' +
                                 response.qr_code +
                                 '" alt="QR Code" style="max-width: 150px;">');
-                            let qrText = response.storage + '/' + response.koding;
+                            let qrText = 'MONITORING-ONGOING-KIMIA/' + response.po_number +
+                                '/' + response
+                                .date + '/' + response.id;
                             $('#qr_code_text').text(qrText);
                         } else {
                             $('#qr_code_container').html(
