@@ -43,52 +43,6 @@ class SampleController extends Controller
                 ->addColumn('variant', function ($data) {
                     return $data->productionBatch->variant ?? '-';
                 })
-                ->addColumn('progress', function ($data) {
-                    $maxBulan = $data->shelfLifeSamplingDetails->max('bulan_ke') ?? 0;
-                    $totalDetails = $data->shelfLifeSamplingDetails->count();
-
-                    $targetBulan = 16;
-
-                    if ($targetBulan == 0 && $maxBulan == 0) {
-                        $targetBulan = 1;
-                    }
-
-                    $progressPercentage = $maxBulan > 0 ? min(($maxBulan / $targetBulan) * 100, 100) : 0;
-
-                    $badgeColor = 'secondary';
-                    $statusText = 'Belum Dimulai';
-
-                    if ($maxBulan > 0) {
-                        if ($maxBulan >= $targetBulan) {
-                            $badgeColor = 'success';
-                            $statusText = 'Selesai';
-                        } else {
-                            $badgeColor = 'warning';
-                            $statusText = 'Berjalan';
-                        }
-                    }
-
-                    return '
-                    <div class="d-flex flex-column gap-1">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="progress flex-grow-1" style="height: 20px; min-width: 100px;">
-                                <div class="progress-bar bg-' . $badgeColor . '" role="progressbar" 
-                                     style="width: ' . $progressPercentage . '%;" 
-                                     aria-valuenow="' . $progressPercentage . '" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                    ' . round($progressPercentage) . '%
-                                </div>
-                            </div>
-                        </div>
-                        <small class="text-muted">
-                            <span class="badge bg-' . $badgeColor . '">' . $statusText . '</span>
-                            Bulan ke-' . $maxBulan . '
-                            <span class="text-muted">(' . $totalDetails . ' data)</span>
-                        </small>
-                    </div>
-                ';
-                })
                 ->addColumn('detail', function ($data) {
                     return '
                     <a href="' . route("shelf-life.sample.show", $data->id) . '" class="btn btn-sm btn-info" title="Lihat Detail">
@@ -109,7 +63,7 @@ class SampleController extends Controller
                     </button>
                     ';
                 })
-                ->rawColumns(['detail', 'action', 'progress'])
+                ->rawColumns(['detail', 'action'])
                 ->make(true);
         }
         return view('app.shelf_life.sample.index');

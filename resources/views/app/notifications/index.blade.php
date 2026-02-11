@@ -243,8 +243,9 @@
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Berhasil!',
-                                text: 'Semua notifikasi berhasil ditandai dibaca.',
+                                title: 'Semua notifikasi ditandai sudah dibaca',
+                                showConfirmButton: false,
+                                timer: 1500
                             }).then(() => {
                                 window.location.reload();
                             });

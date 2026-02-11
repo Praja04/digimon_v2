@@ -201,7 +201,7 @@
                                                                 </div>
                                                                 <div class="modal-body text-center p-3"
                                                                     id="qrPrintArea{{ $item->id }}">
-                                                                    <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(env('QC_URL') . 'scan/shelf-life-sampling/' . $item->id, 'QRCODE') }}"
+                                                                    <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG('SHELF-LIFE-SAMPLING/' . $item->shelfLifeSample->productionBatch->po_number . '/' . $item->shelfLifeSample->productionBatch->date . '/' . $item->id, 'QRCODE') }}"
                                                                         alt="QR" class="img-fluid mb-2"
                                                                         style="max-width:180px;">
                                                                     <div class="small text-muted">
@@ -375,17 +375,220 @@
 @section('scripts')
     <script>
         function printQR(id) {
-            const content = document.getElementById(id).innerHTML;
-            const win = window.open('', '', 'height=600,width=600');
-            win.document.write('<html><head><title>Print QR</title>');
-            win.document.write('<style>body{text-align:center; font-size:12px;}</style>');
-            win.document.write('</head><body>');
-            win.document.write(content);
-            win.document.write('</body></html>');
-            win.document.close();
-            win.focus();
-            win.print();
-            win.close();
+            const printArea = document.getElementById(id);
+
+            if (!printArea) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Area print tidak ditemukan'
+                });
+                return;
+            }
+
+            const qrImage = printArea.querySelector('img');
+            const qrLabel = printArea.querySelector('.small.text-muted');
+
+            if (!qrImage) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'QR Code tidak ditemukan'
+                });
+                return;
+            }
+
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                printQRMobile(qrImage, qrLabel);
+            } else {
+                printQRDesktop(qrImage, qrLabel);
+            }
+        }
+
+        function printQRDesktop(qrImage, qrLabel) {
+            const printWindow = window.open('', '_blank', 'width=300,height=400');
+
+            if (!printWindow) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pop-up Diblokir',
+                    text: 'Mohon izinkan pop-up untuk print.'
+                });
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Print QR</title>
+                    <style>
+                        @page {
+                            size: 58mm auto;
+                            margin: 0;
+                        }
+                        
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        
+                        body {
+                            width: 58mm;
+                            margin: 0 auto;
+                            padding: 5mm 3mm;
+                            font-family: Arial, sans-serif;
+                            background: white;
+                        }
+                        
+                        .container {
+                            text-align: center;
+                            width: 100%;
+                        }
+                        
+                        .qr-image {
+                            width: 45mm;
+                            height: 45mm;
+                            display: block;
+                            margin: 0 auto 3mm auto;
+                        }
+                        
+                        .qr-label {
+                            font-size: 8pt;
+                            color: #000;
+                            word-wrap: break-word;
+                            line-height: 1.3;
+                        }
+                        
+                        @media print {
+                            body {
+                                padding: 2mm;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <img src="${qrImage.src}" alt="QR" class="qr-image">
+                        <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.focus();
+                    printWindow.print();
+                    setTimeout(function() {
+                        printWindow.close();
+                    }, 500);
+                }, 250);
+            };
+        }
+
+        function printQRMobile(qrImage, qrLabel) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = 220;
+            canvas.height = 280;
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                const qrSize = 170;
+                const qrX = (canvas.width - qrSize) / 2;
+                const qrY = 10;
+                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                const labelText = qrLabel ? qrLabel.textContent.trim() : '';
+
+                const maxWidth = 200;
+                const lineHeight = 14;
+                const words = labelText.split('/');
+                let line = '';
+                let y = qrY + qrSize + 20;
+
+                words.forEach((word, index) => {
+                    if (index > 0) line += '/';
+                    const testLine = line + word;
+                    const metrics = ctx.measureText(testLine);
+
+                    if (metrics.width > maxWidth && index > 0) {
+                        ctx.fillText(line, canvas.width / 2, y);
+                        line = word;
+                        y += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                });
+                ctx.fillText(line, canvas.width / 2, y);
+
+                canvas.toBlob(function(blob) {
+                    if (navigator.share && isMobileDevice()) {
+                        const file = new File([blob], 'qr-code.png', {
+                            type: 'image/png'
+                        });
+
+                        navigator.share({
+                            files: [file],
+                            title: 'Print QR Code',
+                            text: 'QR Code untuk print'
+                        }).catch(err => {
+                            fallbackPrint(blob);
+                        });
+                    } else {
+                        fallbackPrint(blob);
+                    }
+                }, 'image/png');
+            };
+
+            img.onerror = function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat QR code'
+                });
+            };
+
+            img.src = qrImage.src;
+        }
+
+        function fallbackPrint(blob) {
+            const url = URL.createObjectURL(blob);
+            const printWindow = window.open(url, '_blank');
+
+            if (!printWindow) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pop-up Diblokir',
+                    text: 'Mohon izinkan pop-up untuk print.'
+                });
+                return;
+            }
+
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.print();
+                }, 500);
+            };
+        }
+
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
         $(document).ready(function() {

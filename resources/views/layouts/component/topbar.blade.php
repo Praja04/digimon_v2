@@ -77,14 +77,25 @@
                      </button>
                  </div>
 
+                 <div class="ms-1 header-item d-none d-sm-flex">
+                     <button type="button"
+                         class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle shadow-none"
+                         onclick="location.reload();">
+                         <i class='bx bx-refresh fs-22'></i>
+                     </button>
+                 </div>
+
 
                  @if (auth()->user()->role === 'Foreman' || auth()->user()->role === 'Supervisor')
                      <div class="dropdown topbar-head-dropdown ms-1 header-item" id="notificationDropdown">
+
                          <button type="button"
-                             class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle shadow-none position-relative"
+                             class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle shadow-none"
                              id="page-header-notifications-dropdown" data-bs-toggle="dropdown"
                              data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false">
+
                              <i class='bx bx-bell fs-22'></i>
+
                              <span id="notif-badge"
                                  class="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger d-none">
                                  0
@@ -92,37 +103,38 @@
                          </button>
 
                          <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
-                             aria-labelledby="page-header-notifications-dropdown"
-                             style="max-height: 400px; overflow-y: auto; border-radius: 10px;">
+                             aria-labelledby="page-header-notifications-dropdown">
 
-                             <!-- HEADER -->
-                             <div class="dropdown-head bg-primary bg-pattern rounded-top sticky-top"
-                                 style="z-index: 10;">
+                             <div class="dropdown-head bg-primary bg-pattern rounded-top">
                                  <div class="p-3">
                                      <div class="row align-items-center">
                                          <div class="col">
                                              <h6 class="m-0 fs-16 fw-semibold text-white">Notifikasi</h6>
                                          </div>
                                          <div class="col-auto">
-                                             <button id="mark-all-read" class="btn btn-sm btn-light">
-                                                 Sudah lihat semua
+                                             <button id="mark-all-read" type="button" class="btn btn-sm btn-light">
+                                                 Tandai Dibaca
                                              </button>
                                          </div>
                                      </div>
                                  </div>
                              </div>
 
-                             <!-- ISI -->
-                             <div class="tab-content position-relative" id="notificationItemsTabContent">
-                                 <div class="tab-pane fade show active py-2 ps-2" id="all-noti-tab" role="tabpanel">
-                                     <div id="notification-list" class="pe-2">
-                                         <div class="text-center p-3 text-muted">Memuat notifikasi...</div>
+                             <div class="py-2 ps-2">
+                                 <div data-simplebar style="max-height: 300px;" class="pe-2">
+
+                                     <div id="notification-list">
+                                         <div class="text-center p-4 text-muted">
+                                             Memuat notifikasi...
+                                         </div>
                                      </div>
                                  </div>
                              </div>
+
                          </div>
                      </div>
                  @endif
+
 
                  <div class="dropdown ms-sm-3 header-item topbar-user">
                      <button type="button" class="btn shadow-none" id="page-header-user-dropdown"
