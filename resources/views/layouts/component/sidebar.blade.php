@@ -51,6 +51,11 @@
                             id="Dashboards">
                             <ul class="nav nav-sm flex-column">
                                 <li class="nav-item">
+                                    <a href="{{ route('dashboard.proses-masak.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.proses-masak.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-chef-hat"></i>Proses Masak</a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('dashboard.gga-ggas.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.gga-ggas.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-flask"></i>GGA & GGAS</a>
@@ -81,6 +86,10 @@
                                 <li class="nav-item"><a href="{{ route('dashboard.monitoring-storage-mikro.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.monitoring-storage-mikro.index') ? 'active' : '' }}"><i
                                             class="mdi mdi-bacteria"></i> Monitoring Storage Mikro</a>
+                                </li>
+                                <li class="nav-item"><a href="{{ route('dashboard.monitoring-on-going-mikro.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.monitoring-on-going-mikro.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-bacteria-outline"></i> Monitoring On Going Mikro</a>
                                 </li>
                                 <li class="nav-item"><a href="{{ route('dashboard.rmpm.index') }}"
                                         class="nav-link {{ request()->routeIs('dashboard.rmpm.index') ? 'active' : '' }}"><i

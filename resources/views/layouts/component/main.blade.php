@@ -6,6 +6,7 @@
 
     <meta charset="utf-8" />
     <title>@yield('title') | {{ env('APP_NAME') }}</title>
+    @vite(['resources/js/app.js'])
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="{{ csrf_token() }}" name="csrf-token">
     <!-- App favicon -->
@@ -65,8 +66,6 @@
     </div>
     <!-- END layout-wrapper -->
 
-
-
     <!--start back-to-top-->
     <button onclick="topFunction()" class="btn btn-danger btn-icon" id="back-to-top">
         <i class="ri-arrow-up-line"></i>
@@ -90,7 +89,6 @@
     <script src="{{ asset('assets') }}/js/pages/plugins/lord-icon-2.1.0.js"></script>
     <script src="{{ asset('assets') }}/js/plugins.js"></script>
 
-
     <!--datatable js-->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
@@ -110,88 +108,168 @@
 
     <!-- App js -->
     <script src="{{ asset('assets') }}/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
-    @if (auth()->user()->role === 'Foreman' || auth()->user()->role === 'Supervisor')
-        <script>
-            async function loadNotifications() {
-                const list = document.getElementById('notification-list');
-                const badge = document.getElementById('notif-badge');
+            @if (auth()->user()->role === 'Foreman' || auth()->user()->role === 'Supervisor')
 
-                try {
-                    const res = await fetch('/notifications/unread');
-                    const data = await res.json();
+                const notifBtn = document.getElementById('page-header-notifications-dropdown');
+                const notifBadge = document.getElementById('notif-badge');
+                const notifContainer = document.getElementById('notification-list');
+                const markAllBtn = document.getElementById('mark-all-read');
 
-                    list.innerHTML = ''; // Kosongkan dulu
+                async function loadNotifications() {
+                    try {
+                        const res = await fetch('/notifications/unread');
+                        const data = await res.json();
 
-                    if (data.length === 0) {
-                        list.innerHTML = `<div class="text-center text-muted py-3">Tidak ada notifikasi baru</div>`;
-                        badge.classList.add('d-none');
-                        return;
-                    }
+                        // Update badge
+                        if (data.length > 0) {
+                            notifBadge.textContent = data.length;
+                            notifBadge.classList.remove('d-none');
+                        } else {
+                            notifBadge.classList.add('d-none');
+                        }
 
-                    // Tampilkan jumlah notifikasi
-                    badge.textContent = data.length;
-                    badge.classList.remove('d-none');
+                        // Kosongkan container
+                        notifContainer.innerHTML = '';
 
-                    // Render setiap notifikasi
-                    data.forEach(n => {
-                        const item = document.createElement('div');
-                        item.className =
-                            'text-reset notification-item d-block dropdown-item position-relative border-bottom';
-                        item.style.cursor = 'pointer';
-                        item.innerHTML = `
-                            <div class="d-flex">
-                                <div class="flex-1">
-                                    <h6 class="mt-0 mb-2 lh-base">
-                                        <b>${n.title}</b> - Status: <span class="text-danger">${n.status_disposition}</span>
-                                    </h6>
-                                    <p class="mb-0 fs-11 fw-medium text-uppercase text-muted">
-                                        <i class="mdi mdi-clock-outline"></i> ${new Date(n.created_at).toLocaleString()}
-                                    </p>
-                                </div>
+                        if (!data || data.length === 0) {
+                            notifContainer.innerHTML = `
+                    <div class="text-center p-4 text-muted">
+                        <i class="bx bx-bell-off fs-22"></i>
+                        <p class="mt-2 mb-0">Tidak ada notifikasi baru</p>
+                    </div>
+                `;
+                            return;
+                        }
+
+                        data.forEach(n => {
+                            const item = document.createElement('div');
+                            item.className =
+                                'text-reset notification-item d-block dropdown-item position-relative';
+
+                            item.innerHTML = `
+                    <div class="d-flex">
+                        <div class="avatar-xs me-3">
+                            <span class="avatar-title bg-soft-info text-info rounded-circle fs-16">
+                                <i class="bx bx-badge-check"></i>
+                            </span>
+                        </div>
+
+                        <div class="flex-1">
+                            <a href="/notifications" class="stretched-link">
+                                <h6 class="mt-0 mb-2 lh-base">
+                                    ${n.title}
+                                </h6>
+                            </a>
+
+                            <div class="fs-13 text-muted">
+                                <p class="mb-1">
+                                    Status: <span class="text-danger">${n.status_disposition}</span>
+                                </p>
                             </div>
-                        `;
-                        // Ketika notifikasi diklik
-                        item.addEventListener('click', async () => {
-                            try {
-                                window.location.href = '/notifications'; // arahkan ke index notifikasi
-                            } catch (err) {
-                                console.error('Gagal menandai sebagai dibaca:', err);
+
+                            <p class="mb-0 fs-11 fw-medium text-uppercase text-muted">
+                                <span>
+                                    <i class="mdi mdi-clock-outline"></i>
+                                    ${new Date(n.created_at).toLocaleString('id-ID')}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                            notifContainer.appendChild(item);
+                        });
+
+                    } catch (error) {
+                        console.error('Error load notifications:', error);
+
+                        notifContainer.innerHTML = `
+                <div class="text-center text-danger p-4">
+                    <i class="bx bx-error-circle fs-22"></i>
+                    <p class="mt-2">Gagal memuat notifikasi</p>
+                </div>
+            `;
+                    }
+                }
+
+                async function markAllRead() {
+                    try {
+                        const response = await fetch('/notifications/mark-all-read', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                    .content,
+                                'Content-Type': 'application/json'
                             }
                         });
 
-                        list.appendChild(item);
-                    });
-                } catch (error) {
-                    console.error('Gagal memuat notifikasi:', error);
-                    list.innerHTML = `<div class="text-center text-danger py-3">Gagal memuat notifikasi</div>`;
-                }
-            }
+                        if (response.ok) {
+                            await loadNotifications();
 
-
-            // Mark all as read
-            async function markAllRead() {
-                await fetch('/notifications/mark-all-read', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Semua notifikasi ditandai sudah dibaca',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error mark all read:', error);
                     }
-                });
+                }
 
-                loadNotifications(); // reload list
-            }
-        </script>
-    @endif
+                if (notifBtn) {
+                    notifBtn.addEventListener('shown.bs.dropdown', function() {
+                        loadNotifications();
+                    });
+                }
+
+                if (markAllBtn) {
+                    markAllBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        markAllRead();
+                    });
+                }
+
+                // Load awal
+                loadNotifications();
+
+                // ===== REALTIME REVERB =====
+                if (window.Echo) {
+                    window.Echo.channel('disposition-channel')
+                        .listen('.ProcessOutsideDisposition', (e) => {
+
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 4000
+                            });
+
+                            Toast.fire({
+                                icon: "info",
+                                title: e.title || "Disposisi Baru"
+                            });
+
+                            if ('Notification' in window && Notification.permission === 'granted') {
+                                new Notification(e.title || 'Disposisi Baru', {
+                                    body: e.message || 'Terdapat disposisi baru.',
+                                    icon: '{{ asset('assets/images/icon-utility/kecap.png') }}'
+                                });
+                            }
+
+                            loadNotifications();
+                        });
+                }
+            @endif
+        });
+    </script>
+
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadNotifications();
-            document.getElementById('mark-all-read').addEventListener('click', markAllRead);
-
-            // Polling ringan setiap 5 detik
-            setInterval(loadNotifications, 5000);
-        });
-
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {

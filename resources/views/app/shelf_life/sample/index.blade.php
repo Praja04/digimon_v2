@@ -62,7 +62,6 @@
                                             <th>Nomor PO</th>
                                             <th>Variant</th>
                                             <th>Storage</th>
-                                            <th>Progress</th>
                                             <th>Detail</th>
                                             <th width="1">Aksi</th>
                                         </tr>
@@ -200,12 +199,6 @@
                     {
                         data: 'storage',
                         name: 'storage'
-                    },
-                    {
-                        data: 'progress',
-                        name: 'progress',
-                        orderable: false,
-                        searchable: false
                     },
                     {
                         data: 'detail',
