@@ -41,6 +41,13 @@ Route::get('/dashboard/monitoring-storage-kimia/analisa/disposisi', [App\Http\Co
 Route::get('/dashboard/monitoring-storage-mikro/analisa', [App\Http\Controllers\Api\Dashboard\MonitoringStorageMikroController::class, 'analisaMonitoringStorageMikro'])->name('api.dashboard.monitoring-storage-mikro.analisa');
 Route::get('/dashboard/monitoring-storage-mikro/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\MonitoringStorageMikroController::class, 'analisaDisposisi'])->name('api.dashboard.monitoring-storage-mikro.analisa.disposisi');
 
+// Dashboard - Proses Masak
+Route::get('/dashboard/proses-masak/data', [App\Http\Controllers\Api\Dashboard\ProsesMasakController::class, 'getData'])->name('api.dashboard.proses-masak.data');
+Route::get('/dashboard/proses-masak/weeks', [App\Http\Controllers\Api\Dashboard\ProsesMasakController::class, 'getWeeks'])->name('api.dashboard.proses-masak.weeks');
+Route::get('/dashboard/proses-masak/filter-options', [App\Http\Controllers\Api\Dashboard\ProsesMasakController::class, 'getFilterOptions'])->name('api.dashboard.proses-masak.filter-options');
+
+Route::get('/dashboard/monitoring-on-going-mikro/data', [App\Http\Controllers\Api\Dashboard\MonitoringOnGoingMikroController::class, 'getData'])->name('api.dashboard.monitoring-on-going-mikro.data');
+Route::get('/dashboard/monitoring-on-going-mikro/weeks', [App\Http\Controllers\Api\Dashboard\MonitoringOnGoingMikroController::class, 'getWeeks'])->name('api.dashboard.monitoring-on-going-mikro.weeks');
 
 // Production Batch
 Route::get('/persiapan-masak', [App\Http\Controllers\Api\ProductionBatchController::class, 'index'])->name('api.production.batch.index');
