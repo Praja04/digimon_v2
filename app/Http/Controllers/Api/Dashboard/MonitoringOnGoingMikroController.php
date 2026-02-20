@@ -48,27 +48,31 @@ class MonitoringOnGoingMikroController extends Controller
     {
         $weeks = [];
         $currentDate = Carbon::now();
+        $currentMonth = $currentDate->month;
+        $currentYear = $currentDate->year;
 
-        for ($i = 0; $i < 12; $i++) {
+        for ($i = 0; $i < 6; $i++) {
             $date = $currentDate->copy()->subWeeks($i);
-            $weekNumber = $date->week;
-            $year = $date->year;
-            $weekValue = $date->format('Y-\WW');
-
             $startOfWeek = $date->copy()->startOfWeek();
             $endOfWeek = $date->copy()->endOfWeek();
 
+            $midOfWeek = $date->copy()->startOfWeek()->addDays(3);
+
+            if ($midOfWeek->month !== $currentMonth || $midOfWeek->year !== $currentYear) {
+                continue;
+            }
+
             $weeks[] = [
-                'value' => $weekValue,
-                'week_number' => $weekNumber,
-                'year' => $year,
-                'date_range' => $startOfWeek->format('d M') . ' - ' . $endOfWeek->format('d M Y')
+                'value'       => $date->format('Y-\WW'),
+                'week_number' => $date->week,
+                'year'        => $date->year,
+                'date_range'  => $startOfWeek->format('d M') . ' - ' . $endOfWeek->format('d M Y')
             ];
         }
 
         return response()->json([
             'success' => true,
-            'data' => $weeks
+            'data'    => $weeks
         ]);
     }
 
@@ -447,11 +451,11 @@ class MonitoringOnGoingMikroController extends Controller
             ->join('production_batches as pb', 'monitoring_on_going_mikro.production_batch_id', '=', 'pb.id')
             ->whereBetween('monitoring_on_going_mikro.filling_date', [$weekDates['start'], $weekDates['end']])
             ->whereIn('pb.variant', $variants)
-            ->groupBy('monitoring_on_going_mikro.storage')
-            ->orderBy('monitoring_on_going_mikro.storage')
+            ->groupBy('monitoring_on_going_mikro.variant')
+            ->orderBy('monitoring_on_going_mikro.variant')
             ->selectRaw('
-                monitoring_on_going_mikro.storage,
-                SUM(CASE WHEN monitoring_on_going_mikro.tpc > 0 OR monitoring_on_going_mikro.ym > 0 OR monitoring_on_going_mikro.eb > 0 THEN 1 ELSE 0 END) as frek_micro,
+                monitoring_on_going_mikro.variant,
+                SUM(CASE WHEN monitoring_on_going_mikro.hasil = "OK" THEN 1 ELSE 0 END) as frek_micro,
                 SUM(CASE WHEN monitoring_on_going_mikro.hasil = "NOT OK" THEN 1 ELSE 0 END) as frek_ng
             ')
             ->get();
@@ -461,7 +465,7 @@ class MonitoringOnGoingMikroController extends Controller
         $frekNG = [];
 
         foreach ($data as $item) {
-            $labels[] = $item->storage ?? 'Unknown';
+            $labels[] = $item->variant ?? 'Unknown';
             $frekMicro[] = $item->frek_micro;
             $frekNG[] = $item->frek_ng;
         }
@@ -487,8 +491,8 @@ class MonitoringOnGoingMikroController extends Controller
             ->orderBy('monitoring_on_going_mikro.no_filler')
             ->selectRaw('
                 monitoring_on_going_mikro.no_filler,
-                SUM(CASE WHEN monitoring_on_going_mikro.tpc > 0 OR monitoring_on_going_mikro.ym > 0 OR monitoring_on_going_mikro.eb > 0 THEN 1 ELSE 0 END) as frek_micro,
-                SUM(CASE WHEN monitoring_on_going_mikro.hasil = "NG" THEN 1 ELSE 0 END) as frek_ng
+                SUM(CASE WHEN monitoring_on_going_mikro.hasil = "OK" THEN 1 ELSE 0 END) as frek_micro,
+                SUM(CASE WHEN monitoring_on_going_mikro.hasil = "NOT OK" THEN 1 ELSE 0 END) as frek_ng
             ')
             ->get();
 
@@ -497,7 +501,7 @@ class MonitoringOnGoingMikroController extends Controller
         $frekNG = [];
 
         foreach ($data as $item) {
-            $labels[] = 'Filler ' . ($item->no_filler ?? 'Unknown');
+            $labels[] = ($item->no_filler ?? 'Unknown');
             $frekMicro[] = $item->frek_micro;
             $frekNG[] = $item->frek_ng;
         }

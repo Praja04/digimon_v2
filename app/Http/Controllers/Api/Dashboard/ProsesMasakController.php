@@ -227,38 +227,64 @@ class ProsesMasakController extends Controller
             return $items->count();
         });
 
-        // === PIE CHART DISPOSITION (GGA + GGAS + Blending) ===
-        $dispositionData = collect();
+        // === PIE CHART DISPOSITION ===
+        $dispositionList = ['Release', 'Release Bersyarat', 'Resampling', 'Reject', 'Repro', 'Jalan Bareng', 'Leveling'];
 
-        // From GGA - with label
-        $ggaDispositions = $ggaData->groupBy('disposition')->map(function ($items, $disposition) {
+        $dispositionCounts = array_fill_keys($dispositionList, 0);
+
+        foreach ($ggaData as $item) {
+            if (isset($dispositionCounts[$item->disposition])) {
+                $dispositionCounts[$item->disposition]++;
+            }
+        }
+
+        foreach ($ggasData as $item) {
+            if (isset($dispositionCounts[$item->disposition])) {
+                $dispositionCounts[$item->disposition]++;
+            }
+        }
+
+        foreach ($blendingData as $item) {
+            if (isset($dispositionCounts[$item->disposition])) {
+                $dispositionCounts[$item->disposition]++;
+            }
+        }
+
+        $totalDisposition = array_sum($dispositionCounts);
+
+        $totalGga = 0;
+        $totalGgas = 0;
+        $totalBlending = 0;
+
+        foreach ($ggaData as $item) {
+            if (isset($dispositionCounts[$item->disposition])) {
+                $totalGga++;
+            }
+        }
+        foreach ($ggasData as $item) {
+            if (isset($dispositionCounts[$item->disposition])) {
+                $totalGgas++;
+            }
+        }
+        foreach ($blendingData as $item) {
+            if (isset($dispositionCounts[$item->disposition])) {
+                $totalBlending++;
+            }
+        }
+
+        $sourceBreakdown = [
+            ['label' => 'GGA',      'count' => $totalGga,      'percentage' => $totalDisposition > 0 ? round(($totalGga / $totalDisposition) * 100, 1) : 0],
+            ['label' => 'GGAS',     'count' => $totalGgas,     'percentage' => $totalDisposition > 0 ? round(($totalGgas / $totalDisposition) * 100, 1) : 0],
+            ['label' => 'Blending', 'count' => $totalBlending, 'percentage' => $totalDisposition > 0 ? round(($totalBlending / $totalDisposition) * 100, 1) : 0],
+        ];
+
+        $dispositionData = collect($dispositionCounts)->map(function ($count, $label) use ($totalDisposition) {
             return [
-                'label' => 'GGA - ' . ($disposition ?? 'Unknown'),
-                'count' => $items->count(),
-                'type' => 'GGA'
+                'label' => $label,
+                'count' => $count,
+                'percentage' => $totalDisposition > 0 ? round(($count / $totalDisposition) * 100, 1) : 0
             ];
-        });
-
-        // From GGAS - with label
-        $ggasDispositions = $ggasData->groupBy('disposition')->map(function ($items, $disposition) {
-            return [
-                'label' => 'GGAS - ' . ($disposition ?? 'Unknown'),
-                'count' => $items->count(),
-                'type' => 'GGAS'
-            ];
-        });
-
-        // From Blending - with label
-        $blendingDispositions = $blendingData->groupBy('disposition')->map(function ($items, $disposition) {
-            return [
-                'label' => 'Blending - ' . ($disposition ?? 'Unknown'),
-                'count' => $items->count(),
-                'type' => 'Blending'
-            ];
-        });
-
-        // Merge all dispositions
-        $dispositionData = $ggaDispositions->merge($ggasDispositions)->merge($blendingDispositions);
+        })->values();
 
         // === CATATAN PROSES MASAK ===
         $catatanProses = collect();
@@ -311,6 +337,7 @@ class ProsesMasakController extends Controller
                 'warnaBloke' => $warnaBloke,
                 'organoBloke' => $organoBloke,
                 'dispositionData' => $dispositionData->values(),
+                'sourceBreakdown' => $sourceBreakdown,
                 'catatanProses' => $catatanProses
             ]
         ]);

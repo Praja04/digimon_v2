@@ -93,7 +93,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <input type="hidden" name="id" id="id">
                             <label for="tanggal_produksi" class="form-label">Tanggal Produksi <span
                                     style="color: red;">*</span></label>
@@ -101,7 +101,7 @@
                             <small class="errorTanggalProduksi text-danger"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="storage" class="form-label">Storage <span style="color: red;">*</span></label>
                             <select name="storage" id="storage" class="form-control">
                                 <option value="">-- Pilih Storage --</option>
@@ -137,7 +137,7 @@
                             <small class="text-danger errorStorage"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="nomor_po" class="form-label">Nomor PO <span style="color: red;">*</span></label>
                             <select name="nomor_po" id="nomor_po" class="form-control">
                                 <option value="">-- Pilih Nomor PO --</option>
@@ -145,7 +145,7 @@
                             <small class="text-danger errorNomorPO"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="sampling_point" class="form-label">Sampling Point <span
                                     style="color: red;">*</span></label>
                             <select id="sampling_point" name="sampling_point" class="form-control">
@@ -162,7 +162,7 @@
                             <small class="text-danger errorSamplingPoint"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="jenis_analisa" class="form-label">Jenis Analisa <span
                                     style="color: red;">*</span></label>
                             <select id="jenis_analisa" name="jenis_analisa" class="form-control">
@@ -173,7 +173,7 @@
                             <small class="text-danger errorJenisAnalisa"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="jenis_sample" class="form-label">Jenis Sample <span
                                     style="color: red;">*</span></label>
                             <select id="jenis_sample" name="jenis_sample" class="form-control">

@@ -473,85 +473,94 @@
                 });
             }
 
+            let currentData = [];
+
+            function displayValue(value) {
+                if (value === null || value === undefined || value === '' || value === 'null') {
+                    return '--';
+                }
+                return value;
+            }
+
             // Function untuk render table
             function renderTable(data) {
                 var html = '';
 
                 $.each(data, function(index, item) {
-                    var hasMikro = item.shelf_life_sampling_mikro !== null;
-                    var hasKimia = item.shelf_life_sampling_kimia !== null;
+                    var hasMikro = item.shelf_life_sampling_mikro != null;
+                    var hasKimia = item.shelf_life_sampling_kimia != null;
 
                     html += `
-            <tr style="border-bottom: 10px solid #f4f6f9;">
-                <td class="text-center align-middle" style="background: #ffffff; border-right: 1px solid #eee;">
-                    <div class="fw-bold text-dark fs-5">${item.bulan_ke}</div>
-                    <small class="text-muted text-uppercase" style="font-size: 10px;">Bulan</small>
-                </td>
-                <td class="p-0">
-                    <div class="container-fluid py-3 px-4 bg-white">
-                        <div class="row align-items-center">
-                            
-                            <div class="col-md-3 border-end">
-                                <h6 class="fw-bold text-primary mb-1">${item.variant_fg || '-'}</h6>
-                                <div style="font-size: 12px; line-height: 1.6;">
-                                    <div class="d-flex justify-content-between pe-3">
-                                        <span class="text-muted">Kelompok Tanggal:</span> <b>${item.kelompok_tanggal || '-'}</b>
-                                    </div>
-                                    <div class="d-flex justify-content-between pe-3">
-                                        <span class="text-muted">Kelompok Sample:</span> <b>${item.kelompok_sample ||'-'}</b>
-                                    </div>
-                                    <div class="d-flex justify-content-between pe-3">
-                                        <span class="text-muted">Koding:</span> <b>${item.koding || '-'}</b>
-                                    </div>
-                                    <div class="d-flex justify-content-between pe-3">
-                                        <span class="text-muted">Jam Koding:</span> <b>${item.jam_koding || '-'}</b>
-                                    </div>
-                                    <div class="d-flex justify-content-between pe-3">
-                                        <span class="text-muted">Bin Loc:</span> <b>${item.bin_location || '-'}</b>
-                                    </div>
-                                </div>
-                            </div>
+                        <tr style="border-bottom: 10px solid #f4f6f9;">
+                            <td class="text-center align-middle" style="background: #ffffff; border-right: 1px solid #eee;">
+                                <div class="fw-bold text-dark fs-5">${displayValue(item.bulan_ke)}</div>
+                                <small class="text-muted text-uppercase" style="font-size: 10px;">Bulan</small>
+                            </td>
+                            <td class="p-0">
+                                <div class="container-fluid py-3 px-4 bg-white">
+                                    <div class="row align-items-center">
+                                        
+                                        <div class="col-md-3 border-end">
+                                            <h6 class="fw-bold text-primary mb-1">${displayValue(item.variant_fg)}</h6>
+                                            <div style="font-size: 12px; line-height: 1.6;">
+                                                <div class="d-flex justify-content-between pe-3">
+                                                    <span class="text-muted">Kelompok Tanggal:</span> <b>${displayValue(item.kelompok_tanggal)}</b>
+                                                </div>
+                                                <div class="d-flex justify-content-between pe-3">
+                                                    <span class="text-muted">Kelompok Sample:</span> <b>${displayValue(item.kelompok_sample)}</b>
+                                                </div>
+                                                <div class="d-flex justify-content-between pe-3">
+                                                    <span class="text-muted">Koding:</span> <b>${displayValue(item.koding)}</b>
+                                                </div>
+                                                <div class="d-flex justify-content-between pe-3">
+                                                    <span class="text-muted">Jam Koding:</span> <b>${displayValue(item.jam_koding)}</b>
+                                                </div>
+                                                <div class="d-flex justify-content-between pe-3">
+                                                    <span class="text-muted">Bin Loc:</span> <b>${displayValue(item.bin_location)}</b>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                            <div class="col-md-4 border-end ps-4">
-                                <p class="fw-bold text-success small text-uppercase mb-2" style="font-size: 10px; letter-spacing: 1px;">
-                                    <i class="mdi mdi-microscope me-1"></i> Mikro
-                                </p>
-                                <div class="row g-2 text-center">
-                                    <div class="col-3"><small class="text-muted d-block">TPC</small><b class="fs-6">${hasMikro ? item.shelf_life_sampling_mikro.tpc : '--'}</b></div>
-                                    <div class="col-3"><small class="text-muted d-block">YM</small><b class="fs-6">${hasMikro ? item.shelf_life_sampling_mikro.ym : '--'}</b></div>
-                                    <div class="col-3"><small class="text-muted d-block">EB</small><b class="fs-6">${hasMikro ? item.shelf_life_sampling_mikro.eb : '--'}</b></div>
-                                    <div class="col-3"><small class="text-muted d-block">SA</small><b class="fs-6">${hasMikro ? item.shelf_life_sampling_mikro.sa : '--'}</b></div>
-                                </div>
-                                <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">Analis: ${hasMikro ? item.shelf_life_sampling_mikro.nama_analis : '-'}</small>
-                                    ${hasMikro ? `<button class="btn btn-sm btn-outline-primary" onclick="showMikroDetail(${index})">Detail &rarr;</button>` : ''}
-                                </div>
-                            </div>
+                                        <div class="col-md-4 border-end ps-4">
+                                            <p class="fw-bold text-success small text-uppercase mb-2" style="font-size: 10px; letter-spacing: 1px;">
+                                                <i class="mdi mdi-microscope me-1"></i> Mikro
+                                            </p>
+                                            <div class="row g-2 text-center">
+                                                <div class="col-3"><small class="text-muted d-block">TPC</small><b class="fs-6">${hasMikro ? displayValue(item.shelf_life_sampling_mikro.tpc) : '--'}</b></div>
+                                                <div class="col-3"><small class="text-muted d-block">YM</small><b class="fs-6">${hasMikro ? displayValue(item.shelf_life_sampling_mikro.ym) : '--'}</b></div>
+                                                <div class="col-3"><small class="text-muted d-block">EB</small><b class="fs-6">${hasMikro ? displayValue(item.shelf_life_sampling_mikro.eb) : '--'}</b></div>
+                                                <div class="col-3"><small class="text-muted d-block">SA</small><b class="fs-6">${hasMikro ? displayValue(item.shelf_life_sampling_mikro.sa) : '--'}</b></div>
+                                            </div>
+                                            <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Analis: ${hasMikro ? displayValue(item.shelf_life_sampling_mikro.nama_analis) : '-'}</small>
+                                                ${hasMikro ? `<button class="btn btn-sm btn-outline-primary" onclick="showMikroDetail(${index})">Detail &rarr;</button>` : ''}
+                                            </div>
+                                        </div>
 
-                            <div class="col-md-5 ps-4">
-                                <p class="fw-bold text-info small text-uppercase mb-2" style="font-size: 10px; letter-spacing: 1px;">
-                                    <i class="mdi mdi-flask-outline me-1"></i> Kimia
-                                </p>
-                                <div class="row g-2 text-center mb-2">
-                                    <div class="col"><small class="text-muted d-block">NaCl</small><b>${hasKimia ? item.shelf_life_sampling_kimia.nacl : '--'}</b></div>
-                                    <div class="col"><small class="text-muted d-block">Brix</small><b>${hasKimia ? item.shelf_life_sampling_kimia.brix : '--'}</b></div>
-                                    <div class="col"><small class="text-muted d-block">pH</small><b>${hasKimia ? item.shelf_life_sampling_kimia.ph : '--'}</b></div>
-                                    <div class="col"><small class="text-muted d-block">aW</small><b>${hasKimia ? item.shelf_life_sampling_kimia.aw : '--'}</b></div>
-                                    <div class="col"><small class="text-muted d-block">Visco</small><b>${hasKimia ? item.shelf_life_sampling_kimia.visco : '--'}</b></div>
-                                </div>
-                                <div class="p-2 bg-light rounded d-flex justify-content-between align-items-center" style="font-size: 11px;">
-                                    <span>Aroma: <b>${hasKimia ? item.shelf_life_sampling_kimia.aroma : '-'}</b></span>
-                                    <span>Organo: <b>${hasKimia ? item.shelf_life_sampling_kimia.organo : '-'}</b></span>
-                                    <span>BJ: <b>${hasKimia ? item.shelf_life_sampling_kimia.bj : '-'}</b></span>
-                                    ${hasKimia ? `<button class="btn btn-sm btn-outline-success" onclick="showKimiaDetail(${index})">Detail &rarr;</button>` : ''}
-                                </div>
-                            </div>
+                                        <div class="col-md-5 ps-4">
+                                            <p class="fw-bold text-info small text-uppercase mb-2" style="font-size: 10px; letter-spacing: 1px;">
+                                                <i class="mdi mdi-flask-outline me-1"></i> Kimia
+                                            </p>
+                                            <div class="row g-2 text-center mb-2">
+                                                <div class="col"><small class="text-muted d-block">NaCl</small><b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.nacl) : '--'}</b></div>
+                                                <div class="col"><small class="text-muted d-block">Brix</small><b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.brix) : '--'}</b></div>
+                                                <div class="col"><small class="text-muted d-block">pH</small><b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.ph) : '--'}</b></div>
+                                                <div class="col"><small class="text-muted d-block">aW</small><b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.aw) : '--'}</b></div>
+                                                <div class="col"><small class="text-muted d-block">Visco</small><b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.visco) : '--'}</b></div>
+                                            </div>
+                                            <div class="p-2 bg-light rounded d-flex justify-content-between align-items-center" style="font-size: 11px;">
+                                                <span>Aroma: <b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.aroma) : '-'}</b></span>
+                                                <span>Organo: <b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.organo) : '-'}</b></span>
+                                                <span>BJ: <b>${hasKimia ? displayValue(item.shelf_life_sampling_kimia.bj) : '-'}</b></span>
+                                                ${hasKimia ? `<button class="btn btn-sm btn-outline-success" onclick="showKimiaDetail(${index})">Detail &rarr;</button>` : ''}
+                                            </div>
+                                        </div>
 
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `;
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
                 });
 
                 $('#tableBody').html(html);
@@ -586,12 +595,12 @@
                         formatTime(mikro.scanned_at) : '-');
                     $('#mikroWaktuAnalisa').text(mikro.waktu_analisa ? formatDate(mikro.waktu_analisa) + ' ' +
                         formatTime(mikro.waktu_analisa) : '-');
-                    $('#mikroShift').text(mikro.shift_analis || '-');
-                    $('#mikroAnalis').text(mikro.nama_analis || '-');
-                    $('#mikroTPC').text(mikro.tpc || '0');
-                    $('#mikroYM').text(mikro.ym || '0');
-                    $('#mikroEB').text(mikro.eb || '0');
-                    $('#mikroSA').text(mikro.sa || '0');
+                    $('#mikroShift').text(displayValue(mikro.shift_analis));
+                    $('#mikroAnalis').text(displayValue(mikro.nama_analis));
+                    $('#mikroTPC').text(displayValue(mikro.tpc) === '--' ? '0' : displayValue(mikro.tpc));
+                    $('#mikroYM').text(displayValue(mikro.ym) === '--' ? '0' : displayValue(mikro.ym));
+                    $('#mikroEB').text(displayValue(mikro.eb) === '--' ? '0' : displayValue(mikro.eb));
+                    $('#mikroSA').text(displayValue(mikro.sa) === '--' ? '0' : displayValue(mikro.sa));
                     new bootstrap.Modal(document.getElementById('modalMikro')).show();
                 }
             };
@@ -604,17 +613,19 @@
                         formatTime(kimia.scanned_at) : '-');
                     $('#kimiaWaktuAnalisa').text(kimia.waktu_analisa ? formatDate(kimia.waktu_analisa) + ' ' +
                         formatTime(kimia.waktu_analisa) : '-');
-                    $('#kimiaAnalis').text(kimia.nama_analis || '-');
-                    $('#kimiaNacl').text(kimia.nacl || '-');
-                    $('#kimiaBrix').text(kimia.brix || '-');
-                    $('#kimiaAw').text(kimia.aw || '-');
-                    $('#kimiaPh').text(kimia.ph || '-');
-                    $('#kimiaBj').text(kimia.bj || '-');
-                    $('#kimiaBuih').text(kimia.buih || '-');
-                    $('#kimiaVisco').text(kimia.visco || '-');
-                    $('#kimiaTotalN').text(kimia.total_nitrogen || '-');
-                    $('#kimiaAroma').text(kimia.aroma || '-');
-                    $('#kimiaOrgano').text(kimia.organo || '-');
+                    $('#kimiaAnalis').text(displayValue(kimia.nama_analis));
+                    $('#kimiaNacl').text(displayValue(kimia.nacl) === '--' ? '0' : displayValue(kimia.nacl));
+                    $('#kimiaBrix').text(displayValue(kimia.brix) === '--' ? '0' : displayValue(kimia.brix));
+                    $('#kimiaAw').text(displayValue(kimia.aw) === '--' ? '0' : displayValue(kimia.aw));
+                    $('#kimiaPh').text(displayValue(kimia.ph) === '--' ? '0' : displayValue(kimia.ph));
+                    $('#kimiaBj').text(displayValue(kimia.bj) === '--' ? '0' : displayValue(kimia.bj));
+                    $('#kimiaBuih').text(displayValue(kimia.buih) === '--' ? '0' : displayValue(kimia.buih));
+                    $('#kimiaVisco').text(displayValue(kimia.visco) === '--' ? '0' : displayValue(kimia.visco));
+                    $('#kimiaTotalN').text(displayValue(kimia.total_nitrogen) === '--' ? '0' : displayValue(
+                        kimia.total_nitrogen));
+                    $('#kimiaAroma').text(displayValue(kimia.aroma) === '--' ? '0' : displayValue(kimia.aroma));
+                    $('#kimiaOrgano').text(displayValue(kimia.organo) === '--' ? '0' : displayValue(kimia
+                        .organo));
                     new bootstrap.Modal(document.getElementById('modalKimia')).show();
                 }
             };

@@ -13,7 +13,7 @@ class MonitoringDailyTankKimiaController extends Controller
 {
     public function show($id)
     {
-        $monitoringDailyTank = MonitoringDailyTank::with('qcField')->findOrFail($id);
+        $monitoringDailyTank = MonitoringDailyTank::with('qcField', 'productionBatch')->findOrFail($id);
         $colors = Color::orderBy('name', 'asc')->get();
         return view('app.analisa.monitoring-daily-tank.kimia.show', compact('monitoringDailyTank', 'colors'));
     }

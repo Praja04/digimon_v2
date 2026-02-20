@@ -731,7 +731,7 @@
             </div>
 
             <!-- Catatan Proses Masak Table -->
-            <div class="row">
+            <div class="row mb-3">
                 <div class="col-12">
                     <div class="table-section">
                         <h6 style="font-size: 13px; font-weight: bold; margin-bottom: 15px;">Catatan Proses Masak</h6>
@@ -1035,7 +1035,7 @@
                 updateBlendingReleaseCharts(data.blendingReleaseStats, data.warnaBloke, data.organoBloke);
 
                 // Update disposition chart
-                updateDispositionChart(data.dispositionData);
+                updateDispositionChart(data.dispositionData, data.sourceBreakdown);
             }
 
             // Update dissolver statistics
@@ -1152,41 +1152,139 @@
             }
 
             // Update disposition chart
-            function updateDispositionChart(dispositionData) {
+            function updateDispositionChart(dispositionData, sourceBreakdown) {
                 const ctx = document.getElementById('dispositionChart');
                 if (!ctx) return;
 
-                const hasData = dispositionData.length > 0;
-                const labels = hasData ? dispositionData.map(item => item.label) : ['No Data'];
-                const counts = hasData ? dispositionData.map(item => item.count) : [1];
-                const colors = hasData ? dispositionData.map(item => {
-                    if (item.type === 'GGA') return '#4169E1';
-                    if (item.type === 'GGAS') return '#FFD700';
-                    if (item.type === 'Blending') return '#32CD32';
-                    return '#999999';
-                }) : ['#e0e0e0'];
+                if (chartInstances.dispositionChart) {
+                    chartInstances.dispositionChart.destroy();
+                }
+
+                const dispositionColorMap = {
+                    'Release': '#28a745',
+                    'Release Bersyarat': '#5cb85c',
+                    'Resampling': '#17a2b8',
+                    'Reject': '#dc3545',
+                    'Repro': '#fd7e14',
+                    'Jalan Bareng': '#6f42c1',
+                    'Leveling': '#ffc107'
+                };
+
+                const sourceColorMap = {
+                    'GGA': '#4169E1',
+                    'GGAS': '#FFD700',
+                    'Blending': '#32CD32'
+                };
+
+                // Outer ring — disposisi (filter yg count > 0)
+                const filteredDisp = dispositionData.filter(item => item.count > 0);
+                const outerLabels = filteredDisp.map(item => `${item.label} (${item.percentage}%)`);
+                const outerData = filteredDisp.map(item => item.count);
+                const outerColors = filteredDisp.map(item => dispositionColorMap[item.label] ?? '#999999');
+
+                // Inner ring — sumber GGA / GGAS / Blending (filter yg count > 0)
+                const filteredSrc = (sourceBreakdown ?? []).filter(item => item.count > 0);
+                const innerLabels = filteredSrc.map(item => `${item.label} (${item.percentage}%)`);
+                const innerData = filteredSrc.map(item => item.count);
+                const innerColors = filteredSrc.map(item => sourceColorMap[item.label] ?? '#aaaaaa');
+
+                const hasData = outerData.length > 0;
 
                 chartInstances.dispositionChart = new Chart(ctx, {
-                    type: 'pie',
+                    type: 'doughnut',
                     data: {
-                        labels: labels,
+                        labels: outerLabels, // legend utama = disposisi
                         datasets: [{
-                            data: counts,
-                            backgroundColor: colors
-                        }]
+                                // Outer ring — disposisi
+                                label: 'Disposisi',
+                                data: hasData ? outerData : [1],
+                                backgroundColor: hasData ? outerColors : ['#e0e0e0'],
+                                borderWidth: 2,
+                                borderColor: '#fff',
+                                weight: 2 // ring luar lebih tebal
+                            },
+                            {
+                                // Inner ring — sumber
+                                label: 'Label',
+                                data: hasData ? innerData : [1],
+                                backgroundColor: hasData ? innerColors : ['#e0e0e0'],
+                                borderWidth: 2,
+                                borderColor: '#fff',
+                                weight: 1 // ring dalam lebih tipis
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        cutout: '35%',
                         plugins: {
                             legend: {
                                 position: 'right',
                                 labels: {
                                     font: {
-                                        size: 8
+                                        size: 9
                                     },
                                     boxWidth: 10,
-                                    padding: 5
+                                    padding: 6,
+                                    // Tampilkan legend gabungan: disposisi + sumber
+                                    generateLabels: function(chart) {
+                                        const dispLabels = outerLabels.map((lbl, i) => ({
+                                            text: lbl,
+                                            fillStyle: outerColors[i] ?? '#999',
+                                            strokeStyle: '#fff',
+                                            lineWidth: 1,
+                                            hidden: false,
+                                            datasetIndex: 0,
+                                            index: i
+                                        }));
+
+                                        // Separator
+                                        const separator = [{
+                                            text: '— Proses —',
+                                            fillStyle: 'transparent',
+                                            strokeStyle: 'transparent',
+                                            lineWidth: 0,
+                                            hidden: false,
+                                            datasetIndex: -1,
+                                            index: -1
+                                        }];
+
+                                        const srcLabels = innerLabels.map((lbl, i) => ({
+                                            text: lbl,
+                                            fillStyle: innerColors[i] ?? '#aaa',
+                                            strokeStyle: '#fff',
+                                            lineWidth: 1,
+                                            hidden: false,
+                                            datasetIndex: 1,
+                                            index: i
+                                        }));
+
+                                        return hasData ? [...dispLabels, ...separator, ...srcLabels] :
+                                    [{
+                                            text: 'No Data',
+                                            fillStyle: '#e0e0e0'
+                                        }];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.datasetIndex === 0) {
+                                            // Outer = disposisi
+                                            const item = filteredDisp[context.dataIndex];
+                                            return item ?
+                                                ` ${item.label}: ${item.count} batch (${item.percentage}%)` :
+                                                '';
+                                        } else {
+                                            // Inner = sumber
+                                            const item = filteredSrc[context.dataIndex];
+                                            return item ?
+                                                ` ${item.label}: ${item.count} batch (${item.percentage}%)` :
+                                                '';
+                                        }
+                                    }
                                 }
                             }
                         }

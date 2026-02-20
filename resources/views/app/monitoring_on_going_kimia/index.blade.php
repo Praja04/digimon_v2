@@ -92,14 +92,14 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <input type="hidden" name="id" id="id">
                             <label for="tanggal_produksi" class="form-label">Tanggal Produksi <span
                                     style="color: red;">*</span></label>
                             <input type="date" name="tanggal_produksi" id="tanggal_produksi" class="form-control">
                             <small class="errorTanggalProduksi text-danger"></small>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="storage" class="form-label">Storage <span style="color: red;">*</span></label>
                             <select name="storage" id="storage" class="form-control">
                                 <option value="">-- Pilih Storage --</option>
@@ -135,7 +135,7 @@
                             <small class="text-danger errorStorage"></small>
                         </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="nomor_po" class="form-label">Nomor PO <span style="color: red;">*</span></label>
                             <select id="nomor_po" name="nomor_po" class="select2 form-control">
                                 <option value="">-- Pilih Nomor PO --</option>
@@ -162,7 +162,7 @@
                             <input type="time" name="jam_koding" id="jam_koding" class="form-control">
                             <small class="text-danger errorJamKoding"></small>
                         </div>
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <label for="koding" class="form-label">Koding <span style="color: red;">*</span></label>
                             <input type="text" name="koding" id="koding" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">

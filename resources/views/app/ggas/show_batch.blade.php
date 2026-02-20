@@ -155,13 +155,20 @@
                                             <small class="text-danger errorNacl"></small>
                                         </div>
                                         <div class="col-lg-6">
+                                            <label class="form-label">Visco</label>
+                                            <input type="text" name="visco" id="visco"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $ggas->visco ?? '') }}">
+                                            <small class="text-danger errorVisco"></small>
+                                        </div>
+                                        <div class="col-lg-6">
                                             <label class="form-label">Organo <span style="color: red">*</span></label>
                                             <input type="text" name="organo" id="organo" class="form-control"
                                                 oninput="this.value = this.value.toUpperCase();"
                                                 value="{{ $ggas->organo ?? '' }}">
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-12">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
@@ -304,6 +311,10 @@
                             if (errors.nacl) {
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
+                            }
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
                             }
                             if (errors.organo) {
                                 $('#organo').addClass('is-invalid');

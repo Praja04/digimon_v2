@@ -28,108 +28,93 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="row gx-lg-5">
-                                <div class="col-xl-12">
-                                    <div class="mt-xl-0 mt-5">
-                                        <div class="d-flex">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <h4>{{ $monitoringOnGoing->storage ?? '-' }} (Storage)</h4>
+                                    <div class="hstack gap-3 flex-wrap">
+                                        <div><a href="#" class="text-primary d-block">{{ auth()->user()->name }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-1 g-3">
+                                <!-- end col -->
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-calendar-check-line"></i>
+                                                </div>
+                                            </div>
                                             <div class="flex-grow-1">
-                                                <h4>{{ $monitoringOnGoing->storage ?? '-' }} (Storage)</h4>
-                                                <div class="hstack gap-3 flex-wrap">
-                                                    <div><a href="#"
-                                                            class="text-primary d-block">{{ auth()->user()->name }}</a>
-                                                    </div>
-                                                </div>
+                                                <p class="text-muted mb-1">Nomor PO :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->productionBatch->po_number ?? '-' }}
+                                                </h5>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
 
-                                        <div class="row mt-4">
-                                            <!-- end col -->
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-calendar-check-line"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Nomor PO :</p>
-                                                            <h5 class="mb-0">
-                                                                {{ $monitoringOnGoing->productionBatch->po_number ?? '-' }}
-                                                            </h5>
-                                                        </div>
-                                                    </div>
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-drop-fill"></i>
                                                 </div>
                                             </div>
-                                            <!-- end col -->
-
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-drop-fill"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Variant :</p>
-                                                            <h5 class="mb-0">
-                                                                {{ $monitoringOnGoing->variant ?? '-' }}
-                                                            </h5>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Variant :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->variant ?? '-' }}
+                                                </h5>
                                             </div>
-                                            <!-- end col -->
                                         </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
 
-                                        <div class="row mt-3">
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-calendar-event-fill"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Tanggal Filling :</p>
-                                                            <h5 class="mb-0">
-                                                                {{ $monitoringOnGoing->filling_date ? \Carbon\Carbon::parse($monitoringOnGoing->filling_date)->locale('id')->translatedFormat('d F Y') : '-' }}
-                                                            </h5>
-                                                        </div>
-                                                    </div>
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-calendar-event-fill"></i>
                                                 </div>
                                             </div>
-                                            <!-- end col -->
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-time-line"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Jam Koding :</p>
-                                                            <h5 class="mb-0">
-                                                                {{ $monitoringOnGoing->jam_koding ?? '-' }}
-                                                            </h5>
-                                                        </div>
-                                                    </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Tanggal Filling :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->filling_date ? \Carbon\Carbon::parse($monitoringOnGoing->filling_date)->locale('id')->translatedFormat('d F Y') : '-' }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-time-line"></i>
                                                 </div>
                                             </div>
-                                            <!-- end col -->
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Jam Koding :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->jam_koding ?? '-' }}
+                                                </h5>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- end col -->
                             </div>
-                            <!-- end row -->
                         </div>
                         <!-- end card body -->
                     </div>

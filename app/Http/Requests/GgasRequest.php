@@ -11,7 +11,10 @@ class GgasRequest extends FormRequest
         $numericFields = [
             'brix',
             'nacl',
+            'visco',
         ];
+
+
 
         $preparedData = [];
 
@@ -30,6 +33,7 @@ class GgasRequest extends FormRequest
         return [
             'brix' => 'required|numeric|min:0|max:100',
             'nacl' => 'nullable|numeric|min:0|max:100',
+            'visco' => 'nullable|numeric|min:0|max:100',
             'organo' => 'required|string',
             'status_disposition' => 'required',
             'disposition_remaks' => 'nullable|string|max:255',
@@ -41,6 +45,7 @@ class GgasRequest extends FormRequest
         return  [
             'brix' => 'Brix',
             'nacl' => 'NACL',
+            'visco' => 'Visco',
             'organo' => 'Organo',
             'status_disposition' => 'Status',
             'disposition_remaks' => 'Catatan disposisi',

@@ -153,6 +153,7 @@ class GgasController extends Controller
             $updateData = [
                 'brix' => $request->brix,
                 'nacl' => $request->nacl,
+                'visco' => $request->visco,
                 'organo' => $request->organo,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,

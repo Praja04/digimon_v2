@@ -40,70 +40,126 @@
         /* SELECT2 STYLING - DISESUAIKAN DENGAN VELZON */
         /* ============================================ */
 
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 38px !important;
-            height: auto !important;
-            border: 1px solid #ced4da !important;
-            border-radius: 0.25rem !important;
-            font-size: 0.875rem !important;
+        .select2-container {
+            width: 100% !important;
         }
 
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 40px !important;
+            height: auto !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            font-size: 0.875rem !important;
+            padding: 0.375rem 0.5rem !important;
+        }
+
+        /* Multiple selection box */
         .select2-container--bootstrap-5 .select2-selection--multiple {
-            padding: 0.25rem 0.5rem !important;
+            padding: 0.25rem 2rem 0.25rem 0.5rem !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 4px !important;
+        }
+
+        /* Tags/chips */
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+            padding: 0 !important;
         }
 
         .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
             background-color: #405189 !important;
-            border: 1px solid #364574 !important;
-            color: white !important;
-            padding: 0.15rem 0.5rem !important;
-            margin: 0.15rem 0.25rem 0.15rem 0 !important;
-            font-size: 0.8125rem !important;
-            line-height: 1.5 !important;
+            border: none !important;
+            color: #fff !important;
+            font-size: 0.8rem !important;
+            font-weight: 500 !important;
+            padding: 0.2rem 0.3rem 0.2rem 0.6rem !important;
+            margin: 0 !important;
             border-radius: 0.25rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            line-height: 1.4 !important;
         }
 
+        /* X remove button */
         .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
-            color: white !important;
-            margin-right: 0.35rem !important;
-            font-size: 0.875rem !important;
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            border: none !important;
+            color: #fff !important;
+            border-radius: 50% !important;
+            width: 16px !important;
+            height: 16px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 0.75rem !important;
             font-weight: bold !important;
+            line-height: 1 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            order: 2 !important;
+            flex-shrink: 0 !important;
+            cursor: pointer !important;
         }
 
         .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
-            color: #fef !important;
-            background-color: transparent !important;
+            background-color: rgba(255, 255, 255, 0.45) !important;
+            color: #fff !important;
+        }
+
+        /* Search input inside multiple */
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-search {
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .select2-container--bootstrap-5 .select2-selection--multiple .select2-search__field {
-            margin-top: 0.25rem !important;
+            margin: 0 !important;
             font-size: 0.875rem !important;
+            min-width: 80px !important;
+            height: 24px !important;
         }
 
+        /* Clear all button (×) */
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__clear {
+            position: absolute !important;
+            right: 0.5rem !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            color: #6c757d !important;
+            font-size: 1.1rem !important;
+            font-weight: 400 !important;
+            padding: 0 0.25rem !important;
+            cursor: pointer !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__clear:hover {
+            color: #405189 !important;
+        }
+
+        /* Focus & open state */
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection {
+            border-color: #405189 !important;
+            box-shadow: 0 0 0 0.2rem rgba(64, 81, 137, 0.2) !important;
+        }
+
+        /* Dropdown */
         .select2-container--bootstrap-5 .select2-dropdown {
             border: 1px solid #ced4da !important;
-            border-radius: 0.25rem !important;
+            border-radius: 0.375rem !important;
             font-size: 0.875rem !important;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+            margin-top: 2px !important;
         }
 
-        .select2-container--bootstrap-5 .select2-results__option {
-            padding: 0.5rem 0.75rem !important;
-            font-size: 0.875rem !important;
-        }
-
-        .select2-container--bootstrap-5 .select2-results__option--highlighted {
-            background-color: #405189 !important;
-            color: white !important;
-        }
-
-        .select2-container--bootstrap-5 .select2-results__option--selected {
-            background-color: #e3f2fd !important;
-            color: #1976d2 !important;
-        }
-
+        /* Dropdown search */
         .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
-            padding: 0.5rem 0.75rem !important;
+            padding: 0.4rem 0.75rem !important;
             font-size: 0.875rem !important;
             border: 1px solid #ced4da !important;
             border-radius: 0.25rem !important;
@@ -111,27 +167,25 @@
 
         .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field:focus {
             border-color: #405189 !important;
-            box-shadow: 0 0 0 0.2rem rgba(64, 81, 137, 0.25) !important;
+            box-shadow: 0 0 0 0.15rem rgba(64, 81, 137, 0.2) !important;
+            outline: none !important;
         }
 
-        .select2-container--bootstrap-5 .select2-selection__clear {
-            font-size: 1rem !important;
-            margin-right: 0.5rem !important;
-            color: #878a99 !important;
+        /* Options */
+        .select2-container--bootstrap-5 .select2-results__option {
+            padding: 0.45rem 0.75rem !important;
+            font-size: 0.875rem !important;
         }
 
-        .select2-container--bootstrap-5 .select2-selection__clear:hover {
+        .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #405189 !important;
+            color: #fff !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: #eef0f8 !important;
             color: #405189 !important;
-        }
-
-        .select2-container {
-            width: 100% !important;
-        }
-
-        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
-        .select2-container--bootstrap-5.select2-container--open .select2-selection {
-            border-color: #405189 !important;
-            box-shadow: 0 0 0 0.2rem rgba(64, 81, 137, 0.25) !important;
+            font-weight: 500 !important;
         }
 
         /* Chart container improvements */
@@ -190,19 +244,6 @@
             color: #374151;
         }
 
-        /* Button hover effects */
-        .btn-primary {
-            background-color: #405189;
-            border-color: #405189;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background-color: #364574;
-            border-color: #364574;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(64, 81, 137, 0.3);
-        }
 
         /* Table striped custom */
         .table-striped tbody tr:nth-of-type(odd) {
@@ -457,7 +498,7 @@
                         response.data.forEach((week, index) => {
                             const selected = index === 0 ? 'selected' : '';
                             options +=
-                                `<option value="${week.value}" ${selected}>Week ${week.week_number} (${week.date_range})</option>`;
+                                `<option value="${week.value}" ${selected}>${week.date_range}</option>`;
                         });
                         $('#weekSelect').html(options);
 

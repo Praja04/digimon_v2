@@ -45,10 +45,8 @@
                                     </select>
                                 </div>
                                 <div class="col-12 col-sm-6 col-md-4">
-                                    <label for="kelompok_tanggal" class="form-label">Kelompok Tanggal</label>
-                                    <select id="kelompok_tanggal" class="form-select select2" disabled>
-                                        <option value="">Pilih Kelompok Tanggal</option>
-                                    </select>
+                                    <label for="tanggal_analisa" class="form-label">Tanggal Analisa</label>
+                                    <input type="date" id="tanggal_analisa" class="form-control" disabled>
                                 </div>
                                 <div class="col-12 col-sm-6 col-md-4 d-flex align-items-end">
                                     <button type="button" id="btnReset" class="btn btn-secondary w-100">
@@ -98,6 +96,9 @@
                 placeholder: '-- Pilih Opsi --'
             });
 
+            var today = new Date().toISOString().split('T')[0];
+            $('#tanggal_analisa').attr('max', today);
+
             var table = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -106,7 +107,7 @@
                     url: "{{ route('shelf-life.analysis-kimia.index') }}",
                     data: function(d) {
                         d.kelompok_sample = $('#kelompok_sample').val();
-                        d.kelompok_tanggal = $('#kelompok_tanggal').val();
+                        d.tanggal_analisa = $('#tanggal_analisa').val();
                     }
                 },
                 columns: [{
@@ -166,63 +167,40 @@
 
             $('#kelompok_sample').on('change', function() {
                 var kelompokSample = $(this).val();
-                var kelompokTanggalSelect = $('#kelompok_tanggal');
-
-                kelompokTanggalSelect.val('').trigger('change');
-                kelompokTanggalSelect.html('<option value="">Pilih Kelompok Tanggal</option>');
 
                 if (kelompokSample) {
-                    kelompokTanggalSelect.prop('disabled', true);
-
-                    $.ajax({
-                        url: "{{ route('shelf-life.analysis-kimia.index') }}",
-                        type: 'GET',
-                        data: {
-                            get_kelompok_tanggal: true,
-                            kelompok_sample: kelompokSample
-                        },
-                        success: function(response) {
-                            if (response.length > 0) {
-                                $.each(response, function(index, value) {
-                                    kelompokTanggalSelect.append(
-                                        $('<option></option>').val(value).text(
-                                            value)
-                                    );
-                                });
-                                kelompokTanggalSelect.prop('disabled', false);
-                            } else {
-                                kelompokTanggalSelect.append(
-                                    '<option value="">Tidak ada data</option>'
-                                );
-                                kelompokTanggalSelect.prop('disabled', true);
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: 'Gagal memuat kelompok tanggal',
-                            });
-                            kelompokTanggalSelect.prop('disabled', true);
-                        }
-                    });
+                    $('#tanggal_analisa').prop('disabled', false);
                 } else {
-                    kelompokTanggalSelect.prop('disabled', true);
+                    $('#tanggal_analisa').prop('disabled', true).val('');
+                    table.ajax.reload();
                 }
             });
 
-            $('#kelompok_tanggal').on('change', function() {
+            $('#tanggal_analisa').on('change', function() {
                 var kelompokSample = $('#kelompok_sample').val();
-                var kelompokTanggal = $(this).val();
+                var tanggalAnalisa = $(this).val();
 
-                if (kelompokSample && kelompokTanggal) {
+                if (kelompokSample && tanggalAnalisa) {
+                    var selectedDate = new Date(tanggalAnalisa);
+                    var todayDate = new Date(today);
+
+                    if (selectedDate > todayDate) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Perhatian',
+                            text: 'Tanggal analisa tidak boleh melebihi hari ini',
+                        });
+                        $(this).val('');
+                        return;
+                    }
+
                     table.ajax.reload();
                 }
             });
 
             $('#btnReset').on('click', function() {
                 $('#kelompok_sample').val('').trigger('change');
-                $('#kelompok_tanggal').val('').trigger('change');
+                $('#tanggal_analisa').val('').prop('disabled', true);
                 table.ajax.reload();
             });
         });

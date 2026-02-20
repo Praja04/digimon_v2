@@ -17,18 +17,7 @@ class AnalysisKimiaController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            if ($request->has('get_kelompok_tanggal')) {
-                $kelompokTanggal = ShelfLifeSamplingDetail::select('kelompok_tanggal')
-                    ->distinct()
-                    ->whereNotNull('kelompok_tanggal')
-                    ->where('kelompok_sample', $request->kelompok_sample)
-                    ->orderBy('kelompok_tanggal', 'asc')
-                    ->pluck('kelompok_tanggal');
-
-                return response()->json($kelompokTanggal);
-            }
-
-            if (empty($request->kelompok_sample) || empty($request->kelompok_tanggal)) {
+            if (empty($request->kelompok_sample) || empty($request->tanggal_analisa)) {
                 return DataTables::of(collect([]))
                     ->addIndexColumn()
                     ->make(true);
@@ -36,7 +25,7 @@ class AnalysisKimiaController extends Controller
 
             $query = ShelfLifeSamplingDetail::with('shelfLifeSamplingKimia')
                 ->where('kelompok_sample', $request->kelompok_sample)
-                ->where('kelompok_tanggal', $request->kelompok_tanggal);
+                ->where('tanggal_analisa', $request->tanggal_analisa);
 
             if (!empty($request->filter_status)) {
                 $status = $request->filter_status;
@@ -150,9 +139,9 @@ class AnalysisKimiaController extends Controller
 
                     if ($isAnalisKimia) {
                         return '
-                    <a class="btn btn-sm btn-primary me-1" href="' . route("shelf-life.analysis-kimia.show", $data->id) . '">
-                        <span class="mdi mdi-flask"></span> Analisa
-                    </a>
+                            <a class="btn btn-sm btn-primary me-1" href="' . route("shelf-life.analysis-kimia.show", $data->id) . '">
+                                <span class="mdi mdi-flask"></span> Analisa
+                            </a>
                     ';
                     } else {
                         return '

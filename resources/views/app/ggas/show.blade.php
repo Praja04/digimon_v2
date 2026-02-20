@@ -111,6 +111,7 @@
                                                 <th>Dissolver</th>
                                                 <th>BRIX</th>
                                                 <th>NACL</th>
+                                                <th>Visco</th>
                                                 <th>Organo</th>
                                                 <th>Dibuat Oleh</th>
                                                 <th>Waktu Scan</th>
@@ -154,6 +155,7 @@
                                                     <td>{{ $ggas->dissolver_number }}</td>
                                                     <td>{{ $ggas->brix ?? '-' }}</td>
                                                     <td>{{ $ggas->nacl ?? '-' }}</td>
+                                                    <td>{{ $ggas->visco ?? '-' }}</td>
                                                     <td>{{ $ggas->organo ?? '-' }}</td>
                                                     </td>
                                                     <td>{{ $ggas->user->name ?? '-' }}</td>
@@ -251,12 +253,18 @@
                             <small class="text-danger errorNacl"></small>
                         </div>
                         <div class="col-lg-6">
+                            <label class="form-label">Visco</label>
+                            <input type="text" name="visco" id="visco" class="form-control comma-input"
+                                placeholder="Contoh: 0,00">
+                            <small class="text-danger errorVisco"></small>
+                        </div>
+                        <div class="col-lg-6">
                             <label class="form-label">Organo <span style="color: red">*</span></label>
                             <input type="text" name="organo" id="organo" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">
                             <small class="text-danger errorOrgano"></small>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <label class="form-label">Status <span style="color: red">*</span></label>
                             <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
@@ -375,6 +383,10 @@
                                 <div class="col-md-2">
                                     <small class="text-muted d-block">NaCl</small>
                                     <p class="mb-2" id="formulasi-nacl">-</p>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted d-block">Visco</small>
+                                    <p class="mb-2" id="formulasi-visco">-</p>
                                 </div>
                                 <div class="col-md-2">
                                     <small class="text-muted d-block">Organo</small>
@@ -506,6 +518,7 @@
                 $('#formulasi-dissolver-number').text(ggaInfo.dissolver_number || '-');
                 $('#formulasi-brix').text(ggaInfo.brix || '-');
                 $('#formulasi-nacl').text(ggaInfo.nacl || '-');
+                $('#formulasi-visco').text(ggaInfo.visco || '-');
                 $('#formulasi-organo').text(ggaInfo.organo || '-');
 
                 // Status dengan badge
@@ -581,7 +594,7 @@
 
         function resetFormulasiModal() {
             $('#formulasi-po-number, #formulasi-variant, #formulasi-date, #formulasi-batch-range').text('-');
-            $('#formulasi-batch-number, #formulasi-dissolver-number, #formulasi-brix, #formulasi-nacl, #formulasi-organo')
+            $('#formulasi-batch-number, #formulasi-dissolver-number, #formulasi-brix, #formulasi-nacl, #formulasi-visco, #formulasi-organo')
                 .text('-');
             $('#formulasi-status, #formulasi-disposition').text('-');
             $('#formulasi-prod-dissolver, #formulasi-line, #formulasi-jam-mulai, #formulasi-jam-transfer').text('-');
@@ -704,6 +717,7 @@
                         $('#id').val(response.id);
                         $('#brix').val(formatDecimal(response.brix));
                         $('#nacl').val(formatDecimal(response.nacl));
+                        $('#visco').val(formatDecimal(response.visco));
                         $('#organo').val(response.organo || '');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
@@ -874,6 +888,10 @@
                             if (errors.nacl) {
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
+                            }
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
                             }
                             if (errors.organo) {
                                 $('#organo').addClass('is-invalid');

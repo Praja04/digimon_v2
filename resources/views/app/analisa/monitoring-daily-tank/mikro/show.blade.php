@@ -25,48 +25,123 @@
 
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <h5 class="mb-3 text-dark fw-semibold">{{ $monitoringDailyTank->storage ?? '-' }} <span
-                                    class="fw-normal text-muted">(Storage)</span></h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <h4>{{ $monitoringDailyTank->productionBatch->po_number }} (Nomor PO)</h4>
+                                    <div class="hstack gap-3 flex-wrap">
+                                        <div><a href="#"
+                                                class="text-primary d-block">{{ Session::get('username') }}</a>
+                                        </div>
+                                        <div class="vr"></div>
 
-                            <div class="row g-3 text-dark">
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Tanggal Sampling</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->tanggal_sampling ?? '-' }}</span>
-                                </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Sampling Point</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->sampling_point ?? '-' }}</span>
-                                </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Status Pemakaian</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->status_pemakaian ?? '-' }}</span>
-                                </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Jenis Analisa</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->jenis_analisa ?? '-' }}</span>
-                                </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Jenis Sample</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->jenis_sample ?? '-' }}</span>
-                                </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">QC Field</label>
-                                    <span class="fw-medium">{{ $monitoringDailyTank->qcField->name ?? '-' }}</span>
-                                </div>
-
-                                <div class="col-md-6 col-lg-4">
-                                    <label class="d-block small text-muted mb-1">Operator</label>
-                                    <span class="fw-medium">{{ auth()->user()->name }}</span>
+                                        <div class="text-muted">Tanggal Produksi : <span
+                                                class="text-body fw-medium">{{ $monitoringDailyTank->productionBatch->date }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            <div class="row mt-2 g-3">
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-archive-fill"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Storage :</p>
+                                                <h5 class="mb-0">{{ $monitoringDailyTank->storage }}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-time-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Waktu Scan :</p>
+                                                <h5 class="mb-0">{{ $monitoringDailyTank->scanned_at }}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-map-pin-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Sampling Point :</p>
+                                                <h5 class="mb-0">{{ $monitoringDailyTank->sampling_point }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-checkbox-blank-circle-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Status Pemakaian :</p>
+                                                <h5 class="mb-0">{{ $monitoringDailyTank->status_pemakaian }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-flask-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Jenis Analisa :</p>
+                                                <h5 class="mb-0">{{ $monitoringDailyTank->jenis_analisa }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-drop-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Jenis Sample :</p>
+                                                <h5 class="mb-0">{{ $monitoringDailyTank->jenis_sample }}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- end row -->
                         </div>
+                        <!-- end card body -->
                     </div>
                 </div>
             </div>
@@ -123,8 +198,8 @@
                                     <!-- EB Field -->
                                     <div id="ebContainer" class="col-lg-12 d-none">
                                         <label class="form-label">EB <span style="color: red;">*</span></label>
-                                        <input type="text" name="eb" id="eb" class="form-control comma-input"
-                                            placeholder="Masukkan nilai EB">
+                                        <input type="text" name="eb" id="eb"
+                                            class="form-control comma-input" placeholder="Masukkan nilai EB">
                                         <small class="text-danger errorEb"></small>
                                     </div>
 

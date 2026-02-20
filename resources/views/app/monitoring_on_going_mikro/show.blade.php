@@ -27,78 +27,97 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="row gx-lg-5">
-                                <div class="col-xl-12">
-                                    <div class="mt-xl-0 mt-5">
-                                        <div class="d-flex">
-                                            <div class="flex-grow-1">
-                                                <h4>{{ $monitoringOnGoing->storage ?? '-' }} (Storage)</h4>
-                                                <div class="hstack gap-3 flex-wrap">
-                                                    <div><a href="#"
-                                                            class="text-primary d-block">{{ auth()->user()->name }}</a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Compact info grid -->
-                                        <div class="row g-3 mt-4">
-                                            <div class="col-6 col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="ri-calendar-check-line text-success fs-4 me-2"></i>
-                                                    <div>
-                                                        <small class="text-muted d-block">Nomor PO</small>
-                                                        <span
-                                                            class="fw-semibold">{{ $monitoringOnGoing->productionBatch->po_number ?? '-' }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-6 col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="ri-drop-fill text-info fs-4 me-2"></i>
-                                                    <div>
-                                                        <small class="text-muted d-block">Variant</small>
-                                                        <span
-                                                            class="fw-semibold">{{ $monitoringOnGoing->variant ?? '-' }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-6 col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="ri-calendar-event-fill text-warning fs-4 me-2"></i>
-                                                    <div>
-                                                        <small class="text-muted d-block">Tanggal Filling</small>
-                                                        <span
-                                                            class="fw-semibold">{{ $monitoringOnGoing->filling_date ? \Carbon\Carbon::parse($monitoringOnGoing->filling_date)->locale('id')->translatedFormat('d F Y') : '-' }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-6 col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="ri-time-line text-warning fs-4 me-2"></i>
-                                                    <div>
-                                                        <small class="text-muted d-block">Jam Koding</small>
-                                                        <span
-                                                            class="fw-semibold">{{ $monitoringOnGoing->jam_koding ?? '-' }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-6 col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="ri-flask-line text-primary fs-4 me-2"></i>
-                                                    <div>
-                                                        <small class="text-muted d-block">Jenis Sampel</small>
-                                                        <span
-                                                            class="fw-semibold">{{ $monitoringOnGoing->jenis_sampel ?? '-' }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <h4>{{ $monitoringOnGoing->storage ?? '-' }} (Storage)</h4>
+                                    <div class="hstack gap-3 flex-wrap">
+                                        <div><a href="#" class="text-primary d-block">{{ auth()->user()->name }}</a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="row mt-1 g-3">
+                                <!-- end col -->
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-calendar-check-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Nomor PO :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->productionBatch->po_number ?? '-' }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-drop-fill"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Variant :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->variant ?? '-' }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-calendar-event-fill"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Tanggal Filling :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->filling_date ? \Carbon\Carbon::parse($monitoringOnGoing->filling_date)->locale('id')->translatedFormat('d F Y') : '-' }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+                                <div class="col-lg-6 col-sm-6">
+                                    <div class="p-2 border border-dashed rounded">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                    <i class="ri-time-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <p class="text-muted mb-1">Jam Koding :</p>
+                                                <h5 class="mb-0">
+                                                    {{ $monitoringOnGoing->jam_koding ?? '-' }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end col -->
+                            </div>
                         </div>
+                        <!-- end card body -->
                     </div>
+                    <!-- end card -->
 
                     <div class="card">
                         <div class="card-body">
