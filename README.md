@@ -19,7 +19,6 @@ Pastikan sistem memenuhi kebutuhan berikut:
 - Node.js & NPM
 - Git
 - MySQL
-- Redis (opsional – jika menggunakan queue/broadcast)
 - XAMPP / Laragon / Web Server lokal
 - Text Editor (VS Code disarankan)
 
@@ -141,7 +140,7 @@ php artisan optimize:clear
 ### Jalankan Laravel Server
 
 ```bash
-php artisan serve
+php artisan serve --port=8000
 ```
 
 ### Jalankan Queue Worker
