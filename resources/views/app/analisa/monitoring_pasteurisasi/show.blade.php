@@ -135,18 +135,16 @@
                                                 <tr class="{{ $rowClass }}">
                                                     <td>
                                                         {{ $productionBatch->po_number }}
-                                                    </td>
-                                                    <td>
-                                                        @if ($pasteurisasi->revisi != null)
-                                                            {{ $pasteurisasi->batch_range }}
 
+                                                        @if ($pasteurisasi->revisi != null)
                                                             <span class="badge {{ $badgeClass }} ms-1"
                                                                 title="Revisi ke-{{ $pasteurisasi->revisi }}">
                                                                 Rev. {{ $pasteurisasi->revisi }}
                                                             </span>
-                                                        @else
-                                                            {{ $pasteurisasi->batch_range }}
                                                         @endif
+                                                    </td>
+                                                    <td>
+                                                        {{ $pasteurisasi->batch_range }}
 
                                                         @if ($pasteurisasi->additionalBatches)
                                                             @foreach ($pasteurisasi->additionalBatches as $relasi)

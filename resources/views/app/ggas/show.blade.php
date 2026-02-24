@@ -145,12 +145,6 @@
                                                                 Rev. {{ $ggas->revisi }}
                                                             </span>
                                                         @endif
-
-                                                        @if ($ggas->additional_batch_info)
-                                                            @foreach ($ggas->additional_batch_info as $relasi)
-                                                                <span class="badge bg-info">{{ $relasi->batch }}</span>
-                                                            @endforeach
-                                                        @endif
                                                     </td>
                                                     <td>{{ $ggas->dissolver_number }}</td>
                                                     <td>{{ $ggas->brix ?? '-' }}</td>
