@@ -90,9 +90,6 @@ DB_DATABASE=digimon
 DB_USERNAME=root
 DB_PASSWORD=
 
-SESSION_DRIVER=database
-QUEUE_CONNECTION=database
-CACHE_STORE=database
 BROADCAST_CONNECTION=reverb
 
 REVERB_APP_ID=your_app_id
@@ -101,6 +98,11 @@ REVERB_APP_SECRET=your_app_secret
 REVERB_HOST=localhost
 REVERB_PORT=8080
 REVERB_SCHEME=http
+
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 
 PRODUCTION_URL=http://127.0.0.1:8001/
 ```
@@ -135,21 +137,67 @@ php artisan optimize:clear
 
 ---
 
+# 📡 Konfigurasi Laravel Reverb
+
+Laravel Reverb adalah WebSocket server bawaan Laravel untuk fitur broadcasting real-time.
+
+## 1️⃣ Install Reverb
+
+```bash
+php artisan install:broadcasting
+```
+
+> Perintah ini secara otomatis menginstall package Reverb, membuat file konfigurasi `config/reverb.php`, dan menambahkan variabel environment yang diperlukan ke file `.env`.
+
+Jika ingin install secara manual via Composer:
+
+```bash
+composer require laravel/reverb
+php artisan reverb:install
+```
+
+## 2️⃣ Install & Build Frontend
+
+Setelah Reverb terinstall, build ulang asset frontend agar konfigurasi Vite terbaru diterapkan:
+
+```bash
+npm install
+npm run build
+```
+
+## 3️⃣ Menjalankan Reverb Server
+
+```bash
+php artisan reverb:start
+```
+
+Dengan opsi tambahan (host, port, debug):
+
+```bash
+php artisan reverb:start --host=0.0.0.0 --port=8080 --debug
+```
+
+> Server Reverb berjalan secara default di `http://localhost:8080`.
+
+---
+
 # ▶️ Menjalankan Aplikasi
 
-### Jalankan Laravel Server
+Jalankan semua proses berikut **secara bersamaan** di terminal terpisah:
+
+### Terminal 1 — Laravel Server
 
 ```bash
 php artisan serve --port=8000
 ```
 
-### Jalankan Queue Worker
+### Terminal 2 — Queue Worker
 
 ```bash
 php artisan queue:work
 ```
 
-### Jalankan Reverb WebSocket Server
+### Terminal 3 — Reverb WebSocket Server
 
 ```bash
 php artisan reverb:start
@@ -164,6 +212,8 @@ Buka browser dan akses:
 ```
 http://localhost:8000
 ```
+
+---
 
 # 📄 Lisensi
 
