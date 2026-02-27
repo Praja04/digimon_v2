@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\GGAS;
+use App\Models\Pelarutan2;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-class GgasController extends Controller
+class Pelarutan2Controller extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        GGAS::create([
+        Pelarutan2::create([
             'id' => $request->id,
             'production_batch_id' => $request->production_batch_id,
             'batch_number' => $request->batch_number,
@@ -21,17 +21,17 @@ class GgasController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Data GGAS berhasil disimpan.',
+            'message' => 'Data Pelarutan 2 berhasil disimpan.',
         ], Response::HTTP_CREATED);
     }
 
     public function update_revisi(Request $request)
     {
-        $data = GGAS::find($request->id_old);
+        $data = Pelarutan2::find($request->id_old);
         $data->not_standard = false;
         $data->save();
 
-        GGAS::create([
+        Pelarutan2::create([
             'id' => $request->id,
             'production_batch_id' => $request->production_batch_id,
             'batch_number' => $request->batch_number,
@@ -41,7 +41,7 @@ class GgasController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Data GGAS berhasil diupdate.',
+            'message' => 'Data Pelarutan 2 berhasil diupdate.',
         ], Response::HTTP_OK);
     }
 }

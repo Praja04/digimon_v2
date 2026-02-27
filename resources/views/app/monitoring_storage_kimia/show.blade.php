@@ -179,28 +179,45 @@
                                                                                 QR Code {{ $storageKimia->id }}
                                                                             </button>
 
-<!-- Modal QR Code -->
-<div class="modal fade" id="qrModalKimia{{ $storageKimia->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-sm">
-            <div class="modal-header bg-light py-2">
-                <h6 class="modal-title">QR Code Monitoring Storage Kimia #{{ $storageKimia->id }}</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center p-3" id="qrPrintKimiaArea{{ $storageKimia->id }}">
-                <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-kimia.show_batch', $storageKimia->id), 'QRCODE') }}"
-                    alt="QR" class="img-fluid mb-2" style="max-width:180px;">
-                <div class="small text-muted">
-                    MONITORING-STORAGE-KIMIA/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageKimia->id }}
-                </div>
-            </div>
-            <div class="modal-footer bg-light py-2">
-                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
-                <button onclick="printQR('qrPrintKimiaArea{{ $storageKimia->id }}')" class="btn btn-sm btn-primary">Cetak</button>
-            </div>
-        </div>
-    </div>
-</div>
+                                                                            <!-- Modal QR Code -->
+                                                                            <div class="modal fade"
+                                                                                id="qrModalKimia{{ $storageKimia->id }}"
+                                                                                tabindex="-1" aria-hidden="true">
+                                                                                <div
+                                                                                    class="modal-dialog modal-dialog-centered">
+                                                                                    <div class="modal-content shadow-sm">
+                                                                                        <div
+                                                                                            class="modal-header bg-light py-2">
+                                                                                            <h6 class="modal-title">QR Code
+                                                                                                Monitoring Storage Kimia
+                                                                                                #{{ $storageKimia->id }}
+                                                                                            </h6>
+                                                                                            <button type="button"
+                                                                                                class="btn-close"
+                                                                                                data-bs-dismiss="modal"></button>
+                                                                                        </div>
+                                                                                        <div class="modal-body text-center p-3"
+                                                                                            id="qrPrintKimiaArea{{ $storageKimia->id }}">
+                                                                                            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-kimia.show_batch', $storageKimia->id), 'QRCODE') }}"
+                                                                                                alt="QR"
+                                                                                                class="img-fluid mb-2"
+                                                                                                style="max-width:180px;">
+                                                                                            <div class="small text-muted">
+                                                                                                MONITORING-STORAGE-KIMIA/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageKimia->id }}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div
+                                                                                            class="modal-footer bg-light py-2">
+                                                                                            <button type="button"
+                                                                                                class="btn btn-sm btn-light"
+                                                                                                data-bs-dismiss="modal">Tutup</button>
+                                                                                            <button
+                                                                                                onclick="printQR('qrPrintKimiaArea{{ $storageKimia->id }}')"
+                                                                                                class="btn btn-sm btn-primary">Cetak</button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
                                                                         </td>
                                                                         <td>{{ $storageKimia->storage ?? '-' }}</td>
                                                                         <td>{{ $storageKimia->status ?? '-' }}</td>
@@ -305,25 +322,40 @@
                                                                                 tabindex="-1"
                                                                                 aria-labelledby="qrModalMikroLabel{{ $storageMikro->id }}"
                                                                                 aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-sm">
-        <div class="modal-header bg-light py-2">
-            <h6 class="modal-title">QR Code Monitoring Storage Mikro #{{ $storageMikro->id }}</h6>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body text-center p-3" id="qrPrintMikroArea{{ $storageMikro->id }}">
-            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-mikro.show_batch', $storageMikro->id), 'QRCODE') }}"
-                alt="QR" class="img-fluid mb-2" style="max-width:180px;">
-            <div class="small text-muted">
-                MONITORING-STORAGE-MIKRO/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageMikro->id }}
-            </div>
-        </div>
-        <div class="modal-footer bg-light py-2">
-            <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
-            <button onclick="printQR('qrPrintMikroArea{{ $storageMikro->id }}')" class="btn btn-sm btn-primary">Cetak</button>
-        </div>
-    </div>
-</div>
+                                                                                <div
+                                                                                    class="modal-dialog modal-dialog-centered">
+                                                                                    <div class="modal-content shadow-sm">
+                                                                                        <div
+                                                                                            class="modal-header bg-light py-2">
+                                                                                            <h6 class="modal-title">QR Code
+                                                                                                Monitoring Storage Mikro
+                                                                                                #{{ $storageMikro->id }}
+                                                                                            </h6>
+                                                                                            <button type="button"
+                                                                                                class="btn-close"
+                                                                                                data-bs-dismiss="modal"></button>
+                                                                                        </div>
+                                                                                        <div class="modal-body text-center p-3"
+                                                                                            id="qrPrintMikroArea{{ $storageMikro->id }}">
+                                                                                            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-mikro.show_batch', $storageMikro->id), 'QRCODE') }}"
+                                                                                                alt="QR"
+                                                                                                class="img-fluid mb-2"
+                                                                                                style="max-width:180px;">
+                                                                                            <div class="small text-muted">
+                                                                                                MONITORING-STORAGE-MIKRO/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageMikro->id }}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div
+                                                                                            class="modal-footer bg-light py-2">
+                                                                                            <button type="button"
+                                                                                                class="btn btn-sm btn-light"
+                                                                                                data-bs-dismiss="modal">Tutup</button>
+                                                                                            <button
+                                                                                                onclick="printQR('qrPrintMikroArea{{ $storageMikro->id }}')"
+                                                                                                class="btn btn-sm btn-primary">Cetak</button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
                                                                         </td>
                                                                         <td>{{ $storageMikro->storage ?? '-' }}</td>

@@ -5,11 +5,11 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class GgaSeeder extends Seeder
+class Pelarutan1Seeder extends Seeder
 {
     public function run(): void
     {
-        $productionBatchId = 35;
+        $productionBatchId = 37;
         $qcUserId = 4;
 
         $batch = DB::table('production_batches')
@@ -22,7 +22,7 @@ class GgaSeeder extends Seeder
 
         $variant = strtoupper($batch->variant);
 
-        $rows = DB::table('gga')
+        $rows = DB::table('pelarutan_1')
             ->where('production_batch_id', $productionBatchId)
             ->pluck('id');
 
@@ -75,7 +75,7 @@ class GgaSeeder extends Seeder
                     break;
             }
 
-            DB::table('gga')->where('id', $id)->update([
+            DB::table('pelarutan_1')->where('id', $id)->update([
                 'brix'        => $brix,
                 'nacl'        => $nacl,
                 'organo'      => 'OK',

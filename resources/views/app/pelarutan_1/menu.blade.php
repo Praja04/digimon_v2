@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'GGA & GGAS')
+@section('title', 'Pelarutan 1 & Pelarutan 2')
 @section('styles')
     <style>
         .bg-gradient-primary {
@@ -80,7 +80,7 @@
             <!-- end page title -->
 
             <div class="row g-4 mb-3">
-                <!-- GGA Card -->
+                <!-- Pelarutan 1 Card -->
                 <div class="col-xl-6 col-lg-6">
                     <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                         <div class="card-header bg-gradient-primary text-white border-0 py-4">
@@ -91,8 +91,9 @@
                                         <i class="ri-bar-chart-box-line fs-1 text-white"></i>
                                     </div>
                                     <div>
-                                        <h5 class="text-white mb-1 fw-bold">GGA</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Analisis dan Monitoring GGA</p>
+                                        <h5 class="text-white mb-1 fw-bold">Pelarutan 1</h5>
+                                        <p class="text-white text-opacity-75 mb-0 small">Analisis dan Monitoring Pelarutan 1
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -103,7 +104,7 @@
                                     <span class="badge bg-primary-subtle text-primary">Analisis</span>
                                     <span class="badge bg-primary-subtle text-primary">Monitoring</span>
                                 </div>
-                                <a href="{{ route('gga.index') }}"
+                                <a href="{{ route('pelarutan-1.index') }}"
                                     class="btn btn-primary rounded-pill px-4 d-flex align-items-center">
                                     Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
                                 </a>
@@ -112,7 +113,7 @@
                     </div>
                 </div>
 
-                <!-- GGAS Card -->
+                <!-- Pelarutan 2 Card -->
                 <div class="col-xl-6 col-lg-6">
                     <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                         <div class="card-header bg-gradient-success text-white border-0 py-4">
@@ -123,8 +124,9 @@
                                         <i class="ri-line-chart-line fs-1 text-white"></i>
                                     </div>
                                     <div>
-                                        <h5 class="text-white mb-1 fw-bold">GGAS</h5>
-                                        <p class="text-white text-opacity-75 mb-0 small">Analisis dan Monitoring GGAS</p>
+                                        <h5 class="text-white mb-1 fw-bold">Pelarutan 2</h5>
+                                        <p class="text-white text-opacity-75 mb-0 small">Analisis dan Monitoring Pelarutan 2
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -135,7 +137,7 @@
                                     <span class="badge bg-success-subtle text-success">Analisis</span>
                                     <span class="badge bg-success-subtle text-success">Monitoring</span>
                                 </div>
-                                <a href="{{ route('ggas.index') }}"
+                                <a href="{{ route('pelarutan-2.index') }}"
                                     class="btn btn-success rounded-pill px-4 d-flex align-items-center">
                                     Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
                                 </a>

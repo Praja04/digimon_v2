@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\BlendingAfterAdjustMikro;
 use App\Models\BlendingAwal;
-use App\Models\GGA;
-use App\Models\GGAS;
 use App\Models\MonitoringDailyTank;
 use App\Models\MonitoringOnGoingKimia;
 use App\Models\MonitoringOnGoingMikro;
@@ -14,6 +12,8 @@ use App\Models\MonitoringStorageBeforeUse;
 use App\Models\MonitoringStorageKimia;
 use App\Models\MonitoringStorageMikro;
 use App\Models\MonitoringTurunBlending;
+use App\Models\Pelarutan1;
+use App\Models\Pelarutan2;
 use App\Models\QRScanLog;
 use App\Models\ShelfLifeSamplingDetail;
 use App\Models\ShelfLifeSamplingKimia;
@@ -28,8 +28,8 @@ class ScanController extends Controller
     // Definisi hak akses berdasarkan role
     private $rolePermissions = [
         'Analis Kimia' => [
-            'gga',
-            'ggas',
+            'pelarutan-1',
+            'pelarutan-2',
             'blending-awal',
             'monitoring-turun-blending',
             'monitoring-pasteurisasi',
@@ -79,8 +79,8 @@ class ScanController extends Controller
 
         // Mapping prefix kode manual ke type sistem
         $prefixMapping = [
-            'GGA' => 'gga',
-            'GGAS' => 'ggas',
+            'PELARUTAN-1' => 'pelarutan-1',
+            'PELARUTAN-2' => 'pelarutan-2',
             'BLENDING-AWAL' => 'blending-awal',
             'BLENDING-AFTER-ADJUST-MIKRO' => 'blending-awal-mikro',
             'MONITORING-TURUN-BLENDING' => 'monitoring-turun-blending',
@@ -113,7 +113,7 @@ class ScanController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Format kode tidak valid. Gunakan format: PROSES/PO/DATE/ID' . "\n\n" .
-                        'Contoh: GGA/1002001/2026-02-10/3'
+                        'Contoh: PELARUTAN-1/1002001/2026-02-10/3'
                 ], 400);
             }
 
@@ -165,15 +165,15 @@ class ScanController extends Controller
 
         // Mapping semua QC type dengan konfigurasi masing-masing
         $qcMapping = [
-            'gga' => [
-                'model' => GGA::class,
-                'route' => 'gga.show_batch',
-                'name'  => 'GGA'
+            'pelarutan-1' => [
+                'model' => Pelarutan1::class,
+                'route' => 'pelarutan-1.show_batch',
+                'name'  => 'Pelarutan 1'
             ],
-            'ggas' => [
-                'model' => GGAS::class,
-                'route' => 'ggas.show_batch',
-                'name'  => 'GGAS'
+            'pelarutan-2' => [
+                'model' => Pelarutan2::class,
+                'route' => 'pelarutan-2.show_batch',
+                'name'  => 'Pelarutan 2'
             ],
             'blending-awal' => [
                 'model' => BlendingAwal::class,

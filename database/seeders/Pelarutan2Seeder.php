@@ -6,14 +6,14 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class GgasSeeder extends Seeder
+class Pelarutan2Seeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $productionBatchId = 35;
+        $productionBatchId = 37;
         $qcUserId = 4;
 
         $batch = DB::table('production_batches')
@@ -26,7 +26,7 @@ class GgasSeeder extends Seeder
 
         $variant = strtoupper($batch->variant);
 
-        $rows = DB::table('ggas')
+        $rows = DB::table('pelarutan_2')
             ->where('production_batch_id', $productionBatchId)
             ->pluck('id');
 
@@ -70,7 +70,7 @@ class GgasSeeder extends Seeder
                     break;
             }
 
-            DB::table('ggas')->where('id', $id)->update([
+            DB::table('pelarutan_2')->where('id', $id)->update([
                 'brix'        => $brix,
                 'nacl'        => $nacl,
                 'visco'       => $visco,

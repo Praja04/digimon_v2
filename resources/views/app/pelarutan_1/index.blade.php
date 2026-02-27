@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'GGAS')
+@section('title', 'Pelarutan 1')
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -29,16 +29,16 @@
                         </div>
                         <div class="card-body">
                             <!-- Filter Section -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
+                            <div class="row mb-3 g-2">
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <label for="start_date" class="form-label">Tanggal Mulai</label>
                                     <input type="date" id="start_date" class="form-control">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <label for="end_date" class="form-label">Tanggal Akhir</label>
                                     <input type="date" id="end_date" class="form-control">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <label for="status_filter" class="form-label">Status</label>
                                     <select id="status_filter" class="form-select">
                                         <option value="">Semua</option>
@@ -46,11 +46,11 @@
                                         <option value="progress">On Progress</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button type="button" id="btnFilter" class="btn btn-primary me-2">
+                                <div class="col-12 col-sm-6 col-md-3 d-flex align-items-end gap-2">
+                                    <button type="button" id="btnFilter" class="btn btn-primary flex-fill">
                                         <i class="mdi mdi-filter"></i> Filter
                                     </button>
-                                    <button type="button" id="btnReset" class="btn btn-secondary">
+                                    <button type="button" id="btnReset" class="btn btn-secondary flex-fill">
                                         <i class="mdi mdi-refresh"></i> Reset
                                     </button>
                                 </div>
@@ -64,7 +64,7 @@
                                             <th>#</th>
                                             <th>PO</th>
                                             <th>Tanggal</th>
-                                            <th>Jumlah GGAS</th>
+                                            <th>Jumlah Pelarutan 1</th>
                                             <th>Status</th>
                                             <th width="1">Aksi</th>
                                         </tr>
@@ -95,7 +95,7 @@
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: "{{ route('ggas.index') }}",
+                    url: "{{ route('pelarutan-1.index') }}",
                     data: function(d) {
                         d.start_date = $('#start_date').val();
                         d.end_date = $('#end_date').val();
@@ -117,14 +117,14 @@
                         name: 'date'
                     },
                     {
-                        data: 'ggas_count',
-                        name: 'ggas_count',
+                        data: 'pelarutan_1_count',
+                        name: 'pelarutan_1_count',
                         orderable: false,
                         searchable: false
                     },
                     {
-                        data: 'status_ggas',
-                        name: 'status_ggas',
+                        data: 'status_pelarutan_1',
+                        name: 'status_pelarutan_1',
                         orderable: false,
                         searchable: false
                     },

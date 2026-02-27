@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\GGA;
+use App\Models\Pelarutan1;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class GgaController extends Controller
+class Pelarutan1Controller extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        GGA::create([
+        Pelarutan1::create([
             'id' => $request->id,
             'production_batch_id' => $request->production_batch_id,
             'batch_number' => $request->batch_number,
@@ -21,17 +21,17 @@ class GgaController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Data GGA berhasil disimpan.',
+            'message' => 'Data Pelarutan 1 berhasil disimpan.',
         ], Response::HTTP_CREATED);
     }
 
     public function update_revisi(Request $request)
     {
-        $data = GGA::find($request->id_old);
+        $data = Pelarutan1::find($request->id_old);
         $data->not_standard = false;
         $data->save();
 
-        GGA::create([
+        Pelarutan1::create([
             'id' => $request->id,
             'production_batch_id' => $request->production_batch_id,
             'batch_number' => $request->batch_number,
@@ -41,7 +41,7 @@ class GgaController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Data GGA berhasil diupdate.',
+            'message' => 'Data Pelarutan 1 berhasil diupdate.',
         ], Response::HTTP_OK);
     }
 }

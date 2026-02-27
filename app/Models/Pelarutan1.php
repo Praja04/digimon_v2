@@ -7,9 +7,9 @@ use App\Models\ProductionBatch;
 use App\Models\Color;
 use App\Models\User;
 
-class GGA extends Model
+class Pelarutan1 extends Model
 {
-    protected $table = 'gga';
+    protected $table = 'pelarutan_1';
 
     protected $guarded = [];
 

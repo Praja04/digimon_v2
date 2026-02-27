@@ -13,9 +13,9 @@ Route::get('/dashboard/rmpm/vehicle-condition', [App\Http\Controllers\Api\Dashbo
 Route::get('/dashboard/rmpm/packaging-findings', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getPackagingFindings'])->name('api.dashboard.rmpm.packaging-findings');
 Route::get('/dashboard/rmpm/recent-data', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getRecentData'])->name('api.dashboard.rmpm.recent-data');
 
-// Dashboard - GGA GGAS
-Route::get('/dashboard/gga-ggas/analisa', [App\Http\Controllers\Api\Dashboard\GgaGgasController::class, 'analisaGgaGgas'])->name('api.dashboard.gga-ggas.analisa');
-Route::get('/dashboard/gga-ggas/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\GgaGgasController::class, 'analisaDisposisi'])->name('api.dashboard.gga-ggas.analisa.disposisi');
+// Dashboard - Pelarutan
+Route::get('/dashboard/pelarutan/analisa', [App\Http\Controllers\Api\Dashboard\PelarutanController::class, 'analisaPelarutan'])->name('api.dashboard.pelarutan.analisa');
+Route::get('/dashboard/pelarutan/analisa/disposisi', [App\Http\Controllers\Api\Dashboard\PelarutanController::class, 'analisaDisposisi'])->name('api.dashboard.pelarutan.analisa.disposisi');
 
 // Dashboard - Blending Awal
 Route::get('/dashboard/blending-awal/analisa', [App\Http\Controllers\Api\Dashboard\BlendingAwalController::class, 'analisaBlendingAwal'])->name('api.dashboard.blending-awal.analisa');
@@ -57,12 +57,12 @@ Route::post('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchCo
 Route::delete('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'destroy'])->name('api.production.batch.destroy');
 
 // GGA
-Route::post('/gga', [App\Http\Controllers\Api\GgaController::class, 'store'])->name('api.gga.store');
-Route::post('/gga/revisi', [App\Http\Controllers\Api\GgaController::class, 'update_revisi'])->name('api.gga.update_revisi');
+Route::post('/pelarutan-1', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'store'])->name('api.pelarutan.1.store');
+Route::post('/pelarutan-1/revisi', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'update_revisi'])->name('api.pelarutan.1.update_revisi');
 
 // GGAS
-Route::post('/ggas', [App\Http\Controllers\Api\GgasController::class, 'store'])->name('api.ggas.store');
-Route::post('/ggas/revisi', [App\Http\Controllers\Api\GgasController::class, 'update_revisi'])->name('api.ggas.update_revisi');
+Route::post('/pelarutan-2', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'store'])->name('api.pelarutan.2.store');
+Route::post('/pelarutan-2/revisi', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'update_revisi'])->name('api.pelarutan.2.update_revisi');
 
 // Blending Awal
 Route::get('/blending-awal/{id}', [App\Http\Controllers\Api\BlendingAwalController::class, 'show'])->name('api.blending.awal.show');

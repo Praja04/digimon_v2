@@ -3,21 +3,21 @@
 namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\GGA;
-use App\Models\GGAS;
+use App\Models\Pelarutan1;
+use App\Models\Pelarutan2;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class GgaGgasController extends Controller
+class PelarutanController extends Controller
 {
-    public function analisaGgaGgas(Request $request)
+    public function analisaPelarutan(Request $request)
     {
         $startDate = $request->input('start_date');
         $endDate   = $request->input('end_date');
         $variant   = $request->input('variant');
 
-        // === GGA Data ===
-        $ggaQuery = GGA::with(['productionBatch:id,po_number,variant'])
+        // === Pelarutan 1 Data ===
+        $pelarutan1Query = Pelarutan1::with(['productionBatch:id,po_number,variant'])
             ->select('id', 'batch_number', 'brix', 'nacl', 'production_batch_id', 'created_at')
             ->whereNotNull('brix')
             ->whereNotNull('nacl')
@@ -33,7 +33,7 @@ class GgaGgasController extends Controller
                 });
             });
 
-        $ggaData = $ggaQuery->orderBy('created_at')
+        $pelarutan1Data = $pelarutan1Query->orderBy('created_at')
             ->get()
             ->map(function ($item) {
                 return [
@@ -47,8 +47,8 @@ class GgaGgasController extends Controller
                 ];
             });
 
-        // === GGAS Data ===
-        $ggasQuery = GGAS::with(['productionBatch:id,po_number,variant'])
+        // === Pelarutan 2 Data ===
+        $pelarutan2Query = Pelarutan2::with(['productionBatch:id,po_number,variant'])
             ->select('id', 'batch_number', 'brix', 'nacl', 'production_batch_id', 'created_at')
             ->whereNotNull('brix')
             ->whereNotNull('nacl')
@@ -64,7 +64,7 @@ class GgaGgasController extends Controller
                 });
             });
 
-        $ggasData = $ggasQuery->orderBy('created_at')
+        $pelarutan2Data = $pelarutan2Query->orderBy('created_at')
             ->get()
             ->map(function ($item) {
                 return [
@@ -79,8 +79,8 @@ class GgaGgasController extends Controller
             });
 
         return response()->json([
-            'gga'  => $ggaData,
-            'ggas' => $ggasData,
+            'pelarutan1'  => $pelarutan1Data,
+            'pelarutan2' => $pelarutan2Data,
         ]);
     }
 
@@ -90,8 +90,8 @@ class GgaGgasController extends Controller
         $endDate   = $request->input('end_date');
         $variant   = $request->input('variant');
 
-        // GGA analysis
-        $ggaQuery = GGA::whereNotNull('disposition')
+        // Pelarutan 1 analysis
+        $pelarutan1Query = Pelarutan1::whereNotNull('disposition')
             ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('created_at', [
                     Carbon::parse($startDate)->startOfDay(),
@@ -104,12 +104,12 @@ class GgaGgasController extends Controller
                 });
             });
 
-        $ggaDispositions = $ggaQuery->get()
+        $pelarutan1Dispositions = $pelarutan1Query->get()
             ->groupBy('disposition')
             ->map(fn($group) => $group->count());
 
-        // GGAS analysis
-        $ggasQuery = GGAS::whereNotNull('disposition')
+        // Pelarutan 2 analysis
+        $pelarutan2Query = Pelarutan2::whereNotNull('disposition')
             ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('created_at', [
                     Carbon::parse($startDate)->startOfDay(),
@@ -122,13 +122,13 @@ class GgaGgasController extends Controller
                 });
             });
 
-        $ggasDispositions = $ggasQuery->get()
+        $pelarutan2Dispositions = $pelarutan2Query->get()
             ->groupBy('disposition')
             ->map(fn($group) => $group->count());
 
         return response()->json([
-            'gga'  => $ggaDispositions,
-            'ggas' => $ggasDispositions,
+            'pelarutan1'  => $pelarutan1Dispositions,
+            'pelarutan2' => $pelarutan2Dispositions,
         ]);
     }
 }

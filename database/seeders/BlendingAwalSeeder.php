@@ -9,7 +9,7 @@ class BlendingAwalSeeder extends Seeder
 {
     public function run(): void
     {
-        $productionBatchId = 34;
+        $productionBatchId = 36;
         $qcUserId = 4;
 
         $batch = DB::table('production_batches')

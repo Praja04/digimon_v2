@@ -56,9 +56,9 @@
                                             class="mdi mdi-chef-hat"></i>Proses Masak</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="{{ route('dashboard.gga-ggas.index') }}"
-                                        class="nav-link {{ request()->routeIs('dashboard.gga-ggas.index') ? 'active' : '' }}"><i
-                                            class="mdi mdi-flask"></i>GGA & GGAS</a>
+                                    <a href="{{ route('dashboard.pelarutan.index') }}"
+                                        class="nav-link {{ request()->routeIs('dashboard.pelarutan.index') ? 'active' : '' }}"><i
+                                            class="mdi mdi-flask"></i>Pelarutan</a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="{{ route('dashboard.blending-awal.index') }}"
@@ -154,12 +154,12 @@
                         </li>
                     @endif
 
-                    {{-- GGA & GGAS Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia --}}
+                    {{-- Pelarutan Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia --}}
                     @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia']))
                         <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['gga.menu', 'gga.index', 'gga.show', 'gga.show_batch', 'ggas.index', 'ggas.show', 'ggas.show_batch']) ? 'active' : '' }}"
-                                href="{{ route('gga.menu') }}">
-                                <i class="mdi mdi-flask-outline"></i> <span>GGA & GGAS</span>
+                            <a class="nav-link menu-link {{ request()->routeIs(['pelarutan_1.menu', 'pelarutan_1.index', 'pelarutan_1.show', 'pelarutan_1.show_batch', 'pelarutan_2.index', 'pelarutan_2.show', 'pelarutan_2.show_batch']) ? 'active' : '' }}"
+                                href="{{ route('pelarutan-1.menu') }}">
+                                <i class="mdi mdi-flask-outline"></i> <span>Pelarutan</span>
                             </a>
                         </li>
                     @endif

@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'GGA')
+@section('title', 'Pelarutan 2')
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -30,7 +30,7 @@
                                     <div class="mt-xl-0 mt-5">
                                         <div class="d-flex">
                                             <div class="flex-grow-1">
-                                                <h4>{{ $gga->productionBatch->po_number }} (Nomor PO)</h4>
+                                                <h4>{{ $pelarutan_2->productionBatch->po_number }} (Nomor PO)</h4>
                                                 <div class="hstack gap-3 flex-wrap">
                                                     <div><a href="#"
                                                             class="text-primary d-block">{{ auth()->user()->name }}</a>
@@ -38,7 +38,7 @@
                                                     <div class="vr"></div>
 
                                                     <div class="text-muted">Tanggal Produksi : <span
-                                                            class="text-body fw-medium">{{ $gga->productionBatch->date }}</span>
+                                                            class="text-body fw-medium">{{ $pelarutan_2->productionBatch->date }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -56,11 +56,13 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Variant :</p>
-                                                            <h5 class="mb-0">{{ $gga->productionBatch->variant }}</h5>
+                                                            <h5 class="mb-0">{{ $pelarutan_2->productionBatch->variant }}
+                                                            </h5>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            <!-- end col -->
                                             <div class="col-lg-6 col-sm-6">
                                                 <div class="p-2 border border-dashed rounded">
                                                     <div class="d-flex align-items-center">
@@ -72,11 +74,14 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Batch Range :</p>
-                                                            <h5 class="mb-0">{{ $gga->productionBatch->batch_range }}</h5>
+                                                            <h5 class="mb-0">
+                                                                {{ $pelarutan_2->productionBatch->batch_range }}
+                                                            </h5>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            <!-- end col -->
                                             <div class="col-lg-6 col-sm-6 mt-3">
                                                 <div class="p-2 border border-dashed rounded">
                                                     <div class="d-flex align-items-center">
@@ -88,7 +93,7 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Batch :</p>
-                                                            <h5 class="mb-0">{{ $gga->batch_number }}
+                                                            <h5 class="mb-0">{{ $pelarutan_2->batch_number }}
                                                             </h5>
                                                         </div>
                                                     </div>
@@ -105,21 +110,19 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Dissolver :</p>
-                                                            <h5 class="mb-0">{{ $gga->dissolver_number }}</h5>
+                                                            <h5 class="mb-0">{{ $pelarutan_2->dissolver_number }}</h5>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
                                         </div>
-
 
 
                                         <!-- end row -->
 
                                         <div class="mt-4 text-muted">
                                             <h5 class="fs-14">Description :</h5>
-                                            <p>{{ $gga->productionBatch->description ?? '-' }}</p>
+                                            <p>{{ $pelarutan_2->productionBatch->description ?? '-' }}</p>
                                         </div>
 
                                     </div>
@@ -139,41 +142,46 @@
                                 <form id="form">
                                     <div class="row g-3">
                                         <div class="col-lg-6">
-                                            <input type="hidden" name="id" id="id" value="{{ $gga->id }}">
+                                            <input type="hidden" name="id" id="id"
+                                                value="{{ $pelarutan_2->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $gga->brix ?? '') }}">
-
+                                                value="{{ str_replace('.', ',', $pelarutan_2->brix ?? '') }}">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-6">
-                                            <label class="form-label">NACL <span style="color: red">*</span></label>
+                                            <label class="form-label">NACL</label>
                                             <input type="text" name="nacl" id="nacl"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $gga->nacl ?? '') }}">
+                                                value="{{ str_replace('.', ',', $pelarutan_2->nacl ?? '') }}">
                                             <small class="text-danger errorNacl"></small>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="form-label">Visco</label>
+                                            <input type="text" name="visco" id="visco"
+                                                class="form-control comma-input" placeholder="Contoh: 0,00"
+                                                value="{{ str_replace('.', ',', $pelarutan_2->visco ?? '') }}">
+                                            <small class="text-danger errorVisco"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Organo <span style="color: red">*</span></label>
                                             <input type="text" name="organo" id="organo" class="form-control"
                                                 oninput="this.value = this.value.toUpperCase();"
-                                                value="{{ $gga->organo ?? '' }}">
+                                                value="{{ $pelarutan_2->organo ?? '' }}">
                                             <small class="text-danger errorOrgano"></small>
                                         </div>
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-12">
                                             <label class="form-label">Status <span style="color: red">*</span></label>
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK" {{ $gga->status == 'OK' ? 'selected' : '' }}>OK
+                                                <option value="OK"
+                                                    {{ $pelarutan_2->status == 'OK' ? 'selected' : '' }}>OK
                                                 </option>
-                                                <option value="NOT OK" {{ $gga->status == 'NOT OK' ? 'selected' : '' }}>
-                                                    NOT OK
-                                                </option>
-                                                <option value="Adjustment"
-                                                    {{ $gga->status == 'Adjustment' ? 'selected' : '' }}>
-                                                    Adjustment</option>
+                                                <option value="NOT OK"
+                                                    {{ $pelarutan_2->status == 'NOT OK' ? 'selected' : '' }}>
+                                                    NOT OK</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
@@ -195,28 +203,9 @@
                                         <div class="col-lg-12">
                                             <label class="form-label">Catatan</label>
                                             <textarea name="disposition_remark" class="form-control" rows="2" placeholder="Isi catatan jika diperlukan..."
-                                                oninput="this.value = this.value.toUpperCase();">{{ $gga->disposition_remark ?? '' }}</textarea>
+                                                oninput="this.value = this.value.toUpperCase();">{{ $pelarutan_2->disposition_remark ?? '' }}</textarea>
                                         </div>
 
-                                        <div class="col-lg-12 d-none adjustment-qty-wrapper">
-                                            <h6 class="form-label fw-bold">Adjustment Qty</h6>
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Gula Tebu (Kg)</label>
-                                                    <input type="text" name="adjustment_qty_gula_tebu"
-                                                        class="form-control adjustment-qty comma-input" value="0"
-                                                        placeholder="Contoh: 0,00"
-                                                        value="{{ $gga->adjustment_qty_gula_tebu ?? '' }}">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Gula Kelapa (Kg)</label>
-                                                    <input type="text" name="adjustment_qty_gula_kelapa"
-                                                        class="form-control adjustment-qty comma-input" value="0"
-                                                        placeholder="Contoh: 0,00"
-                                                        value="{{ $gga->adjustment_qty_gula_kelapa ?? '' }}">
-                                                </div>
-                                            </div>
-                                        </div>
                                         <div class="d-flex justify-content-end">
                                             <button type="submit" class="btn btn-primary" id="save">Simpan</button>
                                         </div>
@@ -264,35 +253,6 @@
             });
 
             // ==========================================
-            // Helper: Toggle Adjustment Fields
-            // ==========================================
-            function toggleAdjustmentFields(status, showOnly = false) {
-                const qtyWrapper = $('.adjustment-qty-wrapper');
-                const qtyInput = $('.adjustment-qty');
-
-                if (status === 'Adjustment') {
-                    qtyWrapper.removeClass('d-none');
-                    qtyInput.prop('required', true);
-                } else {
-                    qtyWrapper.addClass('d-none');
-                    qtyInput.prop('required', false);
-
-                    // Clear values hanya jika bukan mode showOnly
-                    if (!showOnly) {
-                        qtyInput.val('');
-                    }
-                }
-            }
-
-            // ==========================================
-            // Event: Status Disposition Change
-            // ==========================================
-            $('#status_disposition').on('change', function() {
-                const selected = $(this).val();
-                toggleAdjustmentFields(selected);
-            });
-
-            // ==========================================
             // Form Submit
             // ==========================================
             $('#form').submit(function(e) {
@@ -300,7 +260,7 @@
 
                 $.ajax({
                     data: $(this).serialize(),
-                    url: "{{ route('gga.update') }}",
+                    url: "{{ route('pelarutan-2.update') }}",
                     type: "POST",
                     dataType: 'json',
                     beforeSend: function() {
@@ -321,8 +281,8 @@
                             text: response.message,
                         }).then(() => {
                             window.location.href =
-                                "{{ route('gga.show', '') }}/" +
-                                {{ $gga->productionBatch->id }}
+                                "{{ route('pelarutan-2.show', '') }}/" +
+                                {{ $pelarutan_2->productionBatch->id }}
                         });
                     },
                     error: function(xhr) {
@@ -357,6 +317,10 @@
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
+                            }
                             if (errors.organo) {
                                 $('#organo').addClass('is-invalid');
                                 $('.errorOrgano').html(errors.organo.join('<br>'));
@@ -369,14 +333,6 @@
                             if (errors.disposition) {
                                 $('#disposition').addClass('is-invalid');
                                 $('.errorDisposition').html(errors.disposition.join('<br>'));
-                            }
-                            if (errors.adjustment_qty_gula_tebu) {
-                                $('input[name="adjustment_qty_gula_tebu"]').addClass(
-                                    'is-invalid');
-                            }
-                            if (errors.adjustment_qty_gula_kelapa) {
-                                $('input[name="adjustment_qty_gula_kelapa"]').addClass(
-                                    'is-invalid');
                             }
 
                             return;

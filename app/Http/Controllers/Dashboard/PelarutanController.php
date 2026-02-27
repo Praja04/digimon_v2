@@ -8,10 +8,10 @@ use App\Models\GGAS;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class GgaGgasController extends Controller
+class PelarutanController extends Controller
 {
     public function index()
     {
-        return view('dashboard.gga-ggas.index');
+        return view('dashboard.pelarutan.index');
     }
 }

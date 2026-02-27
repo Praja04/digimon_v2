@@ -143,8 +143,8 @@
             let isSwitchingCamera = false;
 
             const typeNames = {
-                'gga': 'GGA',
-                'ggas': 'GGAS',
+                'pelarutan-1': 'Pelarutan 1',
+                'pelarutan-2': 'Pelarutan 2',
                 'blending-awal': 'Blending Awal',
                 'blending-awal-mikro': 'Blending Awal Mikro',
                 'monitoring-turun-blending': 'Monitoring Turun Blending',
@@ -160,7 +160,7 @@
             };
 
             const validPrefixes = [
-                'GGA', 'GGAS',
+                'PELARUTAN-1', 'PELARUTAN-2',
                 'BLENDING-AWAL', 'BLENDING-AFTER-ADJUST-MIKRO',
                 'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI',
                 'MONITORING-STORAGE-KIMIA', 'MONITORING-STORAGE-MIKRO',
@@ -204,7 +204,7 @@
                             html: '<strong>Format wajib 4 bagian:</strong><br>' +
                                 '<code>PROSES/PO/TANGGAL/ID</code><br><br>' +
                                 '<strong>Contoh:</strong><br>' +
-                                '<small>GGA/1002001/2026-02-10/3</small>',
+                                '<small>PELARUTAN-1/1002001/2026-02-10/3</small>',
                             confirmButtonText: 'Mengerti'
                         });
                         return;

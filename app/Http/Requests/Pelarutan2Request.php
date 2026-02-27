@@ -4,16 +4,17 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class GgaRequest extends FormRequest
+class Pelarutan2Request extends FormRequest
 {
     protected function prepareForValidation()
     {
         $numericFields = [
             'brix',
             'nacl',
-            'adjustment_qty_gula_tebu',
-            'adjustment_qty_gula_kelapa'
+            'visco',
         ];
+
+
 
         $preparedData = [];
 
@@ -31,12 +32,11 @@ class GgaRequest extends FormRequest
     {
         return [
             'brix' => 'required|numeric|min:0|max:100',
-            'nacl' => 'required|numeric|min:0|max:100',
+            'nacl' => 'nullable|numeric|min:0|max:100',
+            'visco' => 'nullable|numeric|min:0|max:100',
             'organo' => 'required|string',
             'status_disposition' => 'required',
             'disposition_remaks' => 'nullable|string|max:255',
-            'adjustment_qty_gula_tebu' => 'nullable|numeric',
-            'adjustment_qty_gula_kelapa' => 'nullable|numeric',
         ];
     }
 
@@ -45,6 +45,7 @@ class GgaRequest extends FormRequest
         return  [
             'brix' => 'Brix',
             'nacl' => 'NACL',
+            'visco' => 'Visco',
             'organo' => 'Organo',
             'status_disposition' => 'Status',
             'disposition_remaks' => 'Catatan disposisi',

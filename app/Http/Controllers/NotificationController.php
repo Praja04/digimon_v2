@@ -73,7 +73,8 @@ class NotificationController extends Controller
         $process = $notification->process;
 
         $routeMap = [
-            'GGA' => $notification->redirect,
+            'Pelarutan 1' => $notification->redirect,
+            'Pelarutan 2' => $notification->redirect,
             'GGAS' => $notification->redirect,
             'Blending Awal' => $notification->redirect,
             'Monitoring Turun Blending' => $notification->redirect,

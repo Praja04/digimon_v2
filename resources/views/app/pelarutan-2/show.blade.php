@@ -1,97 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'GGA')
-@section('styles')
-    <style>
-        /* Custom styles untuk modal formulasi - Lebih Clean & Simple */
-        #formulasiModal .modal-dialog {
-            max-width: 800px;
-        }
-
-        /* Hapus Box Shadow */
-        #formulasiModal .card {
-            box-shadow: none;
-        }
-
-        /* Header Card lebih sederhana */
-        #formulasiModal .card-header {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e9ecef;
-            /* Pastikan tidak ada warna latar belakang yang mencolok di header card */
-            background-color: transparent !important;
-        }
-
-        #formulasiModal .table {
-            font-size: 0.875rem;
-        }
-
-        #formulasiModal .table thead th {
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-            /* Membuat header tabel lebih netral */
-            background-color: #f8f9fa;
-        }
-
-        #formulasiModal .table tbody td {
-            vertical-align: middle;
-        }
-
-        #formulasiModal small {
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        #formulasiModal p {
-            font-size: 0.9375rem;
-            font-weight: 500;
-            color: #212529;
-        }
-
-        /* Style untuk Alert Info Source - Lebih Netral */
-        #formulasiSourceInfo {
-            background-color: #f8f9fa;
-            /* Warna latar belakang sangat ringan */
-            color: #212529;
-            border: 1px solid #dee2e6 !important;
-        }
-
-        /* Print styles - Pertahankan */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            #formulasiModal,
-            #formulasiModal * {
-                visibility: visible;
-            }
-
-            #formulasiModal {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-
-            #formulasiModal .modal-footer,
-            #formulasiModal .btn-close {
-                display: none !important;
-            }
-
-            #formulasiModal .modal-dialog {
-                max-width: 100%;
-                margin: 0;
-            }
-
-            #formulasiModal .card {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-        }
-    </style>
-@endsection
+@section('title', 'Pelarutan 2')
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -193,15 +101,17 @@
 
                     <div class="col-lg-12">
                         <div class="card">
+                            <!--end card-body-->
                             <div class="card-body">
                                 <div class="table-responsive table-card mb-4">
-                                    <table class="table align-middle table-nowrap mb-0 text-center">
+                                    <table class="table align-middle table-nowrap mb-0  text-center">
                                         <thead class="table-light text-muted">
                                             <tr>
                                                 <th>No Batch</th>
                                                 <th>Dissolver</th>
                                                 <th>BRIX</th>
                                                 <th>NACL</th>
+                                                <th>Visco</th>
                                                 <th>Organo</th>
                                                 <th>Dibuat Oleh</th>
                                                 <th>Waktu Scan</th>
@@ -212,80 +122,77 @@
                                             </tr>
                                         </thead>
                                         <tbody class="list form-check-all">
-                                            @forelse ($productionBatch->gga as $gga)
+                                            @forelse ($productionBatch->pelarutan_2 as $pelarutan_2)
                                                 @php
-                                                    // Tentukan class berdasarkan disposition
-                                                    $dispositionUpper = strtoupper($gga->status ?? '');
+                                                    $dispositionUpper = strtoupper($pelarutan_2->status ?? '');
                                                     $rowClass = match ($dispositionUpper) {
                                                         'NOT OK' => 'table-danger',
-                                                        'ADJUSTMENT' => 'table-warning',
                                                         default => '',
                                                     };
 
                                                     $badgeClass = match ($dispositionUpper) {
                                                         'NOT OK' => 'bg-danger',
-                                                        'ADJUSTMENT' => 'bg-warning text-dark',
                                                         'OK' => 'bg-success',
                                                         default => 'bg-secondary',
                                                     };
                                                 @endphp
                                                 <tr class="{{ $rowClass }}">
                                                     <td>
-                                                        {{ $gga->batch_number }}
-                                                        @if ($gga->revisi != null)
+                                                        {{ $pelarutan_2->batch_number }}
+                                                        @if ($pelarutan_2->revisi != null)
                                                             <span class="badge bg-secondary ms-1"
-                                                                title="Revisi ke-{{ $gga->revisi }}">
-                                                                Rev. {{ $gga->revisi }}
+                                                                title="Revisi ke-{{ $pelarutan_2->revisi }}">
+                                                                Rev. {{ $pelarutan_2->revisi }}
                                                             </span>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $gga->dissolver_number }}</td>
-                                                    <td>{{ $gga->brix ?? '-' }}</td>
-                                                    <td>{{ $gga->nacl ?? '-' }}</td>
-                                                    <td>{{ $gga->organo ?? '-' }}</td>
-                                                    <td>{{ $gga->user->name ?? '-' }}</td>
-                                                    <td>{{ $gga->scanned_at ? \Carbon\Carbon::parse($gga->scanned_at)->format('d/m/Y H:i:s') : '-' }}
+                                                    <td>{{ $pelarutan_2->dissolver_number }}</td>
+                                                    <td>{{ $pelarutan_2->brix ?? '-' }}</td>
+                                                    <td>{{ $pelarutan_2->nacl ?? '-' }}</td>
+                                                    <td>{{ $pelarutan_2->visco ?? '-' }}</td>
+                                                    <td>{{ $pelarutan_2->organo ?? '-' }}</td>
                                                     </td>
+                                                    <td>{{ $pelarutan_2->user->name ?? '-' }}</td>
+                                                    <td>{{ $pelarutan_2->scanned_at ? \Carbon\Carbon::parse($pelarutan_2->scanned_at)->format('d/m/Y H:i:s') : '-' }}
                                                     <td>
-                                                        @if ($gga->status)
+                                                        @if ($pelarutan_2->status)
                                                             <span
-                                                                class="badge {{ match (strtoupper($gga->status)) {
+                                                                class="badge {{ match (strtoupper($pelarutan_2->status)) {
                                                                     'OK' => 'bg-success',
                                                                     'NOT OK' => 'bg-danger',
                                                                     'ADJUSTMENT' => 'bg-warning text-dark',
                                                                     default => 'bg-secondary',
                                                                 } }}">
-                                                                {{ $gga->status }}
+                                                                {{ $pelarutan_2->status }}
                                                             </span>
                                                         @else
                                                             <span class="text-muted">-</span>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $gga->disposition ?? '-' }}</td>
-
+                                                    <td>{{ $pelarutan_2->disposition ?? '-' }}</td>
                                                     <td>
                                                         <button class="btn btn-sm btn-info" id="btnDetail"
-                                                            data-id="{{ $gga->id }}">
+                                                            data-id="{{ $pelarutan_2->id }}">
                                                             <i class="ri-eye-line"></i>
                                                         </button>
                                                         @if (auth()->user()->role == 'Foreman')
                                                             <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
-                                                                data-id="{{ $gga->id }}">
+                                                                data-id="{{ $pelarutan_2->id }}">
                                                                 <i class="ri-file-list-line"></i>
                                                             </button>
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        @if (is_null($gga->status))
-                                                            <a href="{{ route('gga.show_batch', $gga->id) }}"
-                                                                class="btn btn-sm btn-primary">
-                                                                Analisa Data
-                                                            </a>
+                                                        @if (is_null($pelarutan_2->status))
+                                                            <button class="btn btn-sm btn-primary open-pelarutan-2-modal"
+                                                                data-id="{{ $pelarutan_2->id }}">
+                                                                Input Data
+                                                            </button>
                                                         @else
                                                             @if (auth()->user()->role == 'Foreman')
                                                                 <button type="button"
-                                                                    class="btn btn-sm btn-warning open-gga-modal-edit"
-                                                                    data-id="{{ $gga->id }}">
+                                                                    class="btn btn-sm btn-warning open-pelarutan-2-modal-edit"
+                                                                    data-id="{{ $pelarutan_2->id }}">
                                                                     Kelola Data
                                                                 </button>
                                                             @else
@@ -298,7 +205,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="10" class="text-center text-muted py-4">
+                                                    <td colspan="11" class="text-center text-muted py-4">
                                                         <i class="ri-inbox-line fs-1 d-block mb-2 opacity-50"></i>
                                                         Tidak ada data tersedia.
                                                     </td>
@@ -315,13 +222,13 @@
         </div>
     </div>
 
-    <!-- Modal input GGA -->
+    <!-- Modal input Pelarutan 2 -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <form id="form">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Input Data GGA</h5>
+                        <h5 class="modal-title">Kelola Data Pelarutan 2</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -334,10 +241,16 @@
                             <small class="text-danger errorBrix"></small>
                         </div>
                         <div class="col-lg-6">
-                            <label class="form-label">NACL <span style="color: red">*</span></label>
+                            <label class="form-label">NACL</label>
                             <input type="text" name="nacl" id="nacl" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorNacl"></small>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="form-label">Visco</label>
+                            <input type="text" name="visco" id="visco" class="form-control comma-input"
+                                placeholder="Contoh: 0,00">
+                            <small class="text-danger errorVisco"></small>
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label">Organo <span style="color: red">*</span></label>
@@ -345,14 +258,13 @@
                                 oninput="this.value = this.value.toUpperCase();">
                             <small class="text-danger errorOrgano"></small>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <label class="form-label">Status <span style="color: red">*</span></label>
                             <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
                                 <option value="">-- Pilih Status --</option>
                                 <option value="OK">OK</option>
                                 <option value="NOT OK">NOT OK</option>
-                                <option value="Adjustment">Adjustment</option>
                             </select>
                             <small class="text-danger errorStatusDisposition"></small>
                         </div>
@@ -364,7 +276,6 @@
                                     <option value="Release">Release</option>
                                     <option value="Release Bersyarat">Release Bersyarat</option>
                                     <option value="Resampling">Resampling</option>
-                                    <option value="Adjustment">Adjustment</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
                                 </select>
@@ -376,24 +287,6 @@
                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
                                 placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
                         </div>
-
-                        <div class="col-lg-12 d-none adjustment-qty-wrapper">
-                            <h6 class="form-label fw-bold">Adjustment Qty</h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Gula Tebu (Kg)</label>
-                                    <input type="text" name="adjustment_qty_gula_tebu"
-                                        class="form-control adjustment-qty comma-input" value="0"
-                                        placeholder="Contoh: 0,00">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Gula Kelapa (Kg)</label>
-                                    <input type="text" name="adjustment_qty_gula_kelapa"
-                                        class="form-control adjustment-qty comma-input" value="0"
-                                        placeholder="Contoh: 0,00">
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -404,12 +297,12 @@
         </div>
     </div>
 
-    <!-- Modal Detail Keterangan GGA -->
+    <!-- Modal Detail Keterangan Pelarutan 2 -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Detail GGA</h5>
+                    <h5 class="modal-title">Detail Pelarutan 2</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body row g-3">
@@ -465,7 +358,7 @@
 
                     <div class="card border mb-4">
                         <div class="card-header">
-                            <h6 class="mb-0 fw-semibold">Informasi GGA</h6>
+                            <h6 class="mb-0 fw-semibold">Informasi Pelarutan 2</h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -486,6 +379,10 @@
                                     <p class="mb-2" id="formulasi-nacl">-</p>
                                 </div>
                                 <div class="col-md-2">
+                                    <small class="text-muted d-block">Visco</small>
+                                    <p class="mb-2" id="formulasi-visco">-</p>
+                                </div>
+                                <div class="col-md-2">
                                     <small class="text-muted d-block">Organo</small>
                                     <p class="mb-2" id="formulasi-organo">-</p>
                                 </div>
@@ -498,6 +395,32 @@
                                 <div class="col-md-3">
                                     <small class="text-muted d-block">Disposition</small>
                                     <p class="mb-0" id="formulasi-disposition">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border mb-4 d-none" id="dissolverInfoCard">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Informasi Dissolver Produksi</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Dissolver Number</small>
+                                    <p class="mb-2" id="formulasi-prod-dissolver">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Line Pasteurisasi</small>
+                                    <p class="mb-2" id="formulasi-line">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Jam Mulai Transfer</small>
+                                    <p class="mb-2" id="formulasi-jam-mulai">-</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Jam Mulai Transfer</small>
+                                    <p class="mb-2" id="formulasi-jam-transfer">-</p>
                                 </div>
                             </div>
                         </div>
@@ -564,7 +487,6 @@
             </div>
         </div>
     </div>
-
 @endsection
 
 @section('scripts')
@@ -583,25 +505,35 @@
                 $('#formulasi-batch-range').text(data.production_batch.batch_range || '-');
             }
 
-            // GGA Info
-            if (data.gga_info) {
-                const ggaInfo = data.gga_info;
-                $('#formulasi-batch-number').text(ggaInfo.batch_number || '-');
-                $('#formulasi-dissolver-number').text(ggaInfo.dissolver_number || '-');
-                $('#formulasi-brix').text(ggaInfo.brix || '-');
-                $('#formulasi-nacl').text(ggaInfo.nacl || '-');
-                $('#formulasi-organo').text(ggaInfo.organo || '-');
+            // Pelarutan 2 Info
+            if (data.pelarutan_2_info) {
+                const pelarutan_2_info = data.pelarutan_2_info;
+                $('#formulasi-batch-number').text(pelarutan_2_info.batch_number || '-');
+                $('#formulasi-dissolver-number').text(pelarutan_2_info.dissolver_number || '-');
+                $('#formulasi-brix').text(pelarutan_2_info.brix || '-');
+                $('#formulasi-nacl').text(pelarutan_2_info.nacl || '-');
+                $('#formulasi-visco').text(pelarutan_2_info.visco || '-');
+                $('#formulasi-organo').text(pelarutan_2_info.organo || '-');
 
                 // Status dengan badge
-                if (ggaInfo.status) {
-                    const statusClass = ggaInfo.status === 'OK' ? 'success' :
-                        ggaInfo.status === 'NOT OK' ? 'danger' : 'warning';
-                    $('#formulasi-status').html(`<span class="badge bg-${statusClass}">${ggaInfo.status}</span>`);
+                if (pelarutan_2_info.status) {
+                    const statusClass = pelarutan_2_info.status === 'OK' ? 'success' :
+                        pelarutan_2_info.status === 'NOT OK' ? 'danger' : 'warning';
+                    $('#formulasi-status').html(`<span class="badge bg-${statusClass}">${pelarutan_2_info.status}</span>`);
                 } else {
                     $('#formulasi-status').text('-');
                 }
 
-                $('#formulasi-disposition').text(ggaInfo.disposition || '-');
+                $('#formulasi-disposition').text(pelarutan_2_info.disposition || '-');
+            }
+
+            // Dissolver Info (jika ada)
+            if (data.dissolver_info) {
+                $('#dissolverInfoCard').removeClass('d-none');
+                $('#formulasi-prod-dissolver').text(data.dissolver_info.dissolver_number || '-');
+                $('#formulasi-line').text(data.dissolver_info.line_pasteurisasi || '-');
+                $('#formulasi-jam-mulai').text(data.dissolver_info.jam_mulai_proses || '-');
+                $('#formulasi-jam-transfer').text(data.dissolver_info.jam_mulai_transfer || '-');
             }
 
             // Formulasi Source Info (jika ada)
@@ -656,9 +588,10 @@
 
         function resetFormulasiModal() {
             $('#formulasi-po-number, #formulasi-variant, #formulasi-date, #formulasi-batch-range').text('-');
-            $('#formulasi-batch-number, #formulasi-dissolver-number, #formulasi-brix, #formulasi-nacl, #formulasi-organo')
+            $('#formulasi-batch-number, #formulasi-dissolver-number, #formulasi-brix, #formulasi-nacl, #formulasi-visco, #formulasi-organo')
                 .text('-');
             $('#formulasi-status, #formulasi-disposition').text('-');
+            $('#formulasi-prod-dissolver, #formulasi-line, #formulasi-jam-mulai, #formulasi-jam-transfer').text('-');
 
             // Reset table
             $('#formulasiTableBody').html(`
@@ -674,6 +607,7 @@
             $('#formulasi-total').text('0');
 
             // Hide optional sections
+            $('#dissolverInfoCard').addClass('d-none');
             $('#formulasiSourceInfo').addClass('d-none');
             $('#formulasiEmptyState').addClass('d-none');
             $('#formulasiTable').closest('.card').removeClass('d-none');
@@ -739,34 +673,29 @@
                 });
             });
 
-            function toggleAdjustmentFields(status, showOnly = false) {
-                const qtyWrapper = $('.adjustment-qty-wrapper');
-                const qtyInput = $('.adjustment-qty');
+            $('.open-pelarutan-2-modal').on('click', function() {
+                const id = $(this).data('id');
 
-                if (status === 'Adjustment') {
-                    qtyWrapper.removeClass('d-none');
-                    qtyInput.prop('required', true);
-                } else {
-                    qtyWrapper.addClass('d-none');
-                    qtyInput.prop('required', false);
+                $('#form')[0].reset();
+                $('.text-danger').html('');
+                $('.form-control').removeClass('is-invalid');
+                $('.modal-title').text('Kelola Data Pelarutan 2');
+                $('#id').val(id);
 
-                    if (!showOnly) {
-                        qtyInput.val('');
-                    }
-                }
-            }
+                $('#disposition').val('').trigger('change');
 
-            $('#status_disposition').on('change', function() {
-                const selected = $(this).val();
-                toggleAdjustmentFields(selected);
+                $('#status_disposition').val('').trigger('change');
+                $('#status_disposition').prop('disabled', false);
+
+                $('#modal').modal('show');
             });
 
-            $('body').on('click', '.open-gga-modal-edit', function() {
+            $('body').on('click', '.open-pelarutan-2-modal-edit', function() {
                 const id = $(this).data('id');
 
                 $.ajax({
                     type: "GET",
-                    url: "{{ route('gga.edit', '') }}/" + id,
+                    url: "{{ route('pelarutan-2.edit', '') }}/" + id,
                     dataType: "json",
                     beforeSend: function() {
                         $('#form')[0].reset();
@@ -774,44 +703,35 @@
                         $('.form-control').removeClass('is-invalid');
                     },
                     success: function(response) {
-                        const userRole = "{{ auth()->user()->role }}";
+                        const userRole =
+                            "{{ auth()->user()->role }}";
 
-                        $('.modal-title').text('Kelola Data GGA');
+                        $('.modal-title').text('Kelola Data Pelarutan 2');
 
                         $('#id').val(response.id);
                         $('#brix').val(formatDecimal(response.brix));
                         $('#nacl').val(formatDecimal(response.nacl));
+                        $('#visco').val(formatDecimal(response.visco));
                         $('#organo').val(response.organo || '');
                         $('#disposition_remark').val(response.disposition_remark || '');
 
-                        // Jika role Foreman, field Status menjadi readonly (tidak bisa diedit)
+                        // FIX: Set value status dulu sebelum disable
+                        $('#status_disposition').val(response.status);
+
+                        // Jika role Foreman, field Status menjadi readonly
                         if (userRole === 'Foreman') {
-                            $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', true);
                         } else {
-                            $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', false);
                         }
 
                         $('#disposition').val(response.disposition || '');
 
-                        // Tampilkan adjustment qty jika ada
-                        if (response.status === 'Adjustment') {
-                            $('.adjustment-qty-wrapper').removeClass('d-none');
-                            $('input[name="adjustment_qty_gula_tebu"]').val(response
-                                .adjustment_qty_gula_tebu || '');
-                            $('input[name="adjustment_qty_gula_kelapa"]').val(response
-                                .adjustment_qty_gula_kelapa || '');
-
-                            $('.adjustment-qty').prop('required', true);
-                        } else {
-                            $('.adjustment-qty-wrapper').addClass('d-none');
-                            $('.adjustment-qty').prop('required', false).val('');
-                        }
-
                         $('#modal').modal('show');
                     },
                     error: function(xhr) {
+                        console.error('Error:',
+                            xhr);
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
@@ -826,31 +746,17 @@
 
                 $.ajax({
                     type: "GET",
-                    url: "{{ route('gga.edit', '') }}/" + id,
+                    url: "{{ route('pelarutan-2.edit', '') }}/" + id,
                     dataType: "json",
+                    beforeSend: function() {
+                        $('#disposition_remark_detail').val('');
+                    },
                     success: function(response) {
                         let remarkText = '';
 
-                        const hasAdjustment = hasAdjustmentQty(
-                            response.adjustment_qty_gula_tebu,
-                            response.adjustment_qty_gula_kelapa
-                        );
-
                         if (response.disposition_remark != null &&
-                            response.disposition_remark != '-' &&
-                            response.disposition != 'Adjustment') {
+                            response.disposition_remark != '-') {
                             remarkText = response.disposition_remark;
-                        } else if (response.status === 'Adjustment' || hasAdjustment) {
-                            const tebu = parseFloat(response.adjustment_qty_gula_tebu) || 0;
-                            const kelapa = parseFloat(response.adjustment_qty_gula_kelapa) || 0;
-
-                            remarkText =
-                                `Adjustment:\n- Gula Tebu: ${tebu} Kg\n- Gula Kelapa: ${kelapa} Kg`;
-
-                            if (response.disposition_remark && response.disposition_remark !==
-                                '-') {
-                                remarkText += `\n\nCatatan: ${response.disposition_remark}`;
-                            }
                         } else {
                             remarkText = '-';
                         }
@@ -860,6 +766,7 @@
                         $('#detailModal').modal('show');
                     },
                     error: function(xhr) {
+                        console.error('Error:', xhr);
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
@@ -876,7 +783,7 @@
 
                 $.ajax({
                     type: "GET",
-                    url: "{{ route('gga.formulasi') }}",
+                    url: "{{ route('pelarutan-2.formulasi') }}",
                     data: {
                         id: id,
                     },
@@ -907,7 +814,6 @@
             $('#form').submit(function(e) {
                 e.preventDefault();
 
-                // Re-enable status_disposition sebelum submit agar nilainya ikut terkirim
                 const wasDisabled = $('#status_disposition').prop('disabled');
                 if (wasDisabled) {
                     $('#status_disposition').prop('disabled', false);
@@ -915,7 +821,7 @@
 
                 $.ajax({
                     data: $(this).serialize(),
-                    url: "{{ route('gga.update') }}",
+                    url: "{{ route('pelarutan-2.update') }}",
                     type: "POST",
                     dataType: 'json',
                     beforeSend: function() {
@@ -929,7 +835,6 @@
                     complete: function() {
                         $('#save').prop('disabled', false).text('Simpan');
 
-                        // Kembalikan disabled state jika diperlukan
                         if (wasDisabled) {
                             $('#status_disposition').prop('disabled', true);
                         }
@@ -978,6 +883,10 @@
                                 $('#nacl').addClass('is-invalid');
                                 $('.errorNacl').html(errors.nacl.join('<br>'));
                             }
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
+                            }
                             if (errors.organo) {
                                 $('#organo').addClass('is-invalid');
                                 $('.errorOrgano').html(errors.organo.join('<br>'));
@@ -991,15 +900,6 @@
                                 $('#disposition').addClass('is-invalid');
                                 $('.errorDisposition').html(errors.disposition.join('<br>'));
                             }
-                            if (errors.adjustment_qty_gula_tebu) {
-                                $('input[name="adjustment_qty_gula_tebu"]').addClass(
-                                    'is-invalid');
-                            }
-                            if (errors.adjustment_qty_gula_kelapa) {
-                                $('input[name="adjustment_qty_gula_kelapa"]').addClass(
-                                    'is-invalid');
-                            }
-
                             return;
                         }
 
@@ -1011,11 +911,6 @@
                     }
                 });
             });
-
-            // Helper function untuk cek adjustment qty
-            function hasAdjustmentQty(tebu, kelapa) {
-                return (tebu && parseFloat(tebu) > 0) || (kelapa && parseFloat(kelapa) > 0);
-            }
         });
     </script>
 @endsection

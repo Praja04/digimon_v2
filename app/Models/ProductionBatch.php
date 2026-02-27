@@ -22,14 +22,14 @@ class ProductionBatch extends Model
         return $this->hasMany(Notification::class);
     }
 
-    public function gga()
+    public function pelarutan_1()
     {
-        return $this->hasMany(GGA::class);
+        return $this->hasMany(Pelarutan1::class);
     }
 
-    public function ggas()
+    public function pelarutan_2()
     {
-        return $this->hasMany(GGAS::class);
+        return $this->hasMany(Pelarutan2::class);
     }
 
     public function BlendingAwal()
@@ -90,36 +90,36 @@ class ProductionBatch extends Model
         return [$this->batch_range];
     }
 
-    public function isGGAComplete(): bool
+    public function isPelarutan1Complete(): bool
     {
-        $ggaItems = $this->gga;
-        $jumlahGGA = $ggaItems->count();
+        $pelarutan1Items = $this->pelarutan_1;
+        $jumlahPelarutan1 = $pelarutan1Items->count();
 
         // Jika tidak ada data GGA, belum lengkap
-        if ($jumlahGGA === 0) {
+        if ($jumlahPelarutan1 === 0) {
             return false;
         }
 
         // Cek apakah semua data brix dan nacl sudah terisi
-        $isAllFilled = $ggaItems->every(function ($item) {
+        $isAllFilled = $pelarutan1Items->every(function ($item) {
             return !is_null($item->disposition);
         });
 
         return $isAllFilled;
     }
 
-    public function isGGasComplete(): bool
+    public function isPelarutan2Complete(): bool
     {
-        $ggasItems = $this->ggas;
-        $jumlahGGA = $ggasItems->count();
+        $pelarutan2Items = $this->pelarutan_2;
+        $jumlahPelarutan2 = $pelarutan2Items->count();
 
         // Jika tidak ada data GGA, belum lengkap
-        if ($jumlahGGA === 0) {
+        if ($jumlahPelarutan2 === 0) {
             return false;
         }
 
         // Cek apakah semua data brix dan nacl sudah terisi
-        $isAllFilled = $ggasItems->every(function ($item) {
+        $isAllFilled = $pelarutan2Items->every(function ($item) {
             return !is_null($item->disposition);
         });
 

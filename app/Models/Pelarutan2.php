@@ -4,12 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ProductionBatch;
-use App\Models\Color;
 use App\Models\User;
 
-class GGAS extends Model
+class Pelarutan2 extends Model
 {
-    protected $table = 'ggas';
+    protected $table = 'pelarutan_2';
 
     protected $guarded = [];
 

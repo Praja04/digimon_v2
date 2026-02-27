@@ -35,8 +35,8 @@ Route::middleware(['auth'])->group(function () {
         // Dashboard - RMPM
         Route::get('/dashboard/rmpm', [App\Http\Controllers\Dashboard\RMPMController::class, 'index'])->name('dashboard.rmpm.index');
 
-        // Dashboard - Analisis GGA GGAS
-        Route::get('/dashboard/gga-ggas', [App\Http\Controllers\Dashboard\GgaGgasController::class, 'index'])->name('dashboard.gga-ggas.index');
+        // Dashboard - Analisis Pelarutan
+        Route::get('/dashboard/pelarutan', [App\Http\Controllers\Dashboard\PelarutanController::class, 'index'])->name('dashboard.pelarutan.index');
 
         // Dashboard - Blending Awal
         Route::get('/dashboard/blending-awal', [App\Http\Controllers\Dashboard\BlendingAwalController::class, 'index'])->name('dashboard.blending-awal.index');
@@ -242,27 +242,27 @@ Route::middleware(['auth'])->group(function () {
     });
 
     /*------------------------------------------
-    GGA & GGAS
+    Pelarutan
     Roles: Head Of Dapartement, Supervisor, Foreman, Analis Kimia
     --------------------------------------------*/
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia'])->group(function () {
-        // Analisa - GGA
-        Route::get('/gga/menu', [App\Http\Controllers\Analisa\GGaController::class, 'menu'])->name('gga.menu');
-        Route::get('/gga', [App\Http\Controllers\Analisa\GGaController::class, 'index'])->name('gga.index');
-        Route::get('/gga/formulasi/', [App\Http\Controllers\Analisa\GGaController::class, 'formulasi'])->name('gga.formulasi');
-        Route::get('/gga/{id}', [App\Http\Controllers\Analisa\GGaController::class, 'show'])->name('gga.show');
-        Route::get('/gga/edit/{id}', [App\Http\Controllers\Analisa\GGaController::class, 'edit'])->name('gga.edit');
-        Route::post('/gga', [App\Http\Controllers\Analisa\GGaController::class, 'update'])->name('gga.update');
-        Route::get('/scan/batch/gga/{id}', [App\Http\Controllers\Analisa\GGaController::class, 'show_batch'])->name('gga.show_batch');
+        // Analisa - Pelarutan 1
+        Route::get('/pelarutan-1/menu', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'menu'])->name('pelarutan-1.menu');
+        Route::get('/pelarutan-1', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'index'])->name('pelarutan-1.index');
+        Route::get('/pelarutan-1/formulasi/', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'formulasi'])->name('pelarutan-1.formulasi');
+        Route::get('/pelarutan-1/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show'])->name('pelarutan-1.show');
+        Route::get('/pelarutan-1/edit/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'edit'])->name('pelarutan-1.edit');
+        Route::post('/pelarutan-1', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'update'])->name('pelarutan-1.update');
+        Route::get('/scan/batch/pelarutan-1/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show_batch'])->name('pelarutan-1.show_batch');
 
-        // Analisa - GGAS
-        Route::get('/ggas', [App\Http\Controllers\Analisa\GgasController::class, 'index'])->name('ggas.index');
-        Route::get('/ggas/formulasi/', [App\Http\Controllers\Analisa\GgasController::class, 'formulasi'])->name('ggas.formulasi');
-        Route::get('/ggas/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'show'])->name('ggas.show');
-        Route::get('/ggas/batch/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'show_batch'])->name('ggas.show_batch');
-        Route::get('/ggas/edit/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'edit'])->name('ggas.edit');
-        Route::post('/ggas', [App\Http\Controllers\Analisa\GgasController::class, 'update'])->name('ggas.update');
-        Route::get('/scan/batch/ggas/{id}', [App\Http\Controllers\Analisa\GgasController::class, 'show_batch'])->name('ggas.show_batch');
+        // Analisa - Pelarutan 2
+        Route::get('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'index'])->name('pelarutan-2.index');
+        Route::get('/pelarutan-2/formulasi/', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'formulasi'])->name('pelarutan-2.formulasi');
+        Route::get('/pelarutan-2/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show'])->name('pelarutan-2.show');
+        Route::get('/pelarutan-2/batch/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show_batch'])->name('pelarutan-2.show_batch');
+        Route::get('/pelarutan-2/edit/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'edit'])->name('pelarutan-2.edit');
+        Route::post('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'update'])->name('pelarutan-2.update');
+        Route::get('/scan/batch/pelarutan-2/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show_batch'])->name('pelarutan-2.show_batch');
 
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
