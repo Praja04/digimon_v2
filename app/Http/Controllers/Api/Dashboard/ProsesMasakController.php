@@ -4,12 +4,11 @@ namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\GGA;
-use App\Models\GGAS;
 use App\Models\BlendingAwal;
+use App\Models\Pelarutan1;
+use App\Models\Pelarutan2;
 use App\Models\ProductionBatch;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ProsesMasakController extends Controller
 {
@@ -71,24 +70,24 @@ class ProsesMasakController extends Controller
         // Get filtered production batch IDs
         $productionBatchIds = $batchQuery->pluck('id');
 
-        // Build query for GGA with production batch filter
-        $ggaQuery = GGA::query();
+        // Build query for Pelarutan1 with production batch filter
+        $pelarutan1Query = Pelarutan1::query();
         if ($productionBatchIds->isNotEmpty()) {
-            $ggaQuery->whereIn('production_batch_id', $productionBatchIds);
+            $pelarutan1Query->whereIn('production_batch_id', $productionBatchIds);
         } else {
             // If no batches match, return empty collection
-            $ggaQuery->whereRaw('1 = 0');
+            $pelarutan1Query->whereRaw('1 = 0');
         }
-        $ggaData = $ggaQuery->get();
+        $pelarutan1Data = $pelarutan1Query->get();
 
-        // Build query for GGAS with production batch filter
-        $ggasQuery = GGAS::query();
+        // Build query for Pelarutan2 with production batch filter
+        $pelarutan2Query = Pelarutan2::query();
         if ($productionBatchIds->isNotEmpty()) {
-            $ggasQuery->whereIn('production_batch_id', $productionBatchIds);
+            $pelarutan2Query->whereIn('production_batch_id', $productionBatchIds);
         } else {
-            $ggasQuery->whereRaw('1 = 0');
+            $pelarutan2Query->whereRaw('1 = 0');
         }
-        $ggasData = $ggasQuery->get();
+        $pelarutan2Data = $pelarutan2Query->get();
 
         // Build query for Blending Awal with production batch filter
         $blendingQuery = BlendingAwal::with('color');
@@ -99,24 +98,24 @@ class ProsesMasakController extends Controller
         }
         $blendingData = $blendingQuery->get();
 
-        // === DISSOLVER DATA (GGA & GGAS separated) ===
-        $ggaBrix = $ggaData->pluck('brix')->filter()->values();
-        $ggasBrix = $ggasData->pluck('brix')->filter()->values();
+        // === DISSOLVER DATA (Pelarutan 1 & Pelarutan 2 separated) ===
+        $pelarutan1Brix = $pelarutan1Data->pluck('brix')->filter()->values();
+        $pelarutan2Brix = $pelarutan2Data->pluck('brix')->filter()->values();
 
         $dissolverStats = [
-            'gga' => [
-                'min' => $ggaBrix->count() > 0 ? $ggaBrix->min() : '-',
-                'avg' => $ggaBrix->count() > 0 ? round($ggaBrix->avg(), 2) : '-',
-                'max' => $ggaBrix->count() > 0 ? $ggaBrix->max() : '-',
-                'data' => $ggaBrix->toArray(),
-                'cts' => $this->calculateCTS($ggaBrix, 68, 72)
+            'pelarutan1' => [
+                'min' => $pelarutan1Brix->count() > 0 ? $pelarutan1Brix->min() : '-',
+                'avg' => $pelarutan1Brix->count() > 0 ? round($pelarutan1Brix->avg(), 2) : '-',
+                'max' => $pelarutan1Brix->count() > 0 ? $pelarutan1Brix->max() : '-',
+                'data' => $pelarutan1Brix->toArray(),
+                'cts' => $this->calculateCTS($pelarutan1Brix, 68, 72)
             ],
-            'ggas' => [
-                'min' => $ggasBrix->count() > 0 ? $ggasBrix->min() : '-',
-                'avg' => $ggasBrix->count() > 0 ? round($ggasBrix->avg(), 2) : '-',
-                'max' => $ggasBrix->count() > 0 ? $ggasBrix->max() : '-',
-                'data' => $ggasBrix->toArray(),
-                'cts' => $this->calculateCTS($ggasBrix, 68, 72)
+            'pelarutan2' => [
+                'min' => $pelarutan2Brix->count() > 0 ? $pelarutan2Brix->min() : '-',
+                'avg' => $pelarutan2Brix->count() > 0 ? round($pelarutan2Brix->avg(), 2) : '-',
+                'max' => $pelarutan2Brix->count() > 0 ? $pelarutan2Brix->max() : '-',
+                'data' => $pelarutan2Brix->toArray(),
+                'cts' => $this->calculateCTS($pelarutan2Brix, 68, 72)
             ]
         ];
 
@@ -232,13 +231,13 @@ class ProsesMasakController extends Controller
 
         $dispositionCounts = array_fill_keys($dispositionList, 0);
 
-        foreach ($ggaData as $item) {
+        foreach ($pelarutan1Data as $item) {
             if (isset($dispositionCounts[$item->disposition])) {
                 $dispositionCounts[$item->disposition]++;
             }
         }
 
-        foreach ($ggasData as $item) {
+        foreach ($pelarutan2Data as $item) {
             if (isset($dispositionCounts[$item->disposition])) {
                 $dispositionCounts[$item->disposition]++;
             }
@@ -252,18 +251,18 @@ class ProsesMasakController extends Controller
 
         $totalDisposition = array_sum($dispositionCounts);
 
-        $totalGga = 0;
-        $totalGgas = 0;
+        $totalPelarutan1 = 0;
+        $totalPelarutan2 = 0;
         $totalBlending = 0;
 
-        foreach ($ggaData as $item) {
+        foreach ($pelarutan1Data as $item) {
             if (isset($dispositionCounts[$item->disposition])) {
-                $totalGga++;
+                $totalPelarutan1++;
             }
         }
-        foreach ($ggasData as $item) {
+        foreach ($pelarutan2Data as $item) {
             if (isset($dispositionCounts[$item->disposition])) {
-                $totalGgas++;
+                $totalPelarutan2++;
             }
         }
         foreach ($blendingData as $item) {
@@ -273,8 +272,8 @@ class ProsesMasakController extends Controller
         }
 
         $sourceBreakdown = [
-            ['label' => 'GGA',      'count' => $totalGga,      'percentage' => $totalDisposition > 0 ? round(($totalGga / $totalDisposition) * 100, 1) : 0],
-            ['label' => 'GGAS',     'count' => $totalGgas,     'percentage' => $totalDisposition > 0 ? round(($totalGgas / $totalDisposition) * 100, 1) : 0],
+            ['label' => 'Pelarutan 1', 'count' => $totalPelarutan1, 'percentage' => $totalDisposition > 0 ? round(($totalPelarutan1 / $totalDisposition) * 100, 1) : 0],
+            ['label' => 'Pelarutan 2', 'count' => $totalPelarutan2, 'percentage' => $totalDisposition > 0 ? round(($totalPelarutan2 / $totalDisposition) * 100, 1) : 0],
             ['label' => 'Blending', 'count' => $totalBlending, 'percentage' => $totalDisposition > 0 ? round(($totalBlending / $totalDisposition) * 100, 1) : 0],
         ];
 
@@ -289,23 +288,23 @@ class ProsesMasakController extends Controller
         // === CATATAN PROSES MASAK ===
         $catatanProses = collect();
 
-        // From GGA
-        $ggaRemarks = $ggaData->map(function ($item) {
+        // From Pelarutan 1
+        $pelarutan1Remarks = $pelarutan1Data->map(function ($item) {
             return [
                 'tgl' => $item->scanned_at ? Carbon::parse($item->scanned_at)->format('Y-m-d') : '-',
                 'batch' => $item->dissolver_number ?? '-',
                 'catatan' => $item->disposition_remark ?? '-',
-                'type' => 'Dissolver GGA'
+                'type' => 'Dissolver Pelarutan 1'
             ];
         });
 
-        // From GGAS
-        $ggasRemarks = $ggasData->map(function ($item) {
+        // From Pelarutan 2
+        $pelarutan2Remarks = $pelarutan2Data->map(function ($item) {
             return [
                 'tgl' => $item->scanned_at ? Carbon::parse($item->scanned_at)->format('Y-m-d') : '-',
                 'batch' => $item->dissolver_number ?? '-',
                 'catatan' => $item->disposition_remark ?? '-',
-                'type' => 'Dissolver GGAS'
+                'type' => 'Dissolver Pelarutan 2'
             ];
         });
 
@@ -319,7 +318,7 @@ class ProsesMasakController extends Controller
             ];
         });
 
-        $catatanProses = $ggaRemarks->merge($ggasRemarks)->merge($blendingRemarks)
+        $catatanProses = $pelarutan1Remarks->merge($pelarutan2Remarks)->merge($blendingRemarks)
             ->filter(function ($item) {
                 return $item['catatan'] !== '-' && !empty($item['catatan']);
             })

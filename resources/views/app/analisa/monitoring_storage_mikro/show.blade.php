@@ -172,7 +172,7 @@
     <!-- Modal input GGA tunggal -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="form" class="ajax-gga-form">
+            <form id="form">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalTitle">Input Data Analisa</h5>

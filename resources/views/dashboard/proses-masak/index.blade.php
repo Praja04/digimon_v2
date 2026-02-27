@@ -386,55 +386,55 @@
             </div>
 
             <div class="row g-2 mb-4">
-                <!-- HISTOGRAM BRIX (GGA) -->
+                <!-- HISTOGRAM BRIX (Pelarutan 1) -->
                 <div class="col-lg-6">
                     <div class="histogram-card">
                         <div class="histogram-header">
-                            <span>HISTOGRAM BRIX (GGA)</span>
-                            <span class="cts-badge" id="cts-dissolver-gga">CTS 0%</span>
+                            <span>HISTOGRAM BRIX (Pelarutan 1)</span>
+                            <span class="cts-badge" id="cts-dissolver-pelarutan-1">CTS 0%</span>
                         </div>
                         <div class="chart-container">
-                            <canvas id="dissolverBrixGGA"></canvas>
+                            <canvas id="dissolverBrixPelarutan1"></canvas>
                         </div>
                         <div class="stats-row">
                             <div class="stat-item">
                                 <span class="stat-label">Min</span>
-                                <span class="stat-value" id="min-dissolver-gga">-</span>
+                                <span class="stat-value" id="min-dissolver-pelarutan-1">-</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Avg</span>
-                                <span class="stat-value" id="avg-dissolver-gga">-</span>
+                                <span class="stat-value" id="avg-dissolver-pelarutan-1">-</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Max</span>
-                                <span class="stat-value" id="max-dissolver-gga">-</span>
+                                <span class="stat-value" id="max-dissolver-pelarutan-1">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- HISTOGRAM BRIX (GGAS) -->
+                <!-- HISTOGRAM BRIX (Pelarutan 2) -->
                 <div class="col-lg-6">
                     <div class="histogram-card">
                         <div class="histogram-header">
-                            <span>HISTOGRAM BRIX (GGAS)</span>
-                            <span class="cts-badge" id="cts-dissolver-ggas">CTS 0%</span>
+                            <span>HISTOGRAM BRIX (Pelarutan 2)</span>
+                            <span class="cts-badge" id="cts-dissolver-pelarutan-2">CTS 0%</span>
                         </div>
                         <div class="chart-container">
-                            <canvas id="dissolverBrixGGAS"></canvas>
+                            <canvas id="dissolverBrixPelarutan2"></canvas>
                         </div>
                         <div class="stats-row">
                             <div class="stat-item">
                                 <span class="stat-label">Min</span>
-                                <span class="stat-value" id="min-dissolver-ggas">-</span>
+                                <span class="stat-value" id="min-dissolver-pelarutan-2">-</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Avg</span>
-                                <span class="stat-value" id="avg-dissolver-ggas">-</span>
+                                <span class="stat-value" id="avg-dissolver-pelarutan-2">-</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Max</span>
-                                <span class="stat-value" id="max-dissolver-ggas">-</span>
+                                <span class="stat-value" id="max-dissolver-pelarutan-2">-</span>
                             </div>
                         </div>
                     </div>
@@ -1040,23 +1040,25 @@
 
             // Update dissolver statistics
             function updateDissolverStats(stats) {
-                // GGA
-                document.getElementById('min-dissolver-gga').textContent = stats.gga.min;
-                document.getElementById('avg-dissolver-gga').textContent = stats.gga.avg;
-                document.getElementById('max-dissolver-gga').textContent = stats.gga.max;
-                document.getElementById('cts-dissolver-gga').textContent = `CTS ${stats.gga.cts}%`;
+                // Pelarutan 1
+                document.getElementById('min-dissolver-pelarutan-1').textContent = stats.pelarutan1.min;
+                document.getElementById('avg-dissolver-pelarutan-1').textContent = stats.pelarutan1.avg;
+                document.getElementById('max-dissolver-pelarutan-1').textContent = stats.pelarutan1.max;
+                document.getElementById('cts-dissolver-pelarutan-1').textContent = `CTS ${stats.pelarutan1.cts}%`;
 
-                chartInstances.dissolverBrixGGA = createHistogram('dissolverBrixGGA', stats.gga.data,
-                    'BRIX (GGA)', '#4169E1');
+                chartInstances.dissolverBrixPelarutan1 = createHistogram('dissolverBrixPelarutan1', stats.pelarutan1
+                    .data,
+                    'BRIX (Pelarutan 1)', '#4169E1');
 
-                // GGAS
-                document.getElementById('min-dissolver-ggas').textContent = stats.ggas.min;
-                document.getElementById('avg-dissolver-ggas').textContent = stats.ggas.avg;
-                document.getElementById('max-dissolver-ggas').textContent = stats.ggas.max;
-                document.getElementById('cts-dissolver-ggas').textContent = `CTS ${stats.ggas.cts}%`;
+                // Pelarutan 2
+                document.getElementById('min-dissolver-pelarutan-2').textContent = stats.pelarutan2.min;
+                document.getElementById('avg-dissolver-pelarutan-2').textContent = stats.pelarutan2.avg;
+                document.getElementById('max-dissolver-pelarutan-2').textContent = stats.pelarutan2.max;
+                document.getElementById('cts-dissolver-pelarutan-2').textContent = `CTS ${stats.pelarutan2.cts}%`;
 
-                chartInstances.dissolverBrixGGAS = createHistogram('dissolverBrixGGAS', stats.ggas.data,
-                    'BRIX (GGAS)', '#FFD700');
+                chartInstances.dissolverBrixPelarutan2 = createHistogram('dissolverBrixPelarutan2', stats.pelarutan2
+                    .data,
+                    'BRIX (Pelarutan 2)', '#FFD700');
             }
 
             // Update blending awal charts
@@ -1171,8 +1173,8 @@
                 };
 
                 const sourceColorMap = {
-                    'GGA': '#4169E1',
-                    'GGAS': '#FFD700',
+                    'Pelarutan 1': '#4169E1',
+                    'Pelarutan 2': '#FFD700',
                     'Blending': '#32CD32'
                 };
 
@@ -1182,7 +1184,7 @@
                 const outerData = filteredDisp.map(item => item.count);
                 const outerColors = filteredDisp.map(item => dispositionColorMap[item.label] ?? '#999999');
 
-                // Inner ring — sumber GGA / GGAS / Blending (filter yg count > 0)
+                // Inner ring — sumber Pelarutan 1 / Pelarutan 2 / Blending (filter yg count > 0)
                 const filteredSrc = (sourceBreakdown ?? []).filter(item => item.count > 0);
                 const innerLabels = filteredSrc.map(item => `${item.label} (${item.percentage}%)`);
                 const innerData = filteredSrc.map(item => item.count);

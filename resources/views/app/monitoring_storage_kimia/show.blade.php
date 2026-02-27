@@ -571,18 +571,18 @@
         });
 
         const allBatches = @json($filteredBatchGroups);
-        const validGgasBatches = @json($filteredBatchGroups);
+        const validBatches = @json($filteredBatchGroups);
 
         function populateBatchOptions() {
             const $start = $('#batch_range');
             $start.empty();
 
-            if (!validGgasBatches || validGgasBatches.length === 0) {
+            if (!validBatches || validBatches.length === 0) {
                 $start.append('<option disabled>Belum ada Batch yang lolos Monitoring Pasteurisasi(Release)</option>');
                 return;
             }
 
-            validGgasBatches.forEach(batch => {
+            validBatches.forEach(batch => {
                 $start.append(`<option value="${batch}">${batch}</option>`);
             });
 

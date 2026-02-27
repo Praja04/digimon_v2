@@ -56,11 +56,11 @@ Route::post('/persiapan-masak', [App\Http\Controllers\Api\ProductionBatchControl
 Route::post('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'update'])->name('api.production.batch.update');
 Route::delete('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'destroy'])->name('api.production.batch.destroy');
 
-// GGA
+// Pelarutan 1
 Route::post('/pelarutan-1', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'store'])->name('api.pelarutan.1.store');
 Route::post('/pelarutan-1/revisi', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'update_revisi'])->name('api.pelarutan.1.update_revisi');
 
-// GGAS
+// Pelarutan 2
 Route::post('/pelarutan-2', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'store'])->name('api.pelarutan.2.store');
 Route::post('/pelarutan-2/revisi', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'update_revisi'])->name('api.pelarutan.2.update_revisi');
 

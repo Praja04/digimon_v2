@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Notification;
-use App\Models\GGA;
-use App\Models\GGAS;
+use App\Models\Pelarutan1;
+use App\Models\Pelarutan2;
 use App\Models\BlendingAwal;
 use App\Models\BlendingAfterAdjustMikro;
 use App\Models\MonitoringTurunBlending;

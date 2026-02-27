@@ -1,5 +1,5 @@
 @extends('layouts.component.main')
-@section('title', 'Dashboard - Analisis GGA & GGAS')
+@section('title', 'Dashboard - Analisis Pelarutan')
 @section('styles')
     <!-- Custom CSS for enhanced styling -->
     <style>
@@ -107,13 +107,13 @@
 
             <!-- Main Analysis Charts Section -->
             <div class="row g-4 mb-3">
-                <!-- GGA Chart -->
+                <!-- Pelarutan 1 Chart -->
                 <div class="col-xl-6">
                     <div class="card border-0 shadow-lg h-100">
                         <div class="card-header bg-white border-0 pb-0">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="card-title mb-1 text-dark fw-bold">GGA Analysis</h5>
+                                    <h5 class="card-title mb-1 text-dark fw-bold">Pelarutan 1 Analysis</h5>
                                     <p class="text-muted mb-0 small">Brix & NaCl monitoring trends</p>
                                 </div>
                                 <div class="dropdown">
@@ -127,17 +127,21 @@
                                             <i class="ri-calendar-line me-1"></i>Date Range Filter
                                         </h6>
                                         <div class="mb-3">
-                                            <label for="start_date_gga" class="form-label small fw-semibold">Start
+                                            <label for="start_date_pelarutan1" class="form-label small fw-semibold">Start
                                                 Date</label>
-                                            <input type="date" id="start_date_gga" class="form-control form-control-sm">
+                                            <input type="date" id="start_date_pelarutan1"
+                                                class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="end_date_gga" class="form-label small fw-semibold">End Date</label>
-                                            <input type="date" id="end_date_gga" class="form-control form-control-sm">
+                                            <label for="end_date_pelarutan1" class="form-label small fw-semibold">End
+                                                Date</label>
+                                            <input type="date" id="end_date_pelarutan1"
+                                                class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="variant_gga" class="form-label small fw-semibold">Variant</label>
-                                            <select id="variant_gga" class="form-select form-select-sm">
+                                            <label for="variant_pelarutan1"
+                                                class="form-label small fw-semibold">Variant</label>
+                                            <select id="variant_pelarutan1" class="form-select form-select-sm">
                                                 <option value="">-- All Variants --</option>
                                                 <option value="SS1">SS1</option>
                                                 <option value="SS2">SS2</option>
@@ -147,7 +151,7 @@
                                                 <option value="JB">JB</option>
                                             </select>
                                         </div>
-                                        <button class="btn btn-primary w-100 btn-sm" id="filter_gga">
+                                        <button class="btn btn-primary w-100 btn-sm" id="filter_pelarutan1">
                                             <i class="ri-search-line me-1"></i>Apply Filter
                                         </button>
                                     </div>
@@ -155,18 +159,18 @@
                             </div>
                         </div>
                         <div class="card-body pt-3">
-                            <div id="chart-gga" class="apex-charts"></div>
+                            <div id="chart-pelarutan1" class="apex-charts"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- GGAS Chart -->
+                <!-- Pelarutan 2 Chart -->
                 <div class="col-xl-6">
                     <div class="card border-0 shadow-lg h-100">
                         <div class="card-header bg-white border-0 pb-0">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="card-title mb-1 text-dark fw-bold">GGAS Analysis</h5>
+                                    <h5 class="card-title mb-1 text-dark fw-bold">Pelarutan 2 Analysis</h5>
                                     <p class="text-muted mb-0 small">Brix & NaCl monitoring trends</p>
                                 </div>
                                 <div class="dropdown">
@@ -180,17 +184,21 @@
                                             <i class="ri-calendar-line me-1"></i>Date Range Filter
                                         </h6>
                                         <div class="mb-3">
-                                            <label for="start_date_ggas" class="form-label small fw-semibold">Start
+                                            <label for="start_date_pelarutan2" class="form-label small fw-semibold">Start
                                                 Date</label>
-                                            <input type="date" id="start_date_ggas" class="form-control form-control-sm">
+                                            <input type="date" id="start_date_pelarutan2"
+                                                class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="end_date_ggas" class="form-label small fw-semibold">End Date</label>
-                                            <input type="date" id="end_date_ggas" class="form-control form-control-sm">
+                                            <label for="end_date_pelarutan2" class="form-label small fw-semibold">End
+                                                Date</label>
+                                            <input type="date" id="end_date_pelarutan2"
+                                                class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="variant_ggas" class="form-label small fw-semibold">Variant</label>
-                                            <select id="variant_ggas" class="form-select form-select-sm">
+                                            <label for="variant_pelarutan2"
+                                                class="form-label small fw-semibold">Variant</label>
+                                            <select id="variant_pelarutan2" class="form-select form-select-sm">
                                                 <option value="">-- All Variants --</option>
                                                 <option value="SS1">SS1</option>
                                                 <option value="SS2">SS2</option>
@@ -200,7 +208,7 @@
                                                 <option value="JB">JB</option>
                                             </select>
                                         </div>
-                                        <button class="btn btn-success w-100 btn-sm" id="filter_ggas">
+                                        <button class="btn btn-success w-100 btn-sm" id="filter_pelarutan2">
                                             <i class="ri-search-line me-1"></i>Apply Filter
                                         </button>
                                     </div>
@@ -208,7 +216,7 @@
                             </div>
                         </div>
                         <div class="card-body pt-3">
-                            <div id="chart-ggas" class="apex-charts"></div>
+                            <div id="chart-pelarutan2" class="apex-charts"></div>
                         </div>
                     </div>
                 </div>
@@ -231,7 +239,7 @@
                     <hr class="my-3">
                 </div>
 
-                <!-- GGA Disposition -->
+                <!-- Pelarutan 1 Disposition -->
                 <div class="col-xl-6 mb-3">
                     <div class="card border-0 shadow-lg h-100 position-relative">
                         <div class="position-absolute top-0 start-0 w-100 bg-gradient-primary rounded-top"
@@ -240,7 +248,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5 class="card-title mb-1 text-dark fw-bold">
-                                        <i class="ri-bar-chart-box-line text-primary me-2"></i>GGA Disposition
+                                        <i class="ri-bar-chart-box-line text-primary me-2"></i>Pelarutan 1 Disposition
                                     </h5>
                                     <p class="text-muted mb-0 small">Distribution breakdown analysis</p>
                                 </div>
@@ -255,21 +263,22 @@
                                             <i class="ri-calendar-line me-1"></i>Date Range Filter
                                         </h6>
                                         <div class="mb-3">
-                                            <label for="start_date_gga_disposisi"
+                                            <label for="start_date_pelarutan1_disposisi"
                                                 class="form-label small fw-semibold">Start Date</label>
-                                            <input type="date" id="start_date_gga_disposisi"
+                                            <input type="date" id="start_date_pelarutan1_disposisi"
                                                 class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="end_date_gga_disposisi" class="form-label small fw-semibold">End
+                                            <label for="end_date_pelarutan1_disposisi"
+                                                class="form-label small fw-semibold">End
                                                 Date</label>
-                                            <input type="date" id="end_date_gga_disposisi"
+                                            <input type="date" id="end_date_pelarutan1_disposisi"
                                                 class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="variant_gga_disposisi"
+                                            <label for="variant_pelarutan1_disposisi"
                                                 class="form-label small fw-semibold">Variant</label>
-                                            <select id="variant_gga_disposisi" class="form-select form-select-sm">
+                                            <select id="variant_pelarutan1_disposisi" class="form-select form-select-sm">
                                                 <option value="">-- All Variants --</option>
                                                 <option value="SS1">SS1</option>
                                                 <option value="SS2">SS2</option>
@@ -279,7 +288,7 @@
                                                 <option value="JB">JB</option>
                                             </select>
                                         </div>
-                                        <button class="btn btn-primary w-100 btn-sm" id="filter_gga_disposisi">
+                                        <button class="btn btn-primary w-100 btn-sm" id="filter_pelarutan1_disposisi">
                                             <i class="ri-search-line me-1"></i>Apply Filter
                                         </button>
                                     </div>
@@ -287,12 +296,12 @@
                             </div>
                         </div>
                         <div class="card-body pt-3">
-                            <div id="disposition-gga" class="apex-charts"></div>
+                            <div id="disposition-pelarutan1" class="apex-charts"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- GGAS Disposition -->
+                <!-- Pelarutan 2 Disposition -->
                 <div class="col-xl-6 mb-3">
                     <div class="card border-0 shadow-lg h-100 position-relative">
                         <div class="position-absolute top-0 start-0 w-100 bg-gradient-success rounded-top"
@@ -301,7 +310,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5 class="card-title mb-1 text-dark fw-bold">
-                                        <i class="ri-bar-chart-box-line text-success me-2"></i>GGAS Disposition
+                                        <i class="ri-bar-chart-box-line text-success me-2"></i>Pelarutan 2 Disposition
                                     </h5>
                                     <p class="text-muted mb-0 small">Distribution breakdown analysis</p>
                                 </div>
@@ -316,21 +325,22 @@
                                             <i class="ri-calendar-line me-1"></i>Date Range Filter
                                         </h6>
                                         <div class="mb-3">
-                                            <label for="start_date_ggas_disposisi"
+                                            <label for="start_date_pelarutan2_disposisi"
                                                 class="form-label small fw-semibold">Start Date</label>
-                                            <input type="date" id="start_date_ggas_disposisi"
+                                            <input type="date" id="start_date_pelarutan2_disposisi"
                                                 class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="end_date_ggas_disposisi" class="form-label small fw-semibold">End
+                                            <label for="end_date_pelarutan2_disposisi"
+                                                class="form-label small fw-semibold">End
                                                 Date</label>
-                                            <input type="date" id="end_date_ggas_disposisi"
+                                            <input type="date" id="end_date_pelarutan2_disposisi"
                                                 class="form-control form-control-sm">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="variant_ggas_disposisi"
+                                            <label for="variant_pelarutan2_disposisi"
                                                 class="form-label small fw-semibold">Variant</label>
-                                            <select id="variant_ggas_disposisi" class="form-select form-select-sm">
+                                            <select id="variant_pelarutan2_disposisi" class="form-select form-select-sm">
                                                 <option value="">-- All Variants --</option>
                                                 <option value="SS1">SS1</option>
                                                 <option value="SS2">SS2</option>
@@ -340,7 +350,7 @@
                                                 <option value="JB">JB</option>
                                             </select>
                                         </div>
-                                        <button class="btn btn-success w-100 btn-sm" id="filter_ggas_disposisi">
+                                        <button class="btn btn-success w-100 btn-sm" id="filter_pelarutan2_disposisi">
                                             <i class="ri-search-line me-1"></i>Apply Filter
                                         </button>
                                     </div>
@@ -348,7 +358,7 @@
                             </div>
                         </div>
                         <div class="card-body pt-3">
-                            <div id="disposition-ggas" class="apex-charts"></div>
+                            <div id="disposition-pelarutan2" class="apex-charts"></div>
                         </div>
                     </div>
                 </div>
@@ -377,7 +387,7 @@
 
             // Fetch chart data function
             function fetchChartData(type, startDate = null, endDate = null, variant = null) {
-                let url = "{{ route('api.dashboard.gga-ggas.analisa') }}";
+                let url = "{{ route('api.dashboard.pelarutan.analisa') }}";
                 let params = [];
 
                 if (startDate && endDate) {
@@ -391,13 +401,9 @@
                     url += `?${params.join('&')}`;
                 }
 
-                console.log(`Fetching ${type} data from:`, url); // Debug log
-
                 return $.getJSON(url)
                     .done(function(response) {
-                        console.log(`${type} response:`, response); // Debug log
-                        const data = type === 'gga' ? response.gga : response.ggas;
-                        console.log(`${type} data:`, data); // Debug log
+                        const data = type === 'pelarutan1' ? response.pelarutan1 : response.pelarutan2;
                         renderChart(`#chart-${type}`, data, type.toUpperCase());
                     })
                     .fail(function(xhr) {
@@ -558,7 +564,7 @@
 
             // Fetch disposition data function
             function fetchDispositionData(type, startDate = null, endDate = null, variant = null) {
-                let url = "{{ route('api.dashboard.gga-ggas.analisa.disposisi') }}";
+                let url = "{{ route('api.dashboard.pelarutan.analisa.disposisi') }}";
                 let params = [];
 
                 if (startDate && endDate) {
@@ -572,13 +578,9 @@
                     url += `?${params.join('&')}`;
                 }
 
-                console.log(`Fetching ${type} disposition data from:`, url); // Debug log
-
                 return $.getJSON(url)
                     .done(function(response) {
-                        console.log(`${type} disposition response:`, response); // Debug log
-                        const data = type === 'gga' ? response.gga : response.ggas;
-                        console.log(`${type} disposition data:`, data); // Debug log
+                        const data = type === 'pelarutan1' ? response.pelarutan1 : response.pelarutan2;
                         renderDispositionChart(`#disposition-${type}`, data, type.toUpperCase());
                     })
                     .fail(function(xhr) {
@@ -837,78 +839,78 @@
             function initializeDashboard() {
                 console.log('Initializing dashboard...'); // Debug log
 
-                showLoading('#chart-gga');
-                showLoading('#chart-ggas');
-                showLoading('#disposition-gga');
-                showLoading('#disposition-ggas');
+                showLoading('#chart-pelarutan1');
+                showLoading('#chart-pelarutan2');
+                showLoading('#disposition-pelarutan1');
+                showLoading('#disposition-pelarutan2');
 
-                fetchChartData('gga');
-                fetchChartData('ggas');
-                fetchDispositionData('gga');
-                fetchDispositionData('ggas');
+                fetchChartData('pelarutan1');
+                fetchChartData('pelarutan2');
+                fetchDispositionData('pelarutan1');
+                fetchDispositionData('pelarutan2');
             }
 
             // Event handlers for filters
-            $('#filter_gga').on('click', function() {
+            $('#filter_pelarutan1').on('click', function() {
                 const $btn = $(this);
                 const originalText = $btn.html();
                 $btn.html('<i class="ri-loader-4-line spin me-1"></i>Loading...').prop('disabled', true);
 
-                showLoading('#chart-gga');
+                showLoading('#chart-pelarutan1');
 
-                const start = $('#start_date_gga').val();
-                const end = $('#end_date_gga').val();
-                const variant = $('#variant_gga').val();
+                const start = $('#start_date_pelarutan1').val();
+                const end = $('#end_date_pelarutan1').val();
+                const variant = $('#variant_pelarutan1').val();
 
-                fetchChartData('gga', start, end, variant).always(() => {
+                fetchChartData('pelarutan1', start, end, variant).always(() => {
                     $btn.html(originalText).prop('disabled', false);
                 });
             });
 
-            $('#filter_ggas').on('click', function() {
+            $('#filter_pelarutan2').on('click', function() {
                 const $btn = $(this);
                 const originalText = $btn.html();
                 $btn.html('<i class="ri-loader-4-line spin me-1"></i>Loading...').prop('disabled', true);
 
-                showLoading('#chart-ggas');
+                showLoading('#chart-pelarutan2');
 
-                const start = $('#start_date_ggas').val();
-                const end = $('#end_date_ggas').val();
-                const variant = $('#variant_ggas').val();
+                const start = $('#start_date_pelarutan2').val();
+                const end = $('#end_date_pelarutan2').val();
+                const variant = $('#variant_pelarutan2').val();
 
-                fetchChartData('ggas', start, end, variant).always(() => {
+                fetchChartData('pelarutan2', start, end, variant).always(() => {
                     $btn.html(originalText).prop('disabled', false);
                 });
             });
 
-            $('#filter_gga_disposisi').on('click', function() {
+            $('#filter_pelarutan1_disposisi').on('click', function() {
                 const $btn = $(this);
                 const originalText = $btn.html();
                 $btn.html('<i class="ri-loader-4-line spin me-1"></i>Loading...').prop('disabled', true);
 
-                showLoading('#disposition-gga');
+                showLoading('#disposition-pelarutan1');
 
-                const start = $('#start_date_gga_disposisi').val();
-                const end = $('#end_date_gga_disposisi').val();
-                const variant = $('#variant_gga_disposisi').val();
+                const start = $('#start_date_pelarutan1_disposisi').val();
+                const end = $('#end_date_pelarutan1_disposisi').val();
+                const variant = $('#variant_pelarutan1_disposisi').val();
 
-                fetchDispositionData('gga', start, end, variant).always(() => {
+                fetchDispositionData('pelarutan1', start, end, variant).always(() => {
                     $btn.html(originalText).prop('disabled', false);
                 });
             });
 
-            $('#filter_ggas_disposisi').on('click', function() {
+            $('#filter_pelarutan2_disposisi').on('click', function() {
                 const $btn = $(this);
                 const originalText = $btn.html();
                 $btn.html('<i class="ri-loader-4-line spin me-1"></i>Loading...').prop('disabled', true);
 
-                showLoading('#disposition-ggas');
+                showLoading('#disposition-pelarutan2');
 
-                const start = $('#start_date_ggas_disposisi').val();
-                const end = $('#end_date_ggas_disposisi').val();
-                const variant = $('#variant_ggas_disposisi').val();
+                const start = $('#start_date_pelarutan2_disposisi').val();
+                const end = $('#end_date_pelarutan2_disposisi').val();
+                const variant = $('#variant_pelarutan2_disposisi').val();
 
-                fetchDispositionData('ggas', start, end, variant).always(() => {
+                fetchDispositionData('pelarutan2', start, end, variant).always(() => {
                     $btn.html(originalText).prop('disabled', false);
                 });
             });

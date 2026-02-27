@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Notification;
-use App\Models\GGA;
-use App\Models\GGAS;
 use App\Models\BlendingAwal;
 use App\Models\MonitoringTurunBlending;
 use App\Models\MonitoringPasteurisasi;
@@ -76,14 +74,14 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
-    public function gga()
+    public function pelarutan1()
     {
-        return $this->hasMany(GGA::class, 'created_by');
+        return $this->hasMany(Pelarutan1::class, 'created_by');
     }
 
-    public function ggas()
+    public function pelarutan2()
     {
-        return $this->hasMany(GGAS::class, 'created_by');
+        return $this->hasMany(Pelarutan2::class, 'created_by');
     }
 
     public function blendingAwal()
