@@ -65,7 +65,7 @@ class Pelarutan1Controller extends Controller
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
-                    $showUrl = route('pelarutan_1.show', ['id' => $data->id]);
+                    $showUrl = route('pelarutan-1.show', ['id' => $data->id]);
 
                     return '
                     <a href="' . $showUrl . '" class="btn btn-sm btn-primary" title="Lihat Detail">
