@@ -157,7 +157,7 @@
                     {{-- Pelarutan Menu: Head Of Dapartement, Supervisor, Foreman, Analis Kimia --}}
                     @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Kimia']))
                         <li class="nav-item">
-                            <a class="nav-link menu-link {{ request()->routeIs(['pelarutan_1.menu', 'pelarutan_1.index', 'pelarutan_1.show', 'pelarutan_1.show_batch', 'pelarutan_2.index', 'pelarutan_2.show', 'pelarutan_2.show_batch']) ? 'active' : '' }}"
+                            <a class="nav-link menu-link {{ request()->routeIs(['pelarutan-1.menu', 'pelarutan-1.index', 'pelarutan-1.show', 'pelarutan-1.show_batch', 'pelarutan-2.index', 'pelarutan-2.show', 'pelarutan-2.show_batch']) ? 'active' : '' }}"
                                 href="{{ route('pelarutan-1.menu') }}">
                                 <i class="mdi mdi-flask-outline"></i> <span>Pelarutan</span>
                             </a>
