@@ -22,17 +22,15 @@ class KondisiMobilController extends Controller
             'berbau' => 'required',
         ]);
 
-        // Cek apakah data dengan id_identitas sudah ada
         $existing = SamplingKondisiMobil::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Sampling Kondisi Mobil sudah pernah disimpan untuk ID ini.'
-            ], 409); // 409 = Conflict
+            ], 409);
         }
 
-        // Tambahkan user ke data yang akan disimpan
         $validated['created_by'] = auth()->user()->id;
 
         SamplingKondisiMobil::create($validated);

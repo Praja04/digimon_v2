@@ -19,14 +19,11 @@ class RawController extends Controller
             'sesuai_std' => 'required',
 
         ]);
-        // Tambahkan user ke data yang akan disimpan
         $validated['created_by'] = auth()->user()->id;
 
-        // Pisahkan nilai dan keterangan untuk field-field tertentu
         $fields = ['leleh', 'warna', 'campuran', 'aroma', 'sesuai_std'];
         foreach ($fields as $field) {
             if (!empty($validated[$field])) {
-                // Cek apakah ada pola "no, karena ..."
                 if (preg_match('/^no,\s*karena\s+(.+)$/i', $validated[$field], $matches)) {
                     $validated[$field] = 'no';
                     $validated['keterangan_' . $field] = $matches[1];
@@ -35,17 +32,29 @@ class RawController extends Controller
                 }
             }
         }
-        // Cek apakah data dengan id_identitas sudah ada
         $existing = SamplingFisikRaw::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Sampling Raw sudah pernah disimpan untuk ID ini.'
-            ], 409); // 409 = Conflict
+            ], 409);
         }
 
-        SamplingFisikRaw::create($validated);
+        SamplingFisikRaw::create([
+            'id_identitas'          => $request->id_identitas,
+            'leleh'                 => $request->leleh,
+            'keterangan_leleh'      => $request->keterangan_leleh,
+            'warna'                 => $request->warna,
+            'keterangan_warna'      => $request->keterangan_warna,
+            'campuran'              => $request->campuran,
+            'keterangan_campuran'   => $request->keterangan_campuran,
+            'aroma'                 => $request->aroma,
+            'keterangan_aroma'      => $request->keterangan_aroma,
+            'sesuai_std'            => $request->sesuai_std,
+            'keterangan_sesuai_std' => $request->keterangan_sesuai_std,
+            'created_by'            => auth()->id(),
+        ]);
 
         return response()->json([
             'status' => 'success',

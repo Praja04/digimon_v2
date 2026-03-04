@@ -21,14 +21,11 @@ class KemasanController extends Controller
             'campuran' => 'nullable',
         ]);
 
-        // Tambahkan user ke data yang akan disimpan
         $validated['created_by'] = auth()->user()->id;
 
-        // Pisahkan nilai dan keterangan untuk field-field tertentu
         $fields = ['kotor', 'rusak', 'sesuai_std', 'berair', 'basah', 'campuran', 'lain-lain'];
         foreach ($fields as $field) {
             if (!empty($validated[$field])) {
-                // Cek apakah ada pola "no, karena ..."
                 if (preg_match('/^no,\s*karena\s+(.+)$/i', $validated[$field], $matches)) {
                     $validated[$field] = 'no';
                     $validated['keterangan_' . $field] = $matches[1];
@@ -38,18 +35,32 @@ class KemasanController extends Controller
             }
         }
 
-        // Cek apakah data dengan id_identitas sudah ada
         $existing = SamplingFisikKemasan::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Sampling Kemasan sudah pernah disimpan untuk ID ini.'
-            ], 409); // 409 = Conflict
+            ], 409);
         }
 
-        // Simpan data
-        SamplingFisikKemasan::create($validated);
+        SamplingFisikKemasan::create([
+            'id_identitas'          => $request->id_identitas,
+            'kotor'                 => $request->kotor,
+            'keterangan_kotor'      => $request->keterangan_kotor,
+            'berair'                => $request->berair,
+            'keterangan_berair'     => $request->keterangan_berair,
+            'basah'                 => $request->basah,
+            'keterangan_basah'      => $request->keterangan_basah,
+            'campuran'              => $request->campuran,
+            'keterangan_campuran'   => $request->keterangan_campuran,
+            'rusak'                 => $request->rusak,
+            'keterangan_rusak'      => $request->keterangan_rusak,
+            'sesuai_std'            => $request->sesuai_std,
+            'keterangan_sesuai_std' => $request->keterangan_sesuai_std,
+            'lain_lain'             => $request->lain_lain,
+            'created_by'            => auth()->id(),
+        ]);
 
         return response()->json([
             'status' => 'success',

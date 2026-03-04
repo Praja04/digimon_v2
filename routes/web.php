@@ -113,7 +113,7 @@ Route::middleware(['auth'])->group(function () {
     Scan
     Roles: Analis Kimia, Analis Mikro
     --------------------------------------------*/
-    Route::middleware(['user-access:Analis Kimia,Analis Mikro'])->group(function () {
+    Route::middleware(['user-access:Analis Kimia,Analis Mikro,Analis RM'])->group(function () {
         Route::get('/scan', [App\Http\Controllers\ScanController::class, 'index'])->name('scan.index');
         Route::post('/scan', [App\Http\Controllers\ScanController::class, 'store'])->name('scan.store');
     });
@@ -197,6 +197,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/rmpm/konfirmasi/{id}', [App\Http\Controllers\RMPMController::class, 'getKonfirmasi'])->name('rmpm.konfirmasi');
         Route::post('/rmpm/konfirmasi/update', [App\Http\Controllers\RMPMController::class, 'updateKonfirmasi'])->name('rmpm.konfirmasi.update');
         Route::get('/rmpm/{id}', [App\Http\Controllers\RMPMController::class, 'show'])->name('rmpm.show');
+        Route::get('/rmpm/{id}/analisa', [App\Http\Controllers\RMPMController::class, 'showAnalisa'])->name('rmpm.analisa');
         Route::get('/rmpm/qrcode/{id}', [App\Http\Controllers\RMPMController::class, 'getQRCode'])->name('rmpm.qrcode');
         Route::post('/rmpm', [App\Http\Controllers\RMPMController::class, 'store'])->name('rmpm.store');
         Route::post('/rmpm/update-disposisi/long-term', [App\Http\Controllers\RMPMController::class, 'updateDisposisiLongTerm'])->name('rmpm.update-disposisi.long-term');

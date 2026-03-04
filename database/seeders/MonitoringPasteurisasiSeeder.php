@@ -9,7 +9,7 @@ class MonitoringPasteurisasiSeeder extends Seeder
 {
     public function run(): void
     {
-        $productionBatchId = 36;
+        $productionBatchId = 39;
         $qcUserId = 4;
 
         $batch = DB::table('production_batches')

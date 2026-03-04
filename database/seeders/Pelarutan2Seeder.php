@@ -13,7 +13,7 @@ class Pelarutan2Seeder extends Seeder
      */
     public function run(): void
     {
-        $productionBatchId = 37;
+        $productionBatchId = 39;
         $qcUserId = 4;
 
         $batch = DB::table('production_batches')

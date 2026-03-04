@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BlendingAfterAdjustMikro;
 use App\Models\BlendingAwal;
+use App\Models\IdentitasRM;
 use App\Models\MonitoringDailyTank;
 use App\Models\MonitoringOnGoingKimia;
 use App\Models\MonitoringOnGoingMikro;
@@ -46,7 +47,10 @@ class ScanController extends Controller
             'monitoring-daily-tank-mikro',
             'monitoring-ongoing-mikro',
             'shelf-life-sampling'
-        ]
+        ],
+        'Analis RM' => [
+            'rmpm',
+        ],
     ];
 
     public function index()
@@ -79,6 +83,7 @@ class ScanController extends Controller
 
         // Mapping prefix kode manual ke type sistem
         $prefixMapping = [
+            'RMPM' => 'rmpm',
             'PELARUTAN-1' => 'pelarutan-1',
             'PELARUTAN-2' => 'pelarutan-2',
             'BLENDING-AWAL' => 'blending-awal',
@@ -100,8 +105,14 @@ class ScanController extends Controller
             // ===== FORMAT URL =====
             $path = parse_url($input, PHP_URL_PATH);
             $segments = array_values(array_filter(explode('/', trim($path, '/'))));
-            $type = $segments[count($segments) - 2] ?? null;
-            $id   = $segments[count($segments) - 1] ?? null;
+
+            if (count($segments) >= 3 && $segments[0] === 'rmpm' && end($segments) === 'analisa') {
+                $type = 'rmpm';
+                $id   = $segments[1];
+            } else {
+                $type = $segments[count($segments) - 2] ?? null;
+                $id   = $segments[count($segments) - 1] ?? null;
+            }
 
             Log::info("URL Scan - Type: {$type}, ID: {$id}");
         } else {
@@ -165,6 +176,16 @@ class ScanController extends Controller
 
         // Mapping semua QC type dengan konfigurasi masing-masing
         $qcMapping = [
+            'rmpm' => [
+                'model' => IdentitasRM::class,
+                'name'  => 'RMPM - Analisa Bahan Baku',
+                'route_resolver' => function ($id, $qcData) {
+                    return [
+                        'route' => 'rmpm.analisa',
+                        'id'    => $id,
+                    ];
+                },
+            ],
             'pelarutan-1' => [
                 'model' => Pelarutan1::class,
                 'route' => 'pelarutan-1.show_batch',

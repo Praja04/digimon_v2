@@ -169,24 +169,24 @@
         </div>
     </div>
 
-    <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header py-2">
-                    <h5 class="modal-title" id="qrModalLabel"></h5>
-                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-sm">
+                <div class="modal-header bg-light py-2">
+                    <h6 class="modal-title" id="qrModalLabel">QR Code</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center" id="qrPrintArea">
-                    <div style="display: inline-block; padding: 20px;" id="qrImageArea">
-                        <!-- QR Image will be injected here -->
+                <div class="modal-body text-center p-3" id="qrPrintArea">
+                    <div id="qrImageArea">
+                        {{-- QR diinjeksi via JS --}}
                     </div>
-                    <div class="mt-3" id="qrLabelText"></div>
+                    <div class="mt-2 small text-muted" id="qrLabelText"></div>
                 </div>
-                <div class="modal-footer justify-content-center py-2">
-                    <button onclick="printQR('qrPrintArea')" class="btn btn-sm btn-success">
-                        <span class="mdi mdi-printer"></span> Print
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
+                    <button onclick="printQR('qrPrintArea')" class="btn btn-sm btn-primary">
+                        <span class="mdi mdi-printer"></span> Cetak
                     </button>
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -196,17 +196,102 @@
 @section('scripts')
     <script>
         function printQR(id) {
-            const content = document.getElementById(id).innerHTML;
-            const win = window.open('', '', 'height=600,width=600');
-            win.document.write('<html><head><title>Print QR</title>');
-            win.document.write('<style>body{text-align:center; font-size:12px;}</style>');
-            win.document.write('</head><body>');
-            win.document.write(content);
-            win.document.write('</body></html>');
-            win.document.close();
-            win.focus();
-            win.print();
-            win.close();
+            const printArea = document.getElementById(id);
+            if (!printArea) return;
+
+            const qrImage = printArea.querySelector('img');
+            const qrLabel = printArea.querySelector('.small.text-muted');
+
+            if (!qrImage) return;
+
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                printQRMobile(qrImage, qrLabel);
+            } else {
+                printQRDesktop(qrImage, qrLabel);
+            }
+        }
+
+        function printQRDesktop(qrImage, qrLabel) {
+            const printWindow = window.open('', '_blank', 'width=300,height=400');
+            if (!printWindow) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pop-up Diblokir',
+                    text: 'Mohon izinkan pop-up untuk print.'
+                });
+                return;
+            }
+            printWindow.document.write(`
+                <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print QR</title>
+                <style>
+                    @page { size: 58mm auto; margin: 0; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { width: 58mm; margin: 0 auto; padding: 5mm 3mm; font-family: Arial, sans-serif; background: white; }
+                    .container { text-align: center; width: 100%; }
+                    .qr-image { width: 45mm; height: 45mm; display: block; margin: 0 auto 3mm auto; }
+                    .qr-label { font-size: 8pt; color: #000; word-wrap: break-word; line-height: 1.3; }
+                </style></head><body>
+                <div class="container">
+                    <img src="${qrImage.src}" alt="QR" class="qr-image">
+                    <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
+                </div></body></html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.focus();
+                    printWindow.print();
+                    setTimeout(() => printWindow.close(), 500);
+                }, 250);
+            };
+        }
+
+        function printQRMobile(qrImage, qrLabel) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 220;
+            canvas.height = 280;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                const qrSize = 170,
+                    qrX = (canvas.width - qrSize) / 2,
+                    qrY = 10;
+                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                const labelText = qrLabel ? qrLabel.textContent.trim() : '';
+                const maxWidth = 200,
+                    lineHeight = 14;
+                const words = labelText.split('/');
+                let line = '',
+                    y = qrY + qrSize + 20;
+                words.forEach((word, index) => {
+                    if (index > 0) line += '/';
+                    const testLine = line + word;
+                    if (ctx.measureText(testLine).width > maxWidth && index > 0) {
+                        ctx.fillText(line, canvas.width / 2, y);
+                        line = word;
+                        y += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                });
+                ctx.fillText(line, canvas.width / 2, y);
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'qr-rmpm.png';
+                    a.click();
+                }, 'image/png');
+            };
+            img.src = qrImage.src;
         }
 
         $(document).ready(function() {
@@ -291,7 +376,6 @@
                 table.ajax.reload();
             });
 
-            // Filter otomatis saat tekan Enter pada input tanggal
             $('#start_date, #end_date').on('keypress', function(e) {
                 if (e.which == 13) {
                     table.ajax.reload();
@@ -310,36 +394,33 @@
 
             $('body').on('click', '#btnQRCode', function() {
                 let id = $(this).data('id');
-                $('#id').val(id);
-                $('#qrModalLabel').html("Cetak QR Code - Identitas RM " + id);
+                $('#qrModalLabel').html("QR Code - RMPM #" + id);
 
-                // Show loading
                 $('#qrImageArea').html(
                     '<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>'
                 );
                 $('#qrLabelText').html('Memuat QR Code...');
-
                 $('#qrModal').modal('show');
 
-                // Fetch QR Code from server
                 $.ajax({
                     url: "{{ route('rmpm.qrcode', '') }}/" + id,
                     method: 'GET',
                     success: function(response) {
                         if (response.status === 'success') {
-                            // Display QR Code
-                            $('#qrImageArea').html('<img src="data:image/png;base64,' + response
-                                .qrCode + '" alt="QR Code" style="max-width: 300px;">');
-                            $('#qrLabelText').html('<strong>' + response.label +
-                                '</strong><br>' +
-                                'Tanggal: ' + response.tanggal);
+                            $('#qrImageArea').html(
+                                '<img src="data:image/png;base64,' + response.qrCode +
+                                '" alt="QR Code" style="max-width: 300px;">'
+                            );
+                            $('#qrLabelText').html(
+                                '<strong>' + response.label + '</strong>'
+                            );
                         } else {
                             $('#qrImageArea').html(
                                 '<p class="text-danger">Gagal memuat QR Code</p>');
                             $('#qrLabelText').html('');
                         }
                     },
-                    error: function(xhr) {
+                    error: function() {
                         $('#qrImageArea').html(
                             '<p class="text-danger">Terjadi kesalahan saat memuat QR Code</p>'
                         );

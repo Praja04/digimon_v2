@@ -53,7 +53,7 @@ class DokumenController extends Controller
 
         $dokumen->update($request->all());
 
-          return response()->json([
+        return response()->json([
             'status' => 'success',
             'message' => 'Sampling Dokumen berhasil disimpan.'
         ], 201);

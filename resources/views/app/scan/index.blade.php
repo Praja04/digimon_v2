@@ -143,6 +143,7 @@
             let isSwitchingCamera = false;
 
             const typeNames = {
+                'rmpm': 'RMPM - Analisa Bahan Baku',
                 'pelarutan-1': 'Pelarutan 1',
                 'pelarutan-2': 'Pelarutan 2',
                 'blending-awal': 'Blending Awal',
@@ -160,7 +161,7 @@
             };
 
             const validPrefixes = [
-                'PELARUTAN-1', 'PELARUTAN-2',
+                'RMPM', 'PELARUTAN-1', 'PELARUTAN-2',
                 'BLENDING-AWAL', 'BLENDING-AFTER-ADJUST-MIKRO',
                 'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI',
                 'MONITORING-STORAGE-KIMIA', 'MONITORING-STORAGE-MIKRO',

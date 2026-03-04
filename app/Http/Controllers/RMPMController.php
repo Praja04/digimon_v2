@@ -9,7 +9,6 @@ use App\Http\Requests\RMPMStoreRequest;
 use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
 use App\Models\AnalisaShortTerm;
-use App\Models\Color;
 use App\Models\KonfirmasiKedatangan;
 use Illuminate\Support\Facades\DB;
 use Milon\Barcode\Facades\DNS2DFacade;
@@ -93,10 +92,15 @@ class RMPMController extends Controller
         $analisa_garam_gula = $identitas->analisaGaramGula;
         $analisa_short_term = $identitas->analisaShortTerm;
         $analisa_long_term = $identitas->analisaLongTerm;
+        $konfirmasi = KonfirmasiKedatangan::where('id_identitas', $id)->first();
 
-        $colors = Color::orderBy('name', 'asc')->get();
+        return view('app.rmpm.show', compact('identitas', 'data_dokumen', 'data_mobil', 'data_kemasan', 'data_raw', 'analisa_garam_gula', 'analisa_short_term', 'analisa_long_term', 'konfirmasi'));
+    }
 
-        return view('app.rmpm.show', compact('identitas', 'data_dokumen', 'data_mobil', 'data_kemasan', 'data_raw', 'analisa_garam_gula', 'analisa_short_term', 'analisa_long_term', 'colors'));
+    public function showAnalisa($id)
+    {
+        $identitas = IdentitasRM::findOrFail($id);
+        return view('app.rmpm.analisa', compact('identitas'));
     }
 
     public function store(RMPMStoreRequest $request)
@@ -122,18 +126,21 @@ class RMPMController extends Controller
         try {
             $identitas = IdentitasRM::findOrFail($id);
 
-            $qrText = route('rmpm.show', $id);
+            $qrText = url('/rmpm/' . $id . '/analisa');
             $qrCode = DNS2DFacade::getBarcodePNG($qrText, 'QRCODE');
 
+            $tanggal = \Carbon\Carbon::parse($identitas->created_at)->format('Y-m-d');
+            $label = 'RMPM/' . $identitas->no_spb . '/' . $tanggal . '/' . $identitas->id;
+
             return response()->json([
-                'status' => 'success',
-                'qrCode' => $qrCode,
-                'label' => 'RM - ' . $identitas->id,
-                'tanggal' => \Carbon\Carbon::parse($identitas->tanggal_kedatangan)->locale('id')->isoFormat('D MMMM Y')
+                'status'  => 'success',
+                'qrCode'  => $qrCode,
+                'label'   => $label,
+                'tanggal' => \Carbon\Carbon::parse($identitas->tanggal_kedatangan)->locale('id')->isoFormat('D MMMM Y'),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Gagal generate QR Code: ' . $e->getMessage()
             ], 500);
         }
@@ -198,7 +205,6 @@ class RMPMController extends Controller
 
     public function storeLongTerm(Request $request)
     {
-        // Validasi awal yang selalu dicek
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
             'uji_kristal'  => 'required|in:positif,negatif',
@@ -212,7 +218,6 @@ class RMPMController extends Controller
             $attachmentName = '-';
             $disposisi = 'Release';
         } else {
-            // Jika positif: attachment wajib
             $request->validate([
                 'attachment' => 'required|image|mimes:jpg,jpeg,png,gif|max:5000',
             ]);
@@ -222,6 +227,8 @@ class RMPMController extends Controller
                 $request->file('attachment')->storeAs('uploads/attachment_analisa', $filename, 'public');
                 $attachmentName = basename($filename);
             }
+
+            $disposisi = $request->disposisi;
         }
 
         AnalisaLongTerm::create([
@@ -229,61 +236,57 @@ class RMPMController extends Controller
             'uji_kristal'     => $ujiKristal,
             'disposisi'       => $disposisi,
             'attachment'      => $attachmentName,
-            'created_by' => auth()->user()->id,
+            'created_by'      => auth()->user()->id,
             'created_at'      => now(),
             'updated_at'      => now(),
         ]);
+
+        return response()->json(['message' => 'Data analisa long term berhasil disimpan.'], 201);
     }
 
     public function storeShortTerm(Request $request)
     {
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
-            'brix' => 'nullable|array',
-            'ph' => 'nullable|array',
-            'kotoran' => 'nullable|array',
-            'ka' => 'nullable|array',
-            'organo' => 'nullable|array',
-            'warna' => 'nullable|array',
-            'aroma' => 'nullable|array',
-            'disposisi' => 'required|string',
-            'keterangan' => 'nullable|string',
+            'brix'         => 'required|array|min:1',
+            'brix.*'       => 'required|string',
+            'ph'           => 'required|array|min:1',
+            'ph.*'         => 'required|string',
+            'kotoran'      => 'nullable|array',
+            'ka'           => 'required|array|min:1',
+            'ka.*'         => 'required|string',
+            'organo'       => 'nullable|array',
+            'warna'        => 'nullable|array',
+            'aroma'        => 'nullable|array',
+            'disposisi'    => 'required|in:Release,Reject',
         ]);
 
-        $brix = array_map(fn($val) => str_replace(',', '.', $val), $request->brix);
-        $ph = array_map(fn($val) => str_replace(',', '.', $val), $request->ph);
-
-        $ka = array_map(fn($val) => str_replace(',', '.', $val), $request->ka);
-
         DB::beginTransaction();
-
         try {
-            $jumlah = count($request->brix);
+            $jumlah     = count($request->brix);
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
                 $dataAnalisa[] = [
-                    'id_identitas'    => $request->id_identitas,
-                    'brix'            => $brix[$i] ?? null,
-                    'ph'              => $ph[$i] ?? null,
-                    'kotoran'         => $request->kotoran[$i] ?? null,
-                    'ka'              => $ka[$i] ?? null,
-                    'organo'          => $request->organo[$i] ?? null,
-                    'warna'           => $request->warna[$i] ?? null,
-                    'aroma'           => $request->aroma[$i] ?? null,
-                    'disposisi'       => $request->disposisi ?? null,
-                    'created_by'        => auth()->user()->id,
-                    'created_at'      => now(),
-                    'updated_at'      => now(),
+                    'id_identitas' => $request->id_identitas,
+                    'brix'         => $this->nullableFloat($request->brix[$i]    ?? null),
+                    'ph'           => $this->nullableFloat($request->ph[$i]      ?? null),
+                    'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
+                    'ka'           => $this->nullableFloat($request->ka[$i]      ?? null),
+                    'organo'       => $this->nullableString($request->organo[$i] ?? null),
+                    'warna'        => $this->nullableString($request->warna[$i]  ?? null),
+                    'aroma'        => $this->nullableString($request->aroma[$i]  ?? null),
+                    'disposisi'    => $request->disposisi,
+                    'created_by'   => auth()->id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ];
             }
 
-            // 4. Insert semua data analisa
             AnalisaShortTerm::insert($dataAnalisa);
-
             DB::commit();
 
-            return response()->json(['message' => 'Berhasil menyimpan data analisa dan disposisi'], 201);
+            return response()->json(['message' => 'Berhasil menyimpan data analisa short term.'], 201);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['message' => 'Gagal menyimpan data: ' . $e->getMessage()], 500);
@@ -294,48 +297,45 @@ class RMPMController extends Controller
     {
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
-            'fisik' => 'nullable|array',
-            '%ka' => 'nullable|array',
-            'kotoran' => 'nullable|array',
-            'organo' => 'nullable|array',
-            'warna' => 'nullable|array',
-            'aroma' => 'nullable|array',
-            '%nacl' => 'nullable|array',
+            'fisik'        => 'required|array|min:1',
+            'fisik.*'      => 'required|string',
+            '%ka'          => 'nullable|array',
+            'kotoran'      => 'nullable|array',
+            'organo'       => 'nullable|array',
+            'warna'        => 'nullable|array',
+            'aroma'        => 'nullable|array',
+            '%nacl'        => 'nullable|array',
             'gross_weight' => 'nullable|array',
+            'disposisi'    => 'required|in:Release,Reject',
         ]);
 
         DB::beginTransaction();
-
         try {
-            $jumlah = count($request->fisik);
+            $jumlah      = count($request->fisik);
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
                 $dataAnalisa[] = [
-                    'id_identitas'  => $request->id_identitas,
-                    'fisik'         => $request->fisik[$i] ?? null,
-                    '%ka'           => $request['%ka'][$i] ?? null,
-                    'kotoran'       => $request->kotoran[$i] ?? null,
-                    'organo'        => $request->organo[$i] ?? null,
-                    'warna'         => $request->warna[$i] ?? null,
-                    'aroma'         => $request->aroma[$i] ?? null,
-                    '%nacl'         => $request['%nacl'][$i] ?? null,
-                    'gross_weight'  => $request->gross_weight[$i] ?? null,
-                    'disposisi'    => $request->disposisi ?? null,
-                    'created_at'    => now(),
-                    'updated_at'    => now(),
-                    'created_by' => auth()->user()->id,
+                    'id_identitas' => $request->id_identitas,
+                    'fisik'        => $this->nullableString($request->fisik[$i]           ?? null),
+                    '%ka'          => $this->nullableFloat($request['%ka'][$i]            ?? null),
+                    'kotoran'      => $this->nullableFloat($request->kotoran[$i]          ?? null),
+                    'organo'       => $this->nullableString($request->organo[$i]          ?? null),
+                    'warna'        => $this->nullableString($request->warna[$i]           ?? null),
+                    'aroma'        => $this->nullableString($request->aroma[$i]           ?? null),
+                    '%nacl'        => $this->nullableFloat($request['%nacl'][$i]          ?? null),
+                    'gross_weight' => $this->nullableFloat($request->gross_weight[$i]     ?? null),
+                    'disposisi'    => $request->disposisi,
+                    'created_by'   => auth()->id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ];
             }
 
             AnalisaGaramGula::insert($dataAnalisa);
-
             DB::commit();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data analisa garam gula berhasil disimpan.'
-            ], 201);
+            return response()->json(['status' => 'success', 'message' => 'Data analisa berhasil disimpan.'], 201);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['message' => 'Gagal menyimpan data: ' . $e->getMessage()], 500);
@@ -356,5 +356,17 @@ class RMPMController extends Controller
             'message' => 'Disposisi berhasil diperbarui.',
             'data' => $data
         ]);
+    }
+
+    private function nullableFloat($value): ?float
+    {
+        if ($value === null || trim((string) $value) === '') return null;
+        return (float) str_replace(',', '.', $value);
+    }
+
+    private function nullableString($value): ?string
+    {
+        if ($value === null || trim((string) $value) === '') return null;
+        return strtoupper(trim($value));
     }
 }

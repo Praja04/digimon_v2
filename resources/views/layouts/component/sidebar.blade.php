@@ -228,7 +228,7 @@
                     @endif
 
                     {{-- Scan Menu: Analis Kimia, Analis Mikro --}}
-                    @if (in_array($userRole, ['Analis Kimia', 'Analis Mikro']))
+                    @if (in_array($userRole, ['Analis Kimia', 'Analis Mikro', 'Analis RM']))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ request()->routeIs(['scan.*']) ? 'active' : '' }}"
                                 href="{{ route('scan.index') }}">
