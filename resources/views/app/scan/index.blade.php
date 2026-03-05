@@ -142,6 +142,8 @@
             let isScanning = false;
             let isSwitchingCamera = false;
 
+            const STORAGE_KEY = 'preferredCameraLabel';
+
             const typeNames = {
                 'rmpm': 'RMPM - Analisa Bahan Baku',
                 'pelarutan-1': 'Pelarutan 1',
@@ -179,7 +181,6 @@
 
             initializeScanner();
 
-            // Auto uppercase saat mengetik
             $('#manualUrl').on('input', function() {
                 this.value = this.value.toUpperCase();
             });
@@ -193,11 +194,9 @@
                     return;
                 }
 
-                // Validasi format jika bukan URL
                 if (!input.startsWith('HTTP')) {
                     const parts = input.split('/');
 
-                    // HARUS 4 segment: PROSES/PO/DATE/ID
                     if (parts.length !== 4) {
                         Swal.fire({
                             icon: 'error',
@@ -216,22 +215,16 @@
                     const date = parts[2];
                     const id = parts[3];
 
-                    // Validasi prefix
                     if (!validPrefixes.includes(prefix)) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Prefix Tidak Valid',
                             html: '<strong>Prefix yang valid:</strong><br><small>' +
                                 validPrefixes.join('<br>') + '</small>',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                $('#formatHelper').modal('show');
-                            }
                         });
                         return;
                     }
 
-                    // Validasi format tanggal (YYYY-MM-DD)
                     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                     if (!dateRegex.test(date)) {
                         Swal.fire({
@@ -245,7 +238,6 @@
                         return;
                     }
 
-                    // Validasi ID harus angka
                     if (isNaN(id)) {
                         showError('ID harus berupa angka');
                         return;
@@ -259,6 +251,10 @@
                 if (isSwitchingCamera) return;
 
                 const newCameraId = $(this).val();
+                const selectedLabel = $(this).find('option:selected').data('raw-label') || '';
+
+                localStorage.setItem(STORAGE_KEY, selectedLabel);
+
                 switchCamera(newCameraId);
             });
 
@@ -273,12 +269,27 @@
 
                     updateCameraList(cameras);
 
-                    let selectedCamera = cameras[0].id;
-                    for (let i = 0; i < cameras.length; i++) {
-                        if (cameras[i].label.toLowerCase().includes('back') ||
-                            cameras[i].label.toLowerCase().includes('environment')) {
-                            selectedCamera = cameras[i].id;
-                            break;
+                    const savedLabel = localStorage.getItem(STORAGE_KEY) || '';
+                    let selectedCamera = null;
+
+                    if (savedLabel) {
+                        const matched = cameras.find(c =>
+                            (c.label || '').toLowerCase() === savedLabel.toLowerCase()
+                        );
+                        if (matched) {
+                            selectedCamera = matched.id;
+                        }
+                    }
+
+                    if (!selectedCamera) {
+                        selectedCamera = cameras[0].id;
+                        for (let i = 0; i < cameras.length; i++) {
+                            const lbl = (cameras[i].label || '').toLowerCase();
+                            if (lbl.includes('back') || lbl.includes('environment')) {
+                                selectedCamera = cameras[i].id;
+                                localStorage.setItem(STORAGE_KEY, cameras[i].label || '');
+                                break;
+                            }
                         }
                     }
 
@@ -296,17 +307,23 @@
                 $select.empty();
 
                 $.each(cameras, function(index, camera) {
-                    let label = camera.label || ('Camera ' + (index + 1));
+                    const rawLabel = camera.label || ('Camera ' + (index + 1));
+                    let displayLabel = rawLabel;
 
-                    if (label.toLowerCase().includes('back') || label.toLowerCase().includes(
-                            'environment')) {
-                        label = '📷 Kamera Belakang';
-                    } else if (label.toLowerCase().includes('front') || label.toLowerCase().includes(
-                            'user')) {
-                        label = '🤳 Kamera Depan';
+                    if (rawLabel.toLowerCase().includes('back') ||
+                        rawLabel.toLowerCase().includes('environment')) {
+                        displayLabel = '📷 Kamera Belakang';
+                    } else if (rawLabel.toLowerCase().includes('front') ||
+                        rawLabel.toLowerCase().includes('user')) {
+                        displayLabel = '🤳 Kamera Depan';
                     }
 
-                    $select.append($('<option></option>').val(camera.id).text(label));
+                    $select.append(
+                        $('<option></option>')
+                        .val(camera.id)
+                        .text(displayLabel)
+                        .attr('data-raw-label', rawLabel) 
+                    );
                 });
             }
 
@@ -365,7 +382,6 @@
 
                 return html5QrCode.stop().then(function() {
                     isScanning = false;
-                    console.log("Scanner stopped successfully");
                 }).catch(function(err) {
                     console.error("Scanner stop error:", err);
                     isScanning = false;
@@ -403,12 +419,11 @@
                         let message = "QR gagal diproses";
 
                         if (xhr.status === 403 && xhr.responseJSON) {
-                            const response = xhr.responseJSON;
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Akses Ditolak',
-                                text: response.message,
-                            }).then(function(result) {
+                                text: xhr.responseJSON.message,
+                            }).then(function() {
                                 restartCamera();
                             });
                             return;
