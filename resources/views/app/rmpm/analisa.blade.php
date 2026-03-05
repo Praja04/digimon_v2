@@ -438,10 +438,7 @@
                     <h2 class="accordion-header">
                         <button class="accordion-button ${isOpen ? '' : 'collapsed'} bg-light fw-semibold"
                             type="button" data-bs-toggle="collapse" data-bs-target="#${accId}">
-                            <span class="badge bg-primary rounded-pill d-flex align-items-center justify-content-center me-2"
-                                style="width:24px;height:24px;font-size:11px;flex-shrink:0;">${idx + 1}</span>
                             ${field.label}
-                            ${!isSimple ? `<span class="ms-2 badge bg-light text-secondary border" style="font-size:11px;">${jumlah} sampel</span>` : ''}
                         </button>
                     </h2>
                     <div id="${accId}" class="accordion-collapse collapse ${isOpen ? 'show' : ''}">
@@ -526,7 +523,7 @@
                         html += `
                         <div class="p-3 border rounded bg-white mb-2">
                             <div class="d-flex align-items-center mb-2 pb-1 border-bottom">
-                                <span class="badge bg-secondary rounded-pill d-flex align-items-center justify-content-center me-2"
+                                <span class="badge bg-primary rounded-pill d-flex align-items-center justify-content-center me-2"
                                     style="width:22px;height:22px;font-size:10px;flex-shrink:0;">${i}</span>
                                 <strong class="text-dark small">Sampel ${i}</strong>
                                 ${unitBadge}
