@@ -45,6 +45,34 @@
             border-radius: 3px;
             color: #495057;
         }
+
+        /* Badge status autofocus */
+        #focusStatus {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .focus-active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .focus-inactive {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .focus-unsupported {
+            background: #e2e3e5;
+            color: #495057;
+            border: 1px solid #d6d8db;
+        }
     </style>
 @endsection
 
@@ -58,10 +86,11 @@
 
                     {{-- Scanner Card --}}
                     <div class="card mb-3">
-                        <div class="card-header">
+                        <div class="card-header d-flex align-items-center justify-content-between">
                             <h5 class="card-title mb-0">
                                 <i class="ri-qr-scan-2-line me-2"></i>Scan QR Code
                             </h5>
+                            <span id="focusStatus" class="focus-inactive">AF: -</span>
                         </div>
 
                         <div class="card-body">
@@ -210,10 +239,7 @@
                         return;
                     }
 
-                    const prefix = parts[0];
-                    const po = parts[1];
-                    const date = parts[2];
-                    const id = parts[3];
+                    const [prefix, po, date, id] = parts;
 
                     if (!validPrefixes.includes(prefix)) {
                         Swal.fire({
@@ -225,8 +251,7 @@
                         return;
                     }
 
-                    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-                    if (!dateRegex.test(date)) {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Format Tanggal Salah',
@@ -252,11 +277,68 @@
 
                 const newCameraId = $(this).val();
                 const selectedLabel = $(this).find('option:selected').data('raw-label') || '';
-
                 localStorage.setItem(STORAGE_KEY, selectedLabel);
 
                 switchCamera(newCameraId);
             });
+
+            function applyAutofocus() {
+                try {
+                    const videoEl = document.querySelector('#reader video');
+                    if (!videoEl || !videoEl.srcObject) return;
+
+                    const track = videoEl.srcObject.getVideoTracks()[0];
+                    if (!track) return;
+
+                    const capabilities = track.getCapabilities();
+
+                    if (!capabilities.focusMode) {
+                        updateFocusStatus('unsupported');
+                        return;
+                    }
+
+                    const modes = capabilities.focusMode;
+
+                    if (modes.includes('continuous')) {
+                        track.applyConstraints({
+                                advanced: [{
+                                    focusMode: 'continuous'
+                                }]
+                            })
+                            .then(() => updateFocusStatus('active'))
+                            .catch(() => updateFocusStatus('inactive'));
+
+                    } else if (modes.includes('auto')) {
+                        track.applyConstraints({
+                                advanced: [{
+                                    focusMode: 'auto'
+                                }]
+                            })
+                            .then(() => updateFocusStatus('active'))
+                            .catch(() => updateFocusStatus('inactive'));
+
+                    } else {
+                        updateFocusStatus('unsupported');
+                    }
+
+                } catch (err) {
+                    console.warn('Autofocus error:', err);
+                    updateFocusStatus('unsupported');
+                }
+            }
+
+            function updateFocusStatus(state) {
+                const $badge = $('#focusStatus');
+                $badge.removeClass('focus-active focus-inactive focus-unsupported');
+
+                const map = {
+                    active: ['focus-active', 'AF: ON'],
+                    inactive: ['focus-inactive', 'AF: GAGAL'],
+                    unsupported: ['focus-unsupported', 'AF: N/A'],
+                };
+                const [cls, label] = map[state] || map.unsupported;
+                $badge.addClass(cls).text(label);
+            }
 
             function initializeScanner() {
                 html5QrCode = new Html5Qrcode("reader");
@@ -276,9 +358,7 @@
                         const matched = cameras.find(c =>
                             (c.label || '').toLowerCase() === savedLabel.toLowerCase()
                         );
-                        if (matched) {
-                            selectedCamera = matched.id;
-                        }
+                        if (matched) selectedCamera = matched.id;
                     }
 
                     if (!selectedCamera) {
@@ -310,11 +390,11 @@
                     const rawLabel = camera.label || ('Camera ' + (index + 1));
                     let displayLabel = rawLabel;
 
-                    if (rawLabel.toLowerCase().includes('back') ||
-                        rawLabel.toLowerCase().includes('environment')) {
+                    if (rawLabel.toLowerCase().includes('back') || rawLabel.toLowerCase().includes(
+                            'environment')) {
                         displayLabel = 'Kamera Belakang';
-                    } else if (rawLabel.toLowerCase().includes('front') ||
-                        rawLabel.toLowerCase().includes('user')) {
+                    } else if (rawLabel.toLowerCase().includes('front') || rawLabel.toLowerCase().includes(
+                            'user')) {
                         displayLabel = 'Kamera Depan';
                     }
 
@@ -332,6 +412,7 @@
 
                 isSwitchingCamera = true;
                 updateScannerStatus("Mengganti kamera...", false);
+                updateFocusStatus('inactive');
                 $('#cameraSelect').prop('disabled', true);
 
                 stopScanning().then(function() {
@@ -350,9 +431,7 @@
             }
 
             function startScanning(cameraId) {
-                if (isScanning) {
-                    return Promise.reject("Already scanning");
-                }
+                if (isScanning) return Promise.reject("Already scanning");
 
                 return html5QrCode.start(
                     cameraId, {
@@ -368,6 +447,9 @@
                 ).then(function() {
                     isScanning = true;
                     updateScannerStatus("Kamera aktif, arahkan ke QR Code", false);
+
+                    setTimeout(applyAutofocus, 800);
+
                 }).catch(function(err) {
                     console.error("Scanner start error:", err);
                     showError("Scanner gagal dijalankan: " + err);
@@ -376,9 +458,7 @@
             }
 
             function stopScanning() {
-                if (!isScanning || !html5QrCode) {
-                    return Promise.resolve();
-                }
+                if (!isScanning || !html5QrCode) return Promise.resolve();
 
                 return html5QrCode.stop().then(function() {
                     isScanning = false;
@@ -391,7 +471,6 @@
 
             function onScanSuccess(decodedText) {
                 if (!isScanning) return;
-
                 stopScanning().then(function() {
                     processQRCode(decodedText);
                 });
@@ -445,13 +524,10 @@
 
             function showScanResult(type, id, redirectUrl) {
                 const typeName = typeNames[type] || type;
-
                 $('#resultType').text(typeName);
                 $('#resultId').text('#' + id);
                 $('#resultTime').text(new Date().toLocaleString('id-ID'));
-
                 $('#resultCard').slideDown(200);
-
                 setTimeout(function() {
                     window.location.href = redirectUrl;
                 }, 500);
@@ -470,12 +546,7 @@
             function updateScannerStatus(message, isError) {
                 const $statusEl = $('#scannerStatus');
                 $statusEl.text(message);
-
-                if (isError) {
-                    $statusEl.addClass('alert-error');
-                } else {
-                    $statusEl.removeClass('alert-error');
-                }
+                isError ? $statusEl.addClass('alert-error') : $statusEl.removeClass('alert-error');
             }
 
             function showError(message) {
