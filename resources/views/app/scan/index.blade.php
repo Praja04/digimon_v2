@@ -312,17 +312,17 @@
 
                     if (rawLabel.toLowerCase().includes('back') ||
                         rawLabel.toLowerCase().includes('environment')) {
-                        displayLabel = '📷 Kamera Belakang';
+                        displayLabel = 'Kamera Belakang';
                     } else if (rawLabel.toLowerCase().includes('front') ||
                         rawLabel.toLowerCase().includes('user')) {
-                        displayLabel = '🤳 Kamera Depan';
+                        displayLabel = 'Kamera Depan';
                     }
 
                     $select.append(
                         $('<option></option>')
                         .val(camera.id)
                         .text(displayLabel)
-                        .attr('data-raw-label', rawLabel) 
+                        .attr('data-raw-label', rawLabel)
                     );
                 });
             }
