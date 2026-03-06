@@ -197,14 +197,30 @@
     <script>
         function printQR(id) {
             const printArea = document.getElementById(id);
-            if (!printArea) return;
+
+            if (!printArea) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Area print tidak ditemukan'
+                });
+                return;
+            }
 
             const qrImage = printArea.querySelector('img');
             const qrLabel = printArea.querySelector('.small.text-muted');
 
-            if (!qrImage) return;
+            if (!qrImage) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'QR Code tidak ditemukan'
+                });
+                return;
+            }
 
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
             if (isMobile) {
                 printQRMobile(qrImage, qrLabel);
             } else {
@@ -213,7 +229,8 @@
         }
 
         function printQRDesktop(qrImage, qrLabel) {
-            const printWindow = window.open('', '_blank', 'width=300,height=400');
+            const printWindow = window.open('', '_blank', 'width=320,height=400');
+
             if (!printWindow) {
                 Swal.fire({
                     icon: 'error',
@@ -222,27 +239,98 @@
                 });
                 return;
             }
+
             printWindow.document.write(`
-                <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print QR</title>
-                <style>
-                    @page { size: 58mm auto; margin: 0; }
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { width: 58mm; margin: 0 auto; padding: 5mm 3mm; font-family: Arial, sans-serif; background: white; }
-                    .container { text-align: center; width: 100%; }
-                    .qr-image { width: 45mm; height: 45mm; display: block; margin: 0 auto 3mm auto; }
-                    .qr-label { font-size: 8pt; color: #000; word-wrap: break-word; line-height: 1.3; }
-                </style></head><body>
-                <div class="container">
-                    <img src="${qrImage.src}" alt="QR" class="qr-image">
-                    <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
-                </div></body></html>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Print QR</title>
+                    <style>
+                        @page {
+                            size: 75mm 100mm;
+                            margin: 0;
+                        }
+                        
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        
+                        html, body {
+                            width: 75mm;
+                            height: 100mm;
+                            margin: 0 auto;
+                            font-family: Arial, sans-serif;
+                            background: white;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        
+                        .container {
+                            width: 75mm;
+                            height: 100mm;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            padding: 4mm;
+                            page-break-after: avoid;
+                            page-break-inside: avoid;
+                            break-after: avoid;
+                            break-inside: avoid;
+                        }
+
+                        .qr-image {
+                            width: 58mm;
+                            height: 58mm;
+                            display: block;
+                            flex-shrink: 0;
+                        }
+
+                        .qr-label {
+                            font-size: 8pt;
+                            color: #000;
+                            word-wrap: break-word;
+                            line-height: 1.4;
+                            margin-top: 3mm;
+                            width: 100%;
+                            overflow: hidden; 
+                        }
+                        
+                        @media print {
+                            html, body {
+                                width: 75mm;
+                                height: 100mm;
+                                overflow: hidden;
+                            }
+                            .container {
+                                page-break-after: avoid;
+                                break-after: avoid;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <img src="${qrImage.src}" alt="QR" class="qr-image">
+                        <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
+                    </div>
+                </body>
+                </html>
             `);
+
             printWindow.document.close();
+
             printWindow.onload = function() {
                 setTimeout(function() {
                     printWindow.focus();
                     printWindow.print();
-                    setTimeout(() => printWindow.close(), 500);
+                    setTimeout(function() {
+                        printWindow.close();
+                    }, 500);
                 }, 250);
             };
         }
@@ -250,31 +338,37 @@
         function printQRMobile(qrImage, qrLabel) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 220;
-            canvas.height = 280;
+
+            canvas.width = 302;
+            canvas.height = 378;
+
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = function() {
-                const qrSize = 170,
-                    qrX = (canvas.width - qrSize) / 2,
-                    qrY = 10;
+                const qrSize = 220;
+                const qrX = (canvas.width - qrSize) / 2;
+                const qrY = (canvas.height - qrSize) / 2 - 15;
+
                 ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
                 ctx.fillStyle = 'black';
-                ctx.font = 'bold 10px Arial';
+                ctx.font = 'bold 11px Arial';
                 ctx.textAlign = 'center';
                 const labelText = qrLabel ? qrLabel.textContent.trim() : '';
-                const maxWidth = 200,
-                    lineHeight = 14;
+                const maxWidth = 270;
+                const lineHeight = 15;
                 const words = labelText.split('/');
-                let line = '',
-                    y = qrY + qrSize + 20;
+                let line = '';
+                let y = qrY + qrSize + 20;
+
                 words.forEach((word, index) => {
                     if (index > 0) line += '/';
                     const testLine = line + word;
-                    if (ctx.measureText(testLine).width > maxWidth && index > 0) {
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxWidth && index > 0) {
                         ctx.fillText(line, canvas.width / 2, y);
                         line = word;
                         y += lineHeight;
@@ -283,15 +377,57 @@
                     }
                 });
                 ctx.fillText(line, canvas.width / 2, y);
+
                 canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'qr-rmpm.png';
-                    a.click();
+                    if (navigator.share && navigator.canShare && navigator.canShare({
+                            files: [new File([blob], 'qr.png', {
+                                type: 'image/png'
+                            })]
+                        })) {
+                        navigator.share({
+                            files: [new File([blob], 'qr-code.png', {
+                                type: 'image/png'
+                            })],
+                            title: 'Print QR Code'
+                        }).catch(() => fallbackPrint(blob));
+                    } else {
+                        fallbackPrint(blob);
+                    }
                 }, 'image/png');
             };
+
+            img.onerror = function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat QR code'
+                });
+            };
             img.src = qrImage.src;
+        }
+
+        function fallbackPrint(blob) {
+            const url = URL.createObjectURL(blob);
+            const printWindow = window.open(url, '_blank');
+
+            if (!printWindow) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pop-up Diblokir',
+                    text: 'Mohon izinkan pop-up untuk print.'
+                });
+                return;
+            }
+
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.print();
+                }, 500);
+            };
+        }
+
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
         $(document).ready(function() {

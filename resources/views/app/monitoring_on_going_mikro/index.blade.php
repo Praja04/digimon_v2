@@ -534,7 +534,7 @@
         }
 
         function printQRDesktop(qrImage, qrLabel) {
-            const printWindow = window.open('', '_blank', 'width=300,height=400');
+            const printWindow = window.open('', '_blank', 'width=320,height=400');
 
             if (!printWindow) {
                 Swal.fire({
@@ -553,7 +553,7 @@
                     <title>Print QR</title>
                     <style>
                         @page {
-                            size: 58mm auto;
+                            size: 75mm 100mm;
                             margin: 0;
                         }
                         
@@ -563,36 +563,57 @@
                             box-sizing: border-box;
                         }
                         
-                        body {
-                            width: 58mm;
+                        html, body {
+                            width: 75mm;
+                            height: 100mm;
                             margin: 0 auto;
-                            padding: 5mm 3mm;
                             font-family: Arial, sans-serif;
                             background: white;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
                         }
                         
                         .container {
+                            width: 75mm;
+                            height: 100mm;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
                             text-align: center;
-                            width: 100%;
+                            padding: 4mm;
+                            page-break-after: avoid;
+                            page-break-inside: avoid;
+                            break-after: avoid;
+                            break-inside: avoid;
                         }
-                        
+
                         .qr-image {
-                            width: 45mm;
-                            height: 45mm;
+                            width: 58mm;
+                            height: 58mm;
                             display: block;
-                            margin: 0 auto 3mm auto;
+                            flex-shrink: 0;
                         }
-                        
+
                         .qr-label {
                             font-size: 8pt;
                             color: #000;
                             word-wrap: break-word;
-                            line-height: 1.3;
+                            line-height: 1.4;
+                            margin-top: 3mm;
+                            width: 100%;
+                            overflow: hidden; 
                         }
                         
                         @media print {
-                            body {
-                                padding: 2mm;
+                            html, body {
+                                width: 75mm;
+                                height: 100mm;
+                                overflow: hidden;
+                            }
+                            .container {
+                                page-break-after: avoid;
+                                break-after: avoid;
                             }
                         }
                     </style>
@@ -623,8 +644,8 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            canvas.width = 220;
-            canvas.height = 280;
+            canvas.width = 302;
+            canvas.height = 378;
 
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -632,18 +653,18 @@
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = function() {
-                const qrSize = 170;
+                const qrSize = 220;
                 const qrX = (canvas.width - qrSize) / 2;
-                const qrY = 10;
+                const qrY = (canvas.height - qrSize) / 2 - 15;
+
                 ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
 
                 ctx.fillStyle = 'black';
-                ctx.font = 'bold 10px Arial';
+                ctx.font = 'bold 11px Arial';
                 ctx.textAlign = 'center';
                 const labelText = qrLabel ? qrLabel.textContent.trim() : '';
-
-                const maxWidth = 200;
-                const lineHeight = 14;
+                const maxWidth = 270;
+                const lineHeight = 15;
                 const words = labelText.split('/');
                 let line = '';
                 let y = qrY + qrSize + 20;
@@ -652,7 +673,6 @@
                     if (index > 0) line += '/';
                     const testLine = line + word;
                     const metrics = ctx.measureText(testLine);
-
                     if (metrics.width > maxWidth && index > 0) {
                         ctx.fillText(line, canvas.width / 2, y);
                         line = word;
@@ -664,18 +684,17 @@
                 ctx.fillText(line, canvas.width / 2, y);
 
                 canvas.toBlob(function(blob) {
-                    if (navigator.share && isMobileDevice()) {
-                        const file = new File([blob], 'qr-code.png', {
-                            type: 'image/png'
-                        });
-
+                    if (navigator.share && navigator.canShare && navigator.canShare({
+                            files: [new File([blob], 'qr.png', {
+                                type: 'image/png'
+                            })]
+                        })) {
                         navigator.share({
-                            files: [file],
-                            title: 'Print QR Code',
-                            text: 'QR Code untuk print'
-                        }).catch(err => {
-                            fallbackPrint(blob);
-                        });
+                            files: [new File([blob], 'qr-code.png', {
+                                type: 'image/png'
+                            })],
+                            title: 'Print QR Code'
+                        }).catch(() => fallbackPrint(blob));
                     } else {
                         fallbackPrint(blob);
                     }
@@ -689,7 +708,6 @@
                     text: 'Gagal memuat QR code'
                 });
             };
-
             img.src = qrImage.src;
         }
 
