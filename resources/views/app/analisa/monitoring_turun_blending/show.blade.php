@@ -227,37 +227,25 @@
                     <div class="modal-body row g-3">
                         <div class="alert alert-danger d-none error-alert"></div>
                         <input type="hidden" name="id" id="id">
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                             <input type="text" name="brix" id="brix" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorBrix"></small>
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label class="form-label">Visco <span style="color: red">*</span></label>
                             <input type="text" name="visco" id="visco" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorVisco"></small>
                         </div>
-                        <div class="col-lg-4">
-                            <label class="form-label">NACL <span style="color: red">*</span></label>
-                            <input type="text" name="nacl" id="nacl" class="form-control comma-input"
-                                placeholder="Contoh: 0,00">
-                            <small class="text-danger errorNacl"></small>
-                        </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label class="form-label">Aw <span style="color: red">*</span></label>
                             <input type="text" name="aw" id="aw" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
                             <small class="text-danger errorAw"></small>
                         </div>
-                        <div class="col-lg-4">
-                            <label class="form-label">Organo <span style="color: red">*</span></label>
-                            <input type="text" name="organo" id="organo" class="form-control"
-                                oninput="this.value = this.value.toUpperCase();">
-                            <small class="text-danger errorOrgano"></small>
-                        </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label class="form-label">Status <span style="color: red">*</span></label>
                             <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
@@ -279,8 +267,8 @@
                                     <option value="Adjustment">Adjustment</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
-                                    <option value="Jalan Bareng">Jalan Bareng</option>
-                                    <option value="Leveling">Leveling</option>
+                                    {{-- <option value="Jalan Bareng">Jalan Bareng</option>
+                                    <option value="Leveling">Leveling</option> --}}
                                 </select>
                             </div>
                         @endif
@@ -376,41 +364,22 @@
                     <div class="mb-4">
                         <h6 class="border-bottom pb-2 mb-3">Parameter Analisa</h6>
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Brix</span>
                                     <span class="fw-medium">: <span id="detail_brix">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Visco</span>
                                     <span class="fw-medium">: <span id="detail_visco">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">NaCl</span>
-                                    <span class="fw-medium">: <span id="detail_nacl">-</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">AW</span>
                                     <span class="fw-medium">: <span id="detail_aw">-</span></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Parameter Fisik -->
-                    <div class="mb-4">
-                        <h6 class="border-bottom pb-2 mb-3">Parameter Fisik</h6>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Organo</span>
-                                    <span class="fw-medium">: <span id="detail_organo">-</span></span>
                                 </div>
                             </div>
                         </div>
@@ -584,10 +553,8 @@
 
                         $('#id').val(response.id);
                         $('#brix').val(formatDecimal(response.brix));
-                        $('#nacl').val(formatDecimal(response.nacl));
                         $('#visco').val(formatDecimal(response.visco));
                         $('#aw').val(formatDecimal(response.aw));
-                        $('#organo').val(response.organo);
                         $('#disposition_remark').val(response.disposition_remark || '');
 
                         $('#status_disposition').val(response.status);
@@ -639,10 +606,8 @@
                         // Reset semua field
                         $('#detail_batch_range, #detail_nomor_blending, #detail_shift, #detail_volume, #detail_storage, #detail_revisi')
                             .text('-');
-                        $('#detail_brix, #detail_nacl, #detail_visco, #detail_aw')
+                        $('#detail_brix, #detail_visco, #detail_aw')
                             .text('-');
-                        $('#detail_organo').text(
-                            '-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
                         $('#detail_created_by, #detail_created_at, #detail_updated_at').text(
@@ -660,12 +625,8 @@
 
                         // Parameter Analisa
                         $('#detail_brix').text(response.brix || '-');
-                        $('#detail_nacl').text(response.nacl || '-');
                         $('#detail_visco').text(response.visco || '-');
                         $('#detail_aw').text(response.aw || '-');
-
-                        // Parameter Fisik
-                        $('#detail_organo').text(response.organo || '-');
 
                         // Status & Disposisi
                         $('#detail_status').text(response.status || '-');
@@ -792,10 +753,6 @@
                                 $('#brix').addClass('is-invalid');
                                 $('.errorBrix').html(errors.brix.join('<br>'));
                             }
-                            if (errors.nacl) {
-                                $('#nacl').addClass('is-invalid');
-                                $('.errorNacl').html(errors.nacl.join('<br>'));
-                            }
                             if (errors.visco) {
                                 $('#visco').addClass('is-invalid');
                                 $('.errorVisco').html(errors.visco.join('<br>'));
@@ -803,10 +760,6 @@
                             if (errors.aw) {
                                 $('#aw').addClass('is-invalid');
                                 $('.errorAw').html(errors.aw.join('<br>'));
-                            }
-                            if (errors.organo) {
-                                $('#organo').addClass('is-invalid');
-                                $('.errorOrgano').html(errors.organo.join('<br>'));
                             }
                             if (errors.status_disposition) {
                                 $('#status_disposition').addClass('is-invalid');

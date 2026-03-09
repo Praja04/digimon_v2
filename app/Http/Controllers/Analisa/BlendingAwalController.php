@@ -162,9 +162,7 @@ class BlendingAwalController extends Controller
             $isUpdate = !is_null($blending->status);
             $userRole = auth()->user()->role;
 
-            // Validasi akses berdasarkan role
             if ($userRole === 'Analis Kimia') {
-                // Analis hanya bisa input/update jika belum ada disposition
                 if (!is_null($blending->disposition)) {
                     DB::rollBack();
                     return response()->json([
@@ -173,7 +171,6 @@ class BlendingAwalController extends Controller
                     ], 403);
                 }
             } elseif ($userRole === 'Foreman') {
-                // Foreman hanya bisa update disposition jika sudah ada status dari Analis
                 if (is_null($blending->status)) {
                     DB::rollBack();
                     return response()->json([
@@ -186,7 +183,6 @@ class BlendingAwalController extends Controller
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
-            // Validasi remarks wajib untuk status tertentu
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
@@ -195,7 +191,6 @@ class BlendingAwalController extends Controller
                 ], 409);
             }
 
-            // Cek apakah status berubah
             $statusChanged = ($blending->status !== $status_disposition);
             $dispositionChanged = false;
 
@@ -213,16 +208,13 @@ class BlendingAwalController extends Controller
                 'status' => $status_disposition,
             ];
 
-            // PERBAIKAN: Logic berdasarkan Role
             if ($userRole === 'Analis Kimia') {
-                // Analis hanya update status, disposition tetap null (menunggu Foreman)
                 $updateData['disposition'] = null;
 
                 if (!$isUpdate) {
                     $updateData['created_by'] = auth()->user()->id;
                 }
             } elseif ($userRole === 'Foreman') {
-                // Foreman wajib pilih disposition
                 if (!$request->filled('disposition')) {
                     DB::rollBack();
                     return response()->json([
@@ -232,11 +224,9 @@ class BlendingAwalController extends Controller
                 }
 
                 $disposition = $request->disposition;
-                $dispositionChanged = ($blending->disposition !== $disposition);
                 $updateData['disposition'] = $disposition;
             }
 
-            // Handle Adjustment
             $adjustmentAir = null;
             $adjustmentGaram = null;
             $adjustmentCaramel = null;
@@ -257,7 +247,6 @@ class BlendingAwalController extends Controller
                 $updateData['adjustment_qty_caramel'] = $adjustmentCaramel;
                 $updateData['not_standard'] = true;
             } else {
-                // Jika status bukan Adjustment lagi, clear adjustment data
                 if ($statusChanged) {
                     $updateData['adjustment_qty_air'] = null;
                     $updateData['adjustment_qty_garam'] = null;
@@ -266,7 +255,6 @@ class BlendingAwalController extends Controller
                 }
             }
 
-            // Handle Resampling (hanya untuk Foreman)
             if ($userRole === 'Foreman') {
                 if ($updateData['disposition'] === 'Resampling') {
                     $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
@@ -290,7 +278,6 @@ class BlendingAwalController extends Controller
 
             $blending->update($updateData);
 
-            // Build remark text for API payload
             if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
                 $remarkText = $remark;
             } elseif ($status_disposition === 'Adjustment') {
@@ -321,12 +308,10 @@ class BlendingAwalController extends Controller
 
             DB::commit();
 
-            // PERBAIKAN: Kirim notifikasi berdasarkan kondisi
             $shouldSendNotification = false;
             $notificationTitle = "Blending Awal - Batch " . $blending->batch_range;
 
             if ($userRole === 'Analis Kimia') {
-                // Analis input/update status - kirim notif ke Foreman untuk review
                 $shouldSendNotification = true;
                 $notificationTitle .= " - Menunggu Review Foreman";
             }
@@ -342,7 +327,6 @@ class BlendingAwalController extends Controller
                 ));
             }
 
-            // Pesan response berdasarkan role
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data berhasil diperbarui.'

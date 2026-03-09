@@ -192,9 +192,7 @@ class MonitoringTurunBlendingController extends Controller
             $updateData = [
                 'brix' => $request->brix,
                 'visco' => $request->visco,
-                'nacl' => $request->nacl,
                 'aw' => $request->aw,
-                'organo' => $request->organo,
                 'disposition_remark' => $remark,
                 'status' => $status_disposition,
                 'shift' => $shift,

@@ -91,9 +91,12 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <p class="text-muted mb-1">Batch :</p>
-                                                            <h5 class="mb-0">{{ $blending->batch_range }}@if ($blending->additionalBatches)
+                                                            <h5 class="mb-0">{{ $blending->batch_range }}
+                                                                @if ($blending->additionalBatches)
                                                                     @foreach ($blending->additionalBatches as $relasi)
-                                                                        -{{ $relasi->batch }}
+                                                                        @if (!in_array((int) $relasi->batch, array_map('intval', explode('-', $blending->batch_range))))
+                                                                            -{{ $relasi->batch }}
+                                                                        @endif
                                                                     @endforeach
                                                                 @endif
                                                             </h5>

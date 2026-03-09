@@ -310,8 +310,8 @@
                                     <option value="Adjustment">Adjustment</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
-                                    <option value="Jalan Bareng">Jalan Bareng</option>
-                                    <option value="Leveling">Leveling</option>
+                                    {{-- <option value="Jalan Bareng">Jalan Bareng</option>
+                                    <option value="Leveling">Leveling</option> --}}
                                 </select>
                             </div>
                         @endif

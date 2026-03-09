@@ -45,34 +45,6 @@
             border-radius: 3px;
             color: #495057;
         }
-
-        /* Badge status autofocus */
-        #focusStatus {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-
-        .focus-active {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .focus-inactive {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-
-        .focus-unsupported {
-            background: #e2e3e5;
-            color: #495057;
-            border: 1px solid #d6d8db;
-        }
     </style>
 @endsection
 
@@ -90,7 +62,6 @@
                             <h5 class="card-title mb-0">
                                 <i class="ri-qr-scan-2-line me-2"></i>Scan QR Code
                             </h5>
-                            <span id="focusStatus" class="focus-inactive">AF: -</span>
                         </div>
 
                         <div class="card-body">
@@ -282,64 +253,6 @@
                 switchCamera(newCameraId);
             });
 
-            function applyAutofocus() {
-                try {
-                    const videoEl = document.querySelector('#reader video');
-                    if (!videoEl || !videoEl.srcObject) return;
-
-                    const track = videoEl.srcObject.getVideoTracks()[0];
-                    if (!track) return;
-
-                    const capabilities = track.getCapabilities();
-
-                    if (!capabilities.focusMode) {
-                        updateFocusStatus('unsupported');
-                        return;
-                    }
-
-                    const modes = capabilities.focusMode;
-
-                    if (modes.includes('continuous')) {
-                        track.applyConstraints({
-                                advanced: [{
-                                    focusMode: 'continuous'
-                                }]
-                            })
-                            .then(() => updateFocusStatus('active'))
-                            .catch(() => updateFocusStatus('inactive'));
-
-                    } else if (modes.includes('auto')) {
-                        track.applyConstraints({
-                                advanced: [{
-                                    focusMode: 'auto'
-                                }]
-                            })
-                            .then(() => updateFocusStatus('active'))
-                            .catch(() => updateFocusStatus('inactive'));
-
-                    } else {
-                        updateFocusStatus('unsupported');
-                    }
-
-                } catch (err) {
-                    console.warn('Autofocus error:', err);
-                    updateFocusStatus('unsupported');
-                }
-            }
-
-            function updateFocusStatus(state) {
-                const $badge = $('#focusStatus');
-                $badge.removeClass('focus-active focus-inactive focus-unsupported');
-
-                const map = {
-                    active: ['focus-active', 'AF: ON'],
-                    inactive: ['focus-inactive', 'AF: GAGAL'],
-                    unsupported: ['focus-unsupported', 'AF: N/A'],
-                };
-                const [cls, label] = map[state] || map.unsupported;
-                $badge.addClass(cls).text(label);
-            }
-
             function initializeScanner() {
                 html5QrCode = new Html5Qrcode("reader");
 
@@ -412,7 +325,6 @@
 
                 isSwitchingCamera = true;
                 updateScannerStatus("Mengganti kamera...", false);
-                updateFocusStatus('inactive');
                 $('#cameraSelect').prop('disabled', true);
 
                 stopScanning().then(function() {
@@ -447,9 +359,6 @@
                 ).then(function() {
                     isScanning = true;
                     updateScannerStatus("Kamera aktif, arahkan ke QR Code", false);
-
-                    setTimeout(applyAutofocus, 800);
-
                 }).catch(function(err) {
                     console.error("Scanner start error:", err);
                     showError("Scanner gagal dijalankan: " + err);

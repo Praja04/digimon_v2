@@ -11,7 +11,6 @@ class MonitoringTurunBlendingUpdateRequest extends FormRequest
         $numericFields = [
             'brix',
             'visco',
-            'nacl',
             'aw',
             'adjustment_qty_air',
             'adjustment_qty_garam',
@@ -40,9 +39,7 @@ class MonitoringTurunBlendingUpdateRequest extends FormRequest
         return [
             'brix' => 'required|numeric|min:0|max:100',
             'visco' => 'required|numeric',
-            'nacl' => 'required|numeric|min:0|max:100',
             'aw' => 'required|numeric',
-            'organo' => 'required|string',
             'status_disposition' => 'required',
             'disposition' => 'nullable|in:Release,Release Bersyarat,Resampling,Adjustment,Reject,Repro,Jalan Bareng,Leveling',
             'disposition_remarks' => 'nullable|string|max:255',
@@ -57,9 +54,7 @@ class MonitoringTurunBlendingUpdateRequest extends FormRequest
         return [
             'brix' => 'Brix',
             'visco' => 'Visco',
-            'nacl' => 'Nacl',
             'aw' => 'AW',
-            'organo' => 'Organo',
             'status_disposition' => 'Status',
         ];
     }

@@ -139,9 +139,11 @@
                                                     </td>
                                                     <td>
                                                         {{ $blending->batch_range }}
-                                                        @if ($blending->additional_batch_info)
-                                                            @foreach ($blending->additional_batch_info as $relasi)
-                                                                <span class="badge bg-info">{{ $relasi->batch }}</span>
+                                                        @if ($blending->additionalBatches)
+                                                            @foreach ($blending->additionalBatches as $relasi)
+                                                                @if (!in_array((int) $relasi->batch, array_map('intval', explode('-', $blending->batch_range))))
+                                                                    -{{ $relasi->batch }}
+                                                                @endif
                                                             @endforeach
                                                         @endif
                                                     </td>
@@ -306,10 +308,10 @@
                                     <option value="Release Bersyarat">Release Bersyarat</option>
                                     <option value="Resampling">Resampling</option>
                                     <option value="Adjustment">Adjustment</option>
+                                    <option value="Leveling">Leveling</option>
                                     <option value="Reject">Reject</option>
                                     <option value="Repro">Repro</option>
-                                    <option value="Jalan Bareng">Jalan Bareng</option>
-                                    <option value="Leveling">Leveling</option>
+                                    {{-- <option value="Jalan Bareng">Jalan Bareng</option> --}}
                                 </select>
                             </div>
                         @endif
