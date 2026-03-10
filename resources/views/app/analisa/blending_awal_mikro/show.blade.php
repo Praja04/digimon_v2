@@ -113,10 +113,7 @@
                                                 <th>EB</th>
                                                 <th>TPC</th>
                                                 <th>YM</th>
-                                                <th>Hasil</th>
-                                                @if (auth()->user()->role == 'Analis Mikro')
-                                                    <th>Aksi</th>
-                                                @endif
+                                                <th>Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -132,17 +129,6 @@
                                                     <td>{{ $blending->eb ?? '-' }}</td>
                                                     <td>{{ $blending->tpc ?? '-' }}</td>
                                                     <td>{{ $blending->ym ?? '-' }}</td>
-                                                    <td>
-                                                        @if ($blending->hasil === 'OK')
-                                                            <span class="badge bg-success">OK</span>
-                                                        @elseif ($blending->hasil === 'NOT OK')
-                                                            <span class="badge bg-danger">NOT OK</span>
-                                                        @elseif ($blending->hasil === 'PENDING')
-                                                            <span class="badge bg-warning text-dark">PENDING</span>
-                                                        @else
-                                                            <span class="badge bg-secondary">-</span>
-                                                        @endif
-                                                    </td>
                                                     @if (auth()->user()->role == 'Analis Mikro')
                                                         <td>
                                                             @if (is_null($blending->ym))
@@ -154,6 +140,50 @@
                                                                     <i class="ri-check-line"></i> Lengkap
                                                                 </span>
                                                             @endif
+                                                        </td>
+                                                    @else
+                                                        <td>
+                                                            <button type="button" class="btn btn-primary btn-sm"
+                                                                style="font-size: 12px;" data-bs-toggle="modal"
+                                                                data-bs-target="#qrModalAfterAdjust{{ $blending->id }}">
+                                                                QR Code
+                                                            </button>
+
+                                                            <!-- Modal QR Code -->
+                                                            <div class="modal fade"
+                                                                id="qrModalAfterAdjust{{ $blending->id }}" tabindex="-1"
+                                                                aria-hidden="true">
+                                                                <div class="modal-dialog modal-dialog-centered">
+                                                                    <div class="modal-content shadow-sm">
+                                                                        <div class="modal-header bg-light py-2">
+                                                                            <h6 class="modal-title">QR Code Blending After
+                                                                                Adjust
+                                                                                #{{ $blending->nomor_blending }}</h6>
+                                                                            <button type="button" class="btn-close"
+                                                                                data-bs-dismiss="modal"></button>
+                                                                        </div>
+                                                                        <div class="modal-body text-center p-3"
+                                                                            id="qrPrintArea{{ $blending->id }}">
+                                                                            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.blending-awal-mikro.show_batch', $blending->id), 'QRCODE') }}"
+                                                                                alt="QR" class="img-fluid mb-2"
+                                                                                style="max-width:180px;">
+                                                                            <div class="small text-muted">
+                                                                                BLENDING-AFTER-ADJUST-MIKRO/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $blending->batch_range }}/{{ $blending->id }}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="modal-footer bg-light py-2">
+                                                                            <button type="button"
+                                                                                class="btn btn-sm btn-light"
+                                                                                data-bs-dismiss="modal">Tutup</button>
+                                                                            <button
+                                                                                onclick="printQR('qrPrintArea{{ $blending->id }}')"
+                                                                                class="btn btn-sm btn-primary">
+                                                                                Cetak
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                     @endif
                                                 </tr>
@@ -229,6 +259,223 @@
 
 @section('scripts')
     <script>
+        function printQR(id) {
+            const printArea = document.getElementById(id);
+
+            if (!printArea) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Area print tidak ditemukan'
+                });
+                return;
+            }
+
+            const qrImage = printArea.querySelector('img');
+            const qrLabel = printArea.querySelector('.small.text-muted');
+
+            if (!qrImage) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'QR Code tidak ditemukan'
+                });
+                return;
+            }
+
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                printQRMobile(qrImage, qrLabel);
+            } else {
+                printQRDesktop(qrImage, qrLabel);
+            }
+        }
+
+        function printQRDesktop(qrImage, qrLabel) {
+            const printWindow = window.open('', '_blank', 'width=300,height=400');
+
+            if (!printWindow) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pop-up Diblokir',
+                    text: 'Mohon izinkan pop-up untuk print.'
+                });
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Print QR</title>
+                    <style>
+                        @page {
+                            size: 58mm auto;
+                            margin: 0;
+                        }
+                        
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        
+                        body {
+                            width: 58mm;
+                            margin: 0 auto;
+                            padding: 5mm 3mm;
+                            font-family: Arial, sans-serif;
+                            background: white;
+                        }
+                        
+                        .container {
+                            text-align: center;
+                            width: 100%;
+                        }
+                        
+                        .qr-image {
+                            width: 45mm;
+                            height: 45mm;
+                            display: block;
+                            margin: 0 auto 3mm auto;
+                        }
+                        
+                        .qr-label {
+                            font-size: 8pt;
+                            color: #000;
+                            word-wrap: break-word;
+                            line-height: 1.3;
+                        }
+                        
+                        @media print {
+                            body {
+                                padding: 2mm;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <img src="${qrImage.src}" alt="QR" class="qr-image">
+                        <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.focus();
+                    printWindow.print();
+                    setTimeout(function() {
+                        printWindow.close();
+                    }, 500);
+                }, 250);
+            };
+        }
+
+        function printQRMobile(qrImage, qrLabel) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = 220;
+            canvas.height = 280;
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                const qrSize = 170;
+                const qrX = (canvas.width - qrSize) / 2;
+                const qrY = 10;
+                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                const labelText = qrLabel ? qrLabel.textContent.trim() : '';
+
+                const maxWidth = 200;
+                const lineHeight = 14;
+                const words = labelText.split('/');
+                let line = '';
+                let y = qrY + qrSize + 20;
+
+                words.forEach((word, index) => {
+                    if (index > 0) line += '/';
+                    const testLine = line + word;
+                    const metrics = ctx.measureText(testLine);
+
+                    if (metrics.width > maxWidth && index > 0) {
+                        ctx.fillText(line, canvas.width / 2, y);
+                        line = word;
+                        y += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                });
+                ctx.fillText(line, canvas.width / 2, y);
+
+                canvas.toBlob(function(blob) {
+                    if (navigator.share && isMobileDevice()) {
+                        const file = new File([blob], 'qr-code.png', {
+                            type: 'image/png'
+                        });
+
+                        navigator.share({
+                            files: [file],
+                            title: 'Print QR Code',
+                            text: 'QR Code untuk print'
+                        }).catch(err => {
+                            fallbackPrint(blob);
+                        });
+                    } else {
+                        fallbackPrint(blob);
+                    }
+                }, 'image/png');
+            };
+
+            img.onerror = function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat QR code'
+                });
+            };
+
+            img.src = qrImage.src;
+        }
+
+        function fallbackPrint(blob) {
+            const url = URL.createObjectURL(blob);
+            const printWindow = window.open(url, '_blank');
+
+            if (!printWindow) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pop-up Diblokir',
+                    text: 'Mohon izinkan pop-up untuk print.'
+                });
+                return;
+            }
+
+            printWindow.onload = function() {
+                setTimeout(function() {
+                    printWindow.print();
+                }, 500);
+            };
+        }
+
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {

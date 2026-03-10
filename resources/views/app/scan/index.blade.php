@@ -197,20 +197,25 @@
                 if (!input.startsWith('HTTP')) {
                     const parts = input.split('/');
 
-                    if (parts.length !== 4) {
+                    const [prefix] = parts;
+                    const fiveSegmentPrefixes = ['PELARUTAN-1', 'PELARUTAN-2', 'BLENDING-AWAL',
+                        'BLENDING-AFTER-ADJUST-MIKRO',
+                        'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI'
+                    ];
+                    const expectedParts = fiveSegmentPrefixes.includes(prefix) ? 5 : 4;
+
+                    if (parts.length !== expectedParts) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Format Tidak Valid',
-                            html: '<strong>Format wajib 4 bagian:</strong><br>' +
-                                '<code>PROSES/PO/TANGGAL/ID</code><br><br>' +
-                                '<strong>Contoh:</strong><br>' +
-                                '<small>PELARUTAN-1/1002001/2026-02-10/3</small>',
+                            text: 'Jumlah segmen URL tidak sesuai. Periksa kembali format input Anda.',
                             confirmButtonText: 'Mengerti'
                         });
                         return;
                     }
 
-                    const [prefix, po, date, id] = parts;
+                    const [, po, date, ...rest] = parts;
+                    const id = rest[rest.length - 1];
 
                     if (!validPrefixes.includes(prefix)) {
                         Swal.fire({
