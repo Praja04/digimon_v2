@@ -84,6 +84,7 @@ class BlendingAwalController extends Controller
                         'id' => $additionalBatch['id'],
                         'blending_awal_id' => $additionalBatch['blending_awal_id'],
                         'batch' => $additionalBatch['batch'],
+                        'borrower_production_batch_id' => $additionalBatch['borrower_production_batch_id'] ?? null,
                         'production_batch_id' => $additionalBatch['production_batch_id'],
                         'created_at' => now(),
                         'updated_at' => now(),
