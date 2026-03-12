@@ -604,14 +604,15 @@
             function toggleAdjustmentFields(status, showOnly = false) {
                 const qtyWrapper = $('.adjustment-qty-wrapper');
                 const qtyInput = $('.adjustment-qty');
+                const statusVal = $('#status_disposition').val();
+                const dispositionVal = $('#disposition').val();
 
-                if (status === 'Adjustment') {
+                if (status === 'Adjustment' || statusVal === 'Adjustment' || dispositionVal === 'Adjustment') {
                     qtyWrapper.removeClass('d-none');
                     qtyInput.prop('required', true);
                 } else {
                     qtyWrapper.addClass('d-none');
                     qtyInput.prop('required', false);
-
                     if (!showOnly) {
                         qtyInput.val('');
                     }
@@ -619,6 +620,11 @@
             }
 
             $('#status_disposition').on('change', function() {
+                const selected = $(this).val();
+                toggleAdjustmentFields(selected);
+            });
+
+            $('#disposition').on('change', function() {
                 const selected = $(this).val();
                 toggleAdjustmentFields(selected);
             });
