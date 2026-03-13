@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Analisa;
 
+use App\Events\MonitoringPasteurisasiUpdated;
 use App\Events\ProcessOutsideDisposition;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Analisa\MonitoringPasteurisasiUpdateRequest;
@@ -354,6 +355,8 @@ class MonitoringPasteurisasiController extends Controller
 
             DB::commit();
 
+            $this->broadcastLatest();
+
             $shouldSendNotification = false;
             $notificationTitle = "Monitoring Pasteurisasi - Batch " . $pasteurisasi->batch_range;
 
@@ -396,5 +399,15 @@ class MonitoringPasteurisasiController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function broadcastLatest(): void
+    {
+        $items = MonitoringPasteurisasi::with([
+            'productionBatch:id,po_number,variant',
+            'user:id,name,email',
+        ])->latest()->get()->toArray();
+
+        broadcast(new MonitoringPasteurisasiUpdated($items));
     }
 }

@@ -12,12 +12,47 @@ use Symfony\Component\HttpFoundation\Response;
 
 class MonitoringPasteurisasiController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $query = MonitoringPasteurisasi::with([
+                'productionBatch:id,po_number,variant',
+                'user:id,name,email'
+            ]);
+
+            if ($request->has('production_batch_id')) {
+                $query->where('production_batch_id', $request->production_batch_id);
+            }
+
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            $data = $query->latest()->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data retrieved successfully',
+                'data'    => $data,
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            Log::error('Error fetching monitoring pasteurisasi', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data.',
+                'error'   => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function show($id)
     {
         try {
             $monitoringPasteurisasi = MonitoringPasteurisasi::with([
                 'productionBatch:id,po_number,variant',
-                'color:id,name,code',
                 'user:id,name,email'
             ])->findOrFail($id);
 

@@ -78,6 +78,7 @@ Route::post('/monitoring-turun-blending', [App\Http\Controllers\Api\MonitoringTu
 Route::post('/monitoring-turun-blending/revisi', [App\Http\Controllers\Api\MonitoringTurunBlendingController::class, 'update_revisi'])->name('api.monitoring.turun.blending.update_revisi');
 
 // Monitoring Pasteurisasi
+Route::get('/monitoring-pasteurisasi', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'index'])->name('api.monitoring.pasteurisasi.index');
 Route::get('/monitoring-pasteurisasi/{id}', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'show'])->name('api.monitoring.pasteurisasi.show');
 Route::post('/monitoring-pasteurisasi', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'store'])->name('api.monitoring.pasteurisasi.store');
 Route::post('/monitoring-pasteurisasi/revisi', [App\Http\Controllers\Api\MonitoringPasteurisasiController::class, 'update_revisi'])->name('api.monitoring.pasteurisasi.update_revisi');
