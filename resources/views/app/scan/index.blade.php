@@ -52,82 +52,49 @@
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
-
             <div class="row">
-                <div class="col-lg-12 mx-auto">
-
-                    {{-- Scanner Card --}}
+                <div class="col-lg-6 mx-auto">
                     <div class="card mb-3">
                         <div class="card-header d-flex align-items-center justify-content-between">
                             <h5 class="card-title mb-0">
-                                <i class="ri-qr-scan-2-line me-2"></i>Scan QR Code
+                                <i class="ri-qr-scan-2-line me-2"></i>Scanner
                             </h5>
                         </div>
-
                         <div class="card-body">
-                            <div class="scanner-container">
 
+                            <form id="manualScanForm">
+                                <div class="input-group">
+                                    <input type="text" id="manualUrl" class="form-control form-control-lg"
+                                        placeholder="Scan atau ketik kode..." autocomplete="off"
+                                        style="text-transform:uppercase;">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="ri-send-plane-line"></i>
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div id="scanFeedback" class="mt-2" style="display:none;">
+                                <div id="feedbackContent" class="p-2 rounded small"></div>
+                            </div>
+
+                            <button class="btn btn-sm btn-outline-primary w-100 mt-3" data-bs-toggle="collapse"
+                                data-bs-target="#cameraSection">
+                                <i class="ri-camera-line me-1"></i> Gunakan Kamera
+                            </button>
+
+                            <div class="collapse mt-2" id="cameraSection">
                                 <div id="scannerStatus" class="alert-simple">
                                     Menginisialisasi kamera...
                                 </div>
-
-                                <div id="reader" class="mb-3"></div>
-
+                                <div id="reader" class="mb-2"></div>
                                 <label class="form-label mb-1 small text-muted">Pilih Kamera:</label>
-                                <select id="cameraSelect" class="form-select form-select-sm mb-3">
-                                    <option value="">Memuat kamera...</option>
-                                </select>
-
-                                <button type="button" class="btn btn-sm btn-outline-primary w-100"
-                                    data-bs-toggle="collapse" data-bs-target="#manualInput">
-                                    <i class="ri-keyboard-line me-1"></i> Input Manual
-                                </button>
-
-                                <div class="collapse mt-3" id="manualInput">
-                                    <form id="manualScanForm">
-                                        <label class="form-label small text-muted mb-1">
-                                            <strong><i class="ri-edit-line"></i> Input Manual Kode</strong>
-                                        </label>
-                                        <input type="text" class="form-control form-control-sm mb-2" id="manualUrl"
-                                            style="text-transform: uppercase;">
-
-                                        <button type="submit" class="btn btn-dark btn-sm w-100">
-                                            <i class="ri-send-plane-line me-1"></i> Proses Kode
-                                        </button>
-                                    </form>
-                                </div>
-
+                                <select id="cameraSelect" class="form-select form-select-sm"></select>
                             </div>
+
                         </div>
                     </div>
-
-                    {{-- Hasil Scan --}}
-                    <div class="card mt-3" id="resultCard" style="display: none;">
-                        <div class="card-header">
-                            <h6 class="mb-0"><i class="ri-checkbox-circle-line me-1"></i> Scan Berhasil</h6>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-1 small text-muted">Detail:</p>
-
-                            <div class="mb-1 small">
-                                <strong>Tipe:</strong> <span id="resultType"></span>
-                            </div>
-                            <div class="mb-1 small">
-                                <strong>ID:</strong> <span id="resultId"></span>
-                            </div>
-                            <div class="mb-1 small">
-                                <strong>Waktu:</strong> <span id="resultTime"></span>
-                            </div>
-
-                            <div class="alert-simple mt-3">
-                                <i class="ri-loader-4-line"></i> Mengalihkan halaman...
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
-
         </div>
     </div>
 @endsection
@@ -135,43 +102,12 @@
 
 @section('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-
     <script>
         $(document).ready(function() {
-            let html5QrCode;
-            let isScanning = false;
-            let isSwitchingCamera = false;
 
+            let html5QrCode, isScanning = false,
+                isSwitchingCamera = false;
             const STORAGE_KEY = 'preferredCameraLabel';
-
-            const typeNames = {
-                'rmpm': 'RMPM - Analisa Bahan Baku',
-                'pelarutan-1': 'Pelarutan 1',
-                'pelarutan-2': 'Pelarutan 2',
-                'blending-awal': 'Blending Awal',
-                'blending-awal-mikro': 'Blending Awal Mikro',
-                'monitoring-turun-blending': 'Monitoring Turun Blending',
-                'monitoring-pasteurisasi': 'Monitoring Pasteurisasi',
-                'monitoring-storage-kimia': 'Monitoring Storage Kimia',
-                'monitoring-storage-mikro': 'Monitoring Storage Mikro',
-                'monitoring-storage-before-use': 'Monitoring Storage Before Use',
-                'monitoring-daily-tank-kimia': 'Monitoring Daily Tank - Kimia',
-                'monitoring-daily-tank-mikro': 'Monitoring Daily Tank - Mikro',
-                'monitoring-ongoing-kimia': 'Monitoring Ongoing - Kimia',
-                'monitoring-ongoing-mikro': 'Monitoring Ongoing - Mikro',
-                'shelf-life-sampling': 'Shelf Life Analisis'
-            };
-
-            const validPrefixes = [
-                'RMPM', 'PELARUTAN-1', 'PELARUTAN-2',
-                'BLENDING-AWAL', 'BLENDING-AFTER-ADJUST-MIKRO',
-                'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI',
-                'MONITORING-STORAGE-KIMIA', 'MONITORING-STORAGE-MIKRO',
-                'MONITORING-STORAGE-BEFORE-USE',
-                'MONITORING-DAILY-TANK-KIMIA', 'MONITORING-DAILY-TANK-MIKRO',
-                'MONITORING-ONGOING-KIMIA', 'MONITORING-ONGOING-MIKRO',
-                'SHELF-LIFE-SAMPLING'
-            ];
 
             $.ajaxSetup({
                 headers: {
@@ -179,68 +115,57 @@
                 }
             });
 
-            initializeScanner();
+            $('#manualUrl').focus();
 
             $('#manualUrl').on('input', function() {
                 this.value = this.value.toUpperCase();
             });
 
+            $('#cameraSection').on('show.bs.collapse', function() {
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                if (!isScanning) initializeScanner();
+            });
+            $('#cameraSection').on('hide.bs.collapse', function() {
+                stopScanning();
+            });
+
             $('#manualScanForm').on('submit', function(e) {
                 e.preventDefault();
                 const input = $('#manualUrl').val().trim().toUpperCase();
-
                 if (!input) {
-                    showError('Masukkan kode atau URL');
+                    $('#manualUrl').focus();
+                    return;
+                }
+
+                const barcodeMap = {
+                    'P1': 'PELARUTAN-1',
+                    'P2': 'PELARUTAN-2',
+                    'BA': 'BLENDING-AWAL',
+                    'BM': 'BLENDING-AWAL-MIKRO',
+                    'TB': 'MONITORING-TURUN-BLENDING',
+                    'AC': 'MONITORING-PASTEURISASI',
+                    'SK': 'MONITORING-STORAGE-KIMIA',
+                    'SM': 'MONITORING-STORAGE-MIKRO',
+                };
+
+                if (barcodeMap[input.substring(0, 2)] && !input.includes('/')) {
+                    processQRCode(input);
                     return;
                 }
 
                 if (!input.startsWith('HTTP')) {
                     const parts = input.split('/');
-
-                    const [prefix] = parts;
-                    const fiveSegmentPrefixes = ['PELARUTAN-1', 'PELARUTAN-2', 'BLENDING-AWAL',
-                        'BLENDING-AFTER-ADJUST-MIKRO',
-                        'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI'
+                    const prefix = parts[0];
+                    const fiveSegment = ['PELARUTAN-1', 'PELARUTAN-2', 'BLENDING-AWAL',
+                        'BLENDING-AFTER-ADJUST-MIKRO', 'MONITORING-TURUN-BLENDING',
+                        'MONITORING-PASTEURISASI'
                     ];
-                    const expectedParts = fiveSegmentPrefixes.includes(prefix) ? 5 : 4;
+                    const expected = fiveSegment.includes(prefix) ? 5 : 4;
 
-                    if (parts.length !== expectedParts) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Format Tidak Valid',
-                            text: 'Jumlah segmen URL tidak sesuai. Periksa kembali format input Anda.',
-                            confirmButtonText: 'Mengerti'
-                        });
-                        return;
-                    }
-
-                    const [, po, date, ...rest] = parts;
-                    const id = rest[rest.length - 1];
-
-                    if (!validPrefixes.includes(prefix)) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Prefix Tidak Valid',
-                            html: '<strong>Prefix yang valid:</strong><br><small>' +
-                                validPrefixes.join('<br>') + '</small>',
-                        });
-                        return;
-                    }
-
-                    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Format Tanggal Salah',
-                            html: '<strong>Format tanggal harus:</strong><br>' +
-                                '<code>YYYY-MM-DD</code><br><br>' +
-                                '<strong>Contoh:</strong> 2026-02-10',
-                            confirmButtonText: 'Mengerti'
-                        });
-                        return;
-                    }
-
-                    if (isNaN(id)) {
-                        showError('ID harus berupa angka');
+                    if (parts.length !== expected) {
+                        showFeedback('error',
+                            'Format tidak valid. Contoh: PELARUTAN-1/2901005/2026-01-29/1-2/192');
+                        $('#manualUrl').select();
                         return;
                     }
                 }
@@ -248,150 +173,8 @@
                 processQRCode(input);
             });
 
-            $('#cameraSelect').on('change', function() {
-                if (isSwitchingCamera) return;
-
-                const newCameraId = $(this).val();
-                const selectedLabel = $(this).find('option:selected').data('raw-label') || '';
-                localStorage.setItem(STORAGE_KEY, selectedLabel);
-
-                switchCamera(newCameraId);
-            });
-
-            function initializeScanner() {
-                html5QrCode = new Html5Qrcode("reader");
-
-                Html5Qrcode.getCameras().then(function(cameras) {
-                    if (!cameras || cameras.length === 0) {
-                        showError("Tidak ada kamera ditemukan");
-                        return;
-                    }
-
-                    updateCameraList(cameras);
-
-                    const savedLabel = localStorage.getItem(STORAGE_KEY) || '';
-                    let selectedCamera = null;
-
-                    if (savedLabel) {
-                        const matched = cameras.find(c =>
-                            (c.label || '').toLowerCase() === savedLabel.toLowerCase()
-                        );
-                        if (matched) selectedCamera = matched.id;
-                    }
-
-                    if (!selectedCamera) {
-                        selectedCamera = cameras[0].id;
-                        for (let i = 0; i < cameras.length; i++) {
-                            const lbl = (cameras[i].label || '').toLowerCase();
-                            if (lbl.includes('back') || lbl.includes('environment')) {
-                                selectedCamera = cameras[i].id;
-                                localStorage.setItem(STORAGE_KEY, cameras[i].label || '');
-                                break;
-                            }
-                        }
-                    }
-
-                    $('#cameraSelect').val(selectedCamera);
-                    startScanning(selectedCamera);
-
-                }).catch(function(err) {
-                    console.error("Error getting cameras:", err);
-                    showError("Gagal mengakses kamera");
-                });
-            }
-
-            function updateCameraList(cameras) {
-                const $select = $('#cameraSelect');
-                $select.empty();
-
-                $.each(cameras, function(index, camera) {
-                    const rawLabel = camera.label || ('Camera ' + (index + 1));
-                    let displayLabel = rawLabel;
-
-                    if (rawLabel.toLowerCase().includes('back') || rawLabel.toLowerCase().includes(
-                            'environment')) {
-                        displayLabel = 'Kamera Belakang';
-                    } else if (rawLabel.toLowerCase().includes('front') || rawLabel.toLowerCase().includes(
-                            'user')) {
-                        displayLabel = 'Kamera Depan';
-                    }
-
-                    $select.append(
-                        $('<option></option>')
-                        .val(camera.id)
-                        .text(displayLabel)
-                        .attr('data-raw-label', rawLabel)
-                    );
-                });
-            }
-
-            function switchCamera(cameraId) {
-                if (isSwitchingCamera) return;
-
-                isSwitchingCamera = true;
-                updateScannerStatus("Mengganti kamera...", false);
-                $('#cameraSelect').prop('disabled', true);
-
-                stopScanning().then(function() {
-                    setTimeout(function() {
-                        startScanning(cameraId).finally(function() {
-                            isSwitchingCamera = false;
-                            $('#cameraSelect').prop('disabled', false);
-                        });
-                    }, 500);
-                }).catch(function(err) {
-                    console.error("Error switching camera:", err);
-                    isSwitchingCamera = false;
-                    $('#cameraSelect').prop('disabled', false);
-                    showError("Gagal mengganti kamera");
-                });
-            }
-
-            function startScanning(cameraId) {
-                if (isScanning) return Promise.reject("Already scanning");
-
-                return html5QrCode.start(
-                    cameraId, {
-                        fps: 10,
-                        qrbox: {
-                            width: 250,
-                            height: 250
-                        },
-                        aspectRatio: 1.0,
-                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-                    },
-                    onScanSuccess
-                ).then(function() {
-                    isScanning = true;
-                    updateScannerStatus("Kamera aktif, arahkan ke QR Code", false);
-                }).catch(function(err) {
-                    console.error("Scanner start error:", err);
-                    showError("Scanner gagal dijalankan: " + err);
-                    throw err;
-                });
-            }
-
-            function stopScanning() {
-                if (!isScanning || !html5QrCode) return Promise.resolve();
-
-                return html5QrCode.stop().then(function() {
-                    isScanning = false;
-                }).catch(function(err) {
-                    console.error("Scanner stop error:", err);
-                    isScanning = false;
-                    throw err;
-                });
-            }
-
-            function onScanSuccess(decodedText) {
-                if (!isScanning) return;
-                stopScanning().then(function() {
-                    processQRCode(decodedText);
-                });
-            }
-
             function processQRCode(url) {
-                updateScannerStatus("Memproses QR Code...", false);
+                showFeedback('loading', 'Memproses...');
 
                 $.ajax({
                     url: "{{ route('scan.store') }}",
@@ -402,71 +185,124 @@
                     dataType: 'json',
                     success: function(response) {
                         if (response.status === 'success') {
-                            showScanResult(response.qc_type, response.qc_id, response.redirect_url);
+                            showFeedback('success', response.name + ' &nbsp;#' + response.qc_id);
+                            setTimeout(() => {
+                                window.location.href = response.redirect_url;
+                            }, 1000);
                         } else {
-                            showError(response.message || "QR Code tidak valid");
-                            restartCamera();
+                            showFeedback('error', response.message);
+                            $('#manualUrl').val('').focus();
                         }
                     },
                     error: function(xhr) {
-                        let message = "QR gagal diproses";
+                        const msg = xhr.responseJSON?.message || 'Gagal memproses kode';
+                        if (xhr.status === 403) {
+                            showFeedback('error', 'Akses ditolak: ' + msg);
+                        } else {
+                            showFeedback('error', msg);
+                        }
+                        $('#manualUrl').val('').focus();
 
-                        if (xhr.status === 403 && xhr.responseJSON) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Akses Ditolak',
-                                text: xhr.responseJSON.message,
-                            }).then(function() {
-                                restartCamera();
+                        if (isScanning) {
+                            stopScanning().then(() => {
+                                setTimeout(() => startScanning($('#cameraSelect').val()), 1500);
                             });
-                            return;
                         }
-
-                        if (xhr.status === 404) {
-                            message = "Data tidak ditemukan";
-                        } else if (xhr.status === 400 && xhr.responseJSON) {
-                            message = xhr.responseJSON.message;
-                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                            message = xhr.responseJSON.message;
-                        }
-
-                        showError(message);
-                        restartCamera();
                     }
                 });
             }
 
-            function showScanResult(type, id, redirectUrl) {
-                const typeName = typeNames[type] || type;
-                $('#resultType').text(typeName);
-                $('#resultId').text('#' + id);
-                $('#resultTime').text(new Date().toLocaleString('id-ID'));
-                $('#resultCard').slideDown(200);
-                setTimeout(function() {
-                    window.location.href = redirectUrl;
-                }, 500);
+            function showFeedback(type, message) {
+                const colors = {
+                    loading: 'bg-light text-primary border border-primary',
+                    success: 'bg-success bg-opacity-10 text-success border border-success',
+                    error: 'bg-danger bg-opacity-10 text-danger border border-danger',
+                };
+                const icons = {
+                    loading: '<i class="mdi mdi-loading mdi-spin me-1"></i>',
+                    success: '<i class="ri-checkbox-circle-line me-1"></i>',
+                    error: '<i class="ri-error-warning-line me-1"></i>',
+                };
+                $('#feedbackContent')
+                    .attr('class', 'p-2 rounded small ' + colors[type])
+                    .html(icons[type] + message);
+                $('#scanFeedback').show();
             }
 
-            function restartCamera() {
-                setTimeout(function() {
-                    const selectedCamera = $('#cameraSelect').val();
-                    if (selectedCamera && !isScanning) {
-                        updateScannerStatus("Mengaktifkan kembali kamera...", false);
-                        startScanning(selectedCamera);
+            function initializeScanner() {
+                Html5Qrcode.getCameras().then(function(cameras) {
+                    if (!cameras || cameras.length === 0) {
+                        showFeedback('error', 'Kamera tidak ditemukan');
+                        return;
                     }
-                }, 2000);
+                    updateCameraList(cameras);
+                    const savedLabel = localStorage.getItem(STORAGE_KEY) || '';
+                    let selectedCamera = cameras[0].id;
+                    cameras.forEach(c => {
+                        if ((c.label || '').toLowerCase() === savedLabel.toLowerCase())
+                            selectedCamera = c.id;
+                        if ((c.label || '').toLowerCase().includes('back')) selectedCamera = c.id;
+                    });
+                    $('#cameraSelect').val(selectedCamera);
+                    startScanning(selectedCamera);
+                }).catch(() => showFeedback('error', 'Gagal mengakses kamera'));
             }
 
-            function updateScannerStatus(message, isError) {
-                const $statusEl = $('#scannerStatus');
-                $statusEl.text(message);
-                isError ? $statusEl.addClass('alert-error') : $statusEl.removeClass('alert-error');
+            function updateCameraList(cameras) {
+                const $sel = $('#cameraSelect').empty();
+                cameras.forEach((c, i) => {
+                    const raw = c.label || ('Camera ' + (i + 1));
+                    let label = raw;
+                    if (raw.toLowerCase().includes('back') || raw.toLowerCase().includes('environment'))
+                        label = 'Kamera Belakang';
+                    else if (raw.toLowerCase().includes('front') || raw.toLowerCase().includes('user'))
+                        label = 'Kamera Depan';
+                    $sel.append($('<option>').val(c.id).text(label).data('raw-label', raw));
+                });
             }
 
-            function showError(message) {
-                updateScannerStatus(message, true);
-                $('#resultCard').slideUp(200);
+            function startScanning(cameraId) {
+                if (isScanning) return Promise.reject();
+                return html5QrCode.start(cameraId, {
+                        fps: 10,
+                        qrbox: {
+                            width: 250,
+                            height: 250
+                        },
+                        aspectRatio: 1.0,
+                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats
+                            .CODE_128
+                        ]
+                    },
+                    function(text) {
+                        stopScanning().then(() => processQRCode(text));
+                    }
+                ).then(() => {
+                    isScanning = true;
+                });
             }
+
+            function stopScanning() {
+                if (!isScanning || !html5QrCode) return Promise.resolve();
+                return html5QrCode.stop().then(() => {
+                    isScanning = false;
+                }).catch(() => {
+                    isScanning = false;
+                });
+            }
+
+            $('#cameraSelect').on('change', function() {
+                if (isSwitchingCamera) return;
+                isSwitchingCamera = true;
+                const id = $(this).val();
+                localStorage.setItem(STORAGE_KEY, $(this).find(':selected').data('raw-label') || '');
+                stopScanning().then(() => setTimeout(() => {
+                    startScanning(id).finally(() => {
+                        isSwitchingCamera = false;
+                    });
+                }, 500));
+            });
+
         });
     </script>
 @endsection

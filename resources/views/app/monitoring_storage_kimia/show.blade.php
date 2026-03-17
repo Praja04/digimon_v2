@@ -149,6 +149,26 @@
                                                                             'OK' => 'bg-success',
                                                                             default => 'bg-secondary',
                                                                         };
+
+                                                                        $po = $productionBatch->po_number;
+                                                                        $poCompact =
+                                                                            strlen($po) === 7
+                                                                                ? substr($po, 0, 4) .
+                                                                                    sprintf(
+                                                                                        '%02d',
+                                                                                        (int) substr($po, 4),
+                                                                                    )
+                                                                                : $po;
+
+                                                                        $qrStringSK =
+                                                                            'MONITORING-STORAGE-KIMIA/' .
+                                                                            $po .
+                                                                            '/' .
+                                                                            $productionBatch->date .
+                                                                            '/' .
+                                                                            $storageKimia->id;
+                                                                        $barcodeStringSK =
+                                                                            'SK' . $poCompact . $storageKimia->id;
                                                                     @endphp
                                                                     <tr class="{{ $rowClass }}">
                                                                         <td>
@@ -171,15 +191,13 @@
                                                                             @endif
                                                                         </td>
                                                                         <td>
-                                                                            <!-- Tombol untuk buka modal -->
                                                                             <button type="button"
-                                                                                class="btn btn-sm btn-primary"
+                                                                                class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1"
                                                                                 data-bs-toggle="modal"
                                                                                 data-bs-target="#qrModalKimia{{ $storageKimia->id }}">
-                                                                                QR Code {{ $storageKimia->id }}
+                                                                                <i class="ri-printer-line"></i> Cetak Kode
                                                                             </button>
 
-                                                                            <!-- Modal QR Code -->
                                                                             <div class="modal fade"
                                                                                 id="qrModalKimia{{ $storageKimia->id }}"
                                                                                 tabindex="-1" aria-hidden="true">
@@ -188,22 +206,61 @@
                                                                                     <div class="modal-content shadow-sm">
                                                                                         <div
                                                                                             class="modal-header bg-light py-2">
-                                                                                            <h6 class="modal-title">QR Code
-                                                                                                Monitoring Storage Kimia
+                                                                                            <h6 class="modal-title">Storage
+                                                                                                Kimia
                                                                                                 #{{ $storageKimia->id }}
                                                                                             </h6>
                                                                                             <button type="button"
                                                                                                 class="btn-close"
                                                                                                 data-bs-dismiss="modal"></button>
                                                                                         </div>
-                                                                                        <div class="modal-body text-center p-3"
-                                                                                            id="qrPrintKimiaArea{{ $storageKimia->id }}">
-                                                                                            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-kimia.show_batch', $storageKimia->id), 'QRCODE') }}"
-                                                                                                alt="QR"
-                                                                                                class="img-fluid mb-2"
-                                                                                                style="max-width:180px;">
-                                                                                            <div class="small text-muted">
-                                                                                                MONITORING-STORAGE-KIMIA/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageKimia->id }}
+                                                                                        <div class="px-3 pt-3">
+                                                                                            <div class="btn-group w-100"
+                                                                                                role="group">
+                                                                                                <button type="button"
+                                                                                                    class="btn btn-sm btn-primary aidc-toggle"
+                                                                                                    data-target="qr-sk-{{ $storageKimia->id }}">
+                                                                                                    <i
+                                                                                                        class="ri-qr-code-line me-1"></i>
+                                                                                                    QR Code
+                                                                                                </button>
+                                                                                                <button type="button"
+                                                                                                    class="btn btn-sm btn-outline-primary aidc-toggle"
+                                                                                                    data-target="barcode-sk-{{ $storageKimia->id }}">
+                                                                                                    <i
+                                                                                                        class="ri-barcode-line me-1"></i>
+                                                                                                    Barcode
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div
+                                                                                            class="modal-body text-center p-3">
+                                                                                            <div id="qr-sk-{{ $storageKimia->id }}"
+                                                                                                class="aidc-panel">
+                                                                                                <div
+                                                                                                    id="qrPrintKimiaArea{{ $storageKimia->id }}">
+                                                                                                    <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG($qrStringSK, 'QRCODE') }}"
+                                                                                                        class="img-fluid mb-2"
+                                                                                                        style="max-width:180px;">
+                                                                                                    <div
+                                                                                                        class="small text-muted">
+                                                                                                        {{ $qrStringSK }}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div id="barcode-sk-{{ $storageKimia->id }}"
+                                                                                                class="aidc-panel"
+                                                                                                style="display:none;">
+                                                                                                <div
+                                                                                                    id="barcodePrintKimiaArea{{ $storageKimia->id }}">
+                                                                                                    <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($barcodeStringSK, 'C128') }}"
+                                                                                                        class="img-fluid mb-2"
+                                                                                                        style="max-width:280px; height:80px;">
+                                                                                                    <div
+                                                                                                        class="small text-muted">
+                                                                                                        {{ $barcodeStringSK }}
+                                                                                                    </div>
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                         <div
@@ -212,8 +269,10 @@
                                                                                                 class="btn btn-sm btn-light"
                                                                                                 data-bs-dismiss="modal">Tutup</button>
                                                                                             <button
-                                                                                                onclick="printQR('qrPrintKimiaArea{{ $storageKimia->id }}')"
-                                                                                                class="btn btn-sm btn-primary">Cetak</button>
+                                                                                                class="btn btn-sm btn-primary"
+                                                                                                onclick="printActiveAidc('sk-{{ $storageKimia->id }}')">
+                                                                                                Cetak
+                                                                                            </button>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -285,6 +344,26 @@
                                                                             'OK' => 'bg-success',
                                                                             default => 'bg-secondary',
                                                                         };
+
+                                                                        $po = $productionBatch->po_number;
+                                                                        $poCompact =
+                                                                            strlen($po) === 7
+                                                                                ? substr($po, 0, 4) .
+                                                                                    sprintf(
+                                                                                        '%02d',
+                                                                                        (int) substr($po, 4),
+                                                                                    )
+                                                                                : $po;
+
+                                                                        $qrStringSM =
+                                                                            'MONITORING-STORAGE-MIKRO/' .
+                                                                            $po .
+                                                                            '/' .
+                                                                            $productionBatch->date .
+                                                                            '/' .
+                                                                            $storageMikro->id;
+                                                                        $barcodeStringSM =
+                                                                            'SM' . $poCompact . $storageMikro->id;
                                                                     @endphp
                                                                     <tr class="{{ $rowClass }}">
                                                                         <td>
@@ -308,41 +387,76 @@
                                                                             @endif
                                                                         </td>
                                                                         <td>
-                                                                            <!-- Tombol untuk buka modal -->
                                                                             <button type="button"
-                                                                                class="btn btn-sm btn-primary"
+                                                                                class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1"
                                                                                 data-bs-toggle="modal"
                                                                                 data-bs-target="#qrModalMikro{{ $storageMikro->id }}">
-                                                                                QR Code {{ $storageMikro->id }}
+                                                                                <i class="ri-printer-line"></i> Cetak Kode
                                                                             </button>
 
-                                                                            <!-- Modal Besar -->
                                                                             <div class="modal fade"
                                                                                 id="qrModalMikro{{ $storageMikro->id }}"
-                                                                                tabindex="-1"
-                                                                                aria-labelledby="qrModalMikroLabel{{ $storageMikro->id }}"
-                                                                                aria-hidden="true">
+                                                                                tabindex="-1" aria-hidden="true">
                                                                                 <div
                                                                                     class="modal-dialog modal-dialog-centered">
                                                                                     <div class="modal-content shadow-sm">
                                                                                         <div
                                                                                             class="modal-header bg-light py-2">
-                                                                                            <h6 class="modal-title">QR Code
-                                                                                                Monitoring Storage Mikro
+                                                                                            <h6 class="modal-title">Storage
+                                                                                                Mikro
                                                                                                 #{{ $storageMikro->id }}
                                                                                             </h6>
                                                                                             <button type="button"
                                                                                                 class="btn-close"
                                                                                                 data-bs-dismiss="modal"></button>
                                                                                         </div>
-                                                                                        <div class="modal-body text-center p-3"
-                                                                                            id="qrPrintMikroArea{{ $storageMikro->id }}">
-                                                                                            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.monitoring-storage-mikro.show_batch', $storageMikro->id), 'QRCODE') }}"
-                                                                                                alt="QR"
-                                                                                                class="img-fluid mb-2"
-                                                                                                style="max-width:180px;">
-                                                                                            <div class="small text-muted">
-                                                                                                MONITORING-STORAGE-MIKRO/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $storageMikro->id }}
+                                                                                        <div class="px-3 pt-3">
+                                                                                            <div class="btn-group w-100"
+                                                                                                role="group">
+                                                                                                <button type="button"
+                                                                                                    class="btn btn-sm btn-primary aidc-toggle"
+                                                                                                    data-target="qr-sm-{{ $storageMikro->id }}">
+                                                                                                    <i
+                                                                                                        class="ri-qr-code-line me-1"></i>
+                                                                                                    QR Code
+                                                                                                </button>
+                                                                                                <button type="button"
+                                                                                                    class="btn btn-sm btn-outline-primary aidc-toggle"
+                                                                                                    data-target="barcode-sm-{{ $storageMikro->id }}">
+                                                                                                    <i
+                                                                                                        class="ri-barcode-line me-1"></i>
+                                                                                                    Barcode
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div
+                                                                                            class="modal-body text-center p-3">
+                                                                                            <div id="qr-sm-{{ $storageMikro->id }}"
+                                                                                                class="aidc-panel">
+                                                                                                <div
+                                                                                                    id="qrPrintMikroArea{{ $storageMikro->id }}">
+                                                                                                    <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG($qrStringSM, 'QRCODE') }}"
+                                                                                                        class="img-fluid mb-2"
+                                                                                                        style="max-width:180px;">
+                                                                                                    <div
+                                                                                                        class="small text-muted">
+                                                                                                        {{ $qrStringSM }}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div id="barcode-sm-{{ $storageMikro->id }}"
+                                                                                                class="aidc-panel"
+                                                                                                style="display:none;">
+                                                                                                <div
+                                                                                                    id="barcodePrintMikroArea{{ $storageMikro->id }}">
+                                                                                                    <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($barcodeStringSM, 'C128') }}"
+                                                                                                        class="img-fluid mb-2"
+                                                                                                        style="max-width:280px; height:80px;">
+                                                                                                    <div
+                                                                                                        class="small text-muted">
+                                                                                                        {{ $barcodeStringSM }}
+                                                                                                    </div>
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                         <div
@@ -351,8 +465,10 @@
                                                                                                 class="btn btn-sm btn-light"
                                                                                                 data-bs-dismiss="modal">Tutup</button>
                                                                                             <button
-                                                                                                onclick="printQR('qrPrintMikroArea{{ $storageMikro->id }}')"
-                                                                                                class="btn btn-sm btn-primary">Cetak</button>
+                                                                                                class="btn btn-sm btn-primary"
+                                                                                                onclick="printActiveAidc('sm-{{ $storageMikro->id }}')">
+                                                                                                Cetak
+                                                                                            </button>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -569,6 +685,30 @@
                 }
             });
         });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.aidc-toggle');
+            if (!btn) return;
+
+            const modal = btn.closest('.modal-content');
+            modal.querySelectorAll('.aidc-panel').forEach(p => p.style.display = 'none');
+            document.getElementById(btn.dataset.target).style.display = 'block';
+
+            modal.querySelectorAll('.aidc-toggle').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+        });
+
+        function printActiveAidc(id) {
+            const qrPanel = document.getElementById('qr-' + id);
+            const isQR = qrPanel && qrPanel.style.display !== 'none';
+            const modal = (qrPanel || document.getElementById('barcode-' + id)).closest('.modal-body');
+            const printEl = modal.querySelector(isQR ? '[id^="qrPrint"]' : '[id^="barcodePrint"]');
+            if (printEl) printQR(printEl.id);
+        }
 
         const allBatches = @json($filteredBatchGroups);
         const validBatches = @json($filteredBatchGroups);

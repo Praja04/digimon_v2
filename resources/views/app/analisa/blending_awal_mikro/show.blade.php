@@ -118,6 +118,24 @@
                                         </thead>
                                         <tbody>
                                             @forelse ($productionBatch->blendingAfterAdjustMikro as $blending)
+                                                @php
+                                                    $po = $productionBatch->po_number;
+                                                    $poCompact =
+                                                        strlen($po) === 7
+                                                            ? substr($po, 0, 4) . sprintf('%02d', (int) substr($po, 4))
+                                                            : $po;
+
+                                                    $qrStringBM =
+                                                        'BLENDING-AFTER-ADJUST-MIKRO/' .
+                                                        $po .
+                                                        '/' .
+                                                        $productionBatch->date .
+                                                        '/' .
+                                                        $blending->batch_range .
+                                                        '/' .
+                                                        $blending->id;
+                                                    $barcodeStringBM = 'BM' . $poCompact . $blending->id;
+                                                @endphp
                                                 <tr>
                                                     <td>{{ $productionBatch->po_number }}</td>
                                                     <td>{{ $blending->batch_range }}</td>
@@ -143,41 +161,70 @@
                                                         </td>
                                                     @else
                                                         <td>
-                                                            <button type="button" class="btn btn-primary btn-sm"
+                                                            <button type="button"
+                                                                class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1"
                                                                 style="font-size: 12px;" data-bs-toggle="modal"
                                                                 data-bs-target="#qrModalAfterAdjust{{ $blending->id }}">
-                                                                QR Code
+                                                                <i class="ri-printer-line"></i> Cetak Kode
                                                             </button>
 
-                                                            <!-- Modal QR Code -->
                                                             <div class="modal fade"
                                                                 id="qrModalAfterAdjust{{ $blending->id }}" tabindex="-1"
                                                                 aria-hidden="true">
                                                                 <div class="modal-dialog modal-dialog-centered">
                                                                     <div class="modal-content shadow-sm">
                                                                         <div class="modal-header bg-light py-2">
-                                                                            <h6 class="modal-title">QR Code Blending After
-                                                                                Adjust
+                                                                            <h6 class="modal-title">Blending After Adjust
                                                                                 #{{ $blending->nomor_blending }}</h6>
                                                                             <button type="button" class="btn-close"
                                                                                 data-bs-dismiss="modal"></button>
                                                                         </div>
-                                                                        <div class="modal-body text-center p-3"
-                                                                            id="qrPrintArea{{ $blending->id }}">
-                                                                            <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG(route('analisa.blending-awal-mikro.show_batch', $blending->id), 'QRCODE') }}"
-                                                                                alt="QR" class="img-fluid mb-2"
-                                                                                style="max-width:180px;">
-                                                                            <div class="small text-muted">
-                                                                                BLENDING-AFTER-ADJUST-MIKRO/{{ $productionBatch->po_number }}/{{ $productionBatch->date }}/{{ $blending->batch_range }}/{{ $blending->id }}
+                                                                        <div class="px-3 pt-3">
+                                                                            <div class="btn-group w-100" role="group">
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm btn-primary aidc-toggle"
+                                                                                    data-target="qr-bm-{{ $blending->id }}">
+                                                                                    <i class="ri-qr-code-line me-1"></i> QR
+                                                                                    Code
+                                                                                </button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm btn-outline-primary aidc-toggle"
+                                                                                    data-target="barcode-bm-{{ $blending->id }}">
+                                                                                    <i class="ri-barcode-line me-1"></i>
+                                                                                    Barcode
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="modal-body text-center p-3">
+                                                                            <div id="qr-bm-{{ $blending->id }}"
+                                                                                class="aidc-panel">
+                                                                                <div
+                                                                                    id="qrPrintAreaAfterAdjust{{ $blending->id }}">
+                                                                                    <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG($qrStringBM, 'QRCODE') }}"
+                                                                                        class="img-fluid mb-2"
+                                                                                        style="max-width:180px;">
+                                                                                    <div class="small text-muted">
+                                                                                        {{ $qrStringBM }}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div id="barcode-bm-{{ $blending->id }}"
+                                                                                class="aidc-panel" style="display:none;">
+                                                                                <div
+                                                                                    id="barcodePrintAreaAfterAdjust{{ $blending->id }}">
+                                                                                    <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($barcodeStringBM, 'C128') }}"
+                                                                                        class="img-fluid mb-2"
+                                                                                        style="max-width:280px; height:80px;">
+                                                                                    <div class="small text-muted">
+                                                                                        {{ $barcodeStringBM }}</div>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="modal-footer bg-light py-2">
                                                                             <button type="button"
                                                                                 class="btn btn-sm btn-light"
                                                                                 data-bs-dismiss="modal">Tutup</button>
-                                                                            <button
-                                                                                onclick="printQR('qrPrintArea{{ $blending->id }}')"
-                                                                                class="btn btn-sm btn-primary">
+                                                                            <button class="btn btn-sm btn-primary"
+                                                                                onclick="printActiveAidc('bm-{{ $blending->id }}')">
                                                                                 Cetak
                                                                             </button>
                                                                         </div>
@@ -259,6 +306,30 @@
 
 @section('scripts')
     <script>
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.aidc-toggle');
+            if (!btn) return;
+
+            const modal = btn.closest('.modal-content');
+            modal.querySelectorAll('.aidc-panel').forEach(p => p.style.display = 'none');
+            document.getElementById(btn.dataset.target).style.display = 'block';
+
+            modal.querySelectorAll('.aidc-toggle').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+        });
+
+        function printActiveAidc(id) {
+            const qrPanel = document.getElementById('qr-' + id);
+            const isQR = qrPanel && qrPanel.style.display !== 'none';
+            const modal = (qrPanel || document.getElementById('barcode-' + id)).closest('.modal-body');
+            const printEl = modal.querySelector(isQR ? '[id^="qrPrintArea"]' : '[id^="barcodePrintArea"]');
+            if (printEl) printQR(printEl.id);
+        }
+
         function printQR(id) {
             const printArea = document.getElementById(id);
 

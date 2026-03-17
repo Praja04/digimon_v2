@@ -81,6 +81,17 @@ class ScanController extends Controller
     {
         $input = $request->url;
 
+        $barcodePrefix = [
+            'P1' => 'pelarutan-1',
+            'P2' => 'pelarutan-2',
+            'BA' => 'blending-awal',
+            'BM' => 'blending-awal-mikro',
+            'TB' => 'monitoring-turun-blending',
+            'AC' => 'monitoring-pasteurisasi',
+            'SK' => 'monitoring-storage-kimia',
+            'SM' => 'monitoring-storage-mikro',
+        ];
+
         $prefixMapping = [
             'RMPM' => 'rmpm',
             'PELARUTAN-1' => 'pelarutan-1',
@@ -101,7 +112,21 @@ class ScanController extends Controller
 
         $fiveSegmentPrefixes = ['PELARUTAN-1', 'PELARUTAN-2', 'BLENDING-AWAL', 'BLENDING-AFTER-ADJUST-MIKRO', 'MONITORING-TURUN-BLENDING', 'MONITORING-PASTEURISASI'];
 
-        if (filter_var($input, FILTER_VALIDATE_URL)) {
+        $detectedPrefix = strtoupper(substr($input, 0, 2));
+
+        if (isset($barcodePrefix[$detectedPrefix]) && !str_contains($input, '/')) {
+            $type = $barcodePrefix[$detectedPrefix];
+            $id   = substr($input, 8);
+
+            if (!is_numeric($id) || empty($id)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Format barcode tidak valid.'
+                ], 400);
+            }
+
+            Log::info("Barcode Scan - Type: {$type}, ID: {$id}");
+        } elseif (filter_var($input, FILTER_VALIDATE_URL)) {
             $path = parse_url($input, PHP_URL_PATH);
             $segments = array_values(array_filter(explode('/', trim($path, '/'))));
 
