@@ -27,6 +27,15 @@ Route::middleware(['auth'])->group(function () {
     --------------------------------------------*/
     Route::get('/halaman-utama', [App\Http\Controllers\HomepageController::class, 'index'])->name('homepage.index');
 
+    //------------------------------------------
+    // Profile
+    //------------------------------------------
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/update-password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
+    Route::post('/profile/update-image', [App\Http\Controllers\ProfileController::class, 'updateImage'])->name('profile.updateImage');
+    Route::post('/profile/delete-image', [App\Http\Controllers\ProfileController::class, 'deleteImage'])->name('profile.deleteImage');
+
     /*------------------------------------------
     Dashboard
     Roles: Head Of Dapartement, Supervisor, Foreman

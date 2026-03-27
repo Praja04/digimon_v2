@@ -248,6 +248,14 @@
                     @endif
                 @endif
 
+                {{-- Profile Menu: All --}}
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ request()->routeIs(['profile.index']) ? 'active' : '' }}"
+                        href="{{ route('profile.index') }}">
+                        <i class="mdi mdi-account"></i> <span data-key="t-profile">Profile</span>
+                    </a>
+                </li>
+
                 {{-- SECTION: MASTER DATA --}}
                 @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman']))
                     <li class="menu-title">
