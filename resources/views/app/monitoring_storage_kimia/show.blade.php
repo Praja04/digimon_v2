@@ -907,85 +907,101 @@
             }
 
             printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Print QR</title>
-                    <style>
-                        @page {
-                            size: 75mm 100mm;
-                            margin: 0;
-                        }
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Print QR</title>
+                <style>
+                    @page {
+                        /* size: 75mm 100mm; */
+                        size: 58mm 80mm;
+                        margin: 0;
+                    }
+                    
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    
+                    html, body {
+                        /* width: 75mm; */
+                        /* height: 100mm; */
+                        width: 58mm;
+                        /* height: 80mm; */
+                        margin: 0 auto;
+                        font-family: Arial, sans-serif;
+                        background: white;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    
+                    .container {
+                        /* width: 75mm; */
+                        /* height: 100mm; */
+                        width: 58mm;
+                        /* height: 80mm; */
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                        padding: 4mm;
+                        page-break-after: avoid;
+                        page-break-inside: avoid;
+                        break-after: avoid;
+                        break-inside: avoid;
+                    }
+
+                    .qr-image {
+                        /* width: 58mm; */
+                        /* height: 58mm; */
+                        width: 44mm;
+                        height: 44mm;
+                        display: block;
+                        flex-shrink: 0;
+                    }
                         
-                        * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }
-                        
+                    .barcode-image {
+                        width: 44mm;
+                        height: 18mm;
+                        display: block;
+                        flex-shrink: 0;
+                    }
+
+                    .qr-label {
+                        font-size: 8pt;
+                        color: #000;
+                        word-wrap: break-word;
+                        line-height: 1.4;
+                        margin-top: 3mm;
+                        width: 100%;
+                        overflow: hidden; 
+                    }
+                    
+                    @media print {
                         html, body {
-                            width: 75mm;
-                            height: 100mm;
-                            margin: 0 auto;
-                            font-family: Arial, sans-serif;
-                            background: white;
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
-                        }
-                        
-                        .container {
-                            width: 75mm;
-                            height: 100mm;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            text-align: center;
-                            padding: 4mm;
-                            page-break-after: avoid;
-                            page-break-inside: avoid;
-                            break-after: avoid;
-                            break-inside: avoid;
-                        }
-
-                        .qr-image {
+                            /* width: 75mm; */
+                            /* height: 100mm; */
                             width: 58mm;
-                            height: 58mm;
-                            display: block;
-                            flex-shrink: 0;
+                            height: 80mm;
+                            overflow: hidden;
                         }
-
-                        .qr-label {
-                            font-size: 8pt;
-                            color: #000;
-                            word-wrap: break-word;
-                            line-height: 1.4;
-                            margin-top: 3mm;
-                            width: 100%;
-                            overflow: hidden; 
+                        .container {
+                            page-break-after: avoid;
+                            break-after: avoid;
                         }
-                        
-                        @media print {
-                            html, body {
-                                width: 75mm;
-                                height: 100mm;
-                                overflow: hidden;
-                            }
-                            .container {
-                                page-break-after: avoid;
-                                break-after: avoid;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <img src="${qrImage.src}" alt="QR" class="qr-image">
-                        <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
-                    </div>
-                </body>
-                </html>
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <img src="${qrImage.src}" alt="QR" class="${qrImage.naturalWidth === qrImage.naturalHeight ? 'qr-image' : 'barcode-image'}">
+                    <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
+                </div>
+            </body>
+            </html>
             `);
 
             printWindow.document.close();
