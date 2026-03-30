@@ -181,10 +181,13 @@ class MonitoringDailyTankController extends Controller
             }
 
             // Generate QR Code
+            $po = $data->productionBatch->po_number ?? '';
+            $date = $data->productionBatch->date ?? '';
+
             if ($data->jenis_analisa == 'Mikro') {
-                $qrText = route('analisa.monitoring-daily-tank-mikro.show', $data->id);
+                $qrText = 'MONITORING-DAILY-TANK-MIKRO/' . $po . '/' . $date . '/' . $data->id;
             } else {
-                $qrText = route('analisa.monitoring-daily-tank-kimia.show', $data->id);
+                $qrText = 'MONITORING-DAILY-TANK-KIMIA/' . $po . '/' . $date . '/' . $data->id;
             }
             $qrCode = DNS2DFacade::getBarcodePNG($qrText, 'QRCODE');
 

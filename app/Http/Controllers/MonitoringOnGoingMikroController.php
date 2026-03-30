@@ -183,7 +183,10 @@ class MonitoringOnGoingMikroController extends Controller
                 'productionBatch',
             ])->findOrFail($id);
 
-            $qrCode = DNS2DFacade::getBarcodePNG(route('monitoring-ongoing-mikro.analisa', $monitoring->id), 'QRCODE');
+            $po = $monitoring->productionBatch->po_number ?? '';
+            $date = $monitoring->productionBatch->date ?? '';
+            $qrText = 'MONITORING-ONGOING-MIKRO/' . $po . '/' . $date . '/' . $monitoring->id;
+            $qrCode = DNS2DFacade::getBarcodePNG($qrText, 'QRCODE');
 
             // Gabungkan jenis sampel
             $jenisSampel = collect([

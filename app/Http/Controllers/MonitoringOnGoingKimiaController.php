@@ -152,7 +152,10 @@ class MonitoringOnGoingKimiaController extends Controller
                 'color'
             ])->findOrFail($id);
 
-            $qrCode = DNS2DFacade::getBarcodePNG(route('monitoring-ongoing-kimia.analisa', $monitoring->id), 'QRCODE');
+            $po = $monitoring->productionBatch->po_number ?? '';
+            $date = $monitoring->productionBatch->date ?? '';
+            $qrText = 'MONITORING-ONGOING-KIMIA/' . $po . '/' . $date . '/' . $monitoring->id;
+            $qrCode = DNS2DFacade::getBarcodePNG($qrText, 'QRCODE');
 
             $response = [
                 'id' => $monitoring->id,
