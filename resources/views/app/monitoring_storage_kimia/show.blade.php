@@ -1021,8 +1021,15 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            canvas.width = 302;
-            canvas.height = 378;
+            const isBarcode = qrImage.naturalWidth > qrImage.naturalHeight;
+
+            if (isBarcode) {
+                canvas.width = 1200;
+                canvas.height = 600;
+            } else {
+                canvas.width = 600;
+                canvas.height = 750;
+            }
 
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1030,21 +1037,32 @@
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = function() {
-                const qrSize = 220;
-                const qrX = (canvas.width - qrSize) / 2;
-                const qrY = (canvas.height - qrSize) / 2 - 15;
+                let imgW, imgH, imgX, imgY;
 
-                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+                if (isBarcode) {
+                    imgW = 1100;
+                    imgH = 320;
+                    imgX = (canvas.width - imgW) / 2;
+                    imgY = 60;
+                } else {
+                    const qrSize = 500;
+                    imgW = qrSize;
+                    imgH = qrSize;
+                    imgX = (canvas.width - qrSize) / 2;
+                    imgY = (canvas.height - qrSize) / 2 - 30;
+                }
+
+                ctx.drawImage(img, imgX, imgY, imgW, imgH);
 
                 ctx.fillStyle = 'black';
-                ctx.font = 'bold 11px Arial';
+                ctx.font = `bold ${isBarcode ? '56px' : '36px'} Arial`;
                 ctx.textAlign = 'center';
                 const labelText = qrLabel ? qrLabel.textContent.trim() : '';
-                const maxWidth = 270;
-                const lineHeight = 15;
+                const maxWidth = isBarcode ? 1100 : 560;
+                const lineHeight = isBarcode ? 65 : 40;
                 const words = labelText.split('/');
                 let line = '';
-                let y = qrY + qrSize + 20;
+                let y = imgY + imgH + (isBarcode ? 70 : 50);
 
                 words.forEach((word, index) => {
                     if (index > 0) line += '/';
@@ -1062,15 +1080,15 @@
 
                 canvas.toBlob(function(blob) {
                     if (navigator.share && navigator.canShare && navigator.canShare({
-                            files: [new File([blob], 'qr.png', {
+                            files: [new File([blob], 'code.png', {
                                 type: 'image/png'
                             })]
                         })) {
                         navigator.share({
-                            files: [new File([blob], 'qr-code.png', {
+                            files: [new File([blob], 'barcode.png', {
                                 type: 'image/png'
                             })],
-                            title: 'Print QR Code'
+                            title: 'Print Kode Pelarutan'
                         }).catch(() => fallbackPrint(blob));
                     } else {
                         fallbackPrint(blob);
@@ -1082,7 +1100,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Gagal memuat QR code'
+                    text: 'Gagal memuat kode'
                 });
             };
             img.src = qrImage.src;
