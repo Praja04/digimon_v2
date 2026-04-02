@@ -116,7 +116,7 @@ class ScanController extends Controller
 
         if (isset($barcodePrefix[$detectedPrefix]) && !str_contains($input, '/')) {
             $type = $barcodePrefix[$detectedPrefix];
-            $id   = substr($input, 8);
+            $id   = substr($input, 10);
 
             if (!is_numeric($id) || empty($id)) {
                 return response()->json([
