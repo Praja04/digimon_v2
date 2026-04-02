@@ -53,17 +53,6 @@ class ScanController extends Controller
         ],
     ];
 
-    private $barcodePOLength = [
-        'P1' => 8,
-        'P2' => 8,
-        'BA' => 8,
-        'BM' => 8,
-        'TB' => 8,
-        'AC' => 8,
-        'SK' => 8,
-        'SM' => 8,
-    ];
-
     public function index()
     {
         return view('app.scan.index');
@@ -126,10 +115,9 @@ class ScanController extends Controller
         $detectedPrefix = strtoupper(substr($input, 0, 2));
 
         if (isset($barcodePrefix[$detectedPrefix]) && !str_contains($input, '/')) {
-            $type     = $barcodePrefix[$detectedPrefix];
-            $poLength = $this->barcodePOLength[$detectedPrefix] ?? 7; 
-            $offset   = 2 + $poLength;
-            $id       = substr($input, $offset);
+            $type = $barcodePrefix[$detectedPrefix];
+            $id   = substr($input, 10);
+
             if (!is_numeric($id) || empty($id)) {
                 return response()->json([
                     'status'  => 'error',
