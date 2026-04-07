@@ -557,6 +557,32 @@
                             <div>Data formulasi tidak ditemukan untuk batch ini.</div>
                         </div>
                     </div>
+
+                    <div class="card border mt-3" id="reproCard">
+                        <div class="card-header">
+                            <h6 class="mb-0 fw-semibold">Repro Dissolver</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0" id="reproTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center" style="width: 50px;">No</th>
+                                            <th style="width: 80px;">Slot</th>
+                                            <th>Kempu / Drum Number</th>
+                                            <th class="text-end" style="width: 120px;">Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reproTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">Total Items: <span class="fw-semibold"
+                                        id="repro-total">0</span></small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -647,6 +673,25 @@
                 $('#formulasiTable').closest('.card').addClass('d-none');
             }
 
+            if (data.repro && data.repro.length > 0) {
+                let reproRows = '';
+                data.repro.forEach(function(item, index) {
+                    reproRows += `
+                        <tr>
+                            <td class="text-center">${index + 1}</td>
+                            <td>${item.slot_number}</td>
+                            <td>${item.kempu_drum_number || '-'}</td>
+                            <td class="text-end">${parseFloat(item.quantity).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                $('#reproTableBody').html(reproRows);
+                $('#repro-total').text(data.repro.length);
+                $('#reproCard').removeClass('d-none');
+            } else {
+                $('#reproCard').addClass('d-none');
+            }
+
             // Tampilkan modal
             $('#formulasiModal').modal('show');
 
@@ -677,6 +722,10 @@
             $('#formulasiSourceInfo').addClass('d-none');
             $('#formulasiEmptyState').addClass('d-none');
             $('#formulasiTable').closest('.card').removeClass('d-none');
+
+            $('#reproTableBody').html('');
+            $('#repro-total').text('0');
+            $('#reproCard').addClass('d-none');
         }
 
         function sortFormulasi(formulasi) {

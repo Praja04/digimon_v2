@@ -350,6 +350,7 @@ class Pelarutan1Controller extends Controller
                         ],
                         'production_batch' => $data['data']['production_batch'] ?? null,
                         'formulasi' => $data['data']['formulasi'] ?? [],
+                        'repro' => $data['data']['repro'] ?? [],
                         'dissolver_info' => $data['data']['dissolver_info'] ?? null,
                         'formulasi_source' => $data['data']['formulasi_source'] ?? null,
                     ], 200);
