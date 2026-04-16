@@ -1,465 +1,451 @@
 @extends('layouts.component.main')
 @section('title', 'Analisa Blending Awal')
 @section('content')
-    <div class="page-content">
-        <div class="container-fluid">
-            <!-- start page title -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                        <h4 class="mb-sm-0">@yield('title')</h4>
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">@yield('title')</h4>
 
-                        <div class="page-title-right">
-                            <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
-                                <li class="breadcrumb-item"><a href="{{ route('analisa.blending-awal.index') }}">Analisa
-                                        Blending Awal</a></li>
-                                <li class="breadcrumb-item active">@yield('title')</li>
-                            </ol>
-                        </div>
-
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('analisa.blending-awal.index') }}">Analisa
+                                    Blending Awal</a></li>
+                            <li class="breadcrumb-item active">@yield('title')</li>
+                        </ol>
                     </div>
+
                 </div>
             </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row gx-lg-5">
-                                <div class="col-xl-12">
-                                    <div class="mt-xl-0 mt-5">
-                                        <div class="d-flex">
-                                            <div class="flex-grow-1">
-                                                <h4>{{ $blending->productionBatch->po_number }} (Nomor PO)</h4>
-                                                <div class="hstack gap-3 flex-wrap">
-                                                    <div><a href="#"
-                                                            class="text-primary d-block">{{ Session::get('username') }}</a>
-                                                    </div>
-                                                    <div class="vr"></div>
+        </div>
+        {{$blending}}
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row gx-lg-5">
+                            <div class="col-xl-12">
+                                <div class="mt-xl-0 mt-5">
+                                    <div class="d-flex">
+                                        <div class="flex-grow-1">
+                                            <h4>{{ $blending->productionBatch->po_number }} (Nomor PO)</h4>
+                                            <div class="hstack gap-3 flex-wrap">
+                                                <div><a href="#" class="text-primary d-block">{{ Session::get('username') }}</a>
+                                                </div>
+                                                <div class="vr"></div>
 
-                                                    <div class="text-muted">Tanggal Produksi : <span
-                                                            class="text-body fw-medium">{{ $blending->productionBatch->date }}</span>
+                                                <div class="text-muted">Tanggal Produksi : <span class="text-body fw-medium">{{ $blending->productionBatch->date }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-4">
+                                        <div class="col-lg-6 col-sm-6">
+                                            <div class="p-2 border border-dashed rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                            <i class="ri-drop-fill"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="text-muted mb-1">Variant :</p>
+                                                        <h5 class="mb-0">{{ $blending->productionBatch->variant }}
+                                                        </h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- end col -->
+                                        <div class="col-lg-6 col-sm-6">
+                                            <div class="p-2 border border-dashed rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                            <i class="ri-arrow-left-right-line"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="text-muted mb-1">Batch Range :</p>
+                                                        <h5 class="mb-0">{{ $blending->productionBatch->batch_range }}
+                                                        </h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-sm-6 mt-3">
+                                            <div class="p-2 border border-dashed rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                            <i class="ri-list-ordered"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="text-muted mb-1">Batch :</p>
+                                                        <h5 class="mb-0">{{ $blending->batch_range }}
+                                                            @if ($blending->additionalBatches)
+                                                            @foreach ($blending->additionalBatches as $relasi)
+                                                            @if (!in_array((int) $relasi->batch, array_map('intval', explode('-', $blending->batch_range))))
+                                                            -{{ $relasi->batch }}
+                                                            @endif
+                                                            @endforeach
+                                                            @endif
+                                                        </h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-sm-6 mt-3">
+                                            <div class="p-2 border border-dashed rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                            <i class="ri-hashtag"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="text-muted mb-1">Nomor Blending :</p>
+                                                        <h5 class="mb-0">{{ $blending->nomor_blending }}</h5>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div class="row mt-4">
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-drop-fill"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Variant :</p>
-                                                            <h5 class="mb-0">{{ $blending->productionBatch->variant }}
-                                                            </h5>
+                                        <div class="col-lg-6 col-sm-6 mt-3">
+                                            <div class="p-2 border border-dashed rounded">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                            <i class="ri-drop-line"></i>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                            <!-- end col -->
-                                            <div class="col-lg-6 col-sm-6">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-arrow-left-right-line"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Batch Range :</p>
-                                                            <h5 class="mb-0">{{ $blending->productionBatch->batch_range }}
-                                                            </h5>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6 col-sm-6 mt-3">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-list-ordered"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Batch :</p>
-                                                            <h5 class="mb-0">{{ $blending->batch_range }}
-                                                                @if ($blending->additionalBatches)
-                                                                    @foreach ($blending->additionalBatches as $relasi)
-                                                                        @if (!in_array((int) $relasi->batch, array_map('intval', explode('-', $blending->batch_range))))
-                                                                            -{{ $relasi->batch }}
-                                                                        @endif
-                                                                    @endforeach
-                                                                @endif
-                                                            </h5>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6 col-sm-6 mt-3">
-                                                <div class="p-2 border border-dashed rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div
-                                                                class="avatar-title rounded bg-transparent text-success fs-24">
-                                                                <i class="ri-hashtag"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted mb-1">Nomor Blending :</p>
-                                                            <h5 class="mb-0">{{ $blending->nomor_blending }}</h5>
-                                                        </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="text-muted mb-1">Volume Blending :</p>
+                                                        <h5 class="mb-0">{{ $blending->volume }} Liter</h5>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- end row -->
+                                    </div>
+                                    <!-- end row -->
 
-                                        <div class="mt-4 text-muted">
-                                            <h5 class="fs-14">Description :</h5>
-                                            <p>{{ $blending->productionBatch->description ?? '-' }}</p>
-                                        </div>
+                                    <div class="mt-4 text-muted">
+                                        <h5 class="fs-14">Description :</h5>
+                                        <p>{{ $blending->productionBatch->description ?? '-' }}</p>
                                     </div>
                                 </div>
-                                <!-- end col -->
                             </div>
-                            <!-- end row -->
+                            <!-- end col -->
                         </div>
-                        <!-- end card body -->
+                        <!-- end row -->
                     </div>
-                    <!-- end card -->
-                    <div class="col-lg-12">
-                        <div class="card">
-                            <!--end card-body-->
-                            <div class="card-body">
-                                <form id="form">
-                                    <div class="row g-3">
-                                        <div class="col-lg-4">
-                                            <input type="hidden" name="id" id="id"
-                                                value="{{ $blending->id }}">
-                                            <label class="form-label">BRIX <span style="color: red">*</span></label>
-                                            <input type="text" name="brix" id="brix"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->brix ?? '') }}">
-                                            <small class="text-danger errorBrix"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Visco <span style="color: red">*</span></label>
-                                            <input type="text" name="visco" id="visco"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->visco ?? '') }}">
-                                            <small class="text-danger errorVisco"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">NACL <span style="color: red">*</span></label>
-                                            <input type="text" name="nacl" id="nacl"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->nacl ?? '') }}">
-                                            <small class="text-danger errorNacl"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Bj <span style="color: red">*</span></label>
-                                            <input type="text" name="bj" id="bj"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->bj ?? '') }}">
-                                            <small class="text-danger errorBj"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">pH <span style="color: red">*</span></label>
-                                            <input type="text" name="ph" id="ph"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->ph ?? '') }}">
-                                            <small class="text-danger errorPh"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Aw <span style="color: red">*</span></label>
-                                            <input type="text" name="aw" id="aw"
-                                                class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->aw ?? '') }}">
-                                            <small class="text-danger errorAw"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Organo <span style="color: red">*</span></label>
-                                            <input type="text" name="organo" id="organo" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();"
-                                                value="{{ str_replace('.', ',', $blending->organo ?? '') }}">
-                                            <small class="text-danger errorOrgano"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Aroma <span style="color: red">*</span></label>
-                                            <input type="text" name="aroma" id="aroma" class="form-control"
-                                                oninput="this.value = this.value.toUpperCase();"
-                                                value="{{ str_replace('.', ',', $blending->aroma ?? '') }}">
-                                            <small class="text-danger errorAroma"></small>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <label class="form-label">Warna <span style="color: red">*</span></label>
-                                            <select name="color" id="color" class="select2 form-control">
-                                                <option value="">-- Pilih Warna --</option>
-                                                @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}"
-                                                        {{ $blending->color_id == $color->id ? 'selected' : '' }}>
-                                                        {{ $color->name }} ({{ $color->code }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-danger errorColor"></small>
-                                        </div>
-                                        <div class="col-lg-12">
-                                            <label class="form-label">Status <span style="color: red">*</span></label>
-                                            <select name="status_disposition" id="status_disposition"
-                                                class="form-control disposition-select">
-                                                <option value="">-- Pilih Status --</option>
-                                                <option value="OK" {{ $blending->status == 'OK' ? 'selected' : '' }}>
-                                                    OK
-                                                </option>
-                                                <option value="NOT OK"
-                                                    {{ $blending->status == 'NOT OK' ? 'selected' : '' }}>NOT
-                                                    OK</option>
-                                                <option value="Adjustment"
-                                                    {{ $blending->status == 'Adjustment' ? 'selected' : '' }}>
-                                                    Adjustment</option>
-                                            </select>
-                                            <small class="text-danger errorStatusDisposition"></small>
-                                        </div>
-                                        @if (auth()->user()->role == 'Foreman')
-                                            <div class="col-lg-12">
-                                                <label class="form-label">Disposition</label>
-                                                <select name="disposition" class="form-control disposition-select">
-                                                    <option value="">-- Pilih Disposition --</option>
-                                                    <option value="Release">Release</option>
-                                                    <option value="Release Bersyarat">Release Bersyarat</option>
-                                                    <option value="Resampling">Resampling</option>
-                                                    <option value="Reject">Reject</option>
-                                                    <option value="Repro">Repro</option>
-                                                    <option value="Jalan Bareng">Jalan Bareng</option>
-                                                    <option value="Leveling">Leveling</option>
-                                                </select>
-                                            </div>
-                                        @endif
-                                        <div class="col-lg-12">
-                                            <label class="form-label">Catatan</label>
-                                            <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $blending->disposition_remark ?? '' }}</textarea>
-                                        </div>
+                    <!-- end card body -->
+                </div>
+                <!-- end card -->
+                <div class="col-lg-12">
+                    <div class="card">
+                        <!--end card-body-->
+                        <div class="card-body">
+                            <form id="form">
+                                <div class="row g-3">
+                                    <div class="col-lg-4">
+                                        <input type="hidden" name="id" id="id" value="{{ $blending->id }}">
+                                        <label class="form-label">BRIX <span style="color: red">*</span></label>
+                                        <input type="text" name="brix" id="brix" class="form-control comma-input" placeholder="Contoh: 0,00" value="{{ str_replace('.', ',', $blending->brix ?? '') }}">
+                                        <small class="text-danger errorBrix"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Visco <span style="color: red">*</span></label>
+                                        <input type="text" name="visco" id="visco" class="form-control comma-input" placeholder="Contoh: 0,00" value="{{ str_replace('.', ',', $blending->visco ?? '') }}">
+                                        <small class="text-danger errorVisco"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">NACL <span style="color: red">*</span></label>
+                                        <input type="text" name="nacl" id="nacl" class="form-control comma-input" placeholder="Contoh: 0,00" value="{{ str_replace('.', ',', $blending->nacl ?? '') }}">
+                                        <small class="text-danger errorNacl"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Bj <span style="color: red">*</span></label>
+                                        <input type="text" name="bj" id="bj" class="form-control comma-input" placeholder="Contoh: 0,00" value="{{ str_replace('.', ',', $blending->bj ?? '') }}">
+                                        <small class="text-danger errorBj"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">pH <span style="color: red">*</span></label>
+                                        <input type="text" name="ph" id="ph" class="form-control comma-input" placeholder="Contoh: 0,00" value="{{ str_replace('.', ',', $blending->ph ?? '') }}">
+                                        <small class="text-danger errorPh"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Aw <span style="color: red">*</span></label>
+                                        <input type="text" name="aw" id="aw" class="form-control comma-input" placeholder="Contoh: 0,00" value="{{ str_replace('.', ',', $blending->aw ?? '') }}">
+                                        <small class="text-danger errorAw"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Organo <span style="color: red">*</span></label>
+                                        <input type="text" name="organo" id="organo" class="form-control" oninput="this.value = this.value.toUpperCase();" value="{{ str_replace('.', ',', $blending->organo ?? '') }}">
+                                        <small class="text-danger errorOrgano"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Aroma <span style="color: red">*</span></label>
+                                        <input type="text" name="aroma" id="aroma" class="form-control" oninput="this.value = this.value.toUpperCase();" value="{{ str_replace('.', ',', $blending->aroma ?? '') }}">
+                                        <small class="text-danger errorAroma"></small>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Warna <span style="color: red">*</span></label>
+                                        <select name="color" id="color" class="select2 form-control">
+                                            <option value="">-- Pilih Warna --</option>
+                                            @foreach ($colors as $color)
+                                            <option value="{{ $color->id }}" {{ $blending->color_id == $color->id ? 'selected' : '' }}>
+                                                {{ $color->name }} ({{ $color->code }})
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-danger errorColor"></small>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <label class="form-label">Status <span style="color: red">*</span></label>
+                                        <select name="status_disposition" id="status_disposition" class="form-control disposition-select">
+                                            <option value="">-- Pilih Status --</option>
+                                            <option value="OK" {{ $blending->status == 'OK' ? 'selected' : '' }}>
+                                                OK
+                                            </option>
+                                            <option value="NOT OK" {{ $blending->status == 'NOT OK' ? 'selected' : '' }}>NOT
+                                                OK</option>
+                                            <option value="Adjustment" {{ $blending->status == 'Adjustment' ? 'selected' : '' }}>
+                                                Adjustment</option>
+                                        </select>
+                                        <small class="text-danger errorStatusDisposition"></small>
+                                    </div>
+                                    @if (auth()->user()->role == 'Foreman')
+                                    <div class="col-lg-12">
+                                        <label class="form-label">Disposition</label>
+                                        <select name="disposition" class="form-control disposition-select">
+                                            <option value="">-- Pilih Disposition --</option>
+                                            <option value="Release">Release</option>
+                                            <option value="Release Bersyarat">Release Bersyarat</option>
+                                            <option value="Resampling">Resampling</option>
+                                            <option value="Reject">Reject</option>
+                                            <option value="Repro">Repro</option>
+                                            <option value="Jalan Bareng">Jalan Bareng</option>
+                                            <option value="Leveling">Leveling</option>
+                                        </select>
+                                    </div>
+                                    @endif
+                                    <div class="col-lg-12">
+                                        <label class="form-label">Catatan</label>
+                                        <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2" placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $blending->disposition_remark ?? '' }}</textarea>
+                                    </div>
 
-                                        <div class="mb-3 d-none adjustment-qty-wrapper">
-                                            <h6 class="form-label fw-bold">Adjustment Qty</h6>
-                                            <div class="row g-3">
-                                                <div class="col-lg-4">
-                                                    <label class="form-label">Air (Liter)</label>
-                                                    <input type="text" name="adjustment_qty_air"
-                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
-                                                        value="{{ $blending->adjustment_qty_air ?? '' }}">
-                                                </div>
-                                                <div class="col-lg-4">
-                                                    <label class="form-label">Caramel (Kg)</label>
-                                                    <input type="text" name="adjustment_qty_caramel"
-                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
-                                                        value="{{ $blending->adjustment_qty_caramel ?? '' }}">
-                                                </div>
-                                                <div class="col-lg-4">
-                                                    <label class="form-label">Garam (Kg)</label>
-                                                    <input type="text" name="adjustment_qty_garam"
-                                                        class="form-control adjustment-qty comma-input" placeholder="0,00"
-                                                        value="{{ $blending->adjustment_qty_garam ?? '' }}">
-                                                </div>
+                                    <div class="mb-3 d-none adjustment-qty-wrapper">
+                                        <h6 class="form-label fw-bold">Adjustment Qty</h6>
+                                        <div class="row g-3">
+                                            <div class="col-lg-4">
+                                                <label class="form-label">Air (Liter)</label>
+                                                <input type="text" name="adjustment_qty_air" class="form-control adjustment-qty comma-input" placeholder="0,00" value="{{ $blending->adjustment_qty_air ?? '' }}">
                                             </div>
-                                        </div>
-                                        <div class="d-flex justify-content-end">
-                                            <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                                            <div class="col-lg-4">
+                                                <label class="form-label">Caramel (Kg)</label>
+                                                <input type="text" name="adjustment_qty_caramel" class="form-control adjustment-qty comma-input" placeholder="0,00" value="{{ $blending->adjustment_qty_caramel ?? '' }}">
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <label class="form-label">Garam (Kg)</label>
+                                                <input type="text" name="adjustment_qty_garam" class="form-control adjustment-qty comma-input" placeholder="0,00" value="{{ $blending->adjustment_qty_garam ?? '' }}">
+                                            </div>
                                         </div>
                                     </div>
-                                </form>
-                            </div>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @section('scripts')
-    <script>
-        $('.select2').select2({
-            placeholder: '-- Pilih Opsi --'
+<script>
+    $('.select2').select2({
+        placeholder: '-- Pilih Opsi --'
+    });
+
+    $(document).ready(function() {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
         });
 
-        $(document).ready(function() {
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        document.querySelectorAll('.comma-input').forEach(function(el) {
+            el.addEventListener('input', function() {
+                const value = this.value;
+                if (value.includes('.')) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Format Salah!',
+                        text: 'Gunakan tanda koma (,) untuk desimal, bukan titik (.)',
+                        confirmButtonText: 'Mengerti',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    this.value = value.replace(/\./g, ',');
                 }
             });
+        });
 
-            document.querySelectorAll('.comma-input').forEach(function(el) {
-                el.addEventListener('input', function() {
-                    const value = this.value;
-                    if (value.includes('.')) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Format Salah!',
-                            text: 'Gunakan tanda koma (,) untuk desimal, bukan titik (.)',
-                            confirmButtonText: 'Mengerti',
-                            confirmButtonColor: '#3085d6'
-                        });
-                        this.value = value.replace(/\./g, ',');
-                    }
-                });
-            });
+        function toggleAdjustmentFields(status, showOnly = false) {
+            const qtyWrapper = $('.adjustment-qty-wrapper');
+            const qtyInput = $('.adjustment-qty');
 
-            function toggleAdjustmentFields(status, showOnly = false) {
-                const qtyWrapper = $('.adjustment-qty-wrapper');
-                const qtyInput = $('.adjustment-qty');
+            if (status === 'Adjustment') {
+                qtyWrapper.removeClass('d-none');
+                qtyInput.prop('required', true);
+            } else {
+                qtyWrapper.addClass('d-none');
+                qtyInput.prop('required', false);
 
-                if (status === 'Adjustment') {
-                    qtyWrapper.removeClass('d-none');
-                    qtyInput.prop('required', true);
-                } else {
-                    qtyWrapper.addClass('d-none');
-                    qtyInput.prop('required', false);
-
-                    if (!showOnly) {
-                        qtyInput.val('');
-                    }
+                if (!showOnly) {
+                    qtyInput.val('');
                 }
             }
+        }
 
-            $('#status_disposition').on('change', function() {
-                const selected = $(this).val();
-                toggleAdjustmentFields(selected);
-            });
+        $('#status_disposition').on('change', function() {
+            const selected = $(this).val();
+            toggleAdjustmentFields(selected);
+        });
 
-            $('#form').submit(function(e) {
-                e.preventDefault();
+        $('#form').submit(function(e) {
+            e.preventDefault();
 
-                $.ajax({
-                    data: $(this).serialize(),
-                    url: "{{ route('analisa.blending-awal.update') }}",
-                    type: "POST",
-                    dataType: 'json',
-                    beforeSend: function() {
-                        $('#save').prop('disabled', true).html(
-                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                        );
+            $.ajax({
+                data: $(this).serialize(),
+                url: "{{ route('analisa.blending-awal.update') }}",
+                type: "POST",
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#save').prop('disabled', true).html(
+                        '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
+                    );
 
-                        $('.form-control').removeClass('is-invalid');
-                        $('.text-danger').html('');
-                    },
-                    complete: function() {
-                        $('#save').prop('disabled', false).text('Simpan');
-                    },
-                    success: function(response) {
+                    $('.form-control').removeClass('is-invalid');
+                    $('.text-danger').html('');
+                },
+                complete: function() {
+                    $('#save').prop('disabled', false).text('Simpan');
+                },
+                success: function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sukses',
+                        text: response.message,
+                    }).then(() => {
+                        window.location.href =
+                            "{{ route('analisa.blending-awal.show', '') }}/" + {
+                                {
+                                    $blending - > productionBatch - > id
+                                }
+                            };
+                    });
+                },
+                error: function(xhr) {
+                    let response = xhr.responseJSON;
+
+                    if (xhr.status === 409 && response && response.message) {
                         Swal.fire({
-                            icon: 'success',
-                            title: 'Sukses',
+                            icon: 'warning',
+                            title: 'Gagal Disimpan',
                             text: response.message,
-                        }).then(() => {
-                            window.location.href =
-                                "{{ route('analisa.blending-awal.show', '') }}/" +
-                                {{ $blending->productionBatch->id }};
                         });
-                    },
-                    error: function(xhr) {
-                        let response = xhr.responseJSON;
+                        return;
+                    }
 
-                        if (xhr.status === 409 && response && response.message) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Gagal Disimpan',
-                                text: response.message,
-                            });
-                            return;
-                        }
-
-                        if (xhr.status === 403 && response && response.message) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Akses Ditolak',
-                                text: response.message,
-                            });
-                            return;
-                        }
-
-                        if (xhr.status === 422 && response && response.errors) {
-                            let errors = response.errors;
-
-                            if (errors.brix) {
-                                $('#brix').addClass('is-invalid');
-                                $('.errorBrix').html(errors.brix.join('<br>'));
-                            }
-                            if (errors.nacl) {
-                                $('#nacl').addClass('is-invalid');
-                                $('.errorNacl').html(errors.nacl.join('<br>'));
-                            }
-                            if (errors.bj) {
-                                $('#bj').addClass('is-invalid');
-                                $('.errorBj').html(errors.bj.join('<br>'));
-                            }
-                            if (errors.visco) {
-                                $('#visco').addClass('is-invalid');
-                                $('.errorVisco').html(errors.visco.join('<br>'));
-                            }
-                            if (errors.aw) {
-                                $('#aw').addClass('is-invalid');
-                                $('.errorAw').html(errors.aw.join('<br>'));
-                            }
-                            if (errors.organo) {
-                                $('#organo').addClass('is-invalid');
-                                $('.errorOrgano').html(errors.organo.join('<br>'));
-                            }
-                            if (errors.aroma) {
-                                $('#aroma').addClass('is-invalid');
-                                $('.errorAroma').html(errors.aroma.join('<br>'));
-                            }
-                            if (errors.ph) {
-                                $('#ph').addClass('is-invalid');
-                                $('.errorPh').html(errors.ph.join('<br>'));
-                            }
-                            if (errors.color) {
-                                $('#color').addClass('is-invalid');
-                                $('.errorColor').html(errors.color.join('<br>'));
-                            }
-                            if (errors.status_disposition) {
-                                $('#status_disposition').addClass('is-invalid');
-                                $('.errorStatusDisposition').html(errors.status_disposition
-                                    .join('<br>'));
-                            }
-                            if (errors.disposition) {
-                                $('#disposition').addClass('is-invalid');
-                                $('.errorDisposition').html(errors.disposition.join('<br>'));
-                            }
-                            if (errors.adjustment_qty_air) {
-                                $('input[name="adjustment_qty_air"]').addClass('is-invalid');
-                            }
-                            if (errors.adjustment_qty_caramel) {
-                                $('input[name="adjustment_qty_caramel"]').addClass(
-                                    'is-invalid');
-                            }
-                            if (errors.adjustment_qty_garam) {
-                                $('input[name="adjustment_qty_garam"]').addClass('is-invalid');
-                            }
-
-                            return;
-                        }
-
+                    if (xhr.status === 403 && response && response.message) {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Kesalahan',
-                            text: 'Terjadi kesalahan, silakan coba lagi.',
+                            title: 'Akses Ditolak',
+                            text: response.message,
                         });
+                        return;
                     }
-                });
+
+                    if (xhr.status === 422 && response && response.errors) {
+                        let errors = response.errors;
+
+                        if (errors.brix) {
+                            $('#brix').addClass('is-invalid');
+                            $('.errorBrix').html(errors.brix.join('<br>'));
+                        }
+                        if (errors.nacl) {
+                            $('#nacl').addClass('is-invalid');
+                            $('.errorNacl').html(errors.nacl.join('<br>'));
+                        }
+                        if (errors.bj) {
+                            $('#bj').addClass('is-invalid');
+                            $('.errorBj').html(errors.bj.join('<br>'));
+                        }
+                        if (errors.visco) {
+                            $('#visco').addClass('is-invalid');
+                            $('.errorVisco').html(errors.visco.join('<br>'));
+                        }
+                        if (errors.aw) {
+                            $('#aw').addClass('is-invalid');
+                            $('.errorAw').html(errors.aw.join('<br>'));
+                        }
+                        if (errors.organo) {
+                            $('#organo').addClass('is-invalid');
+                            $('.errorOrgano').html(errors.organo.join('<br>'));
+                        }
+                        if (errors.aroma) {
+                            $('#aroma').addClass('is-invalid');
+                            $('.errorAroma').html(errors.aroma.join('<br>'));
+                        }
+                        if (errors.ph) {
+                            $('#ph').addClass('is-invalid');
+                            $('.errorPh').html(errors.ph.join('<br>'));
+                        }
+                        if (errors.color) {
+                            $('#color').addClass('is-invalid');
+                            $('.errorColor').html(errors.color.join('<br>'));
+                        }
+                        if (errors.status_disposition) {
+                            $('#status_disposition').addClass('is-invalid');
+                            $('.errorStatusDisposition').html(errors.status_disposition
+                                .join('<br>'));
+                        }
+                        if (errors.disposition) {
+                            $('#disposition').addClass('is-invalid');
+                            $('.errorDisposition').html(errors.disposition.join('<br>'));
+                        }
+                        if (errors.adjustment_qty_air) {
+                            $('input[name="adjustment_qty_air"]').addClass('is-invalid');
+                        }
+                        if (errors.adjustment_qty_caramel) {
+                            $('input[name="adjustment_qty_caramel"]').addClass(
+                                'is-invalid');
+                        }
+                        if (errors.adjustment_qty_garam) {
+                            $('input[name="adjustment_qty_garam"]').addClass('is-invalid');
+                        }
+
+                        return;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Kesalahan',
+                        text: 'Terjadi kesalahan, silakan coba lagi.',
+                    });
+                }
             });
         });
-    </script>
+    });
+</script>
 @endsection
