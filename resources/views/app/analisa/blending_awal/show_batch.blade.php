@@ -21,7 +21,7 @@
                 </div>
             </div>
         </div>
-       
+
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
@@ -347,12 +347,7 @@
                         title: 'Sukses',
                         text: response.message,
                     }).then(() => {
-                        window.location.href =
-                            "{{ route('analisa.blending-awal.show', '') }}/" + {
-                                {
-                                    $blending - > productionBatch - > id
-                                }
-                            };
+                        window.location.href = "{{ route('analisa.blending-awal.show', $blending->productionBatch->id) }}";
                     });
                 },
                 error: function(xhr) {
