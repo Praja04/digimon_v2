@@ -76,6 +76,7 @@
                                             <th>Asal Bahan</th>
                                             <th>Jumlah Kedatangan</th>
                                             <th>Selesai Analisa</th>
+                                            <th>Keterangan</th>
                                             <th>QR Code</th>
                                             <th>Aksi</th>
                                         </tr>
@@ -197,247 +198,62 @@
     <script>
         function printQR(id) {
             const printArea = document.getElementById(id);
-
-            if (!printArea) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Area print tidak ditemukan'
-                });
-                return;
-            }
-
+            if (!printArea) { Swal.fire({ icon: 'error', title: 'Error', text: 'Area print tidak ditemukan' }); return; }
             const qrImage = printArea.querySelector('img');
             const qrLabel = printArea.querySelector('.small.text-muted');
-
-            if (!qrImage) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'QR Code tidak ditemukan'
-                });
-                return;
-            }
-
+            if (!qrImage) { Swal.fire({ icon: 'error', title: 'Error', text: 'QR Code tidak ditemukan' }); return; }
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                printQRMobile(qrImage, qrLabel);
-            } else {
-                printQRDesktop(qrImage, qrLabel);
-            }
+            if (isMobile) { printQRMobile(qrImage, qrLabel); } else { printQRDesktop(qrImage, qrLabel); }
         }
 
         function printQRDesktop(qrImage, qrLabel) {
             const printWindow = window.open('', '_blank', 'width=320,height=400');
-
-            if (!printWindow) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Pop-up Diblokir',
-                    text: 'Mohon izinkan pop-up untuk print.'
-                });
-                return;
-            }
-
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Print QR</title>
-                    <style>
-                        @page {
-                            size: 75mm 100mm;
-                            margin: 0;
-                        }
-                        
-                        * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }
-                        
-                        html, body {
-                            width: 75mm;
-                            height: 100mm;
-                            margin: 0 auto;
-                            font-family: Arial, sans-serif;
-                            background: white;
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
-                        }
-                        
-                        .container {
-                            width: 75mm;
-                            height: 100mm;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            text-align: center;
-                            padding: 4mm;
-                            page-break-after: avoid;
-                            page-break-inside: avoid;
-                            break-after: avoid;
-                            break-inside: avoid;
-                        }
-
-                        .qr-image {
-                            width: 58mm;
-                            height: 58mm;
-                            display: block;
-                            flex-shrink: 0;
-                        }
-
-                        .qr-label {
-                            font-size: 8pt;
-                            color: #000;
-                            word-wrap: break-word;
-                            line-height: 1.4;
-                            margin-top: 3mm;
-                            width: 100%;
-                            overflow: hidden; 
-                        }
-                        
-                        @media print {
-                            html, body {
-                                width: 75mm;
-                                height: 100mm;
-                                overflow: hidden;
-                            }
-                            .container {
-                                page-break-after: avoid;
-                                break-after: avoid;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <img src="${qrImage.src}" alt="QR" class="qr-image">
-                        <div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div>
-                    </div>
-                </body>
-                </html>
-            `);
-
+            if (!printWindow) { Swal.fire({ icon: 'error', title: 'Pop-up Diblokir', text: 'Mohon izinkan pop-up untuk print.' }); return; }
+            printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print QR</title><style>@page{size:75mm 100mm;margin:0;}*{margin:0;padding:0;box-sizing:border-box;}html,body{width:75mm;height:100mm;margin:0 auto;font-family:Arial,sans-serif;background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.container{width:75mm;height:100mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4mm;}.qr-image{width:58mm;height:58mm;display:block;flex-shrink:0;}.qr-label{font-size:8pt;color:#000;word-wrap:break-word;line-height:1.4;margin-top:3mm;width:100%;overflow:hidden;}@media print{html,body{width:75mm;height:100mm;overflow:hidden;}}</style></head><body><div class="container"><img src="${qrImage.src}" alt="QR" class="qr-image"><div class="qr-label"><strong>${qrLabel ? qrLabel.textContent.trim() : ''}</strong></div></div></body></html>`);
             printWindow.document.close();
-
-            printWindow.onload = function() {
-                setTimeout(function() {
-                    printWindow.focus();
-                    printWindow.print();
-                    setTimeout(function() {
-                        printWindow.close();
-                    }, 500);
-                }, 250);
-            };
+            printWindow.onload = function() { setTimeout(function() { printWindow.focus(); printWindow.print(); setTimeout(function() { printWindow.close(); }, 500); }, 250); };
         }
 
         function printQRMobile(qrImage, qrLabel) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-
-            canvas.width = 302;
-            canvas.height = 378;
-
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+            canvas.width = 302; canvas.height = 378;
+            ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = function() {
-                const qrSize = 220;
-                const qrX = (canvas.width - qrSize) / 2;
-                const qrY = (canvas.height - qrSize) / 2 - 15;
-
+                const qrSize = 220, qrX = (canvas.width - qrSize) / 2, qrY = (canvas.height - qrSize) / 2 - 15;
                 ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
-
-                ctx.fillStyle = 'black';
-                ctx.font = 'bold 11px Arial';
-                ctx.textAlign = 'center';
+                ctx.fillStyle = 'black'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
                 const labelText = qrLabel ? qrLabel.textContent.trim() : '';
-                const maxWidth = 270;
-                const lineHeight = 15;
-                const words = labelText.split('/');
-                let line = '';
-                let y = qrY + qrSize + 20;
-
+                const maxWidth = 270, lineHeight = 15, words = labelText.split('/');
+                let line = '', y = qrY + qrSize + 20;
                 words.forEach((word, index) => {
                     if (index > 0) line += '/';
                     const testLine = line + word;
-                    const metrics = ctx.measureText(testLine);
-                    if (metrics.width > maxWidth && index > 0) {
-                        ctx.fillText(line, canvas.width / 2, y);
-                        line = word;
-                        y += lineHeight;
-                    } else {
-                        line = testLine;
-                    }
+                    if (ctx.measureText(testLine).width > maxWidth && index > 0) { ctx.fillText(line, canvas.width / 2, y); line = word; y += lineHeight; } else { line = testLine; }
                 });
                 ctx.fillText(line, canvas.width / 2, y);
-
                 canvas.toBlob(function(blob) {
-                    if (navigator.share && navigator.canShare && navigator.canShare({
-                            files: [new File([blob], 'qr.png', {
-                                type: 'image/png'
-                            })]
-                        })) {
-                        navigator.share({
-                            files: [new File([blob], 'qr-code.png', {
-                                type: 'image/png'
-                            })],
-                            title: 'Print QR Code'
-                        }).catch(() => fallbackPrint(blob));
-                    } else {
-                        fallbackPrint(blob);
-                    }
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'qr.png', { type: 'image/png' })] })) {
+                        navigator.share({ files: [new File([blob], 'qr-code.png', { type: 'image/png' })], title: 'Print QR Code' }).catch(() => fallbackPrint(blob));
+                    } else { fallbackPrint(blob); }
                 }, 'image/png');
             };
-
-            img.onerror = function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Gagal memuat QR code'
-                });
-            };
+            img.onerror = function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal memuat QR code' }); };
             img.src = qrImage.src;
         }
 
         function fallbackPrint(blob) {
             const url = URL.createObjectURL(blob);
             const printWindow = window.open(url, '_blank');
-
-            if (!printWindow) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Pop-up Diblokir',
-                    text: 'Mohon izinkan pop-up untuk print.'
-                });
-                return;
-            }
-
-            printWindow.onload = function() {
-                setTimeout(function() {
-                    printWindow.print();
-                }, 500);
-            };
-        }
-
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (!printWindow) { Swal.fire({ icon: 'error', title: 'Pop-up Diblokir', text: 'Mohon izinkan pop-up untuk print.' }); return; }
+            printWindow.onload = function() { setTimeout(function() { printWindow.print(); }, 500); };
         }
 
         $(document).ready(function() {
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
+            $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
 
-            // Inisialisasi DataTable
             var table = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -445,77 +261,48 @@
                     url: "{{ route('rmpm.index') }}",
                     data: function(d) {
                         d.start_date = $('#start_date').val();
-                        d.end_date = $('#end_date').val();
-                        d.jenis = $('#jenis').val();
+                        d.end_date   = $('#end_date').val();
+                        d.jenis      = $('#jenis').val();
                     }
                 },
-                columns: [{
-                        data: 'DT_RowIndex',
-                        name: 'DT_RowIndex',
+                columns: [
+                    { data: 'DT_RowIndex',        name: 'DT_RowIndex',        orderable: false, searchable: false },
+                    { data: 'no_spb',              name: 'no_spb' },
+                    { data: 'jenis',               name: 'jenis' },
+                    { data: 'supplier',            name: 'supplier' },
+                    { data: 'tanggal_kedatangan',  name: 'tanggal_kedatangan' },
+                    { data: 'asal_bahan',          name: 'asal_bahan' },
+                    { data: 'jumlah_kedatangan',   name: 'jumlah_kedatangan' },
+                    { data: 'status',              name: 'status',    orderable: false, searchable: false },
+                    {
+                        // Kolom Keterangan — tampilkan teks jika ada, dash jika kosong
+                        data: 'keterangan',
+                        name: 'keterangan',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        render: function(data) {
+                            if (!data) return '<span class="text-muted">-</span>';
+                            // Potong jika terlalu panjang, tampilkan tooltip untuk full text
+                            const short = data.length > 60 ? data.substring(0, 60) + '…' : data;
+                            return `<span title="${data.replace(/"/g, '&quot;')}" style="cursor:default;">${short}</span>`;
+                        }
                     },
-                    {
-                        data: 'no_spb',
-                        name: 'no_spb'
-                    },
-                    {
-                        data: 'jenis',
-                        name: 'jenis'
-                    },
-                    {
-                        data: 'supplier',
-                        name: 'supplier'
-                    },
-                    {
-                        data: 'tanggal_kedatangan',
-                        name: 'tanggal_kedatangan'
-                    },
-                    {
-                        data: 'asal_bahan',
-                        name: 'asal_bahan'
-                    },
-                    {
-                        data: 'jumlah_kedatangan',
-                        name: 'jumlah_kedatangan'
-                    },
-                    {
-                        data: 'status',
-                        name: 'status',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'qr_code',
-                        name: 'qr_code',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false
-                    },
+                    { data: 'qr_code',  name: 'qr_code',  orderable: false, searchable: false },
+                    { data: 'action',   name: 'action',   orderable: false, searchable: false },
                 ]
             });
 
-            // Tombol Filter
-            $('#btnFilter').click(function() {
-                table.ajax.reload();
-            });
+            $('#btnFilter').click(function() { table.ajax.reload(); });
 
-            // Tombol Reset
             $('#btnReset').click(function() {
                 $('#start_date').val('');
                 $('#end_date').val('');
+                $('#jenis').val('');
                 table.ajax.reload();
             });
 
             $('#start_date, #end_date').on('keypress', function(e) {
-                if (e.which == 13) {
-                    table.ajax.reload();
-                }
+                if (e.which == 13) table.ajax.reload();
             });
 
             $('body').on('click', '#btnAdd', function() {
@@ -523,7 +310,6 @@
                 $('#modalLabel').html("Tambah Data - Identitas RM");
                 $('#modal').modal('show');
                 $('#form').trigger("reset");
-
                 $('.form-control').removeClass('is-invalid');
                 $('.text-danger').html('');
             });
@@ -531,35 +317,23 @@
             $('body').on('click', '#btnQRCode', function() {
                 let id = $(this).data('id');
                 $('#qrModalLabel').html("QR Code - RMPM #" + id);
-
-                $('#qrImageArea').html(
-                    '<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>'
-                );
+                $('#qrImageArea').html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
                 $('#qrLabelText').html('Memuat QR Code...');
                 $('#qrModal').modal('show');
-
                 $.ajax({
                     url: "{{ route('rmpm.qrcode', '') }}/" + id,
                     method: 'GET',
                     success: function(response) {
                         if (response.status === 'success') {
-                            $('#qrImageArea').html(
-                                '<img src="data:image/png;base64,' + response.qrCode +
-                                '" alt="QR Code" style="max-width: 300px;">'
-                            );
-                            $('#qrLabelText').html(
-                                '<strong>' + response.label + '</strong>'
-                            );
+                            $('#qrImageArea').html('<img src="data:image/png;base64,' + response.qrCode + '" alt="QR Code" style="max-width: 300px;">');
+                            $('#qrLabelText').html('<strong>' + response.label + '</strong>');
                         } else {
-                            $('#qrImageArea').html(
-                                '<p class="text-danger">Gagal memuat QR Code</p>');
+                            $('#qrImageArea').html('<p class="text-danger">Gagal memuat QR Code</p>');
                             $('#qrLabelText').html('');
                         }
                     },
                     error: function() {
-                        $('#qrImageArea').html(
-                            '<p class="text-danger">Terjadi kesalahan saat memuat QR Code</p>'
-                        );
+                        $('#qrImageArea').html('<p class="text-danger">Terjadi kesalahan saat memuat QR Code</p>');
                         $('#qrLabelText').html('');
                     }
                 });
@@ -573,78 +347,34 @@
                     type: "POST",
                     dataType: 'json',
                     beforeSend: function() {
-                        $('#save').prop('disabled', true).html(
-                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                        );
-
+                        $('#save').prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...');
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
                     },
-                    complete: function() {
-                        $('#save').prop('disabled', false).text('Simpan');
-                    },
+                    complete: function() { $('#save').prop('disabled', false).text('Simpan'); },
                     success: function(response) {
                         $('#modal').modal('hide');
                         $('#form').trigger("reset");
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sukses',
-                            text: response.message,
-                        });
-                        $('#datatable').DataTable().ajax.reload()
+                        Swal.fire({ icon: 'success', title: 'Sukses', text: response.message });
+                        $('#datatable').DataTable().ajax.reload();
                     },
                     error: function(xhr) {
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
-                            if (errors.jenis) {
-                                $('#jenis').addClass('is-invalid');
-                                $('.errorJenis').html(errors.jenis.join('<br>'));
-                            }
-                            if (errors.tanggal_kedatangan) {
-                                $('#tanggal_kedatangan').addClass('is-invalid');
-                                $('.errorTanggalKedatangan').html(errors.tanggal_kedatangan
-                                    .join('<br>'));
-                            }
-                            if (errors.supplier) {
-                                $('#supplier').addClass('is-invalid');
-                                $('.errorSupplier').html(errors.supplier
-                                    .join('<br>'));
-                            }
-                            if (errors.asal_bahan) {
-                                $('#asal_bahan').addClass('is-invalid');
-                                $('.errorAsalBahan').html(errors.asal_bahan
-                                    .join('<br>'));
-                            }
-                            if (errors.no_plat) {
-                                $('#no_plat').addClass('is-invalid');
-                                $('.errorNoPlat').html(errors.no_plat
-                                    .join('<br>'));
-                            }
-                            if (errors.no_spb) {
-                                $('#no_spb').addClass('is-invalid');
-                                $('.errorNoSPB').html(errors.no_spb
-                                    .join('<br>'));
-                            }
-                            if (errors.jumlah_kedatangan) {
-                                $('#jumlah_kedatangan').addClass('is-invalid');
-                                $('.errorJumlahKedatangan').html(errors.jumlah_kedatangan
-                                    .join('<br>'));
-                            }
-                            if (errors.lot_batch) {
-                                $('#lot_batch').addClass('is-invalid');
-                                $('.errorLotBatch').html(errors.lot_batch
-                                    .join('<br>'));
-                            }
+                            if (errors.jenis)               { $('#jenis').addClass('is-invalid');               $('.errorJenis').html(errors.jenis.join('<br>')); }
+                            if (errors.tanggal_kedatangan)  { $('#tanggal_kedatangan').addClass('is-invalid');  $('.errorTanggalKedatangan').html(errors.tanggal_kedatangan.join('<br>')); }
+                            if (errors.supplier)            { $('#supplier').addClass('is-invalid');            $('.errorSupplier').html(errors.supplier.join('<br>')); }
+                            if (errors.asal_bahan)          { $('#asal_bahan').addClass('is-invalid');          $('.errorAsalBahan').html(errors.asal_bahan.join('<br>')); }
+                            if (errors.no_plat)             { $('#no_plat').addClass('is-invalid');             $('.errorNoPlat').html(errors.no_plat.join('<br>')); }
+                            if (errors.no_spb)              { $('#no_spb').addClass('is-invalid');              $('.errorNoSPB').html(errors.no_spb.join('<br>')); }
+                            if (errors.jumlah_kedatangan)   { $('#jumlah_kedatangan').addClass('is-invalid');   $('.errorJumlahKedatangan').html(errors.jumlah_kedatangan.join('<br>')); }
+                            if (errors.lot_batch)           { $('#lot_batch').addClass('is-invalid');           $('.errorLotBatch').html(errors.lot_batch.join('<br>')); }
                         } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Kesalahan',
-                                text: 'Terjadi kesalahan, silakan coba lagi.',
-                            });
+                            Swal.fire({ icon: 'error', title: 'Kesalahan', text: 'Terjadi kesalahan, silakan coba lagi.' });
                         }
                     }
-                })
-            })
+                });
+            });
         });
     </script>
 @endsection

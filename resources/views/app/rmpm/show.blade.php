@@ -536,6 +536,7 @@
                                                             <th>Warna</th>
                                                             <th>Aroma</th>
                                                             <th>Disposisi</th>
+                                                            <th>Keterangan</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -550,6 +551,7 @@
                                                                 <td>{{ $short->warna ?? '-' }}</td>
                                                                 <td>{{ $short->aroma ?? '-' }}</td>
                                                                 <td>{{ $short->disposisi ?? '-' }}</td>
+                                                                <td>{{ $short->keterangan ?? '-' }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
@@ -579,6 +581,7 @@
                                                             <th>Uji Kristal</th>
                                                             <th>Disposisi</th>
                                                             <th>Attachment</th>
+                                                            <th>Keterangan</th>
                                                             <th width="12%"></th>
                                                         </tr>
                                                     </thead>
@@ -632,6 +635,7 @@
                                                                         <span class="text-muted small">-</span>
                                                                     @endif
                                                                 </td>
+                                                                <td>{{ $long->keterangan ?? '-' }}</td>
                                                                 <td class="text-end">
                                                                     @if (strtolower($long->uji_kristal ?? '') === 'positif' && strtolower($long->disposisi ?? '') !== 'release')
                                                                         <button type="button"
@@ -679,6 +683,7 @@
                                                             <th>%NaCl</th>
                                                             <th>Gross Weight</th>
                                                             <th>Disposisi</th>
+                                                            <th>Keterangan</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -694,6 +699,7 @@
                                                                 <td>{{ $gg->{'%nacl'} ?? '-' }}</td>
                                                                 <td>{{ $gg->gross_weight ?? '-' }}</td>
                                                                 <td>{{ $gg->disposisi ?? '-' }}</td>
+                                                                <td>{{ $gg->keterangan ?? '-' }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
