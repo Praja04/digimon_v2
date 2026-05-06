@@ -208,6 +208,7 @@ class RMPMController extends Controller
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
             'uji_kristal'  => 'required|in:positif,negatif',
+            'keterangan'   => 'nullable|string',
         ]);
 
         $ujiKristal = $request->uji_kristal;
@@ -236,6 +237,7 @@ class RMPMController extends Controller
             'uji_kristal'     => $ujiKristal,
             'disposisi'       => $disposisi,
             'attachment'      => $attachmentName,
+            'keterangan'      => $request->keterangan,
             'created_by'      => auth()->user()->id,
             'created_at'      => now(),
             'updated_at'      => now(),
@@ -259,6 +261,7 @@ class RMPMController extends Controller
             'warna'        => 'nullable|array',
             'aroma'        => 'nullable|array',
             'disposisi'    => 'required|in:Release,Reject',
+            'keterangan'    => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -277,6 +280,7 @@ class RMPMController extends Controller
                     'warna'        => $this->nullableString($request->warna[$i]  ?? null),
                     'aroma'        => $this->nullableString($request->aroma[$i]  ?? null),
                     'disposisi'    => $request->disposisi,
+                    'keterangan'    => $request->keterangan,
                     'created_by'   => auth()->id(),
                     'created_at'   => now(),
                     'updated_at'   => now(),
@@ -307,6 +311,7 @@ class RMPMController extends Controller
             '%nacl'        => 'nullable|array',
             'gross_weight' => 'nullable|array',
             'disposisi'    => 'required|in:Release,Reject',
+            'keterangan'    => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -326,6 +331,7 @@ class RMPMController extends Controller
                     '%nacl'        => $this->nullableFloat($request['%nacl'][$i]          ?? null),
                     'gross_weight' => $this->nullableFloat($request->gross_weight[$i]     ?? null),
                     'disposisi'    => $request->disposisi,
+                    'keterangan'    => $request->keterangan,
                     'created_by'   => auth()->id(),
                     'created_at'   => now(),
                     'updated_at'   => now(),

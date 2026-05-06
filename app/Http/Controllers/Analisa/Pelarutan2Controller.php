@@ -117,6 +117,7 @@ class Pelarutan2Controller extends Controller
             $isUpdate = !is_null($pelarutan_2->status_disposition);
             $userRole = auth()->user()->role;
 
+            // 🔒 Validasi role
             if ($userRole === 'Analis Kimia') {
                 if (!is_null($pelarutan_2->disposition)) {
                     DB::rollBack();
@@ -135,9 +136,15 @@ class Pelarutan2Controller extends Controller
                 }
             }
 
-            $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
+            $status_disposition = $request->status_disposition;
 
+            // ✅ Override: jika Foreman pilih Release → status = OK
+            if ($userRole === 'Foreman' && $request->disposition === 'Release') {
+                $status_disposition = 'OK';
+            }
+
+            // 🔒 Validasi remark
             if (in_array($status_disposition, ['NOT OK']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
@@ -145,9 +152,6 @@ class Pelarutan2Controller extends Controller
                     'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.'
                 ], 409);
             }
-
-            $status_disposition = $request->status_disposition;
-            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
@@ -177,23 +181,20 @@ class Pelarutan2Controller extends Controller
                 $updateData['disposition'] = $disposition;
             }
 
-            // Handle Resampling (hanya untuk Foreman)
-            if ($userRole === 'Foreman') {
-                if ($updateData['disposition'] === 'Resampling') {
-                    $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
-                    $updateData['not_standard'] = true;
-                }
+            // 🔁 Handle Resampling
+            if ($userRole === 'Foreman' && ($updateData['disposition'] ?? null) === 'Resampling') {
+                $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
+                $updateData['not_standard'] = true;
             }
 
-            if ($request->filled('revisi')) {
-                $updateData['revisi'] = $request->revisi;
-            } else {
-                $updateData['revisi'] = $pelarutan_2->revisi;
-            }
+            // 🔁 Revisi
+            $updateData['revisi'] = $request->filled('revisi')
+            ? $request->revisi
+                : $pelarutan_2->revisi;
 
             $pelarutan_2->update($updateData);
 
-            // Build remark text for API payload
+            // 🧠 Build remark untuk API
             if ($remark !== null && $remark !== '-') {
                 $remarkText = $remark;
             } elseif ($updateData['not_standard'] ?? false) {
@@ -203,8 +204,8 @@ class Pelarutan2Controller extends Controller
             }
 
             $jamSelesai = ($status_disposition === 'OK')
-                ? now()->format('Y-m-d H:i:s')
-                : null;
+            ? now()->format('Y-m-d H:i:s')
+            : null;
 
             $apiPayload = [
                 'disposition' => $updateData['disposition'] ?? null,
@@ -234,7 +235,7 @@ class Pelarutan2Controller extends Controller
 
             DB::commit();
 
-            // Kirim notifikasi berdasarkan kondisi
+            // 🔔 Notifikasi
             $shouldSendNotification = false;
             $notificationTitle = "Pelarutan 2 - Batch " . $pelarutan_2->batch_number;
 
@@ -254,7 +255,7 @@ class Pelarutan2Controller extends Controller
                 ));
             }
 
-            // Pesan response berdasarkan role
+            // 📨 Response message
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data Pelarutan 2 berhasil diperbarui.'

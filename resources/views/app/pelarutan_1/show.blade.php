@@ -965,7 +965,7 @@
                 // Re-enable status_disposition sebelum submit agar nilainya ikut terkirim
                 const wasDisabled = $('#status_disposition').prop('disabled');
                 if (wasDisabled) {
-                    $('#status_disposition').prop('disabled', false);
+                    $('#status_disposition').prop('disabled', true);
                 }
 
                 $.ajax({

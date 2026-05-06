@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Validation\Rule;
 class ProductionBatchRequest extends FormRequest
 {
     /**
@@ -14,9 +14,14 @@ class ProductionBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required',
-            'po_number' => 'required|string|max:255',
-            'variant' =>  'required|string|max:255',
+            'po_number' => [
+                'required',
+                'numeric',
+                'digits:8',
+                Rule::unique('production_batches', 'po_number')
+                ->ignore($this->route('id')) // 🔥 ini penting
+            ],
+            'variant' => 'required|string|max:255',
             'date' => 'required|date',
             'batch_range' => 'required|string|max:255',
             'description' => 'nullable'

@@ -720,7 +720,7 @@
 
                         // Jika role Foreman, field Status menjadi readonly
                         if (userRole === 'Foreman') {
-                            $('#status_disposition').prop('disabled', true);
+                            $('#status_disposition').prop('disabled', false);
                         } else {
                             $('#status_disposition').prop('disabled', false);
                         }
@@ -816,7 +816,7 @@
 
                 const wasDisabled = $('#status_disposition').prop('disabled');
                 if (wasDisabled) {
-                    $('#status_disposition').prop('disabled', false);
+                    $('#status_disposition').prop('disabled', true);
                 }
 
                 $.ajax({

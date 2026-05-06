@@ -61,7 +61,7 @@ class ProductionBatchController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(ProductionBatchRequest $request, int $id): JsonResponse
     {
         $data = ProductionBatch::find($id);
 
@@ -72,13 +72,7 @@ class ProductionBatchController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $data->update([
-            'po_number'   => $request->po_number,
-            'variant'     => $request->variant,
-            'date'        => $request->date,
-            'batch_range' => $request->batch_range,
-            'description' => $request->description,
-        ]);
+        $data->update($request->validated());
 
         return response()->json([
             'status'  => 'success',

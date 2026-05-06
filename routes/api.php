@@ -53,7 +53,7 @@ Route::get('/dashboard/monitoring-on-going-mikro/weeks', [App\Http\Controllers\A
 Route::get('/persiapan-masak', [App\Http\Controllers\Api\ProductionBatchController::class, 'index'])->name('api.production.batch.index');
 Route::get('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'show'])->name('api.production.batch.show');
 Route::post('/persiapan-masak', [App\Http\Controllers\Api\ProductionBatchController::class, 'store'])->name('api.production.batch.store');
-Route::post('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'update'])->name('api.production.batch.update');
+Route::put('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'update'])->name('api.production.batch.update');
 Route::delete('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatchController::class, 'destroy'])->name('api.production.batch.destroy');
 
 // Pelarutan 1

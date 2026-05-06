@@ -162,6 +162,7 @@ class BlendingAwalController extends Controller
             $isUpdate = !is_null($blending->status);
             $userRole = auth()->user()->role;
 
+            // 🔒 Validasi role
             if ($userRole === 'Analis Kimia') {
                 if (!is_null($blending->disposition)) {
                     DB::rollBack();
@@ -183,6 +184,12 @@ class BlendingAwalController extends Controller
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
+            // ✅ OVERRIDE: Foreman pilih Release → status jadi OK
+            if ($userRole === 'Foreman' && $request->disposition === 'Release') {
+                $status_disposition = 'OK';
+            }
+
+            // 🔒 Validasi remark
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
@@ -192,7 +199,6 @@ class BlendingAwalController extends Controller
             }
 
             $statusChanged = ($blending->status !== $status_disposition);
-            $dispositionChanged = false;
 
             $updateData = [
                 'brix' => $request->brix,
@@ -255,29 +261,26 @@ class BlendingAwalController extends Controller
                 }
             }
 
+            // 🔁 Handle disposisi Foreman
             if ($userRole === 'Foreman') {
                 if ($updateData['disposition'] === 'Resampling') {
                     $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
                     $updateData['not_standard'] = true;
                 }
 
-                if ($updateData['disposition'] === 'Jalan Bareng') {
-                    $updateData['not_standard'] = true;
-                }
-
-                if ($updateData['disposition'] === 'Leveling') {
+                if (in_array($updateData['disposition'], ['Jalan Bareng', 'Leveling'])) {
                     $updateData['not_standard'] = true;
                 }
             }
 
-            if ($request->filled('revisi')) {
-                $updateData['revisi'] = $request->revisi;
-            } else {
-                $updateData['revisi'] = $blending->revisi;
-            }
+            // 🔁 Revisi
+            $updateData['revisi'] = $request->filled('revisi')
+            ? $request->revisi
+                : $blending->revisi;
 
             $blending->update($updateData);
 
+            // 🧠 Build remark
             if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
                 $remarkText = $remark;
             } elseif ($status_disposition === 'Adjustment') {
@@ -306,8 +309,10 @@ class BlendingAwalController extends Controller
                 'status' => $status_disposition,
             ]);
 
+            
             DB::commit();
 
+            // 🔔 Notifikasi
             $shouldSendNotification = false;
             $notificationTitle = "Blending Awal - Batch " . $blending->batch_range;
 
@@ -327,6 +332,7 @@ class BlendingAwalController extends Controller
                 ));
             }
 
+            // 📨 Response
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data berhasil diperbarui.'

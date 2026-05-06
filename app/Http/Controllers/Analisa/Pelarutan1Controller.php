@@ -118,6 +118,7 @@ class Pelarutan1Controller extends Controller
     public function update(Pelarutan1Request $request)
     {
         DB::beginTransaction();
+
         try {
             $pelarutan_1 = Pelarutan1::findOrFail($request->id);
             $isUpdate = !is_null($pelarutan_1->status);
@@ -144,8 +145,35 @@ class Pelarutan1Controller extends Controller
 
             $status_disposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
+            $disposition = $request->disposition ?? null;
 
-            // Validasi remarks wajib untuk status tertentu
+            // Validasi enum disposition (khusus Foreman)
+            $allowedDispositions = ['Release', 'Release Bersyarat', 'Resampling', 'Reject', 'Adjustment', 'Repro'];
+
+            if ($userRole === 'Foreman') {
+                if (!$request->filled('disposition')) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Foreman wajib memilih disposisi.'
+                    ], 409);
+                }
+
+                if (!in_array($disposition, $allowedDispositions)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Disposition tidak valid.'
+                    ], 422);
+                }
+
+                // 🔥 Override status jika Release / Release Bersyarat
+                if (in_array($disposition, ['Release', 'Release Bersyarat'])) {
+                    $status_disposition = 'OK';
+                }
+            }
+
+            // Validasi remark wajib
             if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
                 DB::rollBack();
                 return response()->json([
@@ -154,7 +182,7 @@ class Pelarutan1Controller extends Controller
                 ], 409);
             }
 
-            // Cek apakah status berubah
+            // Cek perubahan status
             $statusChanged = ($pelarutan_1->status !== $status_disposition);
 
             $updateData = [
@@ -172,19 +200,12 @@ class Pelarutan1Controller extends Controller
                     $updateData['created_by'] = auth()->user()->id;
                 }
             } elseif ($userRole === 'Foreman') {
-                if (!$request->filled('disposition')) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Foreman wajib memilih disposisi.'
-                    ], 409);
-                }
-
-                $disposition = $request->disposition;
                 $updateData['disposition'] = $disposition;
             }
 
-            // Handle Adjustment
+            // =========================
+            // HANDLE ADJUSTMENT
+            // =========================
             $adjustmentGulaTebu = null;
             $adjustmentGulaKelapa = null;
 
@@ -192,6 +213,7 @@ class Pelarutan1Controller extends Controller
                 if (!empty($request->adjustment_qty_gula_tebu)) {
                     $adjustmentGulaTebu = str_replace(',', '.', $request->adjustment_qty_gula_tebu);
                 }
+
                 if (!empty($request->adjustment_qty_gula_kelapa)) {
                     $adjustmentGulaKelapa = str_replace(',', '.', $request->adjustment_qty_gula_kelapa);
                 }
@@ -200,7 +222,6 @@ class Pelarutan1Controller extends Controller
                 $updateData['adjustment_qty_gula_kelapa'] = $adjustmentGulaKelapa;
                 $updateData['not_standard'] = true;
             } else {
-                // Jika status bukan Adjustment lagi, clear adjustment data
                 if ($statusChanged) {
                     $updateData['adjustment_qty_gula_tebu'] = null;
                     $updateData['adjustment_qty_gula_kelapa'] = null;
@@ -208,23 +229,32 @@ class Pelarutan1Controller extends Controller
                 }
             }
 
-            // Handle Resampling (hanya untuk Foreman)
-            if ($userRole === 'Foreman') {
-                if ($updateData['disposition'] === 'Resampling') {
-                    $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
-                    $updateData['not_standard'] = true;
-                }
+            // =========================
+            // HANDLE RESAMPLING
+            // =========================
+            if ($userRole === 'Foreman' && $disposition === 'Resampling') {
+                $updateData['disposition_remark'] = $remark
+                    ? $remark . ' (Resampling)'
+                    : 'Resampling';
+
+                $updateData['not_standard'] = true;
             }
 
-            if ($request->filled('revisi')) {
-                $updateData['revisi'] = $request->revisi;
-            } else {
-                $updateData['revisi'] = $pelarutan_1->revisi;
-            }
+            // =========================
+            // HANDLE REVISI
+            // =========================
+            $updateData['revisi'] = $request->filled('revisi')
+            ? $request->revisi
+                : $pelarutan_1->revisi;
 
+            // =========================
+            // UPDATE DB
+            // =========================
             $pelarutan_1->update($updateData);
 
-            // Build remark text for API payload
+            // =========================
+            // BUILD REMARK API
+            // =========================
             if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
                 $remarkText = $remark;
             } elseif ($status_disposition === 'Adjustment') {
@@ -238,10 +268,12 @@ class Pelarutan1Controller extends Controller
             }
 
             $jamSelesai = ($status_disposition === 'OK')
-                ? now()->format('Y-m-d H:i:s')
-                : null;
+            ? now()->format('Y-m-d H:i:s')
+            : null;
 
-            // Prepare payload for external API
+            // =========================
+            // API PAYLOAD
+            // =========================
             $apiPayload = [
                 'disposition' => $updateData['disposition'] ?? null,
                 'revisi' => $updateData['revisi'] ?? null,
@@ -251,15 +283,19 @@ class Pelarutan1Controller extends Controller
                 'jam_selesai' => $jamSelesai,
             ];
 
-            // Call external API
             $client = new \GuzzleHttp\Client();
-            $apiResponse = $client->request('POST', env('PRODUCTION_URL') . "api/pelarutan-1/{$pelarutan_1->id}", [
-                'json' => $apiPayload,
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-            ]);
+
+            $apiResponse = $client->request(
+                'POST',
+                env('PRODUCTION_URL') . "api/pelarutan-1/{$pelarutan_1->id}",
+                [
+                    'json' => $apiPayload,
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Content-Type' => 'application/json',
+                    ],
+                ]
+            );
 
             if ($apiResponse->getStatusCode() !== 200) {
                 DB::rollBack();
@@ -271,7 +307,9 @@ class Pelarutan1Controller extends Controller
 
             DB::commit();
 
-            // Kirim notifikasi berdasarkan kondisi
+            // =========================
+            // NOTIFIKASI
+            // =========================
             $shouldSendNotification = false;
             $notificationTitle = "Pelarutan 1 - Batch " . $pelarutan_1->batch_number;
 
@@ -291,7 +329,9 @@ class Pelarutan1Controller extends Controller
                 ));
             }
 
-            // Pesan response berdasarkan role
+            // =========================
+            // RESPONSE
+            // =========================
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data Pelarutan 1 berhasil diperbarui.'
@@ -308,6 +348,7 @@ class Pelarutan1Controller extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Error occurred, please try again.',

@@ -841,7 +841,7 @@
                         $('#status_disposition').val(response.status);
                         if (userRole === 'Foreman') {
                             $('#status_disposition').val(response.status);
-                            $('#status_disposition').prop('disabled', true);
+                            $('#status_disposition').prop('disabled', false);
                         } else {
                             $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', false);
