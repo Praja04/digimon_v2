@@ -131,6 +131,7 @@ class TimbanganRetailMesinController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'nik'     => 'required|string|max:50',
             'mesin' => 'required|string|max:255',
             'variant' => 'required|string|max:255',
             'waktu' => 'required|date',
@@ -138,6 +139,7 @@ class TimbanganRetailMesinController extends Controller
             'berat' => 'required|numeric',
             'unit' => 'required|string|max:50'
         ], [], [
+            'nik'     => 'NIK', 
             'mesin' => 'Mesin',
             'variant' => 'Variant',
             'waktu' => 'Waktu',
@@ -155,6 +157,7 @@ class TimbanganRetailMesinController extends Controller
         }
 
         $mesin = TimbanganRetailMesin::create([
+            'nik'     => $request->nik,
             'mesin' => $request->mesin,
             'variant' => $request->variant,
             'waktu' => $request->waktu,
