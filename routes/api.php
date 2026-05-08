@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\TimbanganRetailMesinController;
 
 // Dashboard - RMPM
 Route::get('/dashboard/rmpm/statistics', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getStatistics'])->name('api.dashboard.rmpm.statistics');
@@ -94,6 +95,11 @@ Route::post('/monitoring-storage-mikro', [App\Http\Controllers\Api\MonitoringSto
 
 Route::get('/mesin/dashboard', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'getDashboardData']);
 Route::post('mesin', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'store']);
+Route::prefix('timbangan-retail')->group(function () {
+    Route::get('filter-options', [TimbanganRetailMesinController::class, 'filterOptions']);
+    Route::get('data',           [TimbanganRetailMesinController::class, 'getData']);
+    Route::get('export',         [TimbanganRetailMesinController::class, 'export']);
+});
 
 // Press Test Data (CRUD)
 Route::get('/press-test-data', [App\Http\Controllers\Api\PressTestDataController::class, 'index'])->name('api.press-test-data.index');
