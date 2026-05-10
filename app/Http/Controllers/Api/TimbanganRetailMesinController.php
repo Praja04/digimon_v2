@@ -138,11 +138,13 @@ class TimbanganRetailMesinController extends Controller
             'variant' => 'required|string|max:255',
             'waktu' => 'required|date',
             'status' => 'required|string',
+            'filler' => 'nullable|string',
             'berat' => 'required|numeric',
             'unit' => 'required|string|max:50'
         ], [], [
             'nik'     => 'NIK', 
             'mesin' => 'Mesin',
+            'filler' => 'Filler',
             'variant' => 'Variant',
             'waktu' => 'Waktu',
             'status' => 'Status',
@@ -165,6 +167,54 @@ class TimbanganRetailMesinController extends Controller
             'waktu' => $request->waktu,
             'status' => $request->status,
             'berat' => $request->berat,
+            'filler' => $request->filler,
+            'unit' => $request->unit
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data mesin berhasil ditambahkan',
+            'data' => $mesin
+        ], 201);
+    }
+    public function store2(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nik'     => 'required|string|max:50',
+            'mesin' => 'required|string|max:255',
+            'variant' => 'required|string|max:255',
+            'waktu' => 'required|date',
+            'status' => 'required|string',
+            'filler' => 'nullable|string',
+            'berat' => 'required|numeric',
+            'unit' => 'required|string|max:50'
+        ], [], [
+            'nik'     => 'NIK',
+            'mesin' => 'Mesin',
+            'filler' => 'Filler',
+            'variant' => 'Variant',
+            'waktu' => 'Waktu',
+            'status' => 'Status',
+            'berat' => 'Berat',
+            'unit' => 'Unit',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $mesin = TimbanganRetailMesin::create([
+            'nik'     => $request->nik,
+            'mesin' => $request->mesin,
+            'variant' => $request->variant,
+            'waktu' => $request->waktu,
+            'status' => $request->status,
+            'berat' => $request->berat,
+            'filler' => $request->filler,
             'unit' => $request->unit
         ]);
 
@@ -417,5 +467,279 @@ class TimbanganRetailMesinController extends Controller
             new TimbanganRetailExport($records),
             $filename
         );
+    }
+
+    public function getAverageMinMax(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'tanggal' => 'required|date_format:Y-m-d',
+            'variant' => 'required|string',
+            'mesin'   => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => true,
+                'data'    => null
+            ], 200);
+        }
+
+        $tanggal = $request->tanggal;
+
+      
+        $start = Carbon::parse($tanggal)
+            ->setTime(6, 0, 0)
+            ->toDateTimeString();
+
+        $end = Carbon::parse($tanggal)
+            ->addDay()
+            ->setTime(5, 59, 59)
+            ->toDateTimeString();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Single Query
+    |--------------------------------------------------------------------------
+    */
+
+        $rows = DB::table('timbangan_retail_mesin')
+        ->select('waktu', 'berat')
+        ->where('variant', trim($request->variant))
+            ->where('mesin', trim($request->mesin))
+            ->whereBetween('waktu', [$start, $end])
+            ->get();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Empty Data
+    |--------------------------------------------------------------------------
+    */
+
+        if ($rows->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data'    => null
+            ], 200);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Shift Container
+    |--------------------------------------------------------------------------
+    */
+
+        $shifts = [
+            'Shift 1' => [],
+            'Shift 2' => [],
+            'Shift 3' => [],
+        ];
+
+        /*
+    |--------------------------------------------------------------------------
+    | Ultra Fast Grouping
+    |--------------------------------------------------------------------------
+    */
+
+        foreach ($rows as $row) {
+
+            // Ambil jam tanpa Carbon (lebih cepat)
+            $hour = (int) substr($row->waktu, 11, 2);
+
+            if ($hour >= 6 && $hour < 14) {
+
+                $shifts['Shift 1'][] = (float) $row->berat;
+            } elseif ($hour >= 14 && $hour < 22) {
+
+                $shifts['Shift 2'][] = (float) $row->berat;
+            } else {
+
+                $shifts['Shift 3'][] = (float) $row->berat;
+            }
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Calculate Statistics
+    |--------------------------------------------------------------------------
+    */
+
+        $result = [];
+
+        foreach ($shifts as $shiftName => $weights) {
+
+            if (empty($weights)) {
+
+                $result[$shiftName] = [
+                    'total_transaksi' => 0,
+                    'average_berat'   => null,
+                    'min_berat'       => null,
+                    'max_berat'       => null,
+                ];
+
+                continue;
+            }
+
+            $count = count($weights);
+            $sum   = array_sum($weights);
+
+            $result[$shiftName] = [
+                'total_transaksi' => $count,
+                'average_berat'   => round($sum / $count, 3),
+                'min_berat'       => round(min($weights), 3),
+                'max_berat'       => round(max($weights), 3),
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'tanggal' => $tanggal,
+                'variant' => trim($request->variant),
+                'mesin'   => trim($request->mesin),
+                'shifts'  => $result
+            ]
+        ], 200);
+    }
+
+    public function getChartData(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'variant'    => 'nullable|string',
+            'mesin'      => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Shift Range
+    |--------------------------------------------------------------------------
+    | start : 06:00 hari pertama
+    | end   : 05:59:59 hari setelah end_date
+    |--------------------------------------------------------------------------
+    */
+
+        $start = Carbon::parse($request->start_date)
+            ->setTime(6, 0, 0)
+            ->toDateTimeString();
+
+        $end = Carbon::parse($request->end_date)
+            ->addDay()
+            ->setTime(5, 59, 59)
+            ->toDateTimeString();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Query optimized for index:
+    | (variant, mesin, waktu)
+    |--------------------------------------------------------------------------
+    */
+
+        $query = DB::table('timbangan_retail_mesin')
+        ->select([
+            'mesin',
+            'variant',
+            'waktu',
+            'berat',
+            'status'
+        ]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | IMPORTANT
+    |--------------------------------------------------------------------------
+    | Agar index kepakai optimal:
+    | variant -> mesin -> waktu
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('variant')) {
+            $query->where('variant', trim($request->variant));
+        }
+
+        if ($request->filled('mesin')) {
+            $query->where('mesin', trim($request->mesin));
+        }
+
+        $query->whereBetween('waktu', [$start, $end]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | Order by waktu
+    |--------------------------------------------------------------------------
+    */
+
+        $rows = $query
+            ->orderBy('waktu')
+            ->get();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Empty
+    |--------------------------------------------------------------------------
+    */
+
+        if ($rows->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data'    => []
+            ], 200);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Format chart
+    |--------------------------------------------------------------------------
+    */
+
+        $data = [];
+
+        foreach ($rows as $row) {
+
+            // lebih cepat daripada Carbon::parse()
+            $hour = (int) substr($row->waktu, 11, 2);
+
+            if ($hour >= 6 && $hour < 14) {
+
+                $shift = 'Shift 1';
+            } elseif ($hour >= 14 && $hour < 22) {
+
+                $shift = 'Shift 2';
+            } else {
+
+                $shift = 'Shift 3';
+            }
+
+            $data[] = [
+                'mesin'   => $row->mesin,
+                'variant' => $row->variant,
+                'waktu'   => $row->waktu,
+                'berat'   => (float) $row->berat,
+                'status'  => $row->status,
+                'shift'   => $shift,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+
+            'filters' => [
+                'start_date' => $request->start_date,
+                'end_date'   => $request->end_date,
+                'variant'    => $request->variant,
+                'mesin'      => $request->mesin,
+            ],
+
+            'total_data' => count($data),
+
+            'data' => $data
+        ], 200);
     }
 }

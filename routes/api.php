@@ -95,10 +95,13 @@ Route::post('/monitoring-storage-mikro', [App\Http\Controllers\Api\MonitoringSto
 
 Route::get('/mesin/dashboard', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'getDashboardData']);
 Route::post('mesin', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'store']);
+Route::post('mesin2', [App\Http\Controllers\Api\TimbanganRetailMesinController::class, 'store2']);
 Route::prefix('timbangan-retail')->group(function () {
     Route::get('filter-options', [TimbanganRetailMesinController::class, 'filterOptions']);
     Route::get('data',           [TimbanganRetailMesinController::class, 'getData']);
     Route::get('export',         [TimbanganRetailMesinController::class, 'export']);
+    Route::get('average-minmax',[TimbanganRetailMesinController::class, 'getAverageMinMax']);
+    Route::get('chart',[TimbanganRetailMesinController::class, 'getChartData']);
 });
 
 // Press Test Data (CRUD)

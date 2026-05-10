@@ -15,6 +15,7 @@ class TimbanganRetailMesin extends Model
         'status',
         'berat',
         'unit',
-        'nik'
+        'nik',
+        'filler'
     ];
 }
