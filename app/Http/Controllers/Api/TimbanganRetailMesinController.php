@@ -138,13 +138,11 @@ class TimbanganRetailMesinController extends Controller
             'variant' => 'required|string|max:255',
             'waktu' => 'required|date',
             'status' => 'required|string',
-            'filler' => 'nullable|string',
             'berat' => 'required|numeric',
             'unit' => 'required|string|max:50'
         ], [], [
             'nik'     => 'NIK', 
             'mesin' => 'Mesin',
-            'filler' => 'Filler',
             'variant' => 'Variant',
             'waktu' => 'Waktu',
             'status' => 'Status',
@@ -167,7 +165,6 @@ class TimbanganRetailMesinController extends Controller
             'waktu' => $request->waktu,
             'status' => $request->status,
             'berat' => $request->berat,
-            'filler' => $request->filler,
             'unit' => $request->unit
         ]);
 
