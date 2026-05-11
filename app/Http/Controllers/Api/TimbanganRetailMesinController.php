@@ -176,24 +176,47 @@ class TimbanganRetailMesinController extends Controller
     }
     public function store2(Request $request)
     {
+        // ✅ 14 VARIANT RESMI dari Python
+        $validVariants = [
+            'Sachet YB 12,5gr PCS',
+            'Sachet YB 12,5gr RENCENG',
+            'Sachet YB 20gr PCS',
+            'Sachet YB 20gr RENCENG',
+            'Sachet BB 40gr PCS',
+            'Sachet BB 40gr RENCENG',
+            'Pouch YB 77gr',
+            'Pouch BB 77gr',
+            'Pouch YB 250gr',
+            'Pouch BB 270gr',
+            'Pouch YB 550gr',
+            'Pouch YB 700gr',
+            'Pouch BB 725gr',
+            'Pouch YB 1000gr'
+        ];
+
         $validator = Validator::make($request->all(), [
             'nik'     => 'required|string|max:50',
-            'mesin' => 'required|string|max:255',
-            'variant' => 'required|string|max:255',
-            'waktu' => 'required|date',
-            'status' => 'required|string',
-            'filler' => 'nullable|string',
-            'berat' => 'required|numeric',
-            'unit' => 'required|string|max:50'
+            'mesin'   => 'required|string|max:255',
+            'variant' => [
+                'required',
+                'string',
+                'max:255',
+                "in:" . implode(',', $validVariants)  // ✅ VALIDASI PYTHON
+            ],
+            'waktu'   => 'required|date',
+            'status'  => 'required|in:OK,NOT OK',  // ✅ Hanya OK/NOT OK
+            'filler'  => 'nullable|in:1,2,3,4,5,6,7,8',  // ✅ 1-8
+            'berat'   => 'required|numeric|between:0,999999',
+            'unit'    => 'required|in:g,kg'  // ✅ Unit dari timbangan
         ], [], [
-            'nik'     => 'NIK',
-            'mesin' => 'Mesin',
-            'filler' => 'Filler',
-            'variant' => 'Variant',
-            'waktu' => 'Waktu',
-            'status' => 'Status',
-            'berat' => 'Berat',
-            'unit' => 'Unit',
+            'nik'     => 'NIK Operator',
+            'mesin'   => 'Mesin',
+            'variant' => 'Variant Produk',
+            'waktu'   => 'Waktu',
+            'status'  => 'Status',
+            'filler'  => 'Filler',
+            'berat'   => 'Berat',
+            'unit'    => 'Unit',
         ]);
 
         if ($validator->fails()) {
@@ -206,18 +229,18 @@ class TimbanganRetailMesinController extends Controller
 
         $mesin = TimbanganRetailMesin::create([
             'nik'     => $request->nik,
-            'mesin' => $request->mesin,
+            'mesin'   => $request->mesin,
             'variant' => $request->variant,
-            'waktu' => $request->waktu,
-            'status' => $request->status,
-            'berat' => $request->berat,
-            'filler' => $request->filler,
-            'unit' => $request->unit
+            'waktu'   => $request->waktu,
+            'status'  => $request->status,
+            'berat'   => $request->berat,
+            'filler'  => $request->filler,
+            'unit'    => $request->unit
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Data mesin berhasil ditambahkan',
+            'message' => 'Data timbangan berhasil disimpan',
             'data' => $mesin
         ], 201);
     }
@@ -389,17 +412,48 @@ class TimbanganRetailMesinController extends Controller
      */
     public function filterOptions()
     {
-        $variants = TimbanganRetailMesin::select('variant')
-        ->distinct()
-            ->whereNotNull('variant')
-            ->orderBy('variant')
-            ->pluck('variant');
+        // ── DATA VARIAN + STANDAR ───────────────────────────────────────
+        $variantStandards = [
+            "Sachet YB 12,5gr PCS"    => ["min" =>  12.05, "std" =>  13.05, "max" =>  14.05, "tu1" =>  11.93, "tu2" =>  10.80, "code" => "S12.5G-P"],
+            "Sachet YB 12,5gr RENCENG" => ["min" => 154.60, "std" => 156.60, "max" => 168.60, "tu1" => 143.10, "tu2" => 129.60, "code" => "S12.5G-R"],
+            "Sachet YB 20gr PCS"      => ["min" =>  19.14, "std" =>  20.64, "max" =>  21.64, "tu1" =>  18.84, "tu2" =>  17.04, "code" => "S20G-P"],
+            "Sachet YB 20gr RENCENG"  => ["min" => 244.68, "std" => 247.68, "max" => 259.68, "tu1" => 226.08, "tu2" => 204.48, "code" => "S20G-R"],
+            "Sachet BB 40gr PCS"      => ["min" =>  39.10, "std" =>  41.10, "max" =>  42.10, "tu1" =>  37.50, "tu2" =>  33.90, "code" => "S40G-P"],
+            "Sachet BB 40gr RENCENG"  => ["min" => 489.20, "std" => 493.20, "max" => 505.20, "tu1" => 450.00, "tu2" => 406.80, "code" => "S40G-R"],
+            "Pouch YB 77gr"           => ["min" =>  78.70, "std" =>  79.20, "max" =>  82.70, "tu1" =>  74.70, "tu2" =>  70.20, "code" => "P77G-YB"],
+            "Pouch BB 77gr"           => ["min" =>  78.70, "std" =>  79.20, "max" =>  82.70, "tu1" =>  74.70, "tu2" =>  70.20, "code" => "P77G-BB"],
+            "Pouch YB 250gr"          => ["min" => 253.00, "std" => 255.00, "max" => 257.00, "tu1" => 246.00, "tu2" => 237.00, "code" => "P250G"],
+            "Pouch BB 270gr"          => ["min" => 273.00, "std" => 275.00, "max" => 277.00, "tu1" => 266.00, "tu2" => 257.00, "code" => "P270G"],
+            "Pouch YB 550gr"          => ["min" => 556.00, "std" => 561.00, "max" => 566.00, "tu1" => 545.80, "tu2" => 530.80, "code" => "P550G"],
+            "Pouch YB 700gr"          => ["min" => 706.00, "std" => 711.00, "max" => 716.00, "tu1" => 696.00, "tu2" => 681.00, "code" => "P700G"],
+            "Pouch BB 725gr"          => ["min" => 730.00, "std" => 735.00, "max" => 740.00, "tu1" => 720.00, "tu2" => 705.00, "code" => "P725G"],
+            "Pouch YB 1000gr"         => ["min" => 1007.50, "std" => 1012.50, "max" => 1017.50, "tu1" => 997.50, "tu2" => 982.50, "code" => "P1000G"],
+        ];
 
-        $mesins = TimbanganRetailMesin::select('mesin')
-        ->distinct()
-            ->whereNotNull('mesin')
-            ->orderBy('mesin')
-            ->pluck('mesin');
+        // ── RELASI VARIAN → MESIN ────────────────────────────────────────
+        $variantMesin = [
+            "Sachet YB 12,5gr PCS"    => ["Y", "Z"],
+            "Sachet YB 12,5gr RENCENG" => ["Y", "Z"],
+            "Sachet YB 20gr PCS"      => ["O", "P", "W", "X"],
+            "Sachet YB 20gr RENCENG"  => ["O", "P", "W", "X"],
+            "Sachet BB 40gr PCS"      => ["Q", "R"],
+            "Sachet BB 40gr RENCENG"  => ["Q", "R"],
+            "Pouch YB 77gr"           => ["F", "G", "H", "I", "D", "E", "J", "K", "C", "L", "AE", "AG"],
+            "Pouch BB 77gr"           => ["C", "L", "AE", "AG", "B", "AF", "AI", "AJ"],
+            "Pouch YB 250gr"          => ["AH"],
+            "Pouch BB 270gr"          => ["AH"],
+            "Pouch YB 550gr"          => ["A", "U", "V"],
+            "Pouch YB 700gr"          => ["A", "U", "V"],
+            "Pouch BB 725gr"          => ["A", "U", "V"],
+            "Pouch YB 1000gr"         => ["A", "U", "V"],
+        ];
+
+        $variants = array_keys($variantStandards);
+        $mesins = array_unique(array_merge(...array_values($variantMesin)));
+
+        // Sort alphabetically
+        sort($variants);
+        sort($mesins);
 
         return response()->json([
             'success'  => true,
@@ -469,133 +523,167 @@ class TimbanganRetailMesinController extends Controller
     public function getAverageMinMax(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'tanggal' => 'required|date_format:Y-m-d',
-            'variant' => 'required|string',
-            'mesin'   => 'required|string',
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'varian'     => 'nullable|string',
+            'mesin'      => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => true,
-                'data'    => null
-            ], 200);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $tanggal = $request->tanggal;
-
-      
-        $start = Carbon::parse($tanggal)
-            ->setTime(6, 0, 0)
-            ->toDateTimeString();
-
-        $end = Carbon::parse($tanggal)
-            ->addDay()
-            ->setTime(5, 59, 59)
-            ->toDateTimeString();
-
-        /*
-    |--------------------------------------------------------------------------
-    | Single Query
-    |--------------------------------------------------------------------------
-    */
-
-        $rows = DB::table('timbangan_retail_mesin')
-        ->select('waktu', 'berat')
-        ->where('variant', trim($request->variant))
-            ->where('mesin', trim($request->mesin))
-            ->whereBetween('waktu', [$start, $end])
-            ->get();
-
-        /*
-    |--------------------------------------------------------------------------
-    | Empty Data
-    |--------------------------------------------------------------------------
-    */
-
-        if ($rows->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'data'    => null
-            ], 200);
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Shift Container
-    |--------------------------------------------------------------------------
-    */
-
-        $shifts = [
-            'Shift 1' => [],
-            'Shift 2' => [],
-            'Shift 3' => [],
+        $variantStandards = [
+            'Sachet YB 12,5gr PCS'     => ['min' =>  12.05, 'std' =>  13.05, 'max' =>  14.05, 'tu1' =>  11.93, 'tu2' =>  10.80],
+            'Sachet YB 12,5gr RENCENG' => ['min' => 154.60, 'std' => 156.60, 'max' => 168.60, 'tu1' => 143.10, 'tu2' => 129.60],
+            'Sachet YB 20gr PCS'       => ['min' =>  19.14, 'std' =>  20.64, 'max' =>  21.64, 'tu1' =>  18.84, 'tu2' =>  17.04],
+            'Sachet YB 20gr RENCENG'   => ['min' => 244.68, 'std' => 247.68, 'max' => 259.68, 'tu1' => 226.08, 'tu2' => 204.48],
+            'Sachet BB 40gr PCS'       => ['min' =>  39.10, 'std' =>  41.10, 'max' =>  42.10, 'tu1' =>  37.50, 'tu2' =>  33.90],
+            'Sachet BB 40gr RENCENG'   => ['min' => 489.20, 'std' => 493.20, 'max' => 505.20, 'tu1' => 450.00, 'tu2' => 406.80],
+            'Pouch YB 77gr'            => ['min' =>  78.70, 'std' =>  79.20, 'max' =>  82.70, 'tu1' =>  74.70, 'tu2' =>  70.20],
+            'Pouch BB 77gr'            => ['min' =>  78.70, 'std' =>  79.20, 'max' =>  82.70, 'tu1' =>  74.70, 'tu2' =>  70.20],
+            'Pouch YB 250gr'           => ['min' => 253.00, 'std' => 255.00, 'max' => 257.00, 'tu1' => 246.00, 'tu2' => 237.00],
+            'Pouch BB 270gr'           => ['min' => 273.00, 'std' => 275.00, 'max' => 277.00, 'tu1' => 266.00, 'tu2' => 257.00],
+            'Pouch YB 550gr'           => ['min' => 556.00, 'std' => 561.00, 'max' => 566.00, 'tu1' => 545.80, 'tu2' => 530.80],
+            'Pouch YB 700gr'           => ['min' => 706.00, 'std' => 711.00, 'max' => 716.00, 'tu1' => 696.00, 'tu2' => 681.00],
+            'Pouch BB 725gr'           => ['min' => 730.00, 'std' => 735.00, 'max' => 740.00, 'tu1' => 720.00, 'tu2' => 705.00],
+            'Pouch YB 1000gr'          => ['min' => 1007.50, 'std' => 1012.50, 'max' => 1017.50, 'tu1' => 997.50, 'tu2' => 982.50],
         ];
 
-        /*
-    |--------------------------------------------------------------------------
-    | Ultra Fast Grouping
-    |--------------------------------------------------------------------------
-    */
+        $start = Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString();
+        $end   = Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString();
 
-        foreach ($rows as $row) {
+        $query = DB::table('timbangan_retail_mesin')
+        ->select('waktu', 'berat', 'variant', 'mesin');
 
-            // Ambil jam tanpa Carbon (lebih cepat)
-            $hour = (int) substr($row->waktu, 11, 2);
-
-            if ($hour >= 6 && $hour < 14) {
-
-                $shifts['Shift 1'][] = (float) $row->berat;
-            } elseif ($hour >= 14 && $hour < 22) {
-
-                $shifts['Shift 2'][] = (float) $row->berat;
-            } else {
-
-                $shifts['Shift 3'][] = (float) $row->berat;
-            }
+        if ($request->filled('varian')) {
+            $query->where('variant', trim($request->varian));
+        }
+        if ($request->filled('mesin')) {
+            $query->where('mesin', trim($request->mesin));
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Calculate Statistics
-    |--------------------------------------------------------------------------
-    */
+        $rows = $query->whereBetween('waktu', [$start, $end])->get();
 
-        $result = [];
+        if ($rows->isEmpty()) {
+            return response()->json(['success' => true, 'data' => null], 200);
+        }
 
-        foreach ($shifts as $shiftName => $weights) {
+        // ── CLASSIFY HELPER ───────────────────────────────────────────
+        $classify = function (float $berat, string $variant) use ($variantStandards): string {
+            if (!isset($variantStandards[$variant])) return 'tu1ToStd';
+            $s = $variantStandards[$variant];
+            if ($berat > $s['max'])  return 'overMax';
+            if ($berat >= $s['std']) return 'stdToMax';
+            if ($berat >= $s['min']) return 'tu1ToStd';
+            if ($berat >= $s['tu1']) return 'tu2ToTu1';
+            return 'underTu2';
+        };
 
-            if (empty($weights)) {
+        $blankCounts = fn () => ['underTu2' => 0, 'tu2ToTu1' => 0, 'tu1ToStd' => 0, 'stdToMax' => 0, 'overMax' => 0];
 
-                $result[$shiftName] = [
-                    'total_transaksi' => 0,
-                    'average_berat'   => null,
-                    'min_berat'       => null,
-                    'max_berat'       => null,
-                ];
+        // ── CONTAINERS ────────────────────────────────────────────────
+        $shifts   = [
+            'shift1' => ['weights' => [], 'counts' => $blankCounts()],
+            'shift2' => ['weights' => [], 'counts' => $blankCounts()],
+            'shift3' => ['weights' => [], 'counts' => $blankCounts()],
+        ];
+        $variants = []; // [variantName => ['weights'=>[], 'counts'=>[], 'under'=>0, 'over'=>0]]
+        $mesins   = []; // [mesinName   => ['weights'=>[], 'counts'=>[]]]
 
-                continue;
+        // ── LOOP ROWS ─────────────────────────────────────────────────
+        foreach ($rows as $row) {
+            $berat   = (float) $row->berat;
+            $variant = $row->variant ?? '';
+            $mesin   = $row->mesin   ?? '';
+            $hour    = (int) substr($row->waktu, 11, 2);
+
+            if ($hour >= 6 && $hour < 14)      $shiftKey = 'shift1';
+            elseif ($hour >= 14 && $hour < 22) $shiftKey = 'shift2';
+            else                                $shiftKey = 'shift3';
+
+            $cls = $classify($berat, $variant);
+
+            // Shift
+            $shifts[$shiftKey]['weights'][]      = $berat;
+            $shifts[$shiftKey]['counts'][$cls]++;
+
+            // Variant
+            if (!isset($variants[$variant])) {
+                $variants[$variant] = ['weights' => [], 'counts' => $blankCounts()];
             }
+            $variants[$variant]['weights'][] = $berat;
+            $variants[$variant]['counts'][$cls]++;
 
-            $count = count($weights);
-            $sum   = array_sum($weights);
+            // Mesin
+            if (!isset($mesins[$mesin])) {
+                $mesins[$mesin] = ['weights' => [], 'counts' => $blankCounts()];
+            }
+            $mesins[$mesin]['weights'][] = $berat;
+            $mesins[$mesin]['counts'][$cls]++;
+        }
 
-            $result[$shiftName] = [
-                'total_transaksi' => $count,
-                'average_berat'   => round($sum / $count, 3),
-                'min_berat'       => round(min($weights), 3),
-                'max_berat'       => round(max($weights), 3),
+        // ── BUILD STATS HELPER ────────────────────────────────────────
+        $buildStats = function (array $weights, array $counts) {
+            if (empty($weights)) {
+                return [
+                    'total' => 0, 'avg' => null,
+                    'min'   => null, 'max' => null,
+                    'under' => 0, 'over' => 0,
+                    'counts' => $counts,
+                ];
+            }
+            $n = count($weights);
+            return [
+                'total'  => $n,
+                'avg'    => round(array_sum($weights) / $n, 3),
+                'min'    => round(min($weights), 3),
+                'max'    => round(max($weights), 3),
+                'under'  => $counts['underTu2'],
+                'over'   => $counts['overMax'],
+                'counts' => $counts,
+            ];
+        };
+
+        // ── SHIFT RESULT ──────────────────────────────────────────────
+        $shiftResult = [];
+        foreach ($shifts as $k => $d) {
+            $stats = $buildStats($d['weights'], $d['counts']);
+            $shiftResult[$k] = [
+                'total_transaksi' => $stats['total'],
+                'avg'             => $stats['avg'],
+                'min'             => $stats['min'],
+                'max'             => $stats['max'],
+                'counts'          => $stats['counts'],
             ];
         }
 
+        // ── VARIANT RESULT ────────────────────────────────────────────
+        $variantResult = [];
+        foreach ($variants as $v => $d) {
+            $variantResult[$v] = $buildStats($d['weights'], $d['counts']);
+        }
+
+        // ── MESIN RESULT ──────────────────────────────────────────────
+        $mesinResult = [];
+        foreach ($mesins as $m => $d) {
+            $mesinResult[$m] = $buildStats($d['weights'], $d['counts']);
+        }
+
         return response()->json([
-            'success' => true,
-            'data' => [
-                'tanggal' => $tanggal,
-                'variant' => trim($request->variant),
-                'mesin'   => trim($request->mesin),
-                'shifts'  => $result
-            ]
-        ], 200);
+            'success'    => true,
+            'start_date' => $request->start_date,
+            'end_date'   => $request->end_date,
+            'varian'     => $request->varian,
+            'mesin'      => $request->mesin,
+            // Slide 1 — per shift
+            'shift1'     => $shiftResult['shift1'],
+            'shift2'     => $shiftResult['shift2'],
+            'shift3'     => $shiftResult['shift3'],
+            // Slide 2 — per variant & per mesin
+            'variants'   => $variantResult,
+            'mesins'     => $mesinResult,
+        ]);
     }
 
     public function getChartData(Request $request)
@@ -603,140 +691,91 @@ class TimbanganRetailMesinController extends Controller
         $validator = Validator::make($request->all(), [
             'start_date' => 'required|date_format:Y-m-d',
             'end_date'   => 'required|date_format:Y-m-d',
-            'variant'    => 'nullable|string',
+            'varian'     => 'nullable|string',  // ← sesuai blade
             'mesin'      => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors'  => $validator->errors()
-            ], 422);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Shift Range
-    |--------------------------------------------------------------------------
-    | start : 06:00 hari pertama
-    | end   : 05:59:59 hari setelah end_date
-    |--------------------------------------------------------------------------
-    */
-
-        $start = Carbon::parse($request->start_date)
-            ->setTime(6, 0, 0)
-            ->toDateTimeString();
-
-        $end = Carbon::parse($request->end_date)
-            ->addDay()
-            ->setTime(5, 59, 59)
-            ->toDateTimeString();
-
-        /*
-    |--------------------------------------------------------------------------
-    | Query optimized for index:
-    | (variant, mesin, waktu)
-    |--------------------------------------------------------------------------
-    */
+        $start = Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString();
+        $end   = Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString();
 
         $query = DB::table('timbangan_retail_mesin')
-        ->select([
-            'mesin',
-            'variant',
-            'waktu',
-            'berat',
-            'status'
-        ]);
+        ->select(['mesin', 'variant', 'waktu', 'berat', 'status']);
 
-        /*
-    |--------------------------------------------------------------------------
-    | IMPORTANT
-    |--------------------------------------------------------------------------
-    | Agar index kepakai optimal:
-    | variant -> mesin -> waktu
-    |--------------------------------------------------------------------------
-    */
-
-        if ($request->filled('variant')) {
-            $query->where('variant', trim($request->variant));
+        if ($request->filled('varian')) {
+            $query->where('variant', trim($request->varian));
         }
-
         if ($request->filled('mesin')) {
             $query->where('mesin', trim($request->mesin));
         }
 
-        $query->whereBetween('waktu', [$start, $end]);
-
-        /*
-    |--------------------------------------------------------------------------
-    | Order by waktu
-    |--------------------------------------------------------------------------
-    */
-
-        $rows = $query
-            ->orderBy('waktu')
-            ->get();
-
-        /*
-    |--------------------------------------------------------------------------
-    | Empty
-    |--------------------------------------------------------------------------
-    */
+        $rows = $query->whereBetween('waktu', [$start, $end])->orderBy('waktu')->get();
 
         if ($rows->isEmpty()) {
             return response()->json([
                 'success' => true,
-                'data'    => []
-            ], 200);
+                'shift1'  => ['samples' => []],
+                'shift2'  => ['samples' => []],
+                'shift3'  => ['samples' => []],
+                'mesins'  => [],
+                'data'    => [],
+            ]);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Format chart
-    |--------------------------------------------------------------------------
-    */
+        // Group per shift → samples array untuk line chart blade
+        $shiftSamples = ['shift1' => [], 'shift2' => [], 'shift3' => []];
 
-        $data = [];
+        // Group per mesin → untuk slide2
+        $mesinSamples = [];
+
+        $flatData = [];
 
         foreach ($rows as $row) {
-
-            // lebih cepat daripada Carbon::parse()
             $hour = (int) substr($row->waktu, 11, 2);
+            if ($hour >= 6 && $hour < 14)      $shiftKey = 'shift1';
+            elseif ($hour >= 14 && $hour < 22) $shiftKey = 'shift2';
+            else                                $shiftKey = 'shift3';
 
-            if ($hour >= 6 && $hour < 14) {
-
-                $shift = 'Shift 1';
-            } elseif ($hour >= 14 && $hour < 22) {
-
-                $shift = 'Shift 2';
-            } else {
-
-                $shift = 'Shift 3';
-            }
-
-            $data[] = [
+            $item = [
                 'mesin'   => $row->mesin,
                 'variant' => $row->variant,
                 'waktu'   => $row->waktu,
                 'berat'   => (float) $row->berat,
                 'status'  => $row->status,
-                'shift'   => $shift,
+                'shift'   => ucfirst(str_replace('shift', 'Shift ', $shiftKey)),
             ];
+
+            // Samples per shift — blade akses: chartData['shift1'].samples
+            $shiftSamples[$shiftKey][] = ['berat' => (float) $row->berat, 'waktu' => $row->waktu];
+
+            // Samples per mesin — blade akses: chartData.mesins['A'].samples
+            $m = $row->mesin;
+            if (!isset($mesinSamples[$m])) $mesinSamples[$m] = ['samples' => []];
+            $mesinSamples[$m]['samples'][] = ['berat' => (float) $row->berat, 'waktu' => $row->waktu];
+
+            $flatData[] = $item;
         }
 
         return response()->json([
-            'success' => true,
-
-            'filters' => [
+            'success'    => true,
+            'filters'    => [
                 'start_date' => $request->start_date,
                 'end_date'   => $request->end_date,
-                'variant'    => $request->variant,
+                'varian'     => $request->varian,
                 'mesin'      => $request->mesin,
             ],
-
-            'total_data' => count($data),
-
-            'data' => $data
-        ], 200);
+            'total_data' => count($flatData),
+            // Grouped per shift — untuk slide1 line chart
+            'shift1'     => ['samples' => $shiftSamples['shift1']],
+            'shift2'     => ['samples' => $shiftSamples['shift2']],
+            'shift3'     => ['samples' => $shiftSamples['shift3']],
+            // Grouped per mesin — untuk slide2
+            'mesins'     => $mesinSamples,
+            // Flat array tetap ada
+            'data'       => $flatData,
+        ]);
     }
 }

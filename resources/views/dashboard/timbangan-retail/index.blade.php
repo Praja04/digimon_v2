@@ -1,106 +1,508 @@
 @extends('layouts.component.main')
-@section('title', 'Dashboard - Timbangan Retail')
+@section('title', 'Timbangan Retail')
+
+@section('styles')
+<style>
+    /* ── VARIABLES ───────────────────────── */
+    :root {
+        --tr-primary: #1a56db;
+        --tr-success: #0e9f6e;
+        --tr-warning: #ff5a1f;
+        --tr-danger: #e02424;
+        --tr-info: #0694a2;
+        --tr-purple: #7e3af2;
+        --tr-muted: #6b7280;
+        --tr-border: #e5e7eb;
+        --tr-bg: #f9fafb;
+        --tr-card: #ffffff;
+        --tr-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .04);
+        --tr-shadow-md: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .06);
+    }
+
+    /* ── PAGE WRAPPER ───────────────────── */
+    #tr-dashboard {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ── TAB NAV ───────────────────────── */
+    .tr-tab-nav {
+        display: flex;
+        gap: 4px;
+        background: var(--tr-border);
+        border-radius: 10px;
+        padding: 4px;
+        width: fit-content;
+    }
+
+    .tr-tab-btn {
+        padding: 8px 22px;
+        border: none;
+        background: transparent;
+        border-radius: 7px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--tr-muted);
+        transition: all .2s;
+    }
+
+    .tr-tab-btn.active {
+        background: #fff;
+        color: var(--tr-primary);
+        box-shadow: var(--tr-shadow);
+    }
+
+    /* ── FILTER BAR ─────────────────────── */
+    .tr-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+        background: #fff;
+        border: 1px solid var(--tr-border);
+        border-radius: 10px;
+        padding: 14px 16px;
+    }
+
+    .tr-filters .f-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .tr-filters label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--tr-muted);
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .tr-filters select,
+    .tr-filters input[type=date] {
+        border: 1px solid var(--tr-border);
+        border-radius: 7px;
+        padding: 6px 10px;
+        font-size: 13px;
+        color: #111;
+        background: var(--tr-bg);
+        outline: none;
+        min-width: 130px;
+        transition: border-color .2s;
+    }
+
+    .tr-filters select:focus,
+    .tr-filters input[type=date]:focus {
+        border-color: var(--tr-primary);
+    }
+
+    .tr-btn-apply {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 7px;
+        background: var(--tr-primary);
+        color: #fff;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background .2s;
+        align-self: flex-end;
+    }
+
+    .tr-btn-apply:hover {
+        background: #1648c0;
+    }
+
+    /* ── SUMMARY TABLE ──────────────────── */
+    .tr-summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .tr-summary-table thead th {
+        background: var(--tr-bg);
+        border-bottom: 2px solid var(--tr-border);
+        padding: 9px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--tr-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        white-space: nowrap;
+    }
+
+    .tr-summary-table tbody td {
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--tr-border);
+        vertical-align: middle;
+    }
+
+    .tr-summary-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .tr-summary-table .shift-label {
+        font-weight: 700;
+        color: #111;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .shift-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* ── CARD ───────────────────────────── */
+    .tr-card {
+        background: var(--tr-card);
+        border: 1px solid var(--tr-border);
+        border-radius: 12px;
+        box-shadow: var(--tr-shadow);
+        overflow: hidden;
+    }
+
+    .tr-card-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--tr-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .tr-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #111;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .tr-card-body {
+        padding: 14px 16px;
+    }
+
+    /* ── MACHINE BADGE ──────────────────── */
+    .mesin-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: -.3px;
+        border: 1.5px solid transparent;
+    }
+
+    /* ── STATUS BADGES ──────────────────── */
+    .badge-ok {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warn {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-err {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .badge-over {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+
+    /* ── STACKED BAR WRAP ───────────────── */
+    .stacked-wrap {
+        width: 100%;
+    }
+
+    .stacked-bar-row {
+        display: flex;
+        height: 14px;
+        border-radius: 4px;
+        overflow: hidden;
+        gap: 1px;
+        background: transparent;
+    }
+
+    .stacked-bar-row>span {
+        transition: flex .4s;
+        min-width: 0;
+    }
+
+    .stacked-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        margin-top: 8px;
+        font-size: 11px;
+    }
+
+    .stacked-legend span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--tr-muted);
+    }
+
+    .stacked-legend .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ── LINE CHART WRAP ────────────────── */
+    .chart-canvas-wrap {
+        position: relative;
+    }
+
+    /* ── OVERVIEW TABLE ─────────────────── */
+    .tr-ov-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .tr-ov-table thead th {
+        background: var(--tr-bg);
+        padding: 7px 10px;
+        text-align: left;
+        font-weight: 700;
+        color: var(--tr-muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        border-bottom: 2px solid var(--tr-border);
+        white-space: nowrap;
+    }
+
+    .tr-ov-table tbody td {
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--tr-border);
+        vertical-align: middle;
+    }
+
+    .tr-ov-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* ── LC GROUP HEADER ────────────────── */
+    .lc-group-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0 6px;
+        margin-bottom: 10px;
+        border-bottom: 2px solid var(--tr-border);
+    }
+
+    .lc-group-label {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: var(--tr-muted);
+    }
+
+    /* ── MACHINE MINI CARD ──────────────── */
+    .mesin-mini-card {
+        border: 1px solid var(--tr-border);
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--tr-bg);
+    }
+
+    .mesin-mini-card .mini-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        margin-top: 8px;
+        font-size: 11px;
+    }
+
+    .mesin-mini-card .mini-stats div {
+        color: var(--tr-muted);
+    }
+
+    .mesin-mini-card .mini-stats strong {
+        color: #111;
+    }
+
+    /* ── LOADING SPINNER ────────────────── */
+    .tr-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+        flex-direction: column;
+        gap: 10px;
+        color: var(--tr-muted);
+        font-size: 13px;
+    }
+
+    .tr-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--tr-border);
+        border-top-color: var(--tr-primary);
+        border-radius: 50%;
+        animation: tr-spin .7s linear infinite;
+    }
+
+    @keyframes tr-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ── EMPTY STATE ────────────────────── */
+    .tr-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 0;
+        flex-direction: column;
+        gap: 6px;
+        color: var(--tr-muted);
+        font-size: 13px;
+    }
+
+    .tr-empty i {
+        font-size: 28px;
+        opacity: .4;
+    }
+
+    /* ── UTILITY ────────────────────────── */
+    .text-primary {
+        color: var(--tr-primary) !important;
+    }
+
+    .fs-11 {
+        font-size: 11px !important;
+    }
+
+    .fw-700 {
+        font-weight: 700 !important;
+    }
+
+    /* ── RESPONSIVE ─────────────────────── */
+    @media (max-width: 768px) {
+        .tr-filters {
+            gap: 8px;
+        }
+
+        .tr-filters select,
+        .tr-filters input[type=date] {
+            min-width: 100px;
+        }
+    }
+</style>
+@endsection
 
 @section('content')
-<div class="page-content">
+<div class="page-content" id="tr-dashboard">
     <div class="container-fluid">
 
-        {{-- Page Header --}}
-        <div class="row mb-4">
+        {{-- ── PAGE HEADER ──────────────────────────────────────────── --}}
+        <div class="row mb-3">
             <div class="col-12">
-                <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
                     <div>
-                        <h4 class="mb-1 fw-bold text-dark">Timbangan Retail</h4>
-                        <p class="text-muted mb-0 small">Monitoring berat & transaksi per mesin</p>
+                        <h4 class="mb-1 fw-700" style="font-size:18px;">
+                            <i class="ri-scales-2-line text-primary me-2"></i>Timbangan Retail
+                        </h4>
+                        <p class="text-muted mb-0" style="font-size:12px;">
+                            Monitoring gramasi produk retail — data real-time dari semua mesin
+                        </p>
                     </div>
-                    <button class="btn btn-success btn-sm" id="btnExportModal">
-                        <i class="ri-file-excel-2-line me-1"></i> Export Excel
-                    </button>
+                    <div class="ms-auto">
+                        <div class="tr-tab-nav">
+                            <button class="tr-tab-btn active" data-tab="slide1" onclick="switchTab('slide1')">
+                                <i class="ri-bar-chart-grouped-line me-1"></i>Perbandingan Shift
+                            </button>
+                            <button class="tr-tab-btn" data-tab="slide2" onclick="switchTab('slide2')">
+                                <i class="ri-dashboard-line me-1"></i>Report Mesin
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <hr class="mt-3 mb-0">
             </div>
         </div>
 
-        {{-- Filter Bar --}}
-        <div class="row mb-4 g-2 align-items-end">
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Tanggal</label>
-                <input type="date" id="filterDate" class="form-control form-control-sm" value="{{ date('Y-m-d') }}">
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Variant</label>
-                <select id="filterVariant" class="form-select form-select-sm">
-                    <option value="">-- Semua Variant --</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Mesin</label>
-                <select id="filterMesin" class="form-select form-select-sm">
-                    <option value="">-- Semua Mesin --</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-3">
-                <button id="btnFilter" class="btn btn-primary btn-sm w-100">
-                    <i class="ri-search-line me-1"></i> Tampilkan
+        {{-- ════════════════════════════════════════════════════════════
+             SLIDE 1 — Perbandingan Antar Shift
+        ════════════════════════════════════════════════════════════ --}}
+        <div id="tab-slide1">
+
+            {{-- FILTER ──────────────────────────────────────────────── --}}
+            <div class="tr-filters mb-3">
+                <div class="f-group">
+                    <label>Tanggal Mulai</label>
+                    <input type="date" id="s1-date-start">
+                </div>
+                <div class="f-group">
+                    <label>Tanggal Akhir</label>
+                    <input type="date" id="s1-date-end">
+                </div>
+                <div class="f-group">
+                    <label>Varian</label>
+                    <select id="s1-varian">
+                        <option value="">Semua Varian</option>
+                    </select>
+                </div>
+                <div class="f-group">
+                    <label>Mesin</label>
+                    <select id="s1-mesin">
+                        <option value="">Semua Mesin</option>
+                    </select>
+                </div>
+                <button class="tr-btn-apply" onclick="loadSlide1()">
+                    <i class="ri-search-line me-1"></i>Tampilkan
                 </button>
             </div>
-        </div>
 
-        {{-- Loading Indicator --}}
-        <div id="loadingState" class="text-center py-5 d-none">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="text-muted mt-2 small">Memuat data...</p>
-        </div>
-
-        <div id="mainContent" class="d-none">
-
-
-            {{-- Shift Statistics --}}
-            <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <h6 class="fw-semibold text-dark mb-3"><i class="ri-time-line me-1 text-primary"></i>Statistik Per Shift</h6>
-                </div>
-                @foreach(['Shift 1' => ['06:00 – 13:59', 'primary'], 'Shift 2' => ['14:00 – 21:59', 'warning'], 'Shift 3' => ['22:00 – 05:59 (besok)', 'danger']] as $shift => $meta)
-                <div class="col-12 col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-{{ $meta[1] }} bg-opacity-10 border-0 py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold text-{{ $meta[1] }}">{{ $shift }}</span>
-                                <small class="text-muted">{{ $meta[0] }}</small>
-                            </div>
+            {{-- SHIFT CHARTS GRID ────────────────────────────────────── --}}
+            <div class="row g-3 mb-3" id="s1-shift-grid">
+                @foreach (['1','2','3'] as $shift)
+                <div class="col-12 col-xl-4">
+                    <div class="tr-card h-100">
+                        <div class="tr-card-header">
+                            <h6 class="tr-card-title">
+                                <span class="shift-dot" style="background:{{ $shift=='1'?'#1a56db':($shift=='2'?'#0e9f6e':'#ff5a1f') }};"></span>
+                                Shift {{ $shift }}
+                            </h6>
                         </div>
-                        <div class="card-body py-3">
-                            <div class="row g-2 text-center" id="stat_{{ Str::slug($shift) }}">
-                                <div class="col-6">
-                                    <div class="bg-light rounded p-2">
-                                        <div class="small text-muted">Transaksi</div>
-                                        <div class="fw-bold shift-count">-</div>
-                                    </div>
+                        <div class="tr-card-body">
+                            {{-- Stacked bar --}}
+                            <p class="mb-1" style="font-size:11px;font-weight:700;color:var(--tr-muted);text-transform:uppercase;letter-spacing:.4px;">
+                                Distribusi Klasifikasi
+                            </p>
+                            <div class="stacked-wrap mb-3" id="s1-stacked-shift{{ $shift }}">
+                                <div class="tr-loading">
+                                    <div class="tr-spinner"></div>
                                 </div>
-                                <div class="col-6">
-                                    <div class="bg-light rounded p-2">
-                                        <div class="small text-muted">Total</div>
-                                        <div class="fw-bold shift-total">-</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="bg-light rounded p-2">
-                                        <div class="small text-muted">Min</div>
-                                        <div class="fw-bold text-success shift-min">-</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="bg-light rounded p-2">
-                                        <div class="small text-muted">Avg</div>
-                                        <div class="fw-bold text-primary shift-avg">-</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="bg-light rounded p-2">
-                                        <div class="small text-muted">Max</div>
-                                        <div class="fw-bold text-danger shift-max">-</div>
-                                    </div>
-                                </div>
+                            </div>
+                            {{-- Line chart --}}
+                            <p class="mb-1" style="font-size:11px;font-weight:700;color:var(--tr-muted);text-transform:uppercase;letter-spacing:.4px;">
+                                Tren Gramasi (No Sampel vs Berat)
+                            </p>
+                            <div class="chart-canvas-wrap">
+                                <canvas id="s1-line-shift{{ $shift }}" height="140"></canvas>
                             </div>
                         </div>
                     </div>
@@ -108,46 +510,96 @@
                 @endforeach
             </div>
 
-            {{-- Line Chart --}}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
-                    <h6 class="fw-semibold mb-0"><i class="ri-line-chart-line me-1 text-primary"></i>Grafik Berat per Waktu</h6>
-                    <small class="text-muted">Semua mesin dalam rentang shift yang dipilih</small>
+            {{-- SUMMARY TABLE ─────────────────────────────────────────── --}}
+            <div class="tr-card">
+                <div class="tr-card-header">
+                    <h6 class="tr-card-title"><i class="ri-table-line me-1 text-primary"></i>Olah Data — Ringkasan Per Shift</h6>
                 </div>
-                <div class="card-body pt-2">
-                    <div id="lineChart" style="min-height:300px;"></div>
-                </div>
-            </div>
-
-            {{-- Per Mesin & Transaksi Terbaru --}}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="fw-semibold mb-0"><i class="ri-device-line me-1 text-primary"></i>Data Per Mesin & Transaksi Terbaru</h6>
-                        <span class="badge bg-primary-subtle text-primary" id="mesinCount">0 mesin</span>
-                    </div>
-                </div>
-                <div class="card-body p-0">
+                <div class="tr-card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-sm mb-0 align-middle">
-                            <thead class="table-light">
+                        <table class="tr-summary-table">
+                            <thead>
                                 <tr>
-                                    <th class="ps-3">Mesin</th>
-                                    <th class="text-center">Transaksi</th>
-                                    <th class="text-end">Total Berat</th>
-                                    <th class="text-end">Min</th>
-                                    <th class="text-end">Avg</th>
-                                    <th class="text-end">Max</th>
-                                    <th>Terbaru – Waktu</th>
-                                    <th>Terbaru – Berat</th>
-                                    <th>Status</th>
-                                    <th>Variant</th>
-                                    <th class="pe-3">NIK</th>
+                                    <th>Shift</th>
+                                    <th>Min (gr)</th>
+                                    <th>Avg (gr)</th>
+                                    <th>Max (gr)</th>
+                                    <th>&lt;TU2 (pcs)</th>
+                                    <th>TU2→TU1 (pcs)</th>
+                                    <th>TU1→STD (pcs)</th>
+                                    <th>STD→Max (pcs)</th>
+                                    <th>&gt;Max (pcs)</th>
                                 </tr>
                             </thead>
-                            <tbody id="mesinTableBody">
+                            <tbody id="s1-summary-body">
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted py-4">Belum ada data</td>
+                                    <td colspan="9" class="text-center py-4">
+                                        <div class="tr-loading">
+                                            <div class="tr-spinner"></div><span>Memuat data...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════════
+             SLIDE 2 — Report Antar Mesin (Per Shift)
+        ════════════════════════════════════════════════════════════ --}}
+        <div id="tab-slide2" style="display:none;">
+
+            {{-- FILTER ──────────────────────────────────────────────── --}}
+            <div class="tr-filters mb-3">
+                <div class="f-group">
+                    <label>Tanggal Mulai</label>
+                    <input type="date" id="s2-date-start">
+                </div>
+                <div class="f-group">
+                    <label>Tanggal Akhir</label>
+                    <input type="date" id="s2-date-end">
+                </div>
+                <div class="f-group">
+                    <label>Shift</label>
+                    <select id="s2-shift">
+                        <option value="">Semua Shift</option>
+                        <option value="1">Shift 1</option>
+                        <option value="2">Shift 2</option>
+                        <option value="3">Shift 3</option>
+                    </select>
+                </div>
+                <button class="tr-btn-apply" onclick="loadSlide2()">
+                    <i class="ri-search-line me-1"></i>Tampilkan
+                </button>
+            </div>
+
+            {{-- OVERVIEW TABLE ───────────────────────────────────────── --}}
+            <div class="tr-card mb-3">
+                <div class="tr-card-header">
+                    <h6 class="tr-card-title"><i class="ri-list-check-2 me-1 text-primary"></i>Overview — Semua Varian</h6>
+                </div>
+                <div class="tr-card-body p-0">
+                    <div class="table-responsive">
+                        <table class="tr-ov-table">
+                            <thead>
+                                <tr>
+                                    <th>Varian</th>
+                                    <th>Under (pcs)</th>
+                                    <th>Min (gr)</th>
+                                    <th>Avg (gr)</th>
+                                    <th>Max (gr)</th>
+                                    <th>Over (pcs)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s2-overview-body">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="tr-loading">
+                                            <div class="tr-spinner"></div><span>Memuat data...</span>
+                                        </div>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -155,358 +607,707 @@
                 </div>
             </div>
 
-        </div>{{-- end #mainContent --}}
+            {{-- MACHINE GROUPS ────────────────────────────────────────── --}}
+            <div id="s2-machine-groups">
+                @php
+                $lc_groups = [
+                'LC1' => ['F','G','H','I'],
+                'LC2' => ['D','E','J','K'],
+                'LC3' => ['C','L','AE','AG'],
+                'LC5' => ['B','AF','AI','AJ'],
+                'Pouch Besar & Medium' => ['AH','V','U','A'],
+                'Sachet 20G' => ['O','P','W','X'],
+                'Sachet 40G & 12.5G' => ['R','Q','Y','Z'],
+                ];
+                $lc_colors = [
+                'LC1' => '#1a56db','LC2' => '#0e9f6e','LC3' => '#7e3af2',
+                'LC5' => '#0694a2','Pouch Besar & Medium' => '#ff5a1f',
+                'Sachet 20G' => '#e02424','Sachet 40G & 12.5G' => '#c27803',
+                ];
+                @endphp
 
-    </div>
-</div>
-
-{{-- Export Modal --}}
-<div class="modal fade" id="exportModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h6 class="modal-title fw-semibold"><i class="ri-file-excel-2-line me-1 text-success"></i>Export Excel</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Tanggal</label>
-                    <input type="date" id="exportDate" class="form-control form-control-sm" value="{{ date('Y-m-d') }}">
-                    <div class="form-text">Export mencakup Shift 1 s/d Shift 3 dari tanggal ini.</div>
+                @foreach($lc_groups as $lcName => $machines)
+                <div class="mb-4">
+                    <div class="lc-group-header">
+                        <div style="width:3px;height:20px;border-radius:2px;background:{{ $lc_colors[$lcName] ?? '#888' }}"></div>
+                        <span class="lc-group-label">{{ $lcName }}</span>
+                        <div style="flex:1;height:1px;background:var(--tr-border);"></div>
+                    </div>
+                    <div class="row g-3">
+                        @foreach($machines as $mesin)
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="mesin-mini-card" id="s2-mesin-{{ $mesin }}">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="mesin-badge" style="background:{{ $lc_colors[$lcName] ?? '#888' }}20;color:{{ $lc_colors[$lcName] ?? '#888' }};border-color:{{ $lc_colors[$lcName] ?? '#888' }}40;">{{ $mesin }}</span>
+                                    <div>
+                                        <div style="font-size:12px;font-weight:700;color:#111;">Mesin {{ $mesin }}</div>
+                                        <div style="font-size:10px;color:var(--tr-muted);" class="s2-mesin-varian-{{ $mesin }}">—</div>
+                                    </div>
+                                </div>
+                                {{-- Stacked bar --}}
+                                <div class="stacked-wrap mb-2" id="s2-stacked-{{ $mesin }}">
+                                    <div class="tr-loading" style="padding:16px 0;">
+                                        <div class="tr-spinner" style="width:20px;height:20px;border-width:2px;"></div>
+                                    </div>
+                                </div>
+                                <canvas id="s2-line-{{ $mesin }}" height="80" class="mb-1"></canvas>
+                                <div class="mini-stats" id="s2-stats-{{ $mesin }}">
+                                    <div>Min: <strong>—</strong></div>
+                                    <div>Max: <strong>—</strong></div>
+                                    <div>Avg: <strong>—</strong></div>
+                                    <div>Total: <strong>—</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Variant <span class="text-muted">(opsional)</span></label>
-                    <select id="exportVariant" class="form-select form-select-sm">
-                        <option value="">-- Semua --</option>
-                    </select>
-                </div>
-                <div class="mb-0">
-                    <label class="form-label small fw-semibold">Mesin <span class="text-muted">(opsional)</span></label>
-                    <select id="exportMesin" class="form-select form-select-sm">
-                        <option value="">-- Semua --</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                <button type="button" id="btnDoExport" class="btn btn-success btn-sm">
-                    <i class="ri-download-line me-1"></i>Download
-                </button>
+                @endforeach
             </div>
         </div>
-    </div>
-</div>
+
+    </div>{{-- /container-fluid --}}
+</div>{{-- /page-content --}}
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    (() => {
-        'use strict';
+    /* ══════════════════════════════════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════════════════════════════════ */
+    const VARIANT_STANDARDS = {
+        "Sachet YB 12,5gr PCS": {
+            min: 12.05,
+            std: 13.05,
+            max: 14.05,
+            tu1: 11.93,
+            tu2: 10.80,
+            code: "S12.5G-P"
+        },
+        "Sachet YB 12,5gr RENCENG": {
+            min: 154.60,
+            std: 156.60,
+            max: 168.60,
+            tu1: 143.10,
+            tu2: 129.60,
+            code: "S12.5G-R"
+        },
+        "Sachet YB 20gr PCS": {
+            min: 19.14,
+            std: 20.64,
+            max: 21.64,
+            tu1: 18.84,
+            tu2: 17.04,
+            code: "S20G-P"
+        },
+        "Sachet YB 20gr RENCENG": {
+            min: 244.68,
+            std: 247.68,
+            max: 259.68,
+            tu1: 226.08,
+            tu2: 204.48,
+            code: "S20G-R"
+        },
+        "Sachet BB 40gr PCS": {
+            min: 39.10,
+            std: 41.10,
+            max: 42.10,
+            tu1: 37.50,
+            tu2: 33.90,
+            code: "S40G-P"
+        },
+        "Sachet BB 40gr RENCENG": {
+            min: 489.20,
+            std: 493.20,
+            max: 505.20,
+            tu1: 450.00,
+            tu2: 406.80,
+            code: "S40G-R"
+        },
+        "Pouch YB 77gr": {
+            min: 78.70,
+            std: 79.20,
+            max: 82.70,
+            tu1: 74.70,
+            tu2: 70.20,
+            code: "P77G-YB"
+        },
+        "Pouch BB 77gr": {
+            min: 78.70,
+            std: 79.20,
+            max: 82.70,
+            tu1: 74.70,
+            tu2: 70.20,
+            code: "P77G-BB"
+        },
+        "Pouch YB 250gr": {
+            min: 253.00,
+            std: 255.00,
+            max: 257.00,
+            tu1: 246.00,
+            tu2: 237.00,
+            code: "P250G"
+        },
+        "Pouch BB 270gr": {
+            min: 273.00,
+            std: 275.00,
+            max: 277.00,
+            tu1: 266.00,
+            tu2: 257.00,
+            code: "P270G"
+        },
+        "Pouch YB 550gr": {
+            min: 556.00,
+            std: 561.00,
+            max: 566.00,
+            tu1: 545.80,
+            tu2: 530.80,
+            code: "P550G"
+        },
+        "Pouch YB 700gr": {
+            min: 706.00,
+            std: 711.00,
+            max: 716.00,
+            tu1: 696.00,
+            tu2: 681.00,
+            code: "P700G"
+        },
+        "Pouch BB 725gr": {
+            min: 730.00,
+            std: 735.00,
+            max: 740.00,
+            tu1: 720.00,
+            tu2: 705.00,
+            code: "P725G"
+        },
+        "Pouch YB 1000gr": {
+            min: 1007.50,
+            std: 1012.50,
+            max: 1017.50,
+            tu1: 997.50,
+            tu2: 982.50,
+            code: "P1000G"
+        },
+    };
 
-        const BASE_URL = '/api/timbangan-retail';
-        let lineChart = null;
+    const VARIANT_MESIN = {
+        "Sachet YB 12,5gr PCS": ["Y", "Z"],
+        "Sachet YB 12,5gr RENCENG": ["Y", "Z"],
+        "Sachet YB 20gr PCS": ["O", "P", "W", "X"],
+        "Sachet YB 20gr RENCENG": ["O", "P", "W", "X"],
+        "Sachet BB 40gr PCS": ["Q", "R"],
+        "Sachet BB 40gr RENCENG": ["Q", "R"],
+        "Pouch YB 77gr": ["F", "G", "H", "I", "D", "E", "J", "K", "C", "L", "AE", "AG"],
+        "Pouch BB 77gr": ["C", "L", "AE", "AG", "B", "AF", "AI", "AJ"],
+        "Pouch YB 250gr": ["AH"],
+        "Pouch BB 270gr": ["AH"],
+        "Pouch YB 550gr": ["A", "U", "V"],
+        "Pouch YB 700gr": ["A", "U", "V"],
+        "Pouch BB 725gr": ["A", "U", "V"],
+        "Pouch YB 1000gr": ["A", "U", "V"],
+    };
 
-        // ─── Util ────────────────────────────────────────────────────────
-        const fmt = (v, unit = '') => v !== null && v !== undefined ?
-            `${Number(v).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}${unit ? ' ' + unit : ''}` :
-            '-';
+    // Reverse map: mesin → variants
+    const MESIN_VARIAN = {};
+    Object.entries(VARIANT_MESIN).forEach(([varian, mesins]) => {
+        mesins.forEach(m => {
+            if (!MESIN_VARIAN[m]) MESIN_VARIAN[m] = [];
+            if (!MESIN_VARIAN[m].includes(varian)) MESIN_VARIAN[m].push(varian);
+        });
+    });
 
-        const statusBadge = (s) => {
-            if (!s) return '-';
-            const map = {
-                sukses: 'success',
-                gagal: 'danger',
-                proses: 'warning',
-                ok: 'success'
-            };
-            const cls = map[s.toLowerCase()] ?? 'secondary';
-            return `<span class="badge bg-${cls}-subtle text-${cls}">${s}</span>`;
-        };
+    const CLASS_COLORS = {
+        overMax: '#7e3af2', // >Max
+        stdToMax: '#0e9f6e', // STD→Max (OK)
+        tu1ToStd: '#1a56db', // TU1→STD (OK)
+        tu2ToTu1: '#fbbf24', // TU2→TU1 (warning)
+        underTu2: '#e02424', // <TU2 (danger)
+    };
 
-        // ─── Parse DateTime Fix ──────────────────────────────────────────
-        function parseDateTime(dateStr) {
-            if (!dateStr) return null;
-            try {
-                // Format: "2026-05-08 19:39:17"
-                const [datePart, timePart] = dateStr.split(' ');
-                const [year, month, day] = datePart.split('-').map(Number);
-                const [hour, minute, second] = timePart.split(':').map(Number);
-                // Buat timestamp dengan timezone UTC untuk konsistensi
-                return Date.UTC(year, month - 1, day, hour, minute, second);
-            } catch (e) {
-                console.warn('Invalid date format:', dateStr);
-                return null;
-            }
+    const SHIFT_COLORS = ['#1a56db', '#0e9f6e', '#ff5a1f'];
+
+    /* ══════════════════════════════════════════════════════════════════
+       CHART REGISTRY — avoid double-init
+    ══════════════════════════════════════════════════════════════════ */
+    const _charts = {};
+
+    function destroyChart(id) {
+        if (_charts[id]) {
+            _charts[id].destroy();
+            delete _charts[id];
         }
+    }
 
-        // ─── Load filter options ─────────────────────────────────────────
-        async function loadFilterOptions() {
-            try {
-                const res = await fetch(`${BASE_URL}/filter-options`);
-                const data = await res.json();
+    function registerChart(id, instance) {
+        _charts[id] = instance;
+    }
 
-                const populate = (selectIds, items) => {
-                    selectIds.forEach(id => {
-                        const el = document.getElementById(id);
-                        const current = el.value;
-                        // keep first option
-                        while (el.options.length > 1) el.remove(1);
-                        items.forEach(v => {
-                            const o = new Option(v, v);
-                            el.add(o);
-                        });
-                        el.value = current;
-                    });
-                };
+    /* ══════════════════════════════════════════════════════════════════
+       HELPERS
+    ══════════════════════════════════════════════════════════════════ */
+    function classifyWeight(w, std) {
+        if (!std) return 'tu1ToStd';
+        if (w > std.max) return 'overMax';
+        if (w >= std.min) return (w >= std.std) ? 'stdToMax' : 'tu1ToStd';
+        if (w >= std.tu1) return 'tu2ToTu1';
+        return 'underTu2';
+    }
 
-                populate(['filterVariant', 'exportVariant'], data.variants ?? []);
-                populate(['filterMesin', 'exportMesin'], data.mesins ?? []);
-            } catch (e) {
-                console.error('Filter options error:', e);
-            }
-        }
+    function buildStackedBar(counts, total) {
+        if (!total) return '<div class="tr-empty"><i class="ri-bar-chart-line"></i><span>Tidak ada data</span></div>';
+        const pct = k => ((counts[k] || 0) / total * 100).toFixed(1);
+        return `
+    <div class="stacked-bar-row mb-1">
+        <span style="flex:${pct('underTu2')};background:${CLASS_COLORS.underTu2};" title="<TU2: ${counts.underTu2||0}"></span>
+        <span style="flex:${pct('tu2ToTu1')};background:${CLASS_COLORS.tu2ToTu1};" title="TU2→TU1: ${counts.tu2ToTu1||0}"></span>
+        <span style="flex:${pct('tu1ToStd')};background:${CLASS_COLORS.tu1ToStd};" title="TU1→STD: ${counts.tu1ToStd||0}"></span>
+        <span style="flex:${pct('stdToMax')};background:${CLASS_COLORS.stdToMax};" title="STD→Max: ${counts.stdToMax||0}"></span>
+        <span style="flex:${pct('overMax')};background:${CLASS_COLORS.overMax};" title=">Max: ${counts.overMax||0}"></span>
+    </div>
+    <div class="stacked-legend">
+        <span><i class="dot" style="background:${CLASS_COLORS.underTu2};"></i>&lt;TU2 (${counts.underTu2||0})</span>
+        <span><i class="dot" style="background:${CLASS_COLORS.tu2ToTu1};"></i>TU2→TU1 (${counts.tu2ToTu1||0})</span>
+        <span><i class="dot" style="background:${CLASS_COLORS.tu1ToStd};"></i>TU1→STD (${counts.tu1ToStd||0})</span>
+        <span><i class="dot" style="background:${CLASS_COLORS.stdToMax};"></i>STD→Max (${counts.stdToMax||0})</span>
+        <span><i class="dot" style="background:${CLASS_COLORS.overMax};"></i>&gt;Max (${counts.overMax||0})</span>
+    </div>`;
+    }
 
-        // ─── Fetch & Render ──────────────────────────────────────────────
-        async function loadData() {
-            const date = document.getElementById('filterDate').value;
-            const variant = document.getElementById('filterVariant').value;
-            const mesin = document.getElementById('filterMesin').value;
-
-            if (!date) {
-                alert('Pilih tanggal terlebih dahulu.');
-                return;
-            }
-
-            document.getElementById('loadingState').classList.remove('d-none');
-            document.getElementById('mainContent').classList.add('d-none');
-
-            try {
-                const params = new URLSearchParams({
-                    date
-                });
-                if (variant) params.append('variant', variant);
-                if (mesin) params.append('mesin', mesin);
-
-                const res = await fetch(`${BASE_URL}/data?${params}`);
-                const data = await res.json();
-
-                if (!data.success) throw new Error(data.message ?? 'Gagal memuat data');
-
-                renderShiftStats(data.shift_stats);
-                renderChart(data.chart_data);
-                renderMesinTable(data.per_mesin);
-
-                document.getElementById('mainContent').classList.remove('d-none');
-            } catch (e) {
-                alert('Error: ' + e.message);
-            } finally {
-                document.getElementById('loadingState').classList.add('d-none');
-            }
-        }
-
-        // ─── Shift Stats ─────────────────────────────────────────────────
-        function renderShiftStats(stats) {
-            const slugMap = {
-                'Shift 1': 'shift-1',
-                'Shift 2': 'shift-2',
-                'Shift 3': 'shift-3'
-            };
-            Object.entries(stats ?? {}).forEach(([name, s]) => {
-                const id = `stat_${slugMap[name]}`;
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.querySelector('.shift-count').textContent = (s.count ?? 0).toLocaleString('id-ID');
-                el.querySelector('.shift-total').textContent = fmt(s.total);
-                el.querySelector('.shift-min').textContent = fmt(s.min);
-                el.querySelector('.shift-avg').textContent = fmt(s.average);
-                el.querySelector('.shift-max').textContent = fmt(s.max);
-            });
-        }
-
-        // ─── Line Chart (FIXED) ──────────────────────────────────────────
-        function renderChart(chartData) {
-            // Group by mesin dengan parsing tanggal yang benar
-            const grouped = {};
-            (chartData ?? []).forEach(d => {
-                if (!d.mesin || d.y === null || d.y === undefined) return;
-
-                if (!grouped[d.mesin]) grouped[d.mesin] = [];
-
-                const timestamp = parseDateTime(d.x);
-                if (timestamp) {
-                    grouped[d.mesin].push({
-                        x: timestamp,
-                        y: Number(d.y)
-                    });
+    function buildLineChart(canvasId, labels, datasets, yLines = []) {
+        destroyChart(canvasId);
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        const annotations = {};
+        yLines.forEach((l, i) => {
+            annotations[`line${i}`] = {
+                type: 'line',
+                yMin: l.v,
+                yMax: l.v,
+                borderColor: l.color,
+                borderWidth: 1.5,
+                borderDash: [4, 3],
+                label: {
+                    content: l.label,
+                    display: true,
+                    font: {
+                        size: 9
+                    },
+                    position: 'end'
                 }
-            });
-
-            const series = Object.entries(grouped).map(([mesin, points]) => ({
-                name: mesin,
-                data: points.sort((a, b) => a.x - b.x)
-            }));
-
-            const options = {
-                chart: {
-                    type: 'line',
-                    height: 300,
-                    toolbar: {
-                        show: true
-                    },
-                    zoom: {
-                        enabled: true
-                    },
-                    animations: {
-                        enabled: true,
-                        speed: 400
-                    }
+            };
+        });
+        const instance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets
+            },
+            options: {
+                responsive: true,
+                animation: {
+                    duration: 300
                 },
-                series,
-                xaxis: {
-                    type: 'datetime',
-                    labels: {
-                        datetimeFormatter: {
-                            hour: 'HH:mm',
-                            minute: 'HH:mm:ss'
-                        },
-                        style: {
-                            fontSize: '11px'
+                plugins: {
+                    legend: {
+                        display: datasets.length > 1,
+                        labels: {
+                            font: {
+                                size: 10
+                            },
+                            boxWidth: 10
                         }
-                    }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    annotation: yLines.length ? {
+                        annotations
+                    } : {}
                 },
-                yaxis: {
-                    labels: {
-                        formatter: v => Number(v).toLocaleString('id-ID', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 3
-                        }),
-                        style: {
-                            fontSize: '11px'
-                        }
-                    }
-                },
-                tooltip: {
+                scales: {
                     x: {
-                        format: 'dd MMM yyyy HH:mm:ss'
+                        ticks: {
+                            font: {
+                                size: 9
+                            },
+                            maxTicksLimit: 10,
+                            maxRotation: 0
+                        },
+                        grid: {
+                            display: false
+                        }
                     },
                     y: {
-                        formatter: v => fmt(v)
-                    }
-                },
-                stroke: {
-                    width: 2,
-                    curve: 'smooth'
-                },
-                markers: {
-                    size: series.length <= 2 ? 4 : 0
-                },
-                legend: {
-                    position: 'top'
-                },
-                colors: ['#0d6efd', '#198754', '#fd7e14', '#dc3545', '#6f42c1', '#20c997'],
-                grid: {
-                    borderColor: '#f0f0f0'
-                },
-                noData: {
-                    text: 'Tidak ada data untuk ditampilkan',
-                    style: {
-                        color: '#aaa'
+                        ticks: {
+                            font: {
+                                size: 9
+                            }
+                        },
+                        grid: {
+                            color: '#f3f4f6'
+                        }
                     }
                 }
-            };
-
-            if (lineChart) {
-                lineChart.destroy();
             }
-            lineChart = new ApexCharts(document.getElementById('lineChart'), options);
-            lineChart.render();
+        });
+        registerChart(canvasId, instance);
+    }
+
+    function fmt(v, d = 2) {
+        return v != null ? (+v).toFixed(d) : '—';
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       API CALLS
+    ══════════════════════════════════════════════════════════════════ */
+    async function apiFetch(url, params = {}) {
+        const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v != null)));
+        const res = await fetch(`${url}?${q}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       FILTER OPTIONS — populate selects
+    ══════════════════════════════════════════════════════════════════ */
+    async function loadFilterOptions() {
+        try {
+            const data = await apiFetch('/api/timbangan-retail/filter-options');
+            const variantSel = document.getElementById('s1-varian');
+            const mesinSel = document.getElementById('s1-mesin');
+            (data.variants || Object.keys(VARIANT_STANDARDS)).forEach(v => {
+                [variantSel].forEach(s => {
+                    const o = document.createElement('option');
+                    o.value = v;
+                    o.textContent = v;
+                    s.appendChild(o);
+                });
+            });
+            (data.mesins || Object.keys(MESIN_VARIAN).sort()).forEach(m => {
+                const o = document.createElement('option');
+                o.value = m;
+                o.textContent = `Mesin ${m}`;
+                mesinSel.appendChild(o);
+            });
+        } catch (e) {
+            // Fallback: populate from constants
+            const variantSel = document.getElementById('s1-varian');
+            const mesinSel = document.getElementById('s1-mesin');
+            Object.keys(VARIANT_STANDARDS).forEach(v => {
+                const o = document.createElement('option');
+                o.value = v;
+                o.textContent = v;
+                variantSel.appendChild(o);
+            });
+            Object.keys(MESIN_VARIAN).sort().forEach(m => {
+                const o = document.createElement('option');
+                o.value = m;
+                o.textContent = `Mesin ${m}`;
+                mesinSel.appendChild(o);
+            });
         }
+    }
 
-        // ─── Per Mesin Table ─────────────────────────────────────────────
-        function renderMesinTable(perMesin) {
-            const tbody = document.getElementById('mesinTableBody');
-            document.getElementById('mesinCount').textContent = `${(perMesin ?? []).length} mesin`;
+    /* ══════════════════════════════════════════════════════════════════
+       SLIDE 1 — Perbandingan Shift
+    ══════════════════════════════════════════════════════════════════ */
+    async function loadSlide1() {
+        const params = {
+            start_date: document.getElementById('s1-date-start').value,
+            end_date: document.getElementById('s1-date-end').value,
+            varian: document.getElementById('s1-varian').value,
+            mesin: document.getElementById('s1-mesin').value,
+        };
 
-            if (!perMesin || perMesin.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-4">Tidak ada data</td></tr>`;
-                return;
-            }
+        // Show loaders
+        [1, 2, 3].forEach(s => {
+            document.getElementById(`s1-stacked-shift${s}`).innerHTML = '<div class="tr-loading"><div class="tr-spinner"></div></div>';
+            destroyChart(`s1-line-shift${s}`);
+        });
+        document.getElementById('s1-summary-body').innerHTML =
+            '<tr><td colspan="9" class="text-center py-3"><div class="tr-loading"><div class="tr-spinner"></div><span>Memuat...</span></div></td></tr>';
 
-            tbody.innerHTML = perMesin.map(m => {
-                const tr = m.transaksi_terbaru ?? {};
-                const waktuTerbaru = tr.waktu ? new Date(tr.waktu).toLocaleString('id-ID', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                }) : '-';
+        try {
+            const [avgData, chartData] = await Promise.all([
+                apiFetch('/api/timbangan-retail/average-minmax', params),
+                apiFetch('/api/timbangan-retail/chart', params),
+            ]);
 
+            const summaryRows = [];
+
+            [1, 2, 3].forEach((shift, si) => {
+                const shiftKey = `shift${shift}`;
+                const shiftData = avgData[shiftKey] || {};
+                const shiftChart = chartData[shiftKey] || {};
+
+                // Build counts from chart data or API
+                const counts = shiftData.counts || {
+                    underTu2: 0,
+                    tu2ToTu1: 0,
+                    tu1ToStd: 0,
+                    stdToMax: 0,
+                    overMax: 0
+                };
+                const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+                // Stacked bar
+                document.getElementById(`s1-stacked-shift${shift}`).innerHTML = buildStackedBar(counts, total);
+
+                // Line chart
+                const samples = shiftChart.samples || [];
+                const std = params.varian && VARIANT_STANDARDS[params.varian] ? VARIANT_STANDARDS[params.varian] : null;
+                const yLines = std ? [{
+                        v: std.max,
+                        color: '#7e3af2',
+                        label: 'Max'
+                    },
+                    {
+                        v: std.std,
+                        color: '#0e9f6e',
+                        label: 'STD'
+                    },
+                    {
+                        v: std.min,
+                        color: '#1a56db',
+                        label: 'Min'
+                    },
+                    {
+                        v: std.tu1,
+                        color: '#fbbf24',
+                        label: 'TU1'
+                    },
+                    {
+                        v: std.tu2,
+                        color: '#e02424',
+                        label: 'TU2'
+                    },
+                ] : [];
+
+                buildLineChart(
+                    `s1-line-shift${shift}`,
+                    samples.map((_, i) => `#${i+1}`),
+                    [{
+                        label: `Shift ${shift}`,
+                        data: samples.map(s => s.berat || s.weight || s),
+                        borderColor: SHIFT_COLORS[si],
+                        backgroundColor: SHIFT_COLORS[si] + '22',
+                        pointRadius: 2,
+                        borderWidth: 2,
+                        tension: .35,
+                        fill: true,
+                    }],
+                    yLines
+                );
+
+                // Summary row
+                summaryRows.push({
+                    shift,
+                    color: SHIFT_COLORS[si],
+                    min: shiftData.min,
+                    avg: shiftData.avg || shiftData.average,
+                    max: shiftData.max,
+                    ...counts,
+                });
+            });
+
+            // Render summary table
+            document.getElementById('s1-summary-body').innerHTML = summaryRows.map(r => `
+            <tr>
+                <td><div class="shift-label"><span class="shift-dot" style="background:${r.color};"></span>Shift ${r.shift}</div></td>
+                <td>${fmt(r.min)}</td>
+                <td>${fmt(r.avg)}</td>
+                <td>${fmt(r.max)}</td>
+                <td><span class="badge ${r.underTu2>0?'badge-err':'badge-ok'}">${r.underTu2||0}</span></td>
+                <td><span class="badge ${r.tu2ToTu1>0?'badge-warn':'badge-ok'}">${r.tu2ToTu1||0}</span></td>
+                <td>${r.tu1ToStd||0}</td>
+                <td>${r.stdToMax||0}</td>
+                <td><span class="badge ${r.overMax>0?'badge-over':'badge-ok'}">${r.overMax||0}</span></td>
+            </tr>
+        `).join('');
+
+        } catch (e) {
+            console.error('Slide 1 error:', e);
+            [1, 2, 3].forEach(s => {
+                document.getElementById(`s1-stacked-shift${s}`).innerHTML =
+                    '<div class="tr-empty"><i class="ri-error-warning-line"></i><span>Gagal memuat data</span></div>';
+            });
+            document.getElementById('s1-summary-body').innerHTML =
+                '<tr><td colspan="9" class="text-center text-danger py-3">Gagal memuat data — periksa koneksi API</td></tr>';
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SLIDE 2 — Report Mesin Per Shift
+    ══════════════════════════════════════════════════════════════════ */
+    const ALL_MESINS = ['F', 'G', 'H', 'I', 'D', 'E', 'J', 'K', 'C', 'L', 'AE', 'AG', 'B', 'AF', 'AI', 'AJ', 'AH', 'V', 'U', 'A', 'O', 'P', 'W', 'X', 'R', 'Q', 'Y', 'Z'];
+
+    async function loadSlide2() {
+        const params = {
+            start_date: document.getElementById('s2-date-start').value,
+            end_date: document.getElementById('s2-date-end').value,
+            shift: document.getElementById('s2-shift').value,
+        };
+
+        // Show loaders on all machines
+        ALL_MESINS.forEach(m => {
+            const stEl = document.getElementById(`s2-stacked-${m}`);
+            if (stEl) stEl.innerHTML = '<div class="tr-loading" style="padding:12px 0;"><div class="tr-spinner" style="width:18px;height:18px;border-width:2px;"></div></div>';
+            destroyChart(`s2-line-${m}`);
+            const statsEl = document.getElementById(`s2-stats-${m}`);
+            if (statsEl) statsEl.innerHTML = '<div>Min: <strong>—</strong></div><div>Max: <strong>—</strong></div><div>Avg: <strong>—</strong></div><div>Total: <strong>—</strong></div>';
+            // varian label
+            const varianEls = document.querySelectorAll(`.s2-mesin-varian-${m}`);
+            varianEls.forEach(el => {
+                el.textContent = MESIN_VARIAN[m]?.map(v => VARIANT_STANDARDS[v]?.code || v).join(', ') || '—';
+            });
+        });
+
+        // Overview loader
+        document.getElementById('s2-overview-body').innerHTML =
+            '<tr><td colspan="6" class="text-center py-3"><div class="tr-loading"><div class="tr-spinner"></div><span>Memuat...</span></div></td></tr>';
+
+        try {
+            // Fetch overview + per-machine data
+            const [ovData, chartData] = await Promise.all([
+                apiFetch('/api/timbangan-retail/average-minmax', params),
+                apiFetch('/api/timbangan-retail/chart', params),
+            ]);
+
+            // ── OVERVIEW TABLE ──────────────────────────────────────
+            const variants = Object.keys(VARIANT_STANDARDS);
+            const overviewRows = variants.map(v => {
+                const vd = ovData.variants?.[v] || {};
                 return `
-                    <tr>
-                        <td class="ps-3 fw-semibold">${m.mesin ?? '-'}</td>
-                        <td class="text-center">${(m.jumlah_transaksi ?? 0).toLocaleString('id-ID')}</td>
-                        <td class="text-end">${fmt(m.total_berat)}</td>
-                        <td class="text-end text-success">${fmt(m.min_berat)}</td>
-                        <td class="text-end text-primary">${fmt(m.average_berat)}</td>
-                        <td class="text-end text-danger">${fmt(m.max_berat)}</td>
-                        <td><small class="text-muted">${waktuTerbaru}</small></td>
-                        <td class="fw-medium">${fmt(tr.berat)}</td>
-                        <td>${statusBadge(tr.status)}</td>
-                        <td class="fw-semibold">${tr.variant ?? '-'}</td>
-                        <td class="pe-3">${tr.nik ?? '-'}</td>
-                    </tr>`;
-            }).join('');
+            <tr>
+                <td><span class="fw-600" style="font-size:12px;">${v}</span><br>
+                    <span style="font-size:10px;color:var(--tr-muted);">${VARIANT_STANDARDS[v].code}</span></td>
+                <td><span class="badge ${(vd.under||0)>0?'badge-err':'badge-ok'}">${vd.under||0}</span></td>
+                <td>${fmt(vd.min)}</td>
+                <td>${fmt(vd.avg||vd.average)}</td>
+                <td>${fmt(vd.max)}</td>
+                <td><span class="badge ${(vd.over||0)>0?'badge-over':'badge-ok'}">${vd.over||0}</span></td>
+            </tr>`;
+            });
+            document.getElementById('s2-overview-body').innerHTML = overviewRows.join('') ||
+                '<tr><td colspan="6" class="text-center py-3 text-muted">Tidak ada data</td></tr>';
+
+            // ── PER MACHINE ──────────────────────────────────────────
+            ALL_MESINS.forEach(m => {
+                const mData = chartData.mesins?.[m] || {};
+                const mStats = ovData.mesins?.[m] || {};
+                const samples = mData.samples || [];
+                const counts = mStats.counts || {
+                    underTu2: 0,
+                    tu2ToTu1: 0,
+                    tu1ToStd: 0,
+                    stdToMax: 0,
+                    overMax: 0
+                };
+                const total = mStats.total || 0;
+
+                // Stacked bar
+                const stEl = document.getElementById(`s2-stacked-${m}`);
+                if (stEl) stEl.innerHTML = total > 0 ?
+                    buildStackedBar(counts, total) :
+                    '<div class="tr-empty" style="padding:10px 0;font-size:11px;"><i class="ri-bar-chart-line" style="font-size:16px;"></i><span>Tidak ada data</span></div>';
+
+                // Line chart
+                const varianList = MESIN_VARIAN[m] || [];
+                const firstVarian = varianList[0];
+                const std = firstVarian ? VARIANT_STANDARDS[firstVarian] : null;
+                const yLines = std ? [{
+                        v: std.max,
+                        color: '#7e3af2',
+                        label: 'Max'
+                    },
+                    {
+                        v: std.min,
+                        color: '#1a56db',
+                        label: 'Min'
+                    },
+                ] : [];
+
+                if (samples.length) {
+                    buildLineChart(
+                        `s2-line-${m}`,
+                        samples.map((_, i) => `#${i+1}`),
+                        [{
+                            label: `Mesin ${m}`,
+                            data: samples.map(s => s.berat || s.weight || s),
+                            borderColor: '#1a56db',
+                            backgroundColor: '#1a56db22',
+                            pointRadius: 1.5,
+                            borderWidth: 1.5,
+                            tension: .35,
+                            fill: true,
+                        }],
+                        yLines
+                    );
+                }
+
+                // Mini stats
+                const statsEl = document.getElementById(`s2-stats-${m}`);
+                if (statsEl) statsEl.innerHTML = `
+                    <div>Min: <strong>${fmt(mStats.min)}</strong></div>
+                    <div>Max: <strong>${fmt(mStats.max)}</strong></div>
+                    <div>Avg: <strong>${fmt(mStats.avg)}</strong></div>
+                    <div>Total: <strong>${mStats.total ?? 0}</strong></div>
+                `;
+            });
+
+        } catch (e) {
+            console.error('Slide 2 error:', e);
+            document.getElementById('s2-overview-body').innerHTML =
+                '<tr><td colspan="6" class="text-center text-danger py-3">Gagal memuat data — periksa koneksi API</td></tr>';
+            ALL_MESINS.forEach(m => {
+                const stEl = document.getElementById(`s2-stacked-${m}`);
+                if (stEl) stEl.innerHTML = '<div class="tr-empty" style="padding:8px 0;font-size:11px;"><i class="ri-error-warning-line" style="font-size:14px;"></i><span>Error</span></div>';
+            });
         }
+    }
 
-        // ─── Export ──────────────────────────────────────────────────────
-        function doExport() {
-            const date = document.getElementById('exportDate').value;
-            const variant = document.getElementById('exportVariant').value;
-            const mesin = document.getElementById('exportMesin').value;
-
-            if (!date) {
-                alert('Pilih tanggal untuk export.');
-                return;
-            }
-
-            const params = new URLSearchParams({
-                date
-            });
-            if (variant) params.append('variant', variant);
-            if (mesin) params.append('mesin', mesin);
-
-            window.location.href = `${BASE_URL}/export?${params}`;
-        }
-
-        // ─── Event Listeners ─────────────────────────────────────────────
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btnFilter').addEventListener('click', loadData);
-
-            // Enter key di filter date
-            document.getElementById('filterDate').addEventListener('keydown', e => {
-                if (e.key === 'Enter') loadData();
-            });
-
-            // Export modal
-            document.getElementById('btnExportModal').addEventListener('click', () => {
-                document.getElementById('exportDate').value = document.getElementById('filterDate').value;
-                new bootstrap.Modal(document.getElementById('exportModal')).show();
-            });
-
-            document.getElementById('btnDoExport').addEventListener('click', doExport);
+    /* ══════════════════════════════════════════════════════════════════
+       TAB SWITCHING
+    ══════════════════════════════════════════════════════════════════ */
+    function switchTab(tab) {
+        document.getElementById('tab-slide1').style.display = tab === 'slide1' ? '' : 'none';
+        document.getElementById('tab-slide2').style.display = tab === 'slide2' ? '' : 'none';
+        document.querySelectorAll('.tr-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
         });
+        if (tab === 'slide2') loadSlide2();
+    }
 
-        // ─── Auto Enter di filter select ─────────────────────────────────
-        ['filterVariant', 'filterMesin'].forEach(id => {
-            document.getElementById(id)?.addEventListener('change', loadData);
+    /* ══════════════════════════════════════════════════════════════════
+       SET DEFAULT DATES
+    ══════════════════════════════════════════════════════════════════ */
+    function setDefaultDates() {
+        const today = new Date().toISOString().split('T')[0];
+        const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+        ['s1-date-start', 's2-date-start'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = weekAgo;
         });
+        ['s1-date-end', 's2-date-end'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = today;
+        });
+    }
 
-        // ─── Init ────────────────────────────────────────────────────────
-        loadFilterOptions().then(() => loadData());
-
-    })();
+    /* ══════════════════════════════════════════════════════════════════
+       INIT
+    ══════════════════════════════════════════════════════════════════ */
+    document.addEventListener('DOMContentLoaded', async () => {
+        setDefaultDates();
+        await loadFilterOptions();
+        loadSlide1();
+    });
 </script>
 @endsection
