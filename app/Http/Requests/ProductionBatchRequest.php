@@ -14,8 +14,9 @@ class ProductionBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'po_number' => 'required|string|max:255',
-            'variant' => 'required|string|max:255',
+            'id' => 'required|integer',
+            'po_number' => 'required|numeric|digits:8|unique:production_batches,po_number',
+            'variant' =>  'required|string|max:255',
             'date' => 'required|date',
             'batch_range' => 'required|string|max:255',
             'description' => 'nullable'

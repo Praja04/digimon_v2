@@ -7,9 +7,8 @@ use App\Http\Requests\ProductionBatchRequest;
 use App\Http\Resources\ProductionBatchResource;
 use App\Models\ProductionBatch;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-
+use App\Http\Requests\UpdateProductionBatchRequest;
 class ProductionBatchController extends Controller
 {
     /**
@@ -61,22 +60,21 @@ class ProductionBatchController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ProductionBatchRequest $request, int $id): JsonResponse
+    public function update(UpdateProductionBatchRequest $request, $id): JsonResponse
     {
-        $data = ProductionBatch::find($id);
+        $data = ProductionBatch::findOrFail($id);
 
-        if (!$data) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan.',
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        $data->update($request->validated());
+        $data->update([
+            'po_number' => $request->po_number,
+            'variant' => $request->variant,
+            'date' => $request->date,
+            'batch_range' => $request->batch_range,
+            'description' => $request->description,
+        ]);
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Data Production Batch berhasil diupdate.',
+            'status' => 'success',
+            'message' => 'Data berhasil diupdate'
         ], Response::HTTP_OK);
     }
 
