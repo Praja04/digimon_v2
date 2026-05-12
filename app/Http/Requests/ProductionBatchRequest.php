@@ -25,7 +25,6 @@ class ProductionBatchRequest extends FormRequest
     public function attributes()
     {
         return [
-            'id' => 'Id',
             'po_number' => 'Nomor PO',
             'variant' => 'Varian',
             'date' => 'Tanggal',
