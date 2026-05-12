@@ -878,6 +878,15 @@
         destroyChart(canvasId);
         const ctx = document.getElementById(canvasId);
         if (!ctx) return;
+
+        // Fix: set wrapper height agar canvas punya dimensi tetap
+        const wrapper = ctx.parentElement;
+        if (wrapper) {
+            const fixedHeight = parseInt(ctx.getAttribute('height')) || 140;
+            wrapper.style.position = 'relative';
+            wrapper.style.height = fixedHeight + 'px';
+        }
+
         const annotations = {};
         yLines.forEach((l, i) => {
             annotations[`line${i}`] = {
@@ -897,6 +906,7 @@
                 }
             };
         });
+
         const instance = new Chart(ctx, {
             type: 'line',
             data: {
@@ -905,6 +915,8 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false, // ← fix utama
+                resizeDelay: 200, // ← cegah resize loop saat hover
                 animation: {
                     duration: 300
                 },
