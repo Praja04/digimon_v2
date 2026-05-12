@@ -14,7 +14,6 @@ class ProductionBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required',
             'po_number' => 'required|string|max:255',
             'variant' => 'required|string|max:255',
             'date' => 'required|date',
