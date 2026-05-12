@@ -14,13 +14,8 @@ class ProductionBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'po_number' => [
-                'required',
-                'numeric',
-                'digits:8',
-                Rule::unique('production_batches', 'po_number')
-                ->ignore($this->route('id')) // 🔥 ini penting
-            ],
+            'id' => 'required',
+            'po_number' => 'required|string|max:255',
             'variant' => 'required|string|max:255',
             'date' => 'required|date',
             'batch_range' => 'required|string|max:255',
