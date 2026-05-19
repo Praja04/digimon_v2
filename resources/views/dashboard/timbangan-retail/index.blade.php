@@ -638,19 +638,25 @@
                         <div class="col-12 col-sm-6 col-xl-3">
                             <div class="mesin-mini-card" id="s2-mesin-{{ $mesin }}">
                                 <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="mesin-badge" style="background:{{ $lc_colors[$lcName] ?? '#888' }}20;color:{{ $lc_colors[$lcName] ?? '#888' }};border-color:{{ $lc_colors[$lcName] ?? '#888' }}40;">{{ $mesin }}</span>
+                                    <span class="mesin-badge" style="background:{{ $lc_colors[$lcName] ?? '#888' }}20;color:{{ $lc_colors[$lcName] ?? '#888' }};border-color:{{ $lc_colors[$lcName] ?? '#888' }}40;">
+                                        {{ $mesin }}
+                                    </span>
                                     <div>
                                         <div style="font-size:12px;font-weight:700;color:#111;">Mesin {{ $mesin }}</div>
                                         <div style="font-size:10px;color:var(--tr-muted);" class="s2-mesin-varian-{{ $mesin }}">—</div>
                                     </div>
                                 </div>
+
                                 {{-- Stacked bar --}}
                                 <div class="stacked-wrap mb-2" id="s2-stacked-{{ $mesin }}">
                                     <div class="tr-loading" style="padding:16px 0;">
                                         <div class="tr-spinner" style="width:20px;height:20px;border-width:2px;"></div>
                                     </div>
                                 </div>
-                                <canvas id="s2-line-{{ $mesin }}" height="80" class="mb-1"></canvas>
+
+                                {{-- ▼ GANTI canvas tunggal dengan div container — canvas di-inject JS per variant ▼ --}}
+                                <div id="s2-charts-{{ $mesin }}" class="mb-1"></div>
+
                                 <div class="mini-stats" id="s2-stats-{{ $mesin }}">
                                     <div>Min: <strong>—</strong></div>
                                     <div>Max: <strong>—</strong></div>
@@ -660,6 +666,7 @@
                             </div>
                         </div>
                         @endforeach
+
                     </div>
                 </div>
                 @endforeach
@@ -826,7 +833,15 @@
     };
 
     const SHIFT_COLORS = ['#1a56db', '#0e9f6e', '#ff5a1f'];
-
+    const ALL_MESINS = [
+        'F', 'G', 'H', 'I', // LC1
+        'D', 'E', 'J', 'K', // LC2
+        'C', 'L', 'AE', 'AG', // LC3
+        'B', 'AF', 'AI', 'AJ', // LC5
+        'AH', 'V', 'U', 'A', // Pouch Besar & Medium
+        'O', 'P', 'W', 'X', // Sachet 20G
+        'R', 'Q', 'Y', 'Z', // Sachet 40G & 12.5G
+    ];
     /* ══════════════════════════════════════════════════════════════════
        CHART REGISTRY — avoid double-init
     ══════════════════════════════════════════════════════════════════ */
@@ -1156,9 +1171,14 @@
     }
 
     /* ══════════════════════════════════════════════════════════════════
-       SLIDE 2 — Report Mesin Per Shift
+       SLIDE 2 — Report Mesin Per Shift  (FIXED: multi-variant per mesin)
     ══════════════════════════════════════════════════════════════════ */
-    const ALL_MESINS = ['F', 'G', 'H', 'I', 'D', 'E', 'J', 'K', 'C', 'L', 'AE', 'AG', 'B', 'AF', 'AI', 'AJ', 'AH', 'V', 'U', 'A', 'O', 'P', 'W', 'X', 'R', 'Q', 'Y', 'Z'];
+
+    // Warna per variant — supaya mudah dibedakan di satu card
+    const VARIANT_LINE_COLORS = [
+        '#1a56db', '#0e9f6e', '#ff5a1f', '#7e3af2',
+        '#0694a2', '#c27803', '#e02424', '#6b7280',
+    ];
 
     async function loadSlide2() {
         const params = {
@@ -1167,111 +1187,198 @@
             shift: document.getElementById('s2-shift').value,
         };
 
-        // Show loaders on all machines
+        // ── Reset semua card ke loading state ─────────────────────────
         ALL_MESINS.forEach(m => {
             const stEl = document.getElementById(`s2-stacked-${m}`);
             if (stEl) stEl.innerHTML = '<div class="tr-loading" style="padding:12px 0;"><div class="tr-spinner" style="width:18px;height:18px;border-width:2px;"></div></div>';
-            destroyChart(`s2-line-${m}`);
+
+            // Hancurkan semua chart variant lama untuk mesin ini
+            const varianList = MESIN_VARIAN[m] || [];
+            varianList.forEach(v => destroyChart(`s2-line-${m}-${slugify(v)}`));
+            // Hapus juga canvas lama yang sudah di-inject
+            const chartWrap = document.getElementById(`s2-charts-${m}`);
+            if (chartWrap) chartWrap.innerHTML = '';
+
             const statsEl = document.getElementById(`s2-stats-${m}`);
             if (statsEl) statsEl.innerHTML = '<div>Min: <strong>—</strong></div><div>Max: <strong>—</strong></div><div>Avg: <strong>—</strong></div><div>Total: <strong>—</strong></div>';
-            // varian label
+
+            // Update label varian
             const varianEls = document.querySelectorAll(`.s2-mesin-varian-${m}`);
             varianEls.forEach(el => {
-                el.textContent = MESIN_VARIAN[m]?.map(v => VARIANT_STANDARDS[v]?.code || v).join(', ') || '—';
+                el.textContent = (MESIN_VARIAN[m] || [])
+                    .map(v => VARIANT_STANDARDS[v]?.code || v).join(', ') || '—';
             });
         });
 
-        // Overview loader
         document.getElementById('s2-overview-body').innerHTML =
             '<tr><td colspan="6" class="text-center py-3"><div class="tr-loading"><div class="tr-spinner"></div><span>Memuat...</span></div></td></tr>';
 
         try {
-            // Fetch overview + per-machine data
             const [ovData, chartData] = await Promise.all([
                 apiFetch('/api/timbangan-retail/average-minmax', params),
                 apiFetch('/api/timbangan-retail/chart', params),
             ]);
 
-            // ── OVERVIEW TABLE ──────────────────────────────────────
+            // ── OVERVIEW TABLE ──────────────────────────────────────────
             const variants = Object.keys(VARIANT_STANDARDS);
             const overviewRows = variants.map(v => {
                 const vd = ovData.variants?.[v] || {};
                 return `
-            <tr>
-                <td><span class="fw-600" style="font-size:12px;">${v}</span><br>
-                    <span style="font-size:10px;color:var(--tr-muted);">${VARIANT_STANDARDS[v].code}</span></td>
-                <td><span class="badge ${(vd.under||0)>0?'badge-err':'badge-ok'}">${vd.under||0}</span></td>
-                <td>${fmt(vd.min)}</td>
-                <td>${fmt(vd.avg||vd.average)}</td>
-                <td>${fmt(vd.max)}</td>
-                <td><span class="badge ${(vd.over||0)>0?'badge-over':'badge-ok'}">${vd.over||0}</span></td>
-            </tr>`;
+                <tr>
+                    <td>
+                        <span class="fw-600" style="font-size:12px;">${v}</span><br>
+                        <span style="font-size:10px;color:var(--tr-muted);">${VARIANT_STANDARDS[v].code}</span>
+                    </td>
+                    <td><span class="badge ${(vd.under||0)>0?'badge-err':'badge-ok'}">${vd.under||0}</span></td>
+                    <td>${fmt(vd.min)}</td>
+                    <td>${fmt(vd.avg||vd.average)}</td>
+                    <td>${fmt(vd.max)}</td>
+                    <td><span class="badge ${(vd.over||0)>0?'badge-over':'badge-ok'}">${vd.over||0}</span></td>
+                </tr>`;
             });
-            document.getElementById('s2-overview-body').innerHTML = overviewRows.join('') ||
+            document.getElementById('s2-overview-body').innerHTML =
+                overviewRows.join('') ||
                 '<tr><td colspan="6" class="text-center py-3 text-muted">Tidak ada data</td></tr>';
 
-            // ── PER MACHINE ──────────────────────────────────────────
+            // ── PER MACHINE ───────────────────────────────────────────────
             ALL_MESINS.forEach(m => {
-                const mData = chartData.mesins?.[m] || {};
-                const mStats = ovData.mesins?.[m] || {};
-                const samples = mData.samples || [];
-                const counts = mStats.counts || {
+                // API response shape (baru):
+                //   ovData.mesins[m]   = { variants: { "Pouch YB 250gr": {...stats}, ... }, combined: {...stats} }
+                //   chartData.mesins[m] = { variants: { "Pouch YB 250gr": { samples:[...] }, ... } }
+                const mStatsCombined = ovData.mesins?.[m]?.combined || {};
+                const mStatsPerVar = ovData.mesins?.[m]?.variants || {};
+                const mChartPerVar = chartData.mesins?.[m]?.variants || {};
+
+                const total = mStatsCombined.total || 0;
+                const counts = mStatsCombined.counts || {
                     underTu2: 0,
                     tu2ToTu1: 0,
                     tu1ToStd: 0,
                     stdToMax: 0,
                     overMax: 0
                 };
-                const total = mStats.total || 0;
 
-                // Stacked bar
+                // 1) Stacked bar pakai combined counts
                 const stEl = document.getElementById(`s2-stacked-${m}`);
-                if (stEl) stEl.innerHTML = total > 0 ?
-                    buildStackedBar(counts, total) :
-                    '<div class="tr-empty" style="padding:10px 0;font-size:11px;"><i class="ri-bar-chart-line" style="font-size:16px;"></i><span>Tidak ada data</span></div>';
+                if (stEl) {
+                    stEl.innerHTML = total > 0 ?
+                        buildStackedBar(counts, total) :
+                        '<div class="tr-empty" style="padding:10px 0;font-size:11px;"><i class="ri-bar-chart-line" style="font-size:16px;"></i><span>Tidak ada data</span></div>';
+                }
 
-                // Line chart
+                // 2) Mini stats pakai combined
+                const statsEl = document.getElementById(`s2-stats-${m}`);
+                if (statsEl) {
+                    const varianList = MESIN_VARIAN[m] || [];
+                    const hasMultiple = varianList.filter(v => mStatsPerVar[v]?.total > 0).length > 1;
+
+                    if (!hasMultiple) {
+                        // Mesin 1 variant — tampilan lama sudah cukup
+                        const vd = mStatsPerVar[varianList[0]] || mStatsCombined;
+                        statsEl.innerHTML = `
+            <div>Min: <strong>${fmt(vd.min)}</strong></div>
+            <div>Max: <strong>${fmt(vd.max)}</strong></div>
+            <div>Avg: <strong>${fmt(vd.avg)}</strong></div>
+            <div>Total: <strong>${vd.total ?? 0}</strong></div>
+        `;
+                    } else {
+                        // Mesin multi-variant — tampilkan baris per variant
+                        const rows = varianList
+                            .filter(v => (mStatsPerVar[v]?.total || 0) > 0)
+                            .map(v => {
+                                const vd = mStatsPerVar[v];
+                                const code = VARIANT_STANDARDS[v]?.code || v;
+                                return `
+                <tr>
+                    <td style="padding:2px 6px 2px 0;font-weight:700;color:#111;white-space:nowrap;">${code}</td>
+                    <td style="padding:2px 4px;color:var(--tr-muted);">Min <strong style="color:#111;">${fmt(vd.min)}</strong></td>
+                    <td style="padding:2px 4px;color:var(--tr-muted);">Avg <strong style="color:#111;">${fmt(vd.avg)}</strong></td>
+                    <td style="padding:2px 4px;color:var(--tr-muted);">Max <strong style="color:#111;">${fmt(vd.max)}</strong></td>
+                    <td style="padding:2px 0 2px 4px;color:var(--tr-muted);">n=<strong style="color:#111;">${vd.total}</strong></td>
+                </tr>`;
+                            }).join('');
+
+                        statsEl.style.display = 'block'; // override grid layout
+                        statsEl.innerHTML = `
+            <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                ${rows}
+            </table>
+            <div style="font-size:10px;color:var(--tr-muted);margin-top:3px;border-top:1px solid var(--tr-border);padding-top:3px;">
+                Total gabungan: <strong style="color:#111;">${mStatsCombined.total ?? 0}</strong>
+            </div>
+        `;
+                    }
+                }
+
+                // 3) Line chart — satu per variant yang punya data
+                const chartWrap = document.getElementById(`s2-charts-${m}`);
+                if (!chartWrap) return;
+
+                chartWrap.innerHTML = ''; // bersihkan canvas lama
+
                 const varianList = MESIN_VARIAN[m] || [];
-                const firstVarian = varianList[0];
-                const std = firstVarian ? VARIANT_STANDARDS[firstVarian] : null;
-                const yLines = std ? [{
-                        v: std.max,
-                        color: '#7e3af2',
-                        label: 'Max'
-                    },
-                    {
-                        v: std.min,
-                        color: '#1a56db',
-                        label: 'Min'
-                    },
-                ] : [];
+                let colorIdx = 0;
 
-                if (samples.length) {
+                varianList.forEach(v => {
+                    const samples = mChartPerVar[v]?.samples || [];
+                    if (!samples.length) return; // skip variant tanpa data
+
+                    const std = VARIANT_STANDARDS[v] || null;
+                    const color = VARIANT_LINE_COLORS[colorIdx % VARIANT_LINE_COLORS.length];
+                    const canvasId = `s2-line-${m}-${slugify(v)}`;
+                    const code = std?.code || v;
+                    colorIdx++;
+
+                    // Buat wrapper + label + canvas
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = 'margin-bottom:10px;';
+                    wrap.innerHTML = `
+                        <div style="font-size:10px;font-weight:700;color:${color};margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;">
+                            ${code}
+                            <span style="font-weight:400;color:var(--tr-muted);font-size:9px;margin-left:6px;">
+                                n=${samples.length} · avg=${fmt(mStatsPerVar[v]?.avg)}
+                            </span>
+                        </div>
+                        <div style="position:relative;height:70px;">
+                            <canvas id="${canvasId}" height="70"></canvas>
+                        </div>
+                    `;
+                    chartWrap.appendChild(wrap);
+
+                    // yLines sesuai standar variant ini
+                    const yLines = std ? [{
+                            v: std.max,
+                            color: '#7e3af2',
+                            label: 'Max'
+                        },
+                        {
+                            v: std.min,
+                            color: '#1a56db',
+                            label: 'Min'
+                        },
+                    ] : [];
+
                     buildLineChart(
-                        `s2-line-${m}`,
-                        samples.map((_, i) => `#${i+1}`),
+                        canvasId,
+                        samples.map((_, i) => `#${i + 1}`),
                         [{
-                            label: `Mesin ${m}`,
-                            data: samples.map(s => s.berat || s.weight || s),
-                            borderColor: '#1a56db',
-                            backgroundColor: '#1a56db22',
-                            pointRadius: 1.5,
+                            label: code,
+                            data: samples.map(s => s.berat),
+                            borderColor: color,
+                            backgroundColor: color + '18',
+                            pointRadius: 1,
                             borderWidth: 1.5,
                             tension: .35,
                             fill: true,
                         }],
                         yLines
                     );
-                }
+                });
 
-                // Mini stats
-                const statsEl = document.getElementById(`s2-stats-${m}`);
-                if (statsEl) statsEl.innerHTML = `
-                    <div>Min: <strong>${fmt(mStats.min)}</strong></div>
-                    <div>Max: <strong>${fmt(mStats.max)}</strong></div>
-                    <div>Avg: <strong>${fmt(mStats.avg)}</strong></div>
-                    <div>Total: <strong>${mStats.total ?? 0}</strong></div>
-                `;
+                // Jika tidak ada variant yang punya data
+                if (chartWrap.innerHTML === '') {
+                    chartWrap.innerHTML = '<div style="font-size:11px;color:var(--tr-muted);padding:4px 0;">Tidak ada data chart</div>';
+                }
             });
 
         } catch (e) {
@@ -1283,6 +1390,11 @@
                 if (stEl) stEl.innerHTML = '<div class="tr-empty" style="padding:8px 0;font-size:11px;"><i class="ri-error-warning-line" style="font-size:14px;"></i><span>Error</span></div>';
             });
         }
+    }
+
+    // Helper: buat slug dari nama variant untuk dipakai sebagai canvas id
+    function slugify(str) {
+        return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     }
 
     /* ══════════════════════════════════════════════════════════════════
