@@ -113,6 +113,53 @@
         background: #1648c0;
     }
 
+    .tr-btn-export {
+        padding: 8px 20px;
+        border: 1.5px solid #0e9f6e;
+        border-radius: 7px;
+        background: #fff;
+        color: #0e9f6e;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all .2s;
+        align-self: flex-end;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .tr-btn-export:hover {
+        background: #0e9f6e;
+        color: #fff;
+    }
+
+    .tr-btn-export:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    /* alignment line hint badge */
+    .align-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--tr-muted);
+        background: var(--tr-bg);
+        border: 1px solid var(--tr-border);
+        border-radius: 5px;
+        padding: 2px 7px;
+    }
+
+    .align-hint .dot-line {
+        width: 14px;
+        height: 2px;
+        border-top: 2px dashed currentColor;
+        flex-shrink: 0;
+    }
+
     /* ── SUMMARY TABLE ──────────────────── */
     .tr-summary-table {
         width: 100%;
@@ -474,18 +521,31 @@
                 <button class="tr-btn-apply" onclick="loadSlide1()">
                     <i class="ri-search-line me-1"></i>Tampilkan
                 </button>
+                <button class="tr-btn-export" id="s1-btn-export" onclick="exportSlide1()" title="Export ke Excel">
+                    <i class="ri-file-excel-2-line me-1"></i>Export
+                </button>
             </div>
 
             {{-- SHIFT CHARTS GRID ────────────────────────────────────── --}}
             <div class="row g-3 mb-3" id="s1-shift-grid">
                 @foreach (['1','2','3'] as $shift)
-                <div class="col-12 col-xl-4">
+                <div class="col-12 col-xl-12">
                     <div class="tr-card h-100">
                         <div class="tr-card-header">
                             <h6 class="tr-card-title">
                                 <span class="shift-dot" style="background:{{ $shift=='1'?'#1a56db':($shift=='2'?'#0e9f6e':'#ff5a1f') }};"></span>
                                 Shift {{ $shift }}
                             </h6>
+                            <div id="s1-align-hint-{{ $shift }}" style="display:none;">
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {{-- di blade, bagian align-hint --}}
+                                    <span class="align-hint" style="color:#9333ea;"><span class="dot-line"></span>Max</span>
+                                    <span class="align-hint" style="color:#16a34a;"><span class="dot-line"></span>STD</span>
+                                    <span class="align-hint" style="color:#2563eb;"><span class="dot-line"></span>Min</span>
+                                    <span class="align-hint" style="color:#d97706;"><span class="dot-line"></span>TU1</span>
+                                    <span class="align-hint" style="color:#dc2626;"><span class="dot-line"></span>TU2</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="tr-card-body">
                             {{-- Stacked bar --}}
@@ -679,6 +739,7 @@
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
     /* ══════════════════════════════════════════════════════════════════
    CONSTANTS
@@ -901,23 +962,37 @@
             wrapper.style.position = 'relative';
             wrapper.style.height = fixedHeight + 'px';
         }
-
         const annotations = {};
+        const dashPatterns = [
+            [6, 3], // Max  — dash panjang
+            [8, 3, 2, 3], // STD — dash-dot
+            [4, 3], // Min  — dash pendek
+            [2, 3], // TU1  — titik-titik
+            [10, 2], // TU2  — dash sangat panjang
+        ];
+
         yLines.forEach((l, i) => {
             annotations[`line${i}`] = {
                 type: 'line',
                 yMin: l.v,
                 yMax: l.v,
                 borderColor: l.color,
-                borderWidth: 1.5,
-                borderDash: [4, 3],
+                borderWidth: 2, // ← lebih tebal dari 1.5
+                borderDash: dashPatterns[i] || [4, 3],
                 label: {
-                    content: l.label,
-                    display: true,
+                    content: `${l.label}: ${l.v}`, // ← tampilkan nilai
+                    display: false,
                     font: {
-                        size: 9
+                        size: 9,
+                        weight: 'bold'
                     },
-                    position: 'end'
+                    position: 'end',
+                    color: l.color,
+                    backgroundColor: 'rgba(255,255,255,0.85)',
+                    padding: {
+                        x: 4,
+                        y: 2
+                    },
                 }
             };
         });
@@ -1043,6 +1118,93 @@
     }
 
     /* ══════════════════════════════════════════════════════════════════
+       EXPORT — Slide 1
+    ══════════════════════════════════════════════════════════════════ */
+    function exportSlide1() {
+        const startDate = document.getElementById('s1-date-start').value;
+        const endDate = document.getElementById('s1-date-end').value;
+        const varian = document.getElementById('s1-varian').value;
+        const mesin = document.getElementById('s1-mesin').value;
+
+        if (!startDate || !endDate) {
+            alert('Pilih tanggal mulai dan akhir terlebih dahulu.');
+            return;
+        }
+
+        const btn = document.getElementById('s1-btn-export');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ri-loader-4-line me-1"></i>Mengunduh...';
+
+        // Gunakan endpoint export — looping per hari antara startDate dan endDate
+        // Karena endpoint export hanya menerima satu hari (date), kita download per tanggal
+        // Jika range > 1 hari, tampilkan info ke user
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffDays = Math.round((end - start) / 86400000) + 1;
+
+        if (diffDays > 31) {
+            alert('Range export maksimal 31 hari. Silakan persempit rentang tanggal.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+            return;
+        }
+
+        // Build query string untuk endpoint average-minmax (export data flat)
+        // Kita gunakan endpoint /export yang sudah ada di controller
+        // Endpoint export hanya menerima date tunggal, jadi kita download per tanggal
+        if (diffDays === 1) {
+            const params = new URLSearchParams({
+                date: startDate
+            });
+            if (varian) params.set('variant', varian);
+            if (mesin) params.set('mesin', mesin);
+
+            const a = document.createElement('a');
+            a.href = `/api/timbangan-retail/export?${params}`;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+            }, 2000);
+        } else {
+            // Multi-hari: download satu per satu dengan delay
+            let idx = 0;
+
+            function downloadNext() {
+                if (idx >= diffDays) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+                    return;
+                }
+                const d = new Date(start);
+                d.setDate(start.getDate() + idx);
+                const dateStr = d.toISOString().split('T')[0];
+                const params = new URLSearchParams({
+                    date: dateStr
+                });
+                if (varian) params.set('variant', varian);
+                if (mesin) params.set('mesin', mesin);
+
+                const a = document.createElement('a');
+                a.href = `/api/timbangan-retail/export?${params}`;
+                a.download = '';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+
+                btn.innerHTML = `<i class="ri-loader-4-line me-1"></i>Hari ${idx+1}/${diffDays}`;
+                idx++;
+                setTimeout(downloadNext, 1200); // delay antar unduhan
+            }
+            downloadNext();
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
        SLIDE 1 — Perbandingan Shift
     ══════════════════════════════════════════════════════════════════ */
     async function loadSlide1() {
@@ -1057,6 +1219,8 @@
         [1, 2, 3].forEach(s => {
             document.getElementById(`s1-stacked-shift${s}`).innerHTML = '<div class="tr-loading"><div class="tr-spinner"></div></div>';
             destroyChart(`s1-line-shift${s}`);
+            const hint = document.getElementById(`s1-align-hint-${s}`);
+            if (hint) hint.style.display = 'none';
         });
         document.getElementById('s1-summary-body').innerHTML =
             '<tr><td colspan="9" class="text-center py-3"><div class="tr-loading"><div class="tr-spinner"></div><span>Memuat...</span></div></td></tr>';
@@ -1068,6 +1232,42 @@
             ]);
 
             const summaryRows = [];
+            const hasVariant = !!(params.varian && VARIANT_STANDARDS[params.varian]);
+            const std = hasVariant ? VARIANT_STANDARDS[params.varian] : null;
+
+            // Tampilkan / sembunyikan alignment hint badge
+            [1, 2, 3].forEach(s => {
+                const hint = document.getElementById(`s1-align-hint-${s}`);
+                if (hint) hint.style.display = hasVariant ? '' : 'none';
+            });
+
+            // Garis alignment — hanya muncul jika variant dipilih
+            const yLines = std ? [{
+                    v: std.max,
+                    color: '#9333ea',
+                    label: 'Max'
+                }, // ungu solid
+                {
+                    v: std.std,
+                    color: '#16a34a',
+                    label: 'STD'
+                }, // hijau tua
+                {
+                    v: std.min,
+                    color: '#2563eb',
+                    label: 'Min'
+                }, // biru solid
+                {
+                    v: std.tu1,
+                    color: '#d97706',
+                    label: 'TU1'
+                }, // oranye amber
+                {
+                    v: std.tu2,
+                    color: '#dc2626',
+                    label: 'TU2'
+                }, // merah solid
+            ] : [];
 
             [1, 2, 3].forEach((shift, si) => {
                 const shiftKey = `shift${shift}`;
@@ -1089,34 +1289,6 @@
 
                 // Line chart
                 const samples = shiftChart.samples || [];
-                const std = params.varian && VARIANT_STANDARDS[params.varian] ? VARIANT_STANDARDS[params.varian] : null;
-                const yLines = std ? [{
-                        v: std.max,
-                        color: '#7e3af2',
-                        label: 'Max'
-                    },
-                    {
-                        v: std.std,
-                        color: '#0e9f6e',
-                        label: 'STD'
-                    },
-                    {
-                        v: std.min,
-                        color: '#1a56db',
-                        label: 'Min'
-                    },
-                    {
-                        v: std.tu1,
-                        color: '#fbbf24',
-                        label: 'TU1'
-                    },
-                    {
-                        v: std.tu2,
-                        color: '#e02424',
-                        label: 'TU2'
-                    },
-                ] : [];
-
                 buildLineChart(
                     `s1-line-shift${shift}`,
                     samples.map((_, i) => `#${i+1}`),
@@ -1365,11 +1537,11 @@
                             label: code,
                             data: samples.map(s => s.berat),
                             borderColor: color,
-                            backgroundColor: color + '18',
+                            backgroundColor: 'transparent',
                             pointRadius: 1,
                             borderWidth: 1.5,
                             tension: .35,
-                            fill: true,
+                            fill: false,
                         }],
                         yLines
                     );
