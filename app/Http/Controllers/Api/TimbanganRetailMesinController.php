@@ -32,6 +32,42 @@ class TimbanganRetailMesinController extends Controller
         'Pouch YB 1000gr'          => ['min' => 1007.50, 'std' => 1012.50, 'max' => 1017.50, 'tu1' =>  997.50, 'tu2' =>  982.50, 'code' => 'P1000G'],
     ];
 
+
+    private function isAbnormal(float $berat, string $variant): bool
+    {
+        $s = self::VARIANT_STANDARDS[$variant] ?? null;
+        if (!$s) return false;
+        return $berat < $s['tu1'] || $berat > $s['max'];
+    }
+
+    private function getSeverity(float $berat, string $variant): string
+    {
+        $s = self::VARIANT_STANDARDS[$variant] ?? null;
+        if (!$s) return 'normal';
+        if ($berat > $s['max'])  return 'over';   // >Max
+        if ($berat < $s['tu2'])  return 'kritis'; // <TU2
+        if ($berat < $s['tu1'])  return 'warning'; // TU2→TU1
+        return 'normal';
+    }
+
+    private function buildDateRange(Request $request): array
+    {
+        return [
+            Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString(),
+            Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString(),
+        ];
+    }
+
+    private function applyShiftFilter($query, ?string $shift): void
+    {
+        match ($shift) {
+            '1' => $query->whereRaw("TIME(waktu) >= '06:00:00' AND TIME(waktu) < '14:00:00'"),
+            '2' => $query->whereRaw("TIME(waktu) >= '14:00:00' AND TIME(waktu) < '22:00:00'"),
+            '3' => $query->whereRaw("TIME(waktu) >= '22:00:00' OR TIME(waktu) < '06:00:00'"),
+            default => null,
+        };
+    }
+
     // ── CLASSIFY HELPER ──────────────────────────────────────────────────────
     private function classify(float $berat, string $variant): string
     {
@@ -651,5 +687,317 @@ class TimbanganRetailMesinController extends Controller
         $mesin = TimbanganRetailMesin::create($request->only(['nik', 'mesin', 'variant', 'waktu', 'status', 'filler', 'berat', 'unit']));
 
         return response()->json(['success' => true, 'data' => $mesin], 201);
+    }
+
+    // GET /api/timbangan-retail/abnormal-log
+    // Params: start_date, end_date, shift?, varian?, mesin?, nik?, severity?, per_page?, page?
+    public function getAbnormalLog(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'shift'      => 'nullable|in:1,2,3',
+            'varian'     => 'nullable|string',
+            'mesin'      => 'nullable|string',
+            'nik'        => 'nullable|string',
+            'severity'   => 'nullable|in:kritis,warning,over',
+            'per_page'   => 'nullable|integer|min:10|max:200',
+        ]);
+
+        [$start, $end] = $this->buildDateRange($request);
+
+        $query = DB::table('timbangan_retail_mesin')
+        ->select(['id', 'nik', 'mesin', 'variant', 'waktu', 'berat', 'status'])
+        ->whereBetween('waktu', [$start, $end])
+        ->orderBy('waktu', 'desc');
+
+        if ($request->filled('varian')) $query->where('variant', trim($request->varian));
+        if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
+        if ($request->filled('nik'))    $query->where('nik',
+            trim($request->nik)
+        );
+        $this->applyShiftFilter($query, $request->shift);
+
+        $rows = $query->get();
+
+        // Filter abnormal + severity di PHP (karena klasifikasi butuh VARIANT_STANDARDS)
+        $abnormal = $rows->filter(function ($row) {
+            return $this->isAbnormal((float) $row->berat, $row->variant ?? '');
+        })->map(function ($row) {
+            $berat   = (float) $row->berat;
+            $variant = $row->variant ?? '';
+            $std     = self::VARIANT_STANDARDS[$variant] ?? null;
+            $severity = $this->getSeverity($berat, $variant);
+
+            return [
+                'id'           => $row->id,
+                'waktu'        => $row->waktu,
+                'nik'          => $row->nik,
+                'mesin'        => $row->mesin,
+                'variant'      => $variant,
+                'variant_code' => $std['code'] ?? '—',
+                'shift' => $this->getShiftLabel(Carbon::parse($row->waktu)),
+                'berat'        => $berat,
+                'std_value'    => $std['std']  ?? null, // nilai standar ideal
+                'selisih'      => $std ? round($berat - $std['std'], 3) : null, // negatif = kurang
+                'batas_min'    => $std['tu1']  ?? null,
+                'batas_max'    => $std['max']  ?? null,
+                'severity'     => $severity,  // 'kritis' | 'warning' | 'over'
+                'status'       => $row->status,
+            ];
+        })->values();
+
+        // Filter severity setelah mapping
+        if ($request->filled('severity')) {
+            $abnormal = $abnormal->filter(fn ($r) => $r['severity'] === $request->severity)->values();
+        }
+
+        // Manual paginate
+        $perPage  = (int) ($request->per_page ?? 50);
+        $page     = (int) ($request->page ?? 1);
+        $total    = $abnormal->count();
+        $items    = $abnormal->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return response()->json([
+            'success'    => true,
+            'total'      => $total,
+            'page'       => $page,
+            'per_page'   => $perPage,
+            'total_pages' => (int) ceil($total / $perPage),
+            'data'       => $items,
+        ]);
+    }
+
+    // GET /api/timbangan-retail/abnormal-summary
+    // Params: start_date, end_date, shift?, varian?, mesin?
+    public function getAbnormalSummary(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'shift'      => 'nullable|in:1,2,3',
+            'varian'     => 'nullable|string',
+            'mesin'      => 'nullable|string',
+        ]);
+
+        [$start, $end] = $this->buildDateRange($request);
+
+        $query = DB::table('timbangan_retail_mesin')
+        ->select(['nik', 'mesin', 'variant', 'waktu', 'berat'])
+        ->whereBetween('waktu', [$start, $end]);
+
+        if ($request->filled('varian')) $query->where('variant', trim($request->varian));
+        if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
+        $this->applyShiftFilter($query, $request->shift);
+
+        $rows = $query->orderBy('waktu')->get();
+
+        $totalSampel  = $rows->count();
+        $kritis = $warning = $over = 0;
+
+        // Pareto: mesin dan varian penyumbang abnormal terbanyak
+        $paretoMesin   = [];
+        $paretoVariant = [];
+
+        foreach ($rows as $row) {
+            $berat   = (float) $row->berat;
+            $variant = $row->variant ?? '';
+
+            if (!$this->isAbnormal($berat, $variant)) continue;
+
+            $sev = $this->getSeverity($berat, $variant);
+            if ($sev === 'kritis') $kritis++;
+            elseif ($sev === 'warning') $warning++;
+            elseif ($sev === 'over') $over++;
+
+            $paretoMesin[$row->mesin]     = ($paretoMesin[$row->mesin]     ?? 0) + 1;
+            $paretoVariant[$variant]      = ($paretoVariant[$variant]      ?? 0) + 1;
+        }
+
+        $totalAbnormal = $kritis + $warning + $over;
+        arsort($paretoMesin);
+        arsort($paretoVariant);
+
+        // Pareto kumulatif untuk mesin
+        $paretoMesinOut = [];
+        $cumul = 0;
+        foreach (array_slice($paretoMesin, 0, 10, true) as $m => $cnt) {
+            $cumul += $cnt;
+            $paretoMesinOut[] = [
+                'mesin'      => $m,
+                'count'      => $cnt,
+                'pct'        => $totalAbnormal > 0 ? round($cnt / $totalAbnormal * 100, 1) : 0,
+                'cumulative' => $totalAbnormal > 0 ? round($cumul / $totalAbnormal * 100, 1) : 0,
+            ];
+        }
+
+        $paretoVariantOut = [];
+        $cumul = 0;
+        foreach (array_slice($paretoVariant, 0, 10, true) as $v => $cnt) {
+            $cumul += $cnt;
+            $std = self::VARIANT_STANDARDS[$v] ?? null;
+            $paretoVariantOut[] = [
+                'variant'    => $v,
+                'code'       => $std['code'] ?? $v,
+                'count'      => $cnt,
+                'pct'        => $totalAbnormal > 0 ? round($cnt / $totalAbnormal * 100, 1) : 0,
+                'cumulative' => $totalAbnormal > 0 ? round($cumul / $totalAbnormal * 100, 1) : 0,
+            ];
+        }
+
+        return response()->json([
+            'success'        => true,
+            'total_sampel'   => $totalSampel,
+            'total_abnormal' => $totalAbnormal,
+            'pct_abnormal'   => $totalSampel > 0 ? round($totalAbnormal / $totalSampel * 100, 2) : 0,
+            'kritis'         => $kritis,   // <TU2
+            'warning'        => $warning,  // TU2→TU1
+            'over'           => $over,     // >Max
+            'pareto_mesin'   => $paretoMesinOut,
+            'pareto_variant' => $paretoVariantOut,
+        ]);
+    }
+
+    // GET /api/timbangan-retail/operator-stats
+    // Params: start_date, end_date, shift?, varian?, mesin?
+    public function getOperatorStats(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'shift'      => 'nullable|in:1,2,3',
+            'varian'     => 'nullable|string',
+            'mesin'      => 'nullable|string',
+        ]);
+
+        [$start, $end] = $this->buildDateRange($request);
+
+        $query = DB::table('timbangan_retail_mesin')
+        ->select(['nik', 'mesin', 'variant', 'waktu', 'berat'])
+        ->whereBetween('waktu', [$start, $end]);
+
+        if ($request->filled('varian')) $query->where('variant', trim($request->varian));
+        if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
+        $this->applyShiftFilter($query, $request->shift);
+
+        $rows = $query->orderBy('waktu')->get();
+
+        // Group per NIK
+        $ops = []; // [nik => [total, abnormal, kritis, warning, over, mesin_list, last_seen]]
+        foreach ($rows as $row) {
+            $nik   = $row->nik ?? 'UNKNOWN';
+            $berat = (float) $row->berat;
+            $var   = $row->variant ?? '';
+
+            if (!isset($ops[$nik])) {
+                $ops[$nik] = [
+                    'nik'       => $nik,
+                    'total'     => 0,
+                    'abnormal'  => 0,
+                    'kritis'    => 0,
+                    'warning'   => 0,
+                    'over'      => 0,
+                    'mesins'    => [],
+                    'last_seen' => $row->waktu,
+                ];
+            }
+
+            $ops[$nik]['total']++;
+            if ($row->waktu > $ops[$nik]['last_seen']) {
+                $ops[$nik]['last_seen'] = $row->waktu;
+            }
+            if (!in_array($row->mesin, $ops[$nik]['mesins'])) {
+                $ops[$nik]['mesins'][] = $row->mesin;
+            }
+
+            if ($this->isAbnormal($berat, $var)) {
+                $ops[$nik]['abnormal']++;
+                $sev = $this->getSeverity($berat, $var);
+                $ops[$nik][$sev]++;
+            }
+        }
+
+        // Hitung pct dan sort by abnormal terbanyak
+        $result = collect($ops)->map(function ($op) {
+            return [
+                'nik'          => $op['nik'],
+                'total'        => $op['total'],
+                'abnormal'     => $op['abnormal'],
+                'pct_abnormal' => $op['total'] > 0 ? round($op['abnormal'] / $op['total'] * 100, 1) : 0,
+                'kritis'       => $op['kritis'],
+                'warning'      => $op['warning'],
+                'over'         => $op['over'],
+                'mesins'       => implode(', ', $op['mesins']),
+                'last_seen'    => $op['last_seen'],
+            ];
+        })->sortByDesc('abnormal')->values();
+
+        return response()->json([
+            'success' => true,
+            'total_operator' => $result->count(),
+            'data'    => $result,
+        ]);
+    }
+
+    // GET /api/timbangan-retail/hourly-heatmap
+    // Params: start_date, end_date, varian?, mesin?
+    // Response: matrix [jam 0-23][shift] => { total, abnormal, pct }
+    public function getHourlyHeatmap(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'varian'     => 'nullable|string',
+            'mesin'      => 'nullable|string',
+        ]);
+
+        [$start, $end] = $this->buildDateRange($request);
+
+        $rows = DB::table('timbangan_retail_mesin')
+        ->select(['variant', 'waktu', 'berat'])
+        ->whereBetween('waktu', [$start, $end])
+        ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
+        ->when($request->filled('mesin'),
+            fn ($q) => $q->where('mesin',   trim($request->mesin))
+        )
+        ->orderBy('waktu')
+        ->get();
+
+        // Matrix jam 0-23
+        $matrix = array_fill(0, 24, ['total' => 0, 'abnormal' => 0]);
+
+        foreach ($rows as $row) {
+            $hour  = (int) substr($row->waktu, 11, 2);
+            $berat = (float) $row->berat;
+            $var   = $row->variant ?? '';
+
+            $matrix[$hour]['total']++;
+            if ($this->isAbnormal($berat, $var)) {
+                $matrix[$hour]['abnormal']++;
+            }
+        }
+
+        $result = [];
+        for ($h = 0; $h < 24; $h++) {
+            $t = $matrix[$h]['total'];
+            $a = $matrix[$h]['abnormal'];
+            // Tentukan shift jam ini
+            if ($h >= 6 && $h < 14)  $shift = 'Shift 1';
+            elseif ($h >= 14 && $h < 22) $shift = 'Shift 2';
+            else $shift = 'Shift 3';
+
+            $result[] = [
+                'jam'          => sprintf('%02d:00', $h),
+                'shift'        => $shift,
+                'total'        => $t,
+                'abnormal'     => $a,
+                'pct_abnormal' => $t > 0 ? round($a / $t * 100, 1) : 0,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $result,
+        ]);
     }
 }

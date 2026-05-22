@@ -14,4 +14,9 @@ class TimbanganRetailController extends Controller
     {
         return view('dashboard.timbangan-retail.index');
     }
+
+    public function analisa()
+    {
+        return view('dashboard.timbangan-retail.analisa');
+    }
 }
