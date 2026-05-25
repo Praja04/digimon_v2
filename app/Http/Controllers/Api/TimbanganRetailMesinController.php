@@ -14,7 +14,6 @@ use App\Exports\TimbanganRetailExport;
 class TimbanganRetailMesinController extends Controller
 {
     // ── KONSTANTA VARIANT STANDARDS ──────────────────────────────────────────
-    // Satu sumber kebenaran — dipakai oleh semua method
     private const VARIANT_STANDARDS = [
         'Sachet YB 12,5gr PCS'     => ['min' =>   12.05, 'std' =>   13.05, 'max' =>   14.05, 'tu1' =>   11.93, 'tu2' =>   10.80, 'code' => 'S12.5G-P'],
         'Sachet YB 12,5gr RENCENG' => ['min' =>  154.60, 'std' =>  156.60, 'max' =>  168.60, 'tu1' =>  143.10, 'tu2' =>  129.60, 'code' => 'S12.5G-R'],
@@ -32,6 +31,7 @@ class TimbanganRetailMesinController extends Controller
         'Pouch YB 1000gr'          => ['min' => 1007.50, 'std' => 1012.50, 'max' => 1017.50, 'tu1' =>  997.50, 'tu2' =>  982.50, 'code' => 'P1000G'],
     ];
 
+    // ── HELPERS ───────────────────────────────────────────────────────────────
 
     private function isAbnormal(float $berat, string $variant): bool
     {
@@ -44,31 +44,12 @@ class TimbanganRetailMesinController extends Controller
     {
         $s = self::VARIANT_STANDARDS[$variant] ?? null;
         if (!$s) return 'normal';
-        if ($berat > $s['max'])  return 'over';   // >Max
-        if ($berat < $s['tu2'])  return 'kritis'; // <TU2
-        if ($berat < $s['tu1'])  return 'warning'; // TU2→TU1
+        if ($berat > $s['max']) return 'over';    // >Max
+        if ($berat < $s['tu2']) return 'kritis';  // <TU2
+        if ($berat < $s['tu1']) return 'warning'; // TU2→TU1
         return 'normal';
     }
 
-    private function buildDateRange(Request $request): array
-    {
-        return [
-            Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString(),
-            Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString(),
-        ];
-    }
-
-    private function applyShiftFilter($query, ?string $shift): void
-    {
-        match ($shift) {
-            '1' => $query->whereRaw("TIME(waktu) >= '06:00:00' AND TIME(waktu) < '14:00:00'"),
-            '2' => $query->whereRaw("TIME(waktu) >= '14:00:00' AND TIME(waktu) < '22:00:00'"),
-            '3' => $query->whereRaw("TIME(waktu) >= '22:00:00' OR TIME(waktu) < '06:00:00'"),
-            default => null,
-        };
-    }
-
-    // ── CLASSIFY HELPER ──────────────────────────────────────────────────────
     private function classify(float $berat, string $variant): string
     {
         $s = self::VARIANT_STANDARDS[$variant] ?? null;
@@ -90,7 +71,7 @@ class TimbanganRetailMesinController extends Controller
         if (empty($weights)) {
             return [
                 'total' => 0, 'avg' => null, 'min' => null, 'max' => null,
-                'under' => 0, 'over' => 0, 'counts' => $counts
+                'under' => 0, 'over' => 0, 'counts' => $counts,
             ];
         }
         $n = count($weights);
@@ -106,6 +87,7 @@ class TimbanganRetailMesinController extends Controller
     }
 
     // ── SHIFT HELPERS ─────────────────────────────────────────────────────────
+
     private function getShiftRange(string $date): array
     {
         $day = Carbon::parse($date);
@@ -118,7 +100,7 @@ class TimbanganRetailMesinController extends Controller
     private function getShiftLabel(Carbon $time): string
     {
         $hour = (int) $time->format('H');
-        if ($hour >= 6 && $hour < 14) return 'Shift 1';
+        if ($hour >= 6 && $hour < 14)  return 'Shift 1';
         if ($hour >= 14 && $hour < 22) return 'Shift 2';
         return 'Shift 3';
     }
@@ -129,6 +111,43 @@ class TimbanganRetailMesinController extends Controller
         if ($hour >= 6 && $hour < 14)  return 'shift1';
         if ($hour >= 14 && $hour < 22) return 'shift2';
         return 'shift3';
+    }
+
+    /**
+     * Bangun date range berdasarkan shift.
+     *
+     * Shift 1 : start_date 06:00 → end_date 13:59:59
+     * Shift 2 : start_date 14:00 → end_date 21:59:59
+     * Shift 3 : start_date 22:00 → end_date+1 05:59:59  ← lintas tengah malam
+     * default  : start_date 06:00 → end_date+1 05:59:59  (semua shift, 1 production day)
+     *
+     * Dengan range berbasis datetime (bukan TIME()), tidak ada lagi
+     * kebocoran data shift 3 malam sebelumnya.
+     */
+    private function buildDateRangeWithShift(Request $request): array
+    {
+        $shift     = $request->filled('shift') ? $request->shift : null;
+        $startDate = Carbon::parse($request->start_date);
+        $endDate   = Carbon::parse($request->end_date);
+
+        return match ($shift) {
+            '1' => [
+                $startDate->copy()->setTime(6,  0,  0)->toDateTimeString(),
+                $endDate->copy()->setTime(13, 59, 59)->toDateTimeString(),
+            ],
+            '2' => [
+                $startDate->copy()->setTime(14,  0,  0)->toDateTimeString(),
+                $endDate->copy()->setTime(21, 59, 59)->toDateTimeString(),
+            ],
+            '3' => [
+                $startDate->copy()->setTime(22,  0,  0)->toDateTimeString(),
+                $endDate->copy()->addDay()->setTime(5, 59, 59)->toDateTimeString(),
+            ],
+            default => [
+                $startDate->copy()->setTime(6, 0, 0)->toDateTimeString(),
+                $endDate->copy()->addDay()->setTime(5, 59, 59)->toDateTimeString(),
+            ],
+        };
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -289,19 +308,6 @@ class TimbanganRetailMesinController extends Controller
 
     // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/average-minmax
-    //
-    // FIX: mesinResult sekarang berisi sub-key per variant, bukan satu
-    //      bucket campuran. Contoh response:
-    //
-    //  "mesins": {
-    //    "AH": {
-    //      "variants": {
-    //        "Pouch YB 250gr": { total, avg, min, max, counts, ... },
-    //        "Pouch BB 270gr": { total, avg, min, max, counts, ... }
-    //      },
-    //      "combined": { total, avg, min, max, counts, ... }  ← gabungan
-    //    }
-    //  }
     // ═══════════════════════════════════════════════════════════════════════
     public function getAverageMinMax(Request $request)
     {
@@ -317,29 +323,16 @@ class TimbanganRetailMesinController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $start = Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString();
-        $end   = Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString();
+        // FIX: pakai buildDateRangeWithShift — tidak ada lagi TIME() filter yang bocor
+        [$start, $end] = $this->buildDateRangeWithShift($request);
 
-        $query = DB::table('timbangan_retail_mesin')
+        $rows = DB::table('timbangan_retail_mesin')
             ->select('waktu', 'berat', 'variant', 'mesin')
-            ->whereBetween('waktu', [$start, $end]);
-
-        if ($request->filled('varian')) $query->where('variant', trim($request->varian));
-        if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
-
-        // ── Filter shift ────────────────────────────────────────────────
-        if ($request->filled('shift')) {
-            $shift = $request->shift;
-            if ($shift == '1') {
-                $query->whereRaw("TIME(waktu) >= '06:00:00' AND TIME(waktu) < '14:00:00'");
-            } elseif ($shift == '2') {
-                $query->whereRaw("TIME(waktu) >= '14:00:00' AND TIME(waktu) < '22:00:00'");
-            } elseif ($shift == '3') {
-                $query->whereRaw("TIME(waktu) >= '22:00:00' OR TIME(waktu) < '06:00:00'");
-            }
-        }
-
-        $rows = $query->orderBy('waktu')->get();
+            ->whereBetween('waktu', [$start, $end])
+            ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
+            ->when($request->filled('mesin'),  fn ($q) => $q->where('mesin',   trim($request->mesin)))
+            ->orderBy('waktu')
+            ->get();
 
         if ($rows->isEmpty()) {
             return response()->json([
@@ -352,19 +345,14 @@ class TimbanganRetailMesinController extends Controller
             ]);
         }
 
-        // ── Containers ───────────────────────────────────────────────────
-        $shifts   = [
+        $shifts = [
             'shift1' => ['weights' => [], 'counts' => $this->blankCounts()],
             'shift2' => ['weights' => [], 'counts' => $this->blankCounts()],
             'shift3' => ['weights' => [], 'counts' => $this->blankCounts()],
         ];
-        $variants = []; // [variantName => ['weights'=>[], 'counts'=>[]]]
+        $variants = [];
+        $mesins   = [];
 
-        // KEY FIX: mesins sekarang punya sub-bucket per variant
-        // $mesins[mesinName][variantName] = ['weights'=>[], 'counts'=>[]]
-        $mesins = [];
-
-        // ── Loop rows ────────────────────────────────────────────────────
         foreach ($rows as $row) {
             $berat   = (float) $row->berat;
             $variant = $row->variant ?? '';
@@ -373,29 +361,25 @@ class TimbanganRetailMesinController extends Controller
             $shiftKey = $this->getShiftKey($row->waktu);
             $cls      = $this->classify($berat, $variant);
 
-            // Shift bucket
             $shifts[$shiftKey]['weights'][]    = $berat;
             $shifts[$shiftKey]['counts'][$cls]++;
 
-            // Variant bucket
             if (!isset($variants[$variant])) {
                 $variants[$variant] = ['weights' => [], 'counts' => $this->blankCounts()];
             }
-            $variants[$variant]['weights'][] = $berat;
+            $variants[$variant]['weights'][]    = $berat;
             $variants[$variant]['counts'][$cls]++;
 
-            // ── Mesin bucket — pisah per variant ────────────────────────
             if (!isset($mesins[$mesin])) {
                 $mesins[$mesin] = [];
             }
             if (!isset($mesins[$mesin][$variant])) {
                 $mesins[$mesin][$variant] = ['weights' => [], 'counts' => $this->blankCounts()];
             }
-            $mesins[$mesin][$variant]['weights'][] = $berat;
+            $mesins[$mesin][$variant]['weights'][]    = $berat;
             $mesins[$mesin][$variant]['counts'][$cls]++;
         }
 
-        // ── Shift result ──────────────────────────────────────────────────
         $shiftResult = [];
         foreach ($shifts as $k => $d) {
             $stats = $this->buildStats($d['weights'], $d['counts']);
@@ -408,21 +392,11 @@ class TimbanganRetailMesinController extends Controller
             ];
         }
 
-        // ── Variant result ────────────────────────────────────────────────
         $variantResult = [];
         foreach ($variants as $v => $d) {
             $variantResult[$v] = $this->buildStats($d['weights'], $d['counts']);
         }
 
-        // ── Mesin result — per variant + combined ─────────────────────────
-        // Shape:
-        // "AH": {
-        //   "variants": {
-        //     "Pouch YB 250gr": { total, avg, min, max, under, over, counts },
-        //     "Pouch BB 270gr": { ... }
-        //   },
-        //   "combined": { total, avg, min, max, under, over, counts }
-        // }
         $mesinResult = [];
         foreach ($mesins as $m => $variantBuckets) {
             $allWeights = [];
@@ -430,10 +404,7 @@ class TimbanganRetailMesinController extends Controller
             $perVariant = [];
 
             foreach ($variantBuckets as $variantName => $d) {
-                $stats = $this->buildStats($d['weights'], $d['counts']);
-                $perVariant[$variantName] = $stats;
-
-                // Merge ke combined
+                $perVariant[$variantName] = $this->buildStats($d['weights'], $d['counts']);
                 $allWeights = array_merge($allWeights, $d['weights']);
                 foreach ($d['counts'] as $cls => $cnt) {
                     $allCounts[$cls] += $cnt;
@@ -456,23 +427,12 @@ class TimbanganRetailMesinController extends Controller
             'shift2'     => $shiftResult['shift2'],
             'shift3'     => $shiftResult['shift3'],
             'variants'   => $variantResult,
-            'mesins'     => $mesinResult,   // ← struktur baru: { "AH": { variants:{...}, combined:{...} } }
+            'mesins'     => $mesinResult,
         ]);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/chart
-    //
-    // FIX: mesinSamples sekarang menyimpan samples per variant di tiap mesin.
-    //
-    //  "mesins": {
-    //    "AH": {
-    //      "variants": {
-    //        "Pouch YB 250gr": { "samples": [{berat, waktu}, ...] },
-    //        "Pouch BB 270gr": { "samples": [...] }
-    //      }
-    //    }
-    //  }
     // ═══════════════════════════════════════════════════════════════════════
     public function getChartData(Request $request)
     {
@@ -488,29 +448,16 @@ class TimbanganRetailMesinController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $start = Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString();
-        $end   = Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString();
+        // FIX: pakai buildDateRangeWithShift — tidak ada lagi TIME() filter yang bocor
+        [$start, $end] = $this->buildDateRangeWithShift($request);
 
-        $query = DB::table('timbangan_retail_mesin')
+        $rows = DB::table('timbangan_retail_mesin')
             ->select(['mesin', 'variant', 'waktu', 'berat', 'status'])
-            ->whereBetween('waktu', [$start, $end]);
-
-        if ($request->filled('varian')) $query->where('variant', trim($request->varian));
-        if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
-
-        // Filter shift
-        if ($request->filled('shift')) {
-            $shift = $request->shift;
-            if ($shift == '1') {
-                $query->whereRaw("TIME(waktu) >= '06:00:00' AND TIME(waktu) < '14:00:00'");
-            } elseif ($shift == '2') {
-                $query->whereRaw("TIME(waktu) >= '14:00:00' AND TIME(waktu) < '22:00:00'");
-            } elseif ($shift == '3') {
-                $query->whereRaw("TIME(waktu) >= '22:00:00' OR TIME(waktu) < '06:00:00'");
-            }
-        }
-
-        $rows = $query->orderBy('waktu')->get();
+            ->whereBetween('waktu', [$start, $end])
+            ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
+            ->when($request->filled('mesin'),  fn ($q) => $q->where('mesin',   trim($request->mesin)))
+            ->orderBy('waktu')
+            ->get();
 
         if ($rows->isEmpty()) {
             return response()->json([
@@ -524,19 +471,15 @@ class TimbanganRetailMesinController extends Controller
         }
 
         $shiftSamples = ['shift1' => [], 'shift2' => [], 'shift3' => []];
-
-        // KEY FIX: samples dipisah per variant di dalam tiap mesin
-        // $mesinSamples[mesinName][variantName] = ['samples' => [...]]
         $mesinSamples = [];
-
-        $flatData = [];
+        $flatData     = [];
 
         foreach ($rows as $row) {
             $shiftKey = $this->getShiftKey($row->waktu);
             $m        = $row->mesin;
             $v        = $row->variant;
 
-            $item = [
+            $flatData[] = [
                 'mesin'   => $m,
                 'variant' => $v,
                 'waktu'   => $row->waktu,
@@ -545,10 +488,8 @@ class TimbanganRetailMesinController extends Controller
                 'shift'   => ucfirst(str_replace('shift', 'Shift ', $shiftKey)),
             ];
 
-            // Shift samples
             $shiftSamples[$shiftKey][] = ['berat' => (float) $row->berat, 'waktu' => $row->waktu];
 
-            // Mesin samples — pisah per variant
             if (!isset($mesinSamples[$m])) {
                 $mesinSamples[$m] = ['variants' => []];
             }
@@ -559,8 +500,6 @@ class TimbanganRetailMesinController extends Controller
                 'berat' => (float) $row->berat,
                 'waktu' => $row->waktu,
             ];
-
-            $flatData[] = $item;
         }
 
         return response()->json([
@@ -575,13 +514,13 @@ class TimbanganRetailMesinController extends Controller
             'shift1'     => ['samples' => $shiftSamples['shift1']],
             'shift2'     => ['samples' => $shiftSamples['shift2']],
             'shift3'     => ['samples' => $shiftSamples['shift3']],
-            'mesins'     => $mesinSamples, // ← struktur baru: { "AH": { variants: { "Pouch YB 250gr": { samples:[...] } } } }
+            'mesins'     => $mesinSamples,
             'data'       => $flatData,
         ]);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Dashboard & Store — tidak berubah
+    // GET /api/mesin/dashboard
     // ═══════════════════════════════════════════════════════════════════════
     public function getDashboardData(Request $request)
     {
@@ -617,33 +556,36 @@ class TimbanganRetailMesinController extends Controller
 
         if ($request->filled('status')) $query->where('status', $status);
 
-        $beratHariIni      = (clone $query)->sum('berat');
-        $transaksiHariIni  = (clone $query)->count();
-        $rataRataBerat     = (clone $query)->avg('berat');
-        $mesinAktif        = (clone $query)->select('mesin', DB::raw('count(*) as total'))->groupBy('mesin')->orderBy('total', 'desc')->first();
-        $dataMesin         = (clone $query)->select('mesin', DB::raw('count(*) as total_transaksi'), DB::raw('sum(berat) as total_berat'))->groupBy('mesin')->orderBy('total_transaksi', 'desc')->limit(10)->get();
-        $transaksiTerbaru  = (clone $query)->orderBy('waktu', 'desc')->limit(10)->get();
-        $transaksiPerJam   = (clone $query)->select(DB::raw('HOUR(waktu) as jam'), DB::raw('count(*) as total'))->groupBy('jam')->orderBy('jam')->get();
-        $beratPerVariant   = (clone $query)->select('variant', DB::raw('sum(berat) as total_berat'))->groupBy('variant')->orderBy('total_berat', 'desc')->limit(5)->get();
+        $beratHariIni     = (clone $query)->sum('berat');
+        $transaksiHariIni = (clone $query)->count();
+        $rataRataBerat    = (clone $query)->avg('berat');
+        $mesinAktif       = (clone $query)->select('mesin', DB::raw('count(*) as total'))->groupBy('mesin')->orderBy('total', 'desc')->first();
+        $dataMesin        = (clone $query)->select('mesin', DB::raw('count(*) as total_transaksi'), DB::raw('sum(berat) as total_berat'))->groupBy('mesin')->orderBy('total_transaksi', 'desc')->limit(10)->get();
+        $transaksiTerbaru = (clone $query)->orderBy('waktu', 'desc')->limit(10)->get();
+        $transaksiPerJam  = (clone $query)->select(DB::raw('HOUR(waktu) as jam'), DB::raw('count(*) as total'))->groupBy('jam')->orderBy('jam')->get();
+        $beratPerVariant  = (clone $query)->select('variant', DB::raw('sum(berat) as total_berat'))->groupBy('variant')->orderBy('total_berat', 'desc')->limit(5)->get();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'filters'    => ['tanggal' => $tanggal, 'shift' => $shift, 'status' => $status],
                 'statistics' => [
-                    'berat_hari_ini'    => (float) $beratHariIni,
+                    'berat_hari_ini'     => (float) $beratHariIni,
                     'transaksi_hari_ini' => $transaksiHariIni,
-                    'rata_rata_berat'   => (float) ($rataRataBerat ?? 0),
-                    'mesin_aktif'       => $mesinAktif ? ['mesin' => $mesinAktif->mesin, 'total' => $mesinAktif->total] : null,
+                    'rata_rata_berat'    => (float) ($rataRataBerat ?? 0),
+                    'mesin_aktif'        => $mesinAktif ? ['mesin' => $mesinAktif->mesin, 'total' => $mesinAktif->total] : null,
                 ],
-                'data_mesin'         => $dataMesin,
-                'transaksi_terbaru'  => $transaksiTerbaru,
-                'transaksi_per_jam'  => $transaksiPerJam,
-                'berat_per_variant'  => $beratPerVariant,
+                'data_mesin'        => $dataMesin,
+                'transaksi_terbaru' => $transaksiTerbaru,
+                'transaksi_per_jam' => $transaksiPerJam,
+                'berat_per_variant' => $beratPerVariant,
             ],
         ], 200);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // POST /api/mesin
+    // ═══════════════════════════════════════════════════════════════════════
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -665,6 +607,9 @@ class TimbanganRetailMesinController extends Controller
         return response()->json(['success' => true, 'data' => $mesin], 201);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // POST /api/mesin2
+    // ═══════════════════════════════════════════════════════════════════════
     public function store2(Request $request)
     {
         $validVariants = array_keys(self::VARIANT_STANDARDS);
@@ -672,7 +617,7 @@ class TimbanganRetailMesinController extends Controller
         $validator = Validator::make($request->all(), [
             'nik'     => 'required|string|max:50',
             'mesin'   => 'required|string|max:255',
-            'variant' => ['required', 'string', 'max:255', "in:" . implode(',', $validVariants)],
+            'variant' => ['required', 'string', 'max:255', 'in:' . implode(',', $validVariants)],
             'waktu'   => 'required|date',
             'status'  => 'required|in:OK,NOT OK',
             'filler'  => 'nullable|in:1,2,3,4,5,6,7,8',
@@ -689,8 +634,10 @@ class TimbanganRetailMesinController extends Controller
         return response()->json(['success' => true, 'data' => $mesin], 201);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/abnormal-log
     // Params: start_date, end_date, shift?, varian?, mesin?, nik?, severity?, per_page?, page?
+    // ═══════════════════════════════════════════════════════════════════════
     public function getAbnormalLog(Request $request)
     {
         $request->validate([
@@ -704,29 +651,26 @@ class TimbanganRetailMesinController extends Controller
             'per_page'   => 'nullable|integer|min:10|max:200',
         ]);
 
-        [$start, $end] = $this->buildDateRange($request);
+        // FIX: pakai buildDateRangeWithShift — hapus applyShiftFilter
+        [$start, $end] = $this->buildDateRangeWithShift($request);
 
         $query = DB::table('timbangan_retail_mesin')
-        ->select(['id', 'nik', 'mesin', 'variant', 'waktu', 'berat', 'status'])
-        ->whereBetween('waktu', [$start, $end])
-        ->orderBy('waktu', 'desc');
+            ->select(['id', 'nik', 'mesin', 'variant', 'waktu', 'berat', 'status'])
+            ->whereBetween('waktu', [$start, $end])
+            ->orderBy('waktu', 'desc');
 
         if ($request->filled('varian')) $query->where('variant', trim($request->varian));
         if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
-        if ($request->filled('nik'))    $query->where('nik',
-            trim($request->nik)
-        );
-        $this->applyShiftFilter($query, $request->shift);
+        if ($request->filled('nik'))    $query->where('nik',     trim($request->nik));
 
         $rows = $query->get();
 
-        // Filter abnormal + severity di PHP (karena klasifikasi butuh VARIANT_STANDARDS)
         $abnormal = $rows->filter(function ($row) {
             return $this->isAbnormal((float) $row->berat, $row->variant ?? '');
         })->map(function ($row) {
-            $berat   = (float) $row->berat;
-            $variant = $row->variant ?? '';
-            $std     = self::VARIANT_STANDARDS[$variant] ?? null;
+            $berat    = (float) $row->berat;
+            $variant  = $row->variant ?? '';
+            $std      = self::VARIANT_STANDARDS[$variant] ?? null;
             $severity = $this->getSeverity($berat, $variant);
 
             return [
@@ -736,40 +680,40 @@ class TimbanganRetailMesinController extends Controller
                 'mesin'        => $row->mesin,
                 'variant'      => $variant,
                 'variant_code' => $std['code'] ?? '—',
-                'shift' => $this->getShiftLabel(Carbon::parse($row->waktu)),
+                'shift'        => $this->getShiftLabel(Carbon::parse($row->waktu)),
                 'berat'        => $berat,
-                'std_value'    => $std['std']  ?? null, // nilai standar ideal
-                'selisih'      => $std ? round($berat - $std['std'], 3) : null, // negatif = kurang
+                'std_value'    => $std['std']  ?? null,
+                'selisih'      => $std ? round($berat - $std['std'], 3) : null,
                 'batas_min'    => $std['tu1']  ?? null,
                 'batas_max'    => $std['max']  ?? null,
-                'severity'     => $severity,  // 'kritis' | 'warning' | 'over'
+                'severity'     => $severity,
                 'status'       => $row->status,
             ];
         })->values();
 
-        // Filter severity setelah mapping
         if ($request->filled('severity')) {
             $abnormal = $abnormal->filter(fn ($r) => $r['severity'] === $request->severity)->values();
         }
 
-        // Manual paginate
-        $perPage  = (int) ($request->per_page ?? 50);
-        $page     = (int) ($request->page ?? 1);
-        $total    = $abnormal->count();
-        $items    = $abnormal->slice(($page - 1) * $perPage, $perPage)->values();
+        $perPage = (int) ($request->per_page ?? 50);
+        $page    = (int) ($request->page ?? 1);
+        $total   = $abnormal->count();
+        $items   = $abnormal->slice(($page - 1) * $perPage, $perPage)->values();
 
         return response()->json([
-            'success'    => true,
-            'total'      => $total,
-            'page'       => $page,
-            'per_page'   => $perPage,
+            'success'     => true,
+            'total'       => $total,
+            'page'        => $page,
+            'per_page'    => $perPage,
             'total_pages' => (int) ceil($total / $perPage),
-            'data'       => $items,
+            'data'        => $items,
         ]);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/abnormal-summary
     // Params: start_date, end_date, shift?, varian?, mesin?
+    // ═══════════════════════════════════════════════════════════════════════
     public function getAbnormalSummary(Request $request)
     {
         $request->validate([
@@ -780,22 +724,20 @@ class TimbanganRetailMesinController extends Controller
             'mesin'      => 'nullable|string',
         ]);
 
-        [$start, $end] = $this->buildDateRange($request);
+        // FIX: pakai buildDateRangeWithShift — hapus applyShiftFilter
+        [$start, $end] = $this->buildDateRangeWithShift($request);
 
         $query = DB::table('timbangan_retail_mesin')
-        ->select(['nik', 'mesin', 'variant', 'waktu', 'berat'])
-        ->whereBetween('waktu', [$start, $end]);
+            ->select(['nik', 'mesin', 'variant', 'waktu', 'berat'])
+            ->whereBetween('waktu', [$start, $end]);
 
         if ($request->filled('varian')) $query->where('variant', trim($request->varian));
         if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
-        $this->applyShiftFilter($query, $request->shift);
 
         $rows = $query->orderBy('waktu')->get();
 
-        $totalSampel  = $rows->count();
+        $totalSampel = $rows->count();
         $kritis = $warning = $over = 0;
-
-        // Pareto: mesin dan varian penyumbang abnormal terbanyak
         $paretoMesin   = [];
         $paretoVariant = [];
 
@@ -806,19 +748,18 @@ class TimbanganRetailMesinController extends Controller
             if (!$this->isAbnormal($berat, $variant)) continue;
 
             $sev = $this->getSeverity($berat, $variant);
-            if ($sev === 'kritis') $kritis++;
+            if ($sev === 'kritis')      $kritis++;
             elseif ($sev === 'warning') $warning++;
-            elseif ($sev === 'over') $over++;
+            elseif ($sev === 'over')    $over++;
 
-            $paretoMesin[$row->mesin]     = ($paretoMesin[$row->mesin]     ?? 0) + 1;
-            $paretoVariant[$variant]      = ($paretoVariant[$variant]      ?? 0) + 1;
+            $paretoMesin[$row->mesin] = ($paretoMesin[$row->mesin] ?? 0) + 1;
+            $paretoVariant[$variant]  = ($paretoVariant[$variant]  ?? 0) + 1;
         }
 
         $totalAbnormal = $kritis + $warning + $over;
         arsort($paretoMesin);
         arsort($paretoVariant);
 
-        // Pareto kumulatif untuk mesin
         $paretoMesinOut = [];
         $cumul = 0;
         foreach (array_slice($paretoMesin, 0, 10, true) as $m => $cnt) {
@@ -850,16 +791,18 @@ class TimbanganRetailMesinController extends Controller
             'total_sampel'   => $totalSampel,
             'total_abnormal' => $totalAbnormal,
             'pct_abnormal'   => $totalSampel > 0 ? round($totalAbnormal / $totalSampel * 100, 2) : 0,
-            'kritis'         => $kritis,   // <TU2
-            'warning'        => $warning,  // TU2→TU1
-            'over'           => $over,     // >Max
+            'kritis'         => $kritis,
+            'warning'        => $warning,
+            'over'           => $over,
             'pareto_mesin'   => $paretoMesinOut,
             'pareto_variant' => $paretoVariantOut,
         ]);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/operator-stats
     // Params: start_date, end_date, shift?, varian?, mesin?
+    // ═══════════════════════════════════════════════════════════════════════
     public function getOperatorStats(Request $request)
     {
         $request->validate([
@@ -870,20 +813,19 @@ class TimbanganRetailMesinController extends Controller
             'mesin'      => 'nullable|string',
         ]);
 
-        [$start, $end] = $this->buildDateRange($request);
+        // FIX: pakai buildDateRangeWithShift — hapus applyShiftFilter
+        [$start, $end] = $this->buildDateRangeWithShift($request);
 
         $query = DB::table('timbangan_retail_mesin')
-        ->select(['nik', 'mesin', 'variant', 'waktu', 'berat'])
-        ->whereBetween('waktu', [$start, $end]);
+            ->select(['nik', 'mesin', 'variant', 'waktu', 'berat'])
+            ->whereBetween('waktu', [$start, $end]);
 
         if ($request->filled('varian')) $query->where('variant', trim($request->varian));
         if ($request->filled('mesin'))  $query->where('mesin',   trim($request->mesin));
-        $this->applyShiftFilter($query, $request->shift);
 
         $rows = $query->orderBy('waktu')->get();
 
-        // Group per NIK
-        $ops = []; // [nik => [total, abnormal, kritis, warning, over, mesin_list, last_seen]]
+        $ops = [];
         foreach ($rows as $row) {
             $nik   = $row->nik ?? 'UNKNOWN';
             $berat = (float) $row->berat;
@@ -917,7 +859,6 @@ class TimbanganRetailMesinController extends Controller
             }
         }
 
-        // Hitung pct dan sort by abnormal terbanyak
         $result = collect($ops)->map(function ($op) {
             return [
                 'nik'          => $op['nik'],
@@ -933,15 +874,16 @@ class TimbanganRetailMesinController extends Controller
         })->sortByDesc('abnormal')->values();
 
         return response()->json([
-            'success' => true,
+            'success'        => true,
             'total_operator' => $result->count(),
-            'data'    => $result,
+            'data'           => $result,
         ]);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/hourly-heatmap
     // Params: start_date, end_date, varian?, mesin?
-    // Response: matrix [jam 0-23][shift] => { total, abnormal, pct }
+    // ═══════════════════════════════════════════════════════════════════════
     public function getHourlyHeatmap(Request $request)
     {
         $request->validate([
@@ -951,19 +893,18 @@ class TimbanganRetailMesinController extends Controller
             'mesin'      => 'nullable|string',
         ]);
 
-        [$start, $end] = $this->buildDateRange($request);
+        // Heatmap selalu tampilkan full production day (tidak ada filter shift)
+        $start = Carbon::parse($request->start_date)->setTime(6, 0, 0)->toDateTimeString();
+        $end   = Carbon::parse($request->end_date)->addDay()->setTime(5, 59, 59)->toDateTimeString();
 
         $rows = DB::table('timbangan_retail_mesin')
-        ->select(['variant', 'waktu', 'berat'])
-        ->whereBetween('waktu', [$start, $end])
-        ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
-        ->when($request->filled('mesin'),
-            fn ($q) => $q->where('mesin',   trim($request->mesin))
-        )
-        ->orderBy('waktu')
-        ->get();
+            ->select(['variant', 'waktu', 'berat'])
+            ->whereBetween('waktu', [$start, $end])
+            ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
+            ->when($request->filled('mesin'),  fn ($q) => $q->where('mesin',   trim($request->mesin)))
+            ->orderBy('waktu')
+            ->get();
 
-        // Matrix jam 0-23
         $matrix = array_fill(0, 24, ['total' => 0, 'abnormal' => 0]);
 
         foreach ($rows as $row) {
@@ -981,10 +922,10 @@ class TimbanganRetailMesinController extends Controller
         for ($h = 0; $h < 24; $h++) {
             $t = $matrix[$h]['total'];
             $a = $matrix[$h]['abnormal'];
-            // Tentukan shift jam ini
-            if ($h >= 6 && $h < 14)  $shift = 'Shift 1';
-            elseif ($h >= 14 && $h < 22) $shift = 'Shift 2';
-            else $shift = 'Shift 3';
+
+            if ($h >= 6 && $h < 14)       $shift = 'Shift 1';
+            elseif ($h >= 14 && $h < 22)   $shift = 'Shift 2';
+            else                            $shift = 'Shift 3';
 
             $result[] = [
                 'jam'          => sprintf('%02d:00', $h),
