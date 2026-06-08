@@ -78,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
         // Dashboard - Timbangan Retail
         Route::get('/dashboard/timbangan-retail', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'index'])->name('dashboard.timbangan-retail.index');
         Route::get('/dashboard/timbangan-retail/analisa', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'analisa'])->name('dashboard.timbangan-retail.analisa');
+        Route::get('/dashboard/timbangan-retail/mesin-ranking', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'mesinRanking'])->name('dashboard.timbangan-retail.mesin-ranking');
 
         // Dashboard - Proses Masak
         Route::get('/dashboard/proses-masak', [App\Http\Controllers\Dashboard\ProsesMasakController::class, 'index'])->name('dashboard.proses-masak.index');

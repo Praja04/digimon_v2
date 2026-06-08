@@ -941,4 +941,224 @@ class TimbanganRetailMesinController extends Controller
             'data'    => $result,
         ]);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // GET /api/timbangan-retail/mesin-ranking
+    // Params: start_date, end_date, shift?, varian?, mesin?
+    // ═══════════════════════════════════════════════════════════════════════
+    public function getMesinRanking(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d',
+            'shift'      => 'nullable|in:1,2,3',
+            'varian'     => 'nullable|string',
+            'mesin'      => 'nullable|string',
+        ]);
+
+        [$start, $end] = $this->buildDateRangeWithShift($request);
+
+        $rankingData = $this->calculateRankingForRange(
+            $start,
+            $end,
+            $request->varian,
+            $request->mesin
+        );
+
+        return response()->json(array_merge([
+            'success'          => true,
+            'variant_standards' => collect(self::VARIANT_STANDARDS)->map(fn ($s, $name) => [
+                'name' => $name,
+                'code' => $s['code'],
+                'min'  => $s['min'],
+                'std'  => $s['std'],
+                'max'  => $s['max'],
+                'tu1'  => $s['tu1'],
+                'tu2'  => $s['tu2'],
+            ])->values(),
+        ], $rankingData));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // GET /api/timbangan-retail/realtime-ranking
+    // Params: varian?, mesin?
+    // ═══════════════════════════════════════════════════════════════════════
+    public function getRealtimeRanking(Request $request)
+    {
+        $varian = $request->filled('varian') ? $request->varian : null;
+        $mesin  = $request->filled('mesin') ? $request->mesin : null;
+
+        $now = Carbon::now();
+        $hour = (int)$now->format('H');
+
+        // Determine shift ranges
+        if ($hour >= 6 && $hour < 14) {
+            $currentLabel = 'Shift 1';
+            $currentStart = $now->copy()->setTime(6, 0, 0);
+            $currentEnd = $now->copy()->setTime(13, 59, 59);
+
+            $prevLabel = 'Shift 3';
+            $prevStart = $now->copy()->subDay()->setTime(22, 0, 0);
+            $prevEnd = $now->copy()->setTime(5, 59, 59);
+        } elseif ($hour >= 14 && $hour < 22) {
+            $currentLabel = 'Shift 2';
+            $currentStart = $now->copy()->setTime(14, 0, 0);
+            $currentEnd = $now->copy()->setTime(21, 59, 59);
+
+            $prevLabel = 'Shift 1';
+            $prevStart = $now->copy()->setTime(6, 0, 0);
+            $prevEnd = $now->copy()->setTime(13, 59, 59);
+        } else {
+            $currentLabel = 'Shift 3';
+            if ($hour >= 22) {
+                $currentStart = $now->copy()->setTime(22, 0, 0);
+                $currentEnd = $now->copy()->addDay()->setTime(5, 59, 59);
+
+                $prevLabel = 'Shift 2';
+                $prevStart = $now->copy()->setTime(14, 0, 0);
+                $prevEnd = $now->copy()->setTime(21, 59, 59);
+            } else {
+                $currentStart = $now->copy()->subDay()->setTime(22, 0, 0);
+                $currentEnd = $now->copy()->setTime(5, 59, 59);
+
+                $prevLabel = 'Shift 2';
+                $prevStart = $now->copy()->subDay()->setTime(14, 0, 0);
+                $prevEnd = $now->copy()->subDay()->setTime(21, 59, 59);
+            }
+        }
+
+        // Fetch previous shift data
+        $prevData = $this->calculateRankingForRange(
+            $prevStart->toDateTimeString(),
+            $prevEnd->toDateTimeString(),
+            $varian,
+            $mesin
+        );
+
+        // Fetch current running shift data
+        $currentData = $this->calculateRankingForRange(
+            $currentStart->toDateTimeString(),
+            $currentEnd->toDateTimeString(),
+            $varian,
+            $mesin
+        );
+
+        return response()->json([
+            'success' => true,
+            'previous' => [
+                'label'      => $prevLabel,
+                'start'      => $prevStart->toDateTimeString(),
+                'end'        => $prevEnd->toDateTimeString(),
+                'date_label' => $prevStart->format('d M Y'),
+                'time_label' => $prevStart->format('H:i') . ' - ' . $prevEnd->format('H:i'),
+                'stats'      => $prevData,
+            ],
+            'current' => [
+                'label'      => $currentLabel,
+                'start'      => $currentStart->toDateTimeString(),
+                'end'        => $currentEnd->toDateTimeString(),
+                'date_label' => $currentStart->format('d M Y'),
+                'time_label' => $currentStart->format('H:i') . ' - ' . $currentEnd->format('H:i'),
+                'stats'      => $currentData,
+            ],
+        ]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HELPER: Calculate Ranking for specific datetime range
+    // ═══════════════════════════════════════════════════════════════════════
+    private function calculateRankingForRange($start, $end, $varian = null, $mesin = null)
+    {
+        $rows = DB::table('timbangan_retail_mesin')
+            ->select(['mesin', 'variant', 'waktu', 'berat', 'status', 'nik', 'filler'])
+            ->whereBetween('waktu', [$start, $end])
+            ->when($varian, fn ($q) => $q->where('variant', trim($varian)))
+            ->when($mesin,  fn ($q) => $q->where('mesin',   trim($mesin)))
+            ->orderBy('waktu')
+            ->get();
+
+        $groups = [];
+        $globalTotal = 0;
+        $globalAbnormal = 0;
+
+        foreach ($rows as $row) {
+            $berat   = (float) $row->berat;
+            $variant = $row->variant ?? '';
+            $m       = $row->mesin ?? '';
+            $key     = $m . '|' . $variant;
+
+            if (!isset($groups[$key])) {
+                $groups[$key] = [
+                    'mesin'       => $m,
+                    'variant'     => $variant,
+                    'total'       => 0,
+                    'abnormal'    => 0,
+                    'kritis'      => 0,
+                    'warning'     => 0,
+                    'over'        => 0,
+                    'operators'   => [],
+                    'total_berat' => 0,
+                    'last_waktu'  => $row->waktu,
+                ];
+            }
+
+            $groups[$key]['total']++;
+            $groups[$key]['total_berat'] += $berat;
+            $globalTotal++;
+
+            if ($row->waktu > $groups[$key]['last_waktu']) {
+                $groups[$key]['last_waktu'] = $row->waktu;
+            }
+
+            $nik = $row->nik ?? 'UNKNOWN';
+            if (!in_array($nik, $groups[$key]['operators'])) {
+                $groups[$key]['operators'][] = $nik;
+            }
+
+            if ($this->isAbnormal($berat, $variant)) {
+                $groups[$key]['abnormal']++;
+                $globalAbnormal++;
+
+                $sev = $this->getSeverity($berat, $variant);
+                if (isset($groups[$key][$sev])) {
+                    $groups[$key][$sev]++;
+                }
+            }
+        }
+
+        // Build result sorted by abnormal percentage descending
+        $result = collect($groups)->map(function ($data) use ($globalAbnormal) {
+            $pctAbn = $data['total'] > 0 ? round($data['abnormal'] / $data['total'] * 100, 2) : 0;
+            $std = self::VARIANT_STANDARDS[$data['variant']] ?? null;
+            $variantCode = $std['code'] ?? $data['variant'];
+
+            return [
+                'mesin'            => $data['mesin'],
+                'variant'          => $data['variant'],
+                'variant_code'     => $variantCode,
+                'total'            => $data['total'],
+                'abnormal'         => $data['abnormal'],
+                'pct_abnormal'     => $pctAbn,
+                'kritis'           => $data['kritis'],
+                'warning'          => $data['warning'],
+                'over'             => $data['over'],
+                'total_berat'      => round($data['total_berat'], 2),
+                'avg_berat'        => $data['total'] > 0 ? round($data['total_berat'] / $data['total'], 2) : 0,
+                'operator_count'   => count($data['operators']),
+                'last_activity'    => $data['last_waktu'],
+                'kontribusi_abnormal' => $globalAbnormal > 0
+                    ? round($data['abnormal'] / $globalAbnormal * 100, 1)
+                    : 0,
+            ];
+        })->sortByDesc('pct_abnormal')->values();
+
+        return [
+            'total_mesin'    => $result->count(),
+            'total_sampel'   => $globalTotal,
+            'total_abnormal' => $globalAbnormal,
+            'pct_abnormal'   => $globalTotal > 0 ? round($globalAbnormal / $globalTotal * 100, 2) : 0,
+            'data'           => $result,
+        ];
+    }
 }
+

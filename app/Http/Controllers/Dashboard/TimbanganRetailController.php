@@ -19,4 +19,9 @@ class TimbanganRetailController extends Controller
     {
         return view('dashboard.timbangan-retail.analisa');
     }
+
+    public function mesinRanking()
+    {
+        return view('dashboard.timbangan-retail.mesin-ranking');
+    }
 }

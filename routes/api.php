@@ -106,6 +106,8 @@ Route::prefix('timbangan-retail')->group(function () {
     Route::get('abnormal-summary', [TimbanganRetailMesinController::class, 'getAbnormalSummary']);
     Route::get('operator-stats',   [TimbanganRetailMesinController::class, 'getOperatorStats']);
     Route::get('hourly-heatmap',   [TimbanganRetailMesinController::class, 'getHourlyHeatmap']);
+    Route::get('mesin-ranking',    [TimbanganRetailMesinController::class, 'getMesinRanking']);
+    Route::get('realtime-ranking', [TimbanganRetailMesinController::class, 'getRealtimeRanking']);
 });
 
 // Press Test Data (CRUD)
