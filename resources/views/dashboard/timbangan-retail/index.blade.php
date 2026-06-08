@@ -526,6 +526,41 @@
                 </button>
             </div>
 
+            {{-- SUMMARY TABLE ─────────────────────────────────────────── --}}
+            <div class="tr-card mb-3">
+                <div class="tr-card-header">
+                    <h6 class="tr-card-title"><i class="ri-table-line me-1 text-primary"></i>Olah Data — Ringkasan Per Shift</h6>
+                </div>
+                <div class="tr-card-body p-0">
+                    <div class="table-responsive">
+                        <table class="tr-summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Shift</th>
+                                    <th>Min (gr)</th>
+                                    <th>Avg (gr)</th>
+                                    <th>Max (gr)</th>
+                                    <th>&lt;TU2 (pcs)</th>
+                                    <th>TU2→TU1 (pcs)</th>
+                                    <th>TU1→STD (pcs)</th>
+                                    <th>STD→Max (pcs)</th>
+                                    <th>&gt;Max (pcs)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s1-summary-body">
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">
+                                        <div class="tr-loading">
+                                            <div class="tr-spinner"></div><span>Memuat data...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             {{-- SHIFT CHARTS GRID ────────────────────────────────────── --}}
             <div class="row g-3 mb-3" id="s1-shift-grid">
                 @foreach (['1','2','3'] as $shift)
@@ -533,7 +568,7 @@
                     <div class="tr-card h-100">
                         <div class="tr-card-header">
                             <h6 class="tr-card-title">
-                                <span class="shift-dot" style="background:{{ $shift=='1'?'#1a56db':($shift=='2'?'#0e9f6e':'#ff5a1f') }};"></span>
+                                <span class="shift-dot" style="background:{{ $shift=='1'?'#1a56db':($shift=='2'?'#0891b2':'#ff5a1f') }};"></span>
                                 Shift {{ $shift }}
                             </h6>
                             <div id="s1-align-hint-{{ $shift }}" style="display:none;">
@@ -568,41 +603,6 @@
                     </div>
                 </div>
                 @endforeach
-            </div>
-
-            {{-- SUMMARY TABLE ─────────────────────────────────────────── --}}
-            <div class="tr-card">
-                <div class="tr-card-header">
-                    <h6 class="tr-card-title"><i class="ri-table-line me-1 text-primary"></i>Olah Data — Ringkasan Per Shift</h6>
-                </div>
-                <div class="tr-card-body p-0">
-                    <div class="table-responsive">
-                        <table class="tr-summary-table">
-                            <thead>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Min (gr)</th>
-                                    <th>Avg (gr)</th>
-                                    <th>Max (gr)</th>
-                                    <th>&lt;TU2 (pcs)</th>
-                                    <th>TU2→TU1 (pcs)</th>
-                                    <th>TU1→STD (pcs)</th>
-                                    <th>STD→Max (pcs)</th>
-                                    <th>&gt;Max (pcs)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="s1-summary-body">
-                                <tr>
-                                    <td colspan="9" class="text-center py-4">
-                                        <div class="tr-loading">
-                                            <div class="tr-spinner"></div><span>Memuat data...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -893,7 +893,7 @@
         underTu2: '#e02424', // <TU2 (danger)
     };
 
-    const SHIFT_COLORS = ['#1a56db', '#0e9f6e', '#ff5a1f'];
+    const SHIFT_COLORS = ['#1a56db', '#0891b2', '#ff5a1f'];
     const ALL_MESINS = [
         'F', 'G', 'H', 'I', // LC1
         'D', 'E', 'J', 'K', // LC2
@@ -962,6 +962,23 @@
             wrapper.style.position = 'relative';
             wrapper.style.height = fixedHeight + 'px';
         }
+
+        // Detect and adjust for vertical label overlaps dynamically across all lines
+        const yAdjustments = new Array(yLines.length).fill(0);
+        if (yLines.length > 1) {
+            let maxVal = Math.max(...yLines.map(l => l.v));
+            let minVal = Math.min(...yLines.map(l => l.v));
+            let range = maxVal - minVal || 1;
+
+            for (let i = 1; i < yLines.length; i++) {
+                let diff = yLines[i - 1].v - yLines[i].v;
+                if (diff / range < 0.08) {
+                    yAdjustments[i - 1] -= 8;
+                    yAdjustments[i] += 8;
+                }
+            }
+        }
+
         const annotations = {};
         const dashPatterns = [
             [6, 3], // Max  — dash panjang
@@ -972,6 +989,8 @@
         ];
 
         yLines.forEach((l, i) => {
+            let yAdj = yAdjustments[i] || 0;
+
             annotations[`line${i}`] = {
                 type: 'line',
                 yMin: l.v,
@@ -980,19 +999,19 @@
                 borderWidth: 2, // ← lebih tebal dari 1.5
                 borderDash: dashPatterns[i] || [4, 3],
                 label: {
-                    content: `${l.label}: ${l.v}`, // ← tampilkan nilai
-                    display: false,
-                    font: {
-                        size: 9,
-                        weight: 'bold'
-                    },
+                    content: l.label, // ← tampilkan label text saja
+                    display: true,
                     position: 'end',
-                    color: l.color,
-                    backgroundColor: 'rgba(255,255,255,0.85)',
-                    padding: {
-                        x: 4,
-                        y: 2
+                    xAdjust: 30, // push ke area padding kanan
+                    yAdjust: yAdj,
+                    color: l.label === 'TU2' ? '#000000' : l.color, // TU2 hitam, lainnya sesuai warna garis
+                    backgroundColor: 'transparent',
+                    font: {
+                        size: 10,
+                        weight: 'bold',
+                        family: "'Segoe UI', system-ui, sans-serif"
                     },
+                    padding: 0
                 }
             };
         });
@@ -1010,6 +1029,11 @@
                 animation: {
                     duration: 300
                 },
+                layout: {
+                    padding: {
+                        right: 50
+                    }
+                },
                 plugins: {
                     legend: {
                         display: datasets.length > 1,
@@ -1025,6 +1049,7 @@
                         intersect: false
                     },
                     annotation: yLines.length ? {
+                        clip: false,
                         annotations
                     } : {}
                 },
@@ -1045,6 +1070,9 @@
                         ticks: {
                             font: {
                                 size: 9
+                            },
+                            callback: function(value) {
+                                return typeof value === 'number' ? value.toFixed(1) : value;
                             }
                         },
                         grid: {
@@ -1317,19 +1345,22 @@
             });
 
             // Render summary table
-            document.getElementById('s1-summary-body').innerHTML = summaryRows.map(r => `
-            <tr>
-                <td><div class="shift-label"><span class="shift-dot" style="background:${r.color};"></span>Shift ${r.shift}</div></td>
-                <td>${fmt(r.min)}</td>
-                <td>${fmt(r.avg)}</td>
-                <td>${fmt(r.max)}</td>
-                <td><span class="badge ${r.underTu2>0?'badge-err':'badge-ok'}">${r.underTu2||0}</span></td>
-                <td><span class="badge ${r.tu2ToTu1>0?'badge-warn':'badge-ok'}">${r.tu2ToTu1||0}</span></td>
-                <td>${r.tu1ToStd||0}</td>
-                <td>${r.stdToMax||0}</td>
-                <td><span class="badge ${r.overMax>0?'badge-over':'badge-ok'}">${r.overMax||0}</span></td>
-            </tr>
-        `).join('');
+            document.getElementById('s1-summary-body').innerHTML = summaryRows.map(r => {
+                const isBelowTu1 = std && r.avg != null && r.avg < std.tu1;
+                const avgClass = isBelowTu1 ? 'text-danger fw-700' : '';
+                return `
+                <tr>
+                    <td><div class="shift-label"><span class="shift-dot" style="background:${r.color};"></span>Shift ${r.shift}</div></td>
+                    <td>${fmt(r.min)}</td>
+                    <td class="${avgClass}">${fmt(r.avg)}</td>
+                    <td>${fmt(r.max)}</td>
+                    <td><span class="badge ${r.underTu2>0?'badge-err':'badge-ok'}">${r.underTu2||0}</span></td>
+                    <td><span class="badge ${r.tu2ToTu1>0?'badge-warn':'badge-ok'}">${r.tu2ToTu1||0}</span></td>
+                    <td>${r.tu1ToStd||0}</td>
+                    <td>${r.stdToMax||0}</td>
+                    <td><span class="badge ${r.overMax>0?'badge-over':'badge-ok'}">${r.overMax||0}</span></td>
+                </tr>`;
+            }).join('');
 
         } catch (e) {
             console.error('Slide 1 error:', e);
@@ -1395,6 +1426,9 @@
             const variants = Object.keys(VARIANT_STANDARDS);
             const overviewRows = variants.map(v => {
                 const vd = ovData.variants?.[v] || {};
+                const std = VARIANT_STANDARDS[v];
+                const isBelowTu1 = std && vd.avg != null && (vd.avg || vd.average) < std.tu1;
+                const avgClass = isBelowTu1 ? 'text-danger fw-700' : '';
                 return `
                 <tr>
                     <td>
@@ -1403,14 +1437,14 @@
                     </td>
                     <td><span class="badge ${(vd.under||0)>0?'badge-err':'badge-ok'}">${vd.under||0}</span></td>
                     <td>${fmt(vd.min)}</td>
-                    <td>${fmt(vd.avg||vd.average)}</td>
+                    <td class="${avgClass}">${fmt(vd.avg||vd.average)}</td>
                     <td>${fmt(vd.max)}</td>
                     <td><span class="badge ${(vd.over||0)>0?'badge-over':'badge-ok'}">${vd.over||0}</span></td>
                 </tr>`;
             });
             document.getElementById('s2-overview-body').innerHTML =
                 overviewRows.join('') ||
-                '<tr><td colspan="6" class="text-center py-3 text-muted">Tidak ada data</td></tr>';
+                '<tr><td colspan="6" class="text-muted text-center py-3">Tidak ada data</td></tr>';
 
             // ── PER MACHINE ───────────────────────────────────────────────
             ALL_MESINS.forEach(m => {
@@ -1446,11 +1480,15 @@
 
                     if (!hasMultiple) {
                         // Mesin 1 variant — tampilan lama sudah cukup
-                        const vd = mStatsPerVar[varianList[0]] || mStatsCombined;
+                        const v = varianList[0];
+                        const vd = mStatsPerVar[v] || mStatsCombined;
+                        const std = VARIANT_STANDARDS[v];
+                        const isBelowTu1 = std && vd.avg != null && vd.avg < std.tu1;
+                        const avgStyle = isBelowTu1 ? 'color: var(--tr-danger); font-weight: bold;' : '';
                         statsEl.innerHTML = `
             <div>Min: <strong>${fmt(vd.min)}</strong></div>
             <div>Max: <strong>${fmt(vd.max)}</strong></div>
-            <div>Avg: <strong>${fmt(vd.avg)}</strong></div>
+            <div>Avg: <strong style="${avgStyle}">${fmt(vd.avg)}</strong></div>
             <div>Total: <strong>${vd.total ?? 0}</strong></div>
         `;
                     } else {
@@ -1460,11 +1498,14 @@
                             .map(v => {
                                 const vd = mStatsPerVar[v];
                                 const code = VARIANT_STANDARDS[v]?.code || v;
+                                const std = VARIANT_STANDARDS[v];
+                                const isBelowTu1 = std && vd.avg != null && vd.avg < std.tu1;
+                                const avgStyle = isBelowTu1 ? 'color: var(--tr-danger); font-weight: bold;' : '';
                                 return `
                 <tr>
                     <td style="padding:2px 6px 2px 0;font-weight:700;color:#111;white-space:nowrap;">${code}</td>
                     <td style="padding:2px 4px;color:var(--tr-muted);">Min <strong style="color:#111;">${fmt(vd.min)}</strong></td>
-                    <td style="padding:2px 4px;color:var(--tr-muted);">Avg <strong style="color:#111;">${fmt(vd.avg)}</strong></td>
+                    <td style="padding:2px 4px;color:var(--tr-muted);">Avg <strong style="${avgStyle}">${fmt(vd.avg)}</strong></td>
                     <td style="padding:2px 4px;color:var(--tr-muted);">Max <strong style="color:#111;">${fmt(vd.max)}</strong></td>
                     <td style="padding:2px 0 2px 4px;color:var(--tr-muted);">n=<strong style="color:#111;">${vd.total}</strong></td>
                 </tr>`;
