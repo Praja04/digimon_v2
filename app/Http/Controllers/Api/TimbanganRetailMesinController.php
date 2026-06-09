@@ -56,8 +56,8 @@ class TimbanganRetailMesinController extends Controller
         if (!$s) return 'tu1ToStd';
         if ($berat > $s['max'])  return 'overMax';
         if ($berat >= $s['std']) return 'stdToMax';
-        if ($berat >= $s['min']) return 'tu1ToStd';
-        if ($berat >= $s['tu1']) return 'tu2ToTu1';
+        if ($berat >= $s['tu1']) return 'tu1ToStd';
+        if ($berat >= $s['tu2']) return 'tu2ToTu1';
         return 'underTu2';
     }
 

@@ -925,8 +925,9 @@
     function classifyWeight(w, std) {
         if (!std) return 'tu1ToStd';
         if (w > std.max) return 'overMax';
-        if (w >= std.min) return (w >= std.std) ? 'stdToMax' : 'tu1ToStd';
-        if (w >= std.tu1) return 'tu2ToTu1';
+        if (w >= std.std) return 'stdToMax';
+        if (w >= std.tu1) return 'tu1ToStd';
+        if (w >= std.tu2) return 'tu2ToTu1';
         return 'underTu2';
     }
 
