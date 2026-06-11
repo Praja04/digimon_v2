@@ -635,6 +635,232 @@ class TimbanganRetailMesinController extends Controller
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // POST /api/timbangan-retail/import
+    // ═══════════════════════════════════════════════════════════════════════
+    public function import(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xlsx,xls,csv,txt'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+
+            $headerRowIndex = null;
+            $columnMap = [];
+
+            // Scan first 10 rows to find header
+            foreach ($rows as $index => $row) {
+                $normalizedRow = array_map(fn($val) => strtolower(trim($val ?? '')), $row);
+
+                $hasMesin = in_array('mesin', $normalizedRow) || in_array('machine', $normalizedRow);
+                $hasVariant = in_array('variant', $normalizedRow) || in_array('varian', $normalizedRow);
+                $hasBerat = in_array('berat', $normalizedRow) || in_array('weight', $normalizedRow);
+                $hasTanggal = in_array('tanggal', $normalizedRow) || in_array('date', $normalizedRow);
+
+                if ($hasMesin && $hasVariant && $hasBerat) {
+                    $headerRowIndex = $index;
+                    foreach ($row as $colKey => $cellValue) {
+                        $normalizedName = strtolower(trim($cellValue ?? ''));
+                        if ($normalizedName === 'nik' || $normalizedName === 'operator') {
+                            $columnMap['nik'] = $colKey;
+                        } elseif ($normalizedName === 'mesin' || $normalizedName === 'machine') {
+                            $columnMap['mesin'] = $colKey;
+                        } elseif ($normalizedName === 'variant' || $normalizedName === 'varian' || $normalizedName === 'produk') {
+                            $columnMap['variant'] = $colKey;
+                        } elseif ($normalizedName === 'filler') {
+                            $columnMap['filler'] = $colKey;
+                        } elseif ($normalizedName === 'tanggal' || $normalizedName === 'date') {
+                            $columnMap['tanggal'] = $colKey;
+                        } elseif ($normalizedName === 'waktu' || $normalizedName === 'time') {
+                            $columnMap['waktu'] = $colKey;
+                        } elseif ($normalizedName === 'berat' || $normalizedName === 'weight') {
+                            $columnMap['berat'] = $colKey;
+                        } elseif ($normalizedName === 'unit' || $normalizedName === 'satuan') {
+                            $columnMap['unit'] = $colKey;
+                        } elseif ($normalizedName === 'status') {
+                            $columnMap['status'] = $colKey;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if ($headerRowIndex === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format file Excel tidak sesuai. Pastikan file Excel memiliki baris header dengan kolom "NIK", "Mesin", "Variant", "Tanggal", "Waktu", dan "Berat".'
+                ], 422);
+            }
+
+            $successCount = 0;
+            $duplicateCount = 0;
+            $failedCount = 0;
+            $errors = [];
+
+            foreach ($rows as $index => $row) {
+                if ($index <= $headerRowIndex) {
+                    continue;
+                }
+
+                $isEmpty = true;
+                foreach ($row as $val) {
+                    if ($val !== null && trim($val) !== '') {
+                        $isEmpty = false;
+                        break;
+                    }
+                }
+                if ($isEmpty) {
+                    continue;
+                }
+
+                $nik = isset($columnMap['nik']) ? trim($row[$columnMap['nik']] ?? '') : 'UNKNOWN';
+                $mesin = isset($columnMap['mesin']) ? trim($row[$columnMap['mesin']] ?? '') : '';
+                $variant = isset($columnMap['variant']) ? trim($row[$columnMap['variant']] ?? '') : '';
+                $filler = isset($columnMap['filler']) ? trim($row[$columnMap['filler']] ?? '') : null;
+                $tanggalVal = isset($columnMap['tanggal']) ? trim($row[$columnMap['tanggal']] ?? '') : '';
+                $waktuVal = isset($columnMap['waktu']) ? trim($row[$columnMap['waktu']] ?? '') : '';
+                $beratVal = isset($columnMap['berat']) ? trim($row[$columnMap['berat']] ?? '') : '';
+                $unit = isset($columnMap['unit']) ? trim($row[$columnMap['unit']] ?? '') : 'g';
+                $status = isset($columnMap['status']) ? trim($row[$columnMap['status']] ?? '') : '';
+
+                if (empty($mesin) && empty($variant) && empty($beratVal)) {
+                    continue;
+                }
+
+                if (empty($mesin) || empty($variant) || empty($beratVal)) {
+                    $failedCount++;
+                    $errors[] = "Baris $index: Kolom Mesin, Variant, atau Berat kosong.";
+                    continue;
+                }
+
+                // Parse Date and Time
+                $waktu = null;
+                try {
+                    $rawTanggal = $sheet->getCell($columnMap['tanggal'] . $index)->getValue();
+                    $rawWaktu = isset($columnMap['waktu']) ? $sheet->getCell($columnMap['waktu'] . $index)->getValue() : null;
+
+                    $dateStr = '';
+                    if (is_numeric($rawTanggal)) {
+                        $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawTanggal);
+                        $dateStr = $dateObj->format('Y-m-d');
+                    } else {
+                        $dateStr = date('Y-m-d', strtotime(str_replace('/', '-', $tanggalVal)));
+                    }
+
+                    $timeStr = '00:00:00';
+                    if ($rawWaktu !== null) {
+                        if (is_numeric($rawWaktu)) {
+                            $timeObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawWaktu);
+                            $timeStr = $timeObj->format('H:i:s');
+                        } else {
+                            $timeStr = date('H:i:s', strtotime($waktuVal));
+                        }
+                    }
+
+                    $waktu = $dateStr . ' ' . $timeStr;
+                    if (strtotime($waktu) === false) {
+                        throw new \Exception("Format waktu tidak valid");
+                    }
+                } catch (\Exception $e) {
+                    $failedCount++;
+                    $errors[] = "Baris $index: Format Tanggal/Waktu tidak valid ('$tanggalVal $waktuVal').";
+                    continue;
+                }
+
+                // Normalize Variant mapping
+                $matchedVariant = null;
+                $cleanVariant = strtolower(trim($variant));
+                foreach (self::VARIANT_STANDARDS as $key => $std) {
+                    if (strtolower(trim($key)) === $cleanVariant || strtolower(trim($std['code'] ?? '')) === $cleanVariant) {
+                        $matchedVariant = $key;
+                        break;
+                    }
+                }
+
+                if (!$matchedVariant) {
+                    $failedCount++;
+                    $errors[] = "Baris $index: Variant '$variant' tidak terdaftar di sistem.";
+                    continue;
+                }
+
+                // Clean weight
+                $berat = filter_var($beratVal, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                if (!is_numeric($berat)) {
+                    $failedCount++;
+                    $errors[] = "Baris $index: Nilai Berat '$beratVal' bukan angka valid.";
+                    continue;
+                }
+                $berat = (float) $berat;
+
+                // Check duplicates
+                $query = TimbanganRetailMesin::where('mesin', $mesin)
+                    ->where('variant', $matchedVariant)
+                    ->where('waktu', $waktu)
+                    ->where('berat', $berat)
+                    ->where('nik', $nik);
+                if ($filler !== null) {
+                    $query->where('filler', $filler);
+                }
+                $exists = $query->exists();
+
+                if ($exists) {
+                    $duplicateCount++;
+                    continue;
+                }
+
+                // Determine status
+                if (empty($status)) {
+                    $status = $this->isAbnormal($berat, $matchedVariant) ? 'NOT OK' : 'OK';
+                } else {
+                    $status = strtoupper(trim($status));
+                    if ($status !== 'OK' && $status !== 'NOT OK') {
+                        $status = $this->isAbnormal($berat, $matchedVariant) ? 'NOT OK' : 'OK';
+                    }
+                }
+
+                // Create record
+                TimbanganRetailMesin::create([
+                    'nik' => $nik,
+                    'mesin' => $mesin,
+                    'variant' => $matchedVariant,
+                    'waktu' => $waktu,
+                    'filler' => $filler,
+                    'berat' => $berat,
+                    'unit' => $unit,
+                    'status' => $status
+                ]);
+                $successCount++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proses import selesai.',
+                'stats' => [
+                    'imported' => $successCount,
+                    'skipped' => $duplicateCount,
+                    'failed' => $failedCount
+                ],
+                'errors' => $errors
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengimpor file Excel: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
     // GET /api/timbangan-retail/abnormal-log
     // Params: start_date, end_date, shift?, varian?, mesin?, nik?, severity?, per_page?, page?
     // ═══════════════════════════════════════════════════════════════════════

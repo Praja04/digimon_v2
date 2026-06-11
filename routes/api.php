@@ -100,6 +100,7 @@ Route::prefix('timbangan-retail')->group(function () {
     Route::get('filter-options', [TimbanganRetailMesinController::class, 'filterOptions']);
     Route::get('data',           [TimbanganRetailMesinController::class, 'getData']);
     Route::get('export',         [TimbanganRetailMesinController::class, 'export']);
+    Route::post('import',        [TimbanganRetailMesinController::class, 'import']);
     Route::get('average-minmax',[TimbanganRetailMesinController::class, 'getAverageMinMax']);
     Route::get('chart',[TimbanganRetailMesinController::class, 'getChartData']);
     Route::get('abnormal-log',     [TimbanganRetailMesinController::class, 'getAbnormalLog']);

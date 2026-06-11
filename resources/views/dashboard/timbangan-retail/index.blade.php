@@ -524,6 +524,9 @@
                 <button class="tr-btn-export" id="s1-btn-export" onclick="exportSlide1()" title="Export ke Excel">
                     <i class="ri-file-excel-2-line me-1"></i>Export
                 </button>
+                <button class="tr-btn-export" id="s1-btn-import" onclick="openImportModal()" title="Import dari Excel" style="border-color: var(--tr-primary); color: var(--tr-primary);">
+                    <i class="ri-file-upload-line me-1"></i>Import
+                </button>
             </div>
 
             {{-- SUMMARY TABLE ─────────────────────────────────────────── --}}
@@ -730,6 +733,57 @@
                     </div>
                 </div>
                 @endforeach
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content shadow-lg border-0">
+                    <div class="modal-header bg-primary text-white py-3">
+                        <h5 class="modal-title fw-bold" id="importModalLabel">
+                            <i class="ri-file-upload-line me-2"></i>Import Data Timbangan Retail
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="importForm" enctype="multipart/form-data">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="excelFile" class="form-label fw-semibold text-dark">Pilih File Excel (.xlsx / .xls)</label>
+                                <div class="border border-dashed border-2 border-primary rounded p-4 text-center bg-light" id="dropzone" style="cursor:pointer;">
+                                    <i class="ri-upload-cloud-2-line text-primary" style="font-size: 48px;"></i>
+                                    <p class="mb-1 mt-2 text-muted fw-semibold" id="fileLabel">Seret & letakkan file Anda di sini, atau klik untuk menelusuri</p>
+                                    <span class="text-xs text-muted">Hanya file Excel .xlsx atau .xls hasil export aplikasi scale logger.</span>
+                                    <input type="file" class="form-control d-none" id="excelFile" name="file" accept=".xlsx,.xls">
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info py-2 px-3 mb-0" style="font-size: 11px;">
+                                <i class="ri-information-line me-1 fw-bold"></i><strong>Sistem Otomatis:</strong> Data duplikat berdasarkan Kombinasi Waktu, Variant, Mesin, Filler, dan Berat akan dilewati untuk mencegah data ganda.
+                            </div>
+                        </form>
+
+                        <!-- Progress & Status -->
+                        <div id="importProgress" class="d-none mt-3">
+                            <div class="progress mb-2" style="height: 6px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%"></div>
+                            </div>
+                            <p class="text-center text-muted mb-0" style="font-size: 12px;"><i class="ri-loader-4-line ri-spin me-1"></i>Sedang memproses file Excel, mohon tunggu...</p>
+                        </div>
+
+                        <div id="importResult" class="d-none mt-3">
+                            <div class="alert mb-0" id="resultAlert">
+                                <h6 class="alert-heading fw-bold mb-2" id="resultTitle"></h6>
+                                <ul class="mb-0 text-sm list-unstyled" id="resultStats"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-secondary btn-sm rounded" data-bs-dismiss="modal">Tutup</button>
+                        <button type="button" class="btn btn-primary btn-sm rounded" id="btnSubmitImport" onclick="submitImport()">Mulai Import</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1603,6 +1657,137 @@
                 const stEl = document.getElementById(`s2-stacked-${m}`);
                 if (stEl) stEl.innerHTML = '<div class="tr-empty" style="padding:8px 0;font-size:11px;"><i class="ri-error-warning-line" style="font-size:14px;"></i><span>Error</span></div>';
             });
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       IMPORT EXCEL FUNCTIONS
+    ══════════════════════════════════════════════════════════════════ */
+    function openImportModal() {
+        document.getElementById('importForm').reset();
+        document.getElementById('fileLabel').textContent = 'Seret & letakkan file Anda di sini, atau klik untuk menelusuri';
+        document.getElementById('importProgress').classList.add('d-none');
+        document.getElementById('importResult').classList.add('d-none');
+        document.getElementById('btnSubmitImport').disabled = false;
+        
+        const modal = new bootstrap.Modal(document.getElementById('importModal'));
+        modal.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('excelFile');
+
+        if (dropzone && fileInput) {
+            dropzone.addEventListener('click', () => fileInput.click());
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'var(--tr-success)';
+                dropzone.style.background = '#f0fdf4';
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.style.borderColor = 'var(--tr-primary)';
+                dropzone.style.background = '#f9fafb';
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'var(--tr-primary)';
+                dropzone.style.background = '#f9fafb';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateFileLabel(e.dataTransfer.files[0].name);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    updateFileLabel(fileInput.files[0].name);
+                }
+            });
+        }
+    });
+
+    function updateFileLabel(fileName) {
+        document.getElementById('fileLabel').innerHTML = `<i class="ri-file-excel-2-line text-success"></i> <strong>${fileName}</strong> terpilih.`;
+    }
+
+    async function submitImport() {
+        const fileInput = document.getElementById('excelFile');
+        if (!fileInput.files.length) {
+            alert('Silakan pilih file Excel terlebih dahulu.');
+            return;
+        }
+
+        const formData = new FormData(document.getElementById('importForm'));
+        const btnSubmit = document.getElementById('btnSubmitImport');
+        const progressDiv = document.getElementById('importProgress');
+        const resultDiv = document.getElementById('importResult');
+        
+        btnSubmit.disabled = true;
+        progressDiv.classList.remove('d-none');
+        resultDiv.classList.add('d-none');
+
+        try {
+            const response = await fetch('/api/timbangan-retail/import', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            progressDiv.classList.add('d-none');
+            resultDiv.classList.remove('d-none');
+
+            const alertEl = document.getElementById('resultAlert');
+            const titleEl = document.getElementById('resultTitle');
+            const statsEl = document.getElementById('resultStats');
+
+            if (data.success) {
+                alertEl.className = 'alert alert-success mb-0';
+                titleEl.innerHTML = '<i class="ri-checkbox-circle-line me-1"></i> Import Berhasil!';
+                statsEl.innerHTML = `
+                    <li><i class="ri-arrow-right-s-line"></i> Sukses di-import: <strong>${data.stats.imported}</strong> baris</li>
+                    <li><i class="ri-arrow-right-s-line"></i> Duplikat dilewati: <strong>${data.stats.skipped}</strong> baris</li>
+                    <li><i class="ri-arrow-right-s-line"></i> Gagal/Error: <strong>${data.stats.failed}</strong> baris</li>
+                `;
+
+                if (data.errors && data.errors.length) {
+                    statsEl.innerHTML += `<li class="mt-2 text-danger fw-bold">Detail Error:</li>` + 
+                        data.errors.slice(0, 5).map(err => `<li class="text-danger" style="font-size: 11px;">• ${err}</li>`).join('') +
+                        (data.errors.length > 5 ? `<li class="text-muted" style="font-size: 11px;">...dan ${data.errors.length - 5} error lainnya</li>` : '');
+                }
+
+                if (typeof loadSlide1 === 'function') {
+                    loadSlide1();
+                }
+                if (typeof loadSlide2 === 'function') {
+                    loadSlide2();
+                }
+            } else {
+                alertEl.className = 'alert alert-danger mb-0';
+                titleEl.innerHTML = '<i class="ri-error-warning-line me-1"></i> Gagal Import!';
+                statsEl.innerHTML = `<li>${data.message || 'Terjadi kesalahan sistem.'}</li>`;
+            }
+        } catch (error) {
+            progressDiv.classList.add('d-none');
+            resultDiv.classList.remove('d-none');
+            
+            const alertEl = document.getElementById('resultAlert');
+            const titleEl = document.getElementById('resultTitle');
+            const statsEl = document.getElementById('resultStats');
+
+            alertEl.className = 'alert alert-danger mb-0';
+            titleEl.innerHTML = '<i class="ri-error-warning-line me-1"></i> Kesalahan Jaringan!';
+            statsEl.innerHTML = `<li>Gagal menghubungi server. Silakan coba lagi.</li>`;
+            console.error('Import error:', error);
+        } finally {
+            btnSubmit.disabled = false;
         }
     }
 
