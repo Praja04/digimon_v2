@@ -37,7 +37,7 @@ class TimbanganRetailMesinController extends Controller
     {
         $s = self::VARIANT_STANDARDS[$variant] ?? null;
         if (!$s) return false;
-        return $berat < $s['min'];
+        return $berat < $s['tu1'];
     }
 
     private function getSeverity(float $berat, string $variant): string
@@ -45,7 +45,7 @@ class TimbanganRetailMesinController extends Controller
         $s = self::VARIANT_STANDARDS[$variant] ?? null;
         if (!$s) return 'normal';
         if ($berat < $s['tu2']) return 'kritis';  // <TU2
-        if ($berat < $s['min']) return 'warning'; // TU2→min (warning)
+        if ($berat < $s['tu1']) return 'warning'; // TU2→TU1 (warning)
         return 'normal';
     }
 
@@ -909,7 +909,7 @@ class TimbanganRetailMesinController extends Controller
                 'berat'        => $berat,
                 'std_value'    => $std['std']  ?? null,
                 'selisih'      => $std ? round($berat - $std['std'], 3) : null,
-                'batas_min'    => $std['min']  ?? null,
+                'batas_min'    => $std['tu1']  ?? null,
                 'batas_max'    => $std['max']  ?? null,
                 'severity'     => $severity,
                 'status'       => $row->status,
