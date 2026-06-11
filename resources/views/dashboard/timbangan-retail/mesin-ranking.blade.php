@@ -327,7 +327,15 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 6px;
-            padding: 8px 12px;
+            padding: 8px 12px 4px;
+            background: #fafbfc;
+            flex-shrink: 0;
+        }
+        .tv-kpi-row-secondary {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            padding: 0 12px 8px;
             background: #fafbfc;
             border-bottom: 1px solid #f1f5f9;
             flex-shrink: 0;
@@ -584,6 +592,28 @@
                         <div class="tv-kpi-lbl">Terburuk</div>
                     </div>
                 </div>
+                <div class="tv-kpi-row-secondary">
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvPrevKpiUnderTu2" style="color: #e02424; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">&lt;TU2</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvPrevKpiTu2ToTu1" style="color: #fbbf24; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">TU2→TU1</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvPrevKpiTu1ToStd" style="color: #1a56db; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">TU1→STD</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvPrevKpiStdToMax" style="color: #0e9f6e; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">STD→MAX</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvPrevKpiOverMax" style="color: #7e3af2; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">&gt;MAX</div>
+                    </div>
+                </div>
                 <div class="tv-col-body">
                     <div class="tv-table-wrap">
                         <div class="tv-table-hdr">🏆 Ranking Abnormalitas</div>
@@ -629,6 +659,28 @@
                     <div class="tv-kpi info-kpi">
                         <div class="tv-kpi-val" id="tvCurrKpiWorst">—</div>
                         <div class="tv-kpi-lbl">Terburuk</div>
+                    </div>
+                </div>
+                <div class="tv-kpi-row-secondary">
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvCurrKpiUnderTu2" style="color: #e02424; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">&lt;TU2</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvCurrKpiTu2ToTu1" style="color: #fbbf24; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">TU2→TU1</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvCurrKpiTu1ToStd" style="color: #1a56db; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">TU1→STD</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvCurrKpiStdToMax" style="color: #0e9f6e; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">STD→MAX</div>
+                    </div>
+                    <div class="tv-kpi">
+                        <div class="tv-kpi-val" id="tvCurrKpiOverMax" style="color: #7e3af2; font-size: 0.95rem;">—</div>
+                        <div class="tv-kpi-lbl" style="font-size: 0.48rem;">&gt;MAX</div>
                     </div>
                 </div>
                 <div class="tv-col-body">
@@ -881,9 +933,16 @@
         document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiAbnormal`).textContent = fi(stats.total_abnormal);
         document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiPct`).textContent = f2(stats.pct_abnormal) + '%';
         
+        const counts = stats.counts || { underTu2: 0, tu2ToTu1: 0, tu1ToStd: 0, stdToMax: 0, overMax: 0 };
+        document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiUnderTu2`).textContent = fi(counts.underTu2);
+        document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiTu2ToTu1`).textContent = fi(counts.tu2ToTu1);
+        document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiTu1ToStd`).textContent = fi(counts.tu1ToStd);
+        document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiStdToMax`).textContent = fi(counts.stdToMax);
+        document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiOverMax`).textContent = fi(counts.overMax);
+        
         const rows = stats.data || [];
         const worstKpi = document.getElementById(`tv${prefix === 'prev'?'Prev':'Curr'}KpiWorst`);
-        if (rows.length) {
+        if (stats.total_abnormal > 0 && rows.length && rows[0].abnormal > 0) {
             worstKpi.textContent = 'Msn ' + rows[0].mesin;
         } else {
             worstKpi.textContent = '—';
@@ -1015,12 +1074,17 @@
         document.getElementById('kA').textContent = fi(d.total_abnormal);
         document.getElementById('kAp').textContent = f2(d.pct_abnormal) + '% dari total';
         const data = d.data || [];
-        if (data.length) {
+        if (d.total_abnormal > 0 && data.length && data[0].abnormal > 0) {
             const w = data[0], b = data[data.length-1];
             document.getElementById('kW').textContent = 'Msn ' + w.mesin;
             document.getElementById('kWp').textContent = f2(w.pct_abnormal) + '% abn';
             document.getElementById('kB').textContent = 'Msn ' + b.mesin;
             document.getElementById('kBp').textContent = f2(b.pct_abnormal) + '% abn';
+        } else {
+            document.getElementById('kW').textContent = '—';
+            document.getElementById('kWp').textContent = '—';
+            document.getElementById('kB').textContent = '—';
+            document.getElementById('kBp').textContent = '—';
         }
     }
 

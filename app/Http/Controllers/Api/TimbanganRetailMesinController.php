@@ -37,16 +37,15 @@ class TimbanganRetailMesinController extends Controller
     {
         $s = self::VARIANT_STANDARDS[$variant] ?? null;
         if (!$s) return false;
-        return $berat < $s['tu1'] || $berat > $s['max'];
+        return $berat < $s['min'];
     }
 
     private function getSeverity(float $berat, string $variant): string
     {
         $s = self::VARIANT_STANDARDS[$variant] ?? null;
         if (!$s) return 'normal';
-        if ($berat > $s['max']) return 'over';    // >Max
         if ($berat < $s['tu2']) return 'kritis';  // <TU2
-        if ($berat < $s['tu1']) return 'warning'; // TU2→TU1
+        if ($berat < $s['min']) return 'warning'; // TU2→min (warning)
         return 'normal';
     }
 
@@ -910,7 +909,7 @@ class TimbanganRetailMesinController extends Controller
                 'berat'        => $berat,
                 'std_value'    => $std['std']  ?? null,
                 'selisih'      => $std ? round($berat - $std['std'], 3) : null,
-                'batas_min'    => $std['tu1']  ?? null,
+                'batas_min'    => $std['min']  ?? null,
                 'batas_max'    => $std['max']  ?? null,
                 'severity'     => $severity,
                 'status'       => $row->status,
@@ -1306,12 +1305,16 @@ class TimbanganRetailMesinController extends Controller
         $groups = [];
         $globalTotal = 0;
         $globalAbnormal = 0;
+        $globalCounts = ['underTu2' => 0, 'tu2ToTu1' => 0, 'tu1ToStd' => 0, 'stdToMax' => 0, 'overMax' => 0];
 
         foreach ($rows as $row) {
             $berat   = (float) $row->berat;
             $variant = $row->variant ?? '';
             $m       = $row->mesin ?? '';
             $key     = $m . '|' . $variant;
+
+            $cls = $this->classify($berat, $variant);
+            $globalCounts[$cls]++;
 
             if (!isset($groups[$key])) {
                 $groups[$key] = [
@@ -1383,6 +1386,7 @@ class TimbanganRetailMesinController extends Controller
             'total_sampel'   => $globalTotal,
             'total_abnormal' => $globalAbnormal,
             'pct_abnormal'   => $globalTotal > 0 ? round($globalAbnormal / $globalTotal * 100, 2) : 0,
+            'counts'         => $globalCounts,
             'data'           => $result,
         ];
     }
