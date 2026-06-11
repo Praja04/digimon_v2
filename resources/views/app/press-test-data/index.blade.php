@@ -1,5 +1,266 @@
 @extends('layouts.component.main')
 @section('title', 'Press Test - Data')
+
+@section('styles')
+    <style>
+        .page-content {
+            padding: 24px 0;
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: calc(100vh - 60px);
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 5px 15px -3px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 20px 24px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 850;
+            color: #1e293b;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #btnAdd {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        #btnAdd:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+            filter: brightness(1.05);
+        }
+
+        #btnAdd:active {
+            transform: translateY(0);
+        }
+
+        .table-responsive {
+            padding: 16px;
+        }
+
+        #datatable {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+            width: 100% !important;
+        }
+
+        #datatable thead th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            border: none;
+            padding: 12px 16px;
+        }
+
+        #datatable tbody tr {
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        #datatable tbody tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            background: #fafbfc;
+        }
+
+        #datatable tbody td {
+            padding: 14px 16px;
+            border: none;
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        #datatable tbody td:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            font-weight: bold;
+            color: #64748b;
+        }
+
+        #datatable tbody td:last-child {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        /* Action Buttons */
+        #datatable #btnEdit {
+            background: rgba(245, 158, 11, 0.1) !important;
+            color: #d97706 !important;
+            border: 1px solid rgba(245, 158, 11, 0.15) !important;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-weight: 700;
+            font-size: 0.72rem;
+            transition: all 0.2s ease;
+        }
+
+        #datatable #btnEdit:hover {
+            background: #f59e0b !important;
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
+        #datatable #btnDelete {
+            background: rgba(239, 68, 68, 0.1) !important;
+            color: #ef4444 !important;
+            border: 1px solid rgba(239, 68, 68, 0.15) !important;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-weight: 700;
+            font-size: 0.72rem;
+            transition: all 0.2s ease;
+        }
+
+        #datatable #btnDelete:hover {
+            background: #ef4444 !important;
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
+        /* Modal styling */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .modal-body {
+            padding: 24px;
+            background: #fff;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.2s ease-in-out;
+            background-color: #f8fafc;
+        }
+
+        .form-control:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+            background-color: #fff;
+        }
+
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            height: 42px !important;
+            background-color: #f8fafc !important;
+            transition: all 0.2s ease-in-out !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 40px !important;
+            padding-left: 14px !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            color: #1e293b !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+            background-color: #fff !important;
+        }
+
+        .modal-footer {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 16px 24px;
+        }
+
+        .modal-footer .btn-light {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-size: 0.8rem;
+        }
+
+        .modal-footer .btn-light:hover {
+            background: #f1f5f9;
+        }
+
+        #save {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 22px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        #save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+            filter: brightness(1.05);
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -88,7 +349,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="batas" class="form-label">Batas (Cm) <span style="color: red">*</span></label>
-                            <input type="text" id="batas" name="batas" class="form-control" readonly>
+                            <input type="text" inputmode="decimal" id="batas" name="batas" class="form-control">
                             <small class="text-danger errorBatas"></small>
                         </div>
                         <div class="mb-3">
@@ -200,13 +461,16 @@
                 }
             });
 
-            $('#variant').on('change', function() {
-                const selectedVariant = $(this).val();
-                if (selectedVariant) {
-                    const batasValue = generateBatas(selectedVariant);
-                    $('#batas').val(batasValue);
-                } else {
-                    $('#batas').val('');
+            $('#batas').on('input', function() {
+                let val = $(this).val();
+                let cleaned = val.replace(/,/g, '.');
+                cleaned = cleaned.replace(/[^0-9.]/g, '');
+                let parts = cleaned.split('.');
+                if (parts.length > 2) {
+                    cleaned = parts[0] + '.' + parts.slice(1).join('');
+                }
+                if (val !== cleaned) {
+                    $(this).val(cleaned);
                 }
             });
 
