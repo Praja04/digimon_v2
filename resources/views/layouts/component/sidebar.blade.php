@@ -103,6 +103,11 @@
                                                             <i class="mdi mdi-chart-bell-curve-cumulative"></i> Analisa Abnormal
                                                         </a>
                                                     </li>
+                                                    <li class="nav-item">
+                                                        <a href="{{ route('dashboard.timbangan-retail.mesin-ranking') }}" class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.mesin-ranking') ? 'active' : '' }}">
+                                                            <i class="mdi mdi-television-play"></i> Ranking Mesin (TV Mode)
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </li>
