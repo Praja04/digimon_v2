@@ -799,22 +799,22 @@
    CONSTANTS
 ══════════════════════════════════════════════════════════════════ */
     const VARIANT_STANDARDS = {
-        "Sachet YB 12,5gr PCS": {
-            min: 12.05,
-            std: 13.05,
-            max: 14.05,
-            tu1: 11.93,
-            tu2: 10.80,
-            code: "S12.5G-P"
-        },
-        "Sachet YB 12,5gr RENCENG": {
-            min: 154.60,
-            std: 156.60,
-            max: 168.60,
-            tu1: 143.10,
-            tu2: 129.60,
-            code: "S12.5G-R"
-        },
+        // "Sachet YB 12,5gr PCS": {
+        //     min: 12.05,
+        //     std: 13.05,
+        //     max: 14.05,
+        //     tu1: 11.93,
+        //     tu2: 10.80,
+        //     code: "S12.5G-P"
+        // },
+        // "Sachet YB 12,5gr RENCENG": {
+        //     min: 154.60,
+        //     std: 156.60,
+        //     max: 168.60,
+        //     tu1: 143.10,
+        //     tu2: 129.60,
+        //     code: "S12.5G-R"
+        // },
         "Sachet YB 20gr PCS": {
             min: 19.14,
             std: 20.64,
@@ -911,11 +911,27 @@
             tu2: 982.50,
             code: "P1000G"
         },
+        "Sachet BB 40gr RENCENG (6+1)": {
+            min: 569.40,
+            std: 575.40,
+            max: 589.40,
+            tu1: 525.00,
+            tu2: 474.60,
+            code: "S40G-R(6+1)"
+        },
+        "Sachet YB 20gr RENCENG (6+1)": {
+            min: 284.46,
+            std: 288.96,
+            max: 302.96,
+            tu1: 263.76,
+            tu2: 238.56,
+            code: "S20G-R(6+1)"
+        },
     };
 
     const VARIANT_MESIN = {
-        "Sachet YB 12,5gr PCS": ["Y", "Z"],
-        "Sachet YB 12,5gr RENCENG": ["Y", "Z"],
+        // "Sachet YB 12,5gr PCS": ["Y", "Z"],
+        // "Sachet YB 12,5gr RENCENG": ["Y", "Z"],
         "Sachet YB 20gr PCS": ["O", "P", "W", "X"],
         "Sachet YB 20gr RENCENG": ["O", "P", "W", "X"],
         "Sachet BB 40gr PCS": ["Q", "R"],
@@ -928,6 +944,8 @@
         "Pouch YB 700gr": ["A", "U", "V"],
         "Pouch BB 725gr": ["A", "U", "V"],
         "Pouch YB 1000gr": ["A", "U", "V"],
+        "Sachet BB 40gr RENCENG (6+1)": ["Q", "R"],
+        "Sachet YB 20gr RENCENG (6+1)": ["O", "P", "W", "X"],
     };
 
     // Reverse map: mesin → variants

@@ -15,8 +15,8 @@ class TimbanganRetailMesinController extends Controller
 {
     // ── KONSTANTA VARIANT STANDARDS ──────────────────────────────────────────
     private const VARIANT_STANDARDS = [
-        'Sachet YB 12,5gr PCS'     => ['min' =>   12.05, 'std' =>   13.05, 'max' =>   14.05, 'tu1' =>   11.93, 'tu2' =>   10.80, 'code' => 'S12.5G-P'],
-        'Sachet YB 12,5gr RENCENG' => ['min' =>  154.60, 'std' =>  156.60, 'max' =>  168.60, 'tu1' =>  143.10, 'tu2' =>  129.60, 'code' => 'S12.5G-R'],
+        // 'Sachet YB 12,5gr PCS'     => ['min' =>   12.05, 'std' =>   13.05, 'max' =>   14.05, 'tu1' =>   11.93, 'tu2' =>   10.80, 'code' => 'S12.5G-P'],
+        // 'Sachet YB 12,5gr RENCENG' => ['min' =>  154.60, 'std' =>  156.60, 'max' =>  168.60, 'tu1' =>  143.10, 'tu2' =>  129.60, 'code' => 'S12.5G-R'],
         'Sachet YB 20gr PCS'       => ['min' =>   19.14, 'std' =>   20.64, 'max' =>   21.64, 'tu1' =>   18.84, 'tu2' =>   17.04, 'code' => 'S20G-P'],
         'Sachet YB 20gr RENCENG'   => ['min' =>  244.68, 'std' =>  247.68, 'max' =>  259.68, 'tu1' =>  226.08, 'tu2' =>  204.48, 'code' => 'S20G-R'],
         'Sachet BB 40gr PCS'       => ['min' =>   39.10, 'std' =>   41.10, 'max' =>   42.10, 'tu1' =>   37.50, 'tu2' =>   33.90, 'code' => 'S40G-P'],
@@ -29,6 +29,8 @@ class TimbanganRetailMesinController extends Controller
         'Pouch YB 700gr'           => ['min' =>  706.00, 'std' =>  711.00, 'max' =>  716.00, 'tu1' =>  696.00, 'tu2' =>  681.00, 'code' => 'P700G'],
         'Pouch BB 725gr'           => ['min' =>  730.00, 'std' =>  735.00, 'max' =>  740.00, 'tu1' =>  720.00, 'tu2' =>  705.00, 'code' => 'P725G'],
         'Pouch YB 1000gr'          => ['min' => 1007.50, 'std' => 1012.50, 'max' => 1017.50, 'tu1' =>  997.50, 'tu2' =>  982.50, 'code' => 'P1000G'],
+        'Sachet BB 40gr RENCENG (6+1)' => ['min' =>  569.40, 'std' =>  575.40, 'max' =>  589.40, 'tu1' =>  525.00, 'tu2' =>  474.60, 'code' => 'S40G-R(6+1)'],
+        'Sachet YB 20gr RENCENG (6+1)' => ['min' =>  284.46, 'std' =>  288.96, 'max' =>  302.96, 'tu1' =>  263.76, 'tu2' =>  238.56, 'code' => 'S20G-R(6+1)'],
     ];
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
