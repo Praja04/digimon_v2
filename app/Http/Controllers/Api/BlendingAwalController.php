@@ -109,4 +109,51 @@ class BlendingAwalController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function updateBatchRange(Request $request): JsonResponse
+    {
+        $blendingAwal = BlendingAwal::find($request->id);
+
+        if (!$blendingAwal) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data belum digenerate di QC, dilewati.',
+            ], Response::HTTP_OK);
+        }
+
+        $blendingAwal->update([
+            'batch_range' => $request->batch_range,
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Batch range berhasil diupdate di QC.',
+        ], Response::HTTP_OK);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        DB::beginTransaction();
+        try {
+            $blendingAwal = BlendingAwal::find($id);
+            if ($blendingAwal) {
+                DB::table('blending_awal_relations')->where('blending_awal_id', $id)->delete();
+                $blendingAwal->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data Blending Awal berhasil dihapus di QC.',
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menghapus data di QC: ' . $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

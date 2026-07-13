@@ -19,6 +19,7 @@ class ProductionBatchRequest extends FormRequest
             'variant' =>  'required|string|max:255',
             'date' => 'required|date',
             'batch_range' => 'required|string|max:255',
+            'formulasi' => 'required|string|max:255',
             'description' => 'nullable'
         ];
     }
@@ -30,6 +31,7 @@ class ProductionBatchRequest extends FormRequest
             'variant' => 'Varian',
             'date' => 'Tanggal',
             'batch_range' => 'Rentang Batch Masak',
+            'formulasi' => 'Formulasi',
             'description' => 'Keterangan'
         ];
     }

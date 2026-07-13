@@ -20,6 +20,7 @@ class UpdateProductionBatchRequest extends FormRequest
             'variant' => 'required|string|max:255',
             'date' => 'required|date',
             'batch_range' => 'required|string|max:255',
+            'formulasi' => 'required|string|max:255',
             'description' => 'nullable'
         ];
     }

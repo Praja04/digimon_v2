@@ -69,6 +69,7 @@ class ProductionBatchController extends Controller
             'variant' => $request->variant,
             'date' => $request->date,
             'batch_range' => $request->batch_range,
+            'formulasi' => $request->formulasi,
             'description' => $request->description,
         ]);
 
