@@ -60,10 +60,12 @@ Route::delete('/persiapan-masak/{id}', [App\Http\Controllers\Api\ProductionBatch
 // Pelarutan 1
 Route::post('/pelarutan-1', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'store'])->name('api.pelarutan.1.store');
 Route::post('/pelarutan-1/revisi', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'update_revisi'])->name('api.pelarutan.1.update_revisi');
+Route::delete('/pelarutan-1/{id}', [App\Http\Controllers\Api\Pelarutan1Controller::class, 'destroy'])->name('api.pelarutan.1.destroy');
 
 // Pelarutan 2
 Route::post('/pelarutan-2', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'store'])->name('api.pelarutan.2.store');
 Route::post('/pelarutan-2/revisi', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'update_revisi'])->name('api.pelarutan.2.update_revisi');
+Route::delete('/pelarutan-2/{id}', [App\Http\Controllers\Api\Pelarutan2Controller::class, 'destroy'])->name('api.pelarutan.2.destroy');
 
 // Blending Awal
 Route::get('/blending-awal/{id}', [App\Http\Controllers\Api\BlendingAwalController::class, 'show'])->name('api.blending.awal.show');

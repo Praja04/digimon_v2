@@ -86,14 +86,9 @@ class ProductionBatchController extends Controller
     {
         $data = ProductionBatch::find($id);
 
-        if (!$data) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan.',
-            ], Response::HTTP_NOT_FOUND);
+        if ($data) {
+            $data->delete();
         }
-
-        $data->delete();
 
         return response()->json([
             'status'  => 'success',

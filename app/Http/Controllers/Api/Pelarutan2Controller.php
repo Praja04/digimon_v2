@@ -44,4 +44,17 @@ class Pelarutan2Controller extends Controller
             'message' => 'Data Pelarutan 2 berhasil diupdate.',
         ], Response::HTTP_OK);
     }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $data = Pelarutan2::find($id);
+        if ($data) {
+            $data->delete();
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Data Pelarutan 2 berhasil dihapus.',
+        ], Response::HTTP_OK);
+    }
 }
