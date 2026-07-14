@@ -72,6 +72,7 @@ Route::get('/blending-awal/{id}', [App\Http\Controllers\Api\BlendingAwalControll
 Route::post('/blending-awal', [App\Http\Controllers\Api\BlendingAwalController::class, 'store'])->name('api.blending.awal.store');
 Route::post('/blending-awal/revisi', [App\Http\Controllers\Api\BlendingAwalController::class, 'update_revisi'])->name('api.blending.awal.update_revisi');
 Route::post('/blending-awal/update-batch-range', [App\Http\Controllers\Api\BlendingAwalController::class, 'updateBatchRange'])->name('api.blending.awal.update_batch_range');
+Route::post('/blending-awal/update-nomor-blending', [App\Http\Controllers\Api\BlendingAwalController::class, 'updateNomorBlending'])->name('api.blending.awal.update_nomor_blending');
 Route::delete('/blending-awal/{id}', [App\Http\Controllers\Api\BlendingAwalController::class, 'destroy'])->name('api.blending.awal.destroy');
 
 // Blending After Adjust Mikro

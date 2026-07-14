@@ -131,6 +131,27 @@ class BlendingAwalController extends Controller
         ], Response::HTTP_OK);
     }
 
+    public function updateNomorBlending(Request $request): JsonResponse
+    {
+        $blendingAwal = BlendingAwal::find($request->id);
+
+        if (!$blendingAwal) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data belum digenerate di QC, dilewati.',
+            ], Response::HTTP_OK);
+        }
+
+        $blendingAwal->update([
+            'nomor_blending' => $request->nomor_blending,
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Nomor blending berhasil diupdate di QC.',
+        ], Response::HTTP_OK);
+    }
+
     public function destroy($id): JsonResponse
     {
         DB::beginTransaction();
