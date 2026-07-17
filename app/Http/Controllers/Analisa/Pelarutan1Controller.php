@@ -83,12 +83,44 @@ class Pelarutan1Controller extends Controller
     {
         $productionBatch = ProductionBatch::with('pelarutan_1')->findOrFail($id);
 
-        return view('app.pelarutan_1.show', compact(['productionBatch']));
+        $suhuData = [];
+        if ($productionBatch->pelarutan_1->isNotEmpty()) {
+            $ids = $productionBatch->pelarutan_1->pluck('id')->toArray();
+            try {
+                $response = \Illuminate\Support\Facades\Http::post(env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch', [
+                    'ids' => $ids,
+                    'type' => 'pelarutan_1'
+                ]);
+                if ($response->successful()) {
+                    $suhuData = $response->json('data') ?? [];
+                }
+            } catch (\Exception $e) {
+                // Ignore
+            }
+        }
+
+        return view('app.pelarutan_1.show', compact(['productionBatch', 'suhuData']));
     }
 
     public function show_batch($id)
     {
         $pelarutan_1 = Pelarutan1::with('productionBatch')->findOrFail($id);
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::post(env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch', [
+                'ids' => [$id],
+                'type' => 'pelarutan_1'
+            ]);
+            if ($response->successful()) {
+                $suhuData = $response->json("data.{$id}");
+                if ($suhuData) {
+                    $pelarutan_1->suhu = $suhuData['suhu'] ?? null;
+                    $pelarutan_1->jam_mulai = $suhuData['jam_mulai'] ?? null;
+                }
+            }
+        } catch (\Exception $e) {
+            // Ignore
+        }
 
         return view('app.pelarutan_1.show_batch', compact(['pelarutan_1']));
     }
@@ -103,6 +135,22 @@ class Pelarutan1Controller extends Controller
                     'status' => 'error',
                     'message' => 'Data tidak ditemukan.',
                 ], 404);
+            }
+
+            try {
+                $response = \Illuminate\Support\Facades\Http::post(env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch', [
+                    'ids' => [$id],
+                    'type' => 'pelarutan_1'
+                ]);
+                if ($response->successful()) {
+                    $suhuData = $response->json("data.{$id}");
+                    if ($suhuData) {
+                        $data->suhu = $suhuData['suhu'] ?? null;
+                        $data->jam_mulai = $suhuData['jam_mulai'] ?? null;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore
             }
 
             return response()->json($data);

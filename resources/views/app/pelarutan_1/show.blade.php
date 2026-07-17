@@ -239,7 +239,20 @@
                                                             </span>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $pelarutan_1->dissolver_number }}</td>
+                                                    <td>
+                                                        <div>{{ $pelarutan_1->dissolver_number }}</div>
+                                                        @php
+                                                            $batchSuhu = $suhuData[$pelarutan_1->id] ?? null;
+                                                        @endphp
+                                                        @if ($batchSuhu && !empty($batchSuhu['suhu']))
+                                                            <div class="text-muted small" style="font-size: 11px;" title="Suhu Pelarutan / Waktu Input">
+                                                                Suhu: {{ $batchSuhu['suhu'] }} °C
+                                                                @if (!empty($batchSuhu['jam_mulai']))
+                                                                    <br>({{ \Carbon\Carbon::parse($batchSuhu['jam_mulai'])->format('d/m/Y H:i') }})
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $pelarutan_1->brix ?? '-' }}</td>
                                                     <td>{{ $pelarutan_1->nacl ?? '-' }}</td>
                                                     <td>{{ $pelarutan_1->organo ?? '-' }}</td>
@@ -413,6 +426,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Suhu Pelarutan (dari PRD)</label>
+                        <input type="text" id="suhu_detail" class="form-control" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Waktu Input Suhu (dari PRD)</label>
+                        <input type="text" id="waktu_input_suhu_detail" class="form-control" disabled>
+                    </div>
                     <div class="col-lg-12">
                         <label class="form-label">Catatan</label>
                         <textarea name="disposition_remark_detail" id="disposition_remark_detail" class="form-control" rows="2"
@@ -909,6 +930,20 @@
                         } else {
                             remarkText = '-';
                         }
+
+                        $('#suhu_detail').val(response.suhu ? response.suhu + ' °C' : '-');
+                        
+                        let formatJamMulai = '-';
+                        if (response.jam_mulai) {
+                            const date = new Date(response.jam_mulai);
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = date.getFullYear();
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            formatJamMulai = `${day}/${month}/${year} ${hours}:${minutes}`;
+                        }
+                        $('#waktu_input_suhu_detail').val(formatJamMulai);
 
                         $('#disposition_remark_detail').val(remarkText);
 

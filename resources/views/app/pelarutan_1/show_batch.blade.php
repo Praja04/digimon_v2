@@ -108,9 +108,37 @@
                                                             <h5 class="mb-0">{{ $pelarutan_1->dissolver_number }}</h5>
                                                         </div>
                                                     </div>
+                                            </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-temp-hot-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Suhu Pelarutan (dari PRD) :</p>
+                                                            <h5 class="mb-0">{{ !empty($pelarutan_1->suhu) ? $pelarutan_1->suhu . ' °C' : '-' }}</h5>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div class="avatar-title rounded bg-transparent text-success fs-24">
+                                                                <i class="ri-time-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Waktu Input Suhu (dari PRD) :</p>
+                                                            <h5 class="mb-0">{{ !empty($pelarutan_1->jam_mulai) ? \Carbon\Carbon::parse($pelarutan_1->jam_mulai)->format('d/m/Y H:i') : '-' }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
 
