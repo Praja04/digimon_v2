@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\IdentitasRm;
+use App\Models\IdentitasRM;
 
 class SamplingFisikKemasan extends Model
 {
@@ -13,6 +13,6 @@ class SamplingFisikKemasan extends Model
 
     public function identitas()
     {
-        return $this->hasOne(IdentitasRm::class, 'id', 'id_identitas');
+        return $this->belongsTo(IdentitasRM::class, 'id_identitas', 'id');
     }
 }

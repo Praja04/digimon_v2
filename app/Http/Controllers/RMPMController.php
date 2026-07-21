@@ -15,71 +15,127 @@ use Milon\Barcode\Facades\DNS2DFacade;
 
 class RMPMController extends Controller
 {
-    public function index(Request $request)
-    {
-        if ($request->ajax()) {
-            $query = IdentitasRM::query()->orderBy('created_at', 'desc');
+public function index()
+{
+    return view('app.rmpm.menu');
+}
 
-            // Filter berdasarkan tanggal mulai
-            if ($request->filled('start_date')) {
-                $query->whereDate('tanggal_kedatangan', '>=', $request->start_date);
-            }
+public function rm(Request $request)
+{
+    if ($request->ajax()) {
+        $query = IdentitasRM::query()
+            ->orderBy('created_at', 'desc');
 
-            // Filter berdasarkan tanggal akhir
-            if ($request->filled('end_date')) {
-                $query->whereDate('tanggal_kedatangan', '<=', $request->end_date);
-            }
+        if ($request->filled('start_date')) {
+            $query->whereDate(
+                'tanggal_kedatangan',
+                '>=',
+                $request->start_date
+            );
+        }
 
-            // Filter berdasarkan jenis
-            if ($request->filled('jenis')) {
-                $query->where('jenis', $request->jenis);
-            }
+        if ($request->filled('end_date')) {
+            $query->whereDate(
+                'tanggal_kedatangan',
+                '<=',
+                $request->end_date
+            );
+        }
 
-            $identitas_rm = $query->get();
+        if ($request->filled('jenis')) {
+            $query->where(
+                'jenis',
+                $request->jenis
+            );
+        }
 
-            return DataTables::of($identitas_rm)
-                ->addIndexColumn()
-                ->editColumn('tanggal_kedatangan', function ($data) {
-                    return \Carbon\Carbon::parse($data->tanggal_kedatangan)->locale('id')->isoFormat('D MMMM Y');
-                })
-                ->addColumn('qr_code', function ($data) {
-                    return '
-                        <button class="btn btn-sm btn-primary me-1" id="btnQRCode" data-id="' . $data->id . '">
-                           <span class="mdi mdi-qrcode"></span> QR Code
-                        </button>
-                    ';
-                })
-                ->addColumn('action', function ($data) {
-                    return '
-                        <a class="btn btn-sm btn-info me-1" href="' . route('rmpm.show', $data->id) . '">
-                           <span class="mdi mdi-eye"></span> Lihat
-                        </a>
-                    ';
-                })
-                ->addColumn('status', function ($item) {
-                    $status = '⌛ Proses';
-                    if (in_array($item->jenis, ['Garam', 'Gula'])) {
-                        foreach ($item->analisaGaramGula as $analisa) {
-                            if ($analisa->disposisi) {
-                                $status = '✅ Selesai';
-                                break;
-                            }
-                        }
-                    } elseif (in_array($item->jenis, ['Gula Tebu', 'Gula Kelapa'])) {
-                        foreach ($item->analisaLongTerm as $analisa) {
-                            if (!empty($analisa->disposisi)) {
-                                $status = '✅ Selesai';
-                                break;
-                            }
+        $identitasRm = $query->get();
+
+        return DataTables::of($identitasRm)
+            ->addIndexColumn()
+
+            ->editColumn(
+                'tanggal_kedatangan',
+                function ($data) {
+                    return \Carbon\Carbon::parse(
+                        $data->tanggal_kedatangan
+                    )
+                        ->locale('id')
+                        ->isoFormat('D MMMM Y');
+                }
+            )
+
+            ->addColumn('qr_code', function ($data) {
+                return '
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-primary me-1"
+                        id="btnQRCode"
+                        data-id="' . $data->id . '"
+                    >
+                        <span class="mdi mdi-qrcode"></span>
+                        QR Code
+                    </button>
+                ';
+            })
+
+            ->addColumn('action', function ($data) {
+                return '
+                    <a
+                        class="btn btn-sm btn-info me-1"
+                        href="' . route('rmpm.show', $data->id) . '"
+                    >
+                        <span class="mdi mdi-eye"></span>
+                        Lihat
+                    </a>
+                ';
+            })
+
+            ->addColumn('status', function ($item) {
+                $status = '⌛ Proses';
+
+                if (in_array(
+                    $item->jenis,
+                    ['Garam', 'Gula'],
+                    true
+                )) {
+                    foreach ($item->analisaGaramGula as $analisa) {
+                        if ($analisa->disposisi) {
+                            $status = '✅ Selesai';
+                            break;
                         }
                     }
-                    return $status;
-                })
-                ->rawColumns(['action', 'qr_code'])
-                ->make(true);
-        }
-        return view('app.rmpm.index');
+                } elseif (in_array(
+                    $item->jenis,
+                    ['Gula Tebu', 'Gula Kelapa'],
+                    true
+                )) {
+                    foreach ($item->analisaLongTerm as $analisa) {
+                        if (!empty($analisa->disposisi)) {
+                            $status = '✅ Selesai';
+                            break;
+                        }
+                    }
+                }
+
+                return $status;
+            })
+
+            ->rawColumns([
+                'action',
+                'qr_code',
+            ])
+
+            ->make(true);
     }
+
+    return view('app.rmpm.rm');
+}
+
+public function pm()
+{
+    return view('app.rmpm.pm');
+}
 
     public function show($id)
     {
