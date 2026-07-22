@@ -560,131 +560,131 @@ Route::middleware([
 
 
 
-    /*------------------------------------------
-Master Data - Warna
-Roles: Foreman Only
---------------------------------------------*/
-Route::middleware(['user-access:Foreman'])->group(function () {
-    Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
-    Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
-    Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');
-    Route::delete('/warna/{id}', [App\Http\Controllers\ColorController::class, 'destroy'])->name('colors.destroy');
-});
+            /*------------------------------------------
+        Master Data - Warna
+        Roles: Foreman Only
+        --------------------------------------------*/
+        Route::middleware(['user-access:Foreman'])->group(function () {
+            Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
+            Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
+            Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');
+            Route::delete('/warna/{id}', [App\Http\Controllers\ColorController::class, 'destroy'])->name('colors.destroy');
+        });
 
 
-/*------------------------------------------
-Packaging Sampling Online
-Roles:
-- Head Of Dapartement
-- Supervisor
-- Foreman
-- QC
---------------------------------------------*/
-Route::middleware([
-    'user-access:Head Of Dapartement,Supervisor,Foreman,QC',
-])->group(function (): void {
+        /*------------------------------------------
+        Packaging Sampling Online
+        Roles:
+        - Head Of Dapartement
+        - Supervisor
+        - Foreman
+        - QC
+        --------------------------------------------*/
+        Route::middleware([
+            'user-access:Head Of Dapartement,Supervisor,Foreman,QC',
+        ])->group(function (): void {
 
-    /*
-     * URL yang dihasilkan:
-     *
-     * /packaging-sampling/inner
-     * /packaging-sampling/outer
-     * /packaging-sampling/karton
-     * /packaging-sampling/others
-     *
-     * Parameter {jenis?} dibuat opsional.
-     * Jika tidak diberikan, IncomingController
-     * menggunakan nilai default "inner".
-     */
-    Route::get(
-        '/packaging-sampling/{jenis?}',
-        [IncomingController::class, 'index']
-    )->name('incoming.index');
+            /*
+            * URL yang dihasilkan:
+            *
+            * /packaging-sampling/inner
+            * /packaging-sampling/outer
+            * /packaging-sampling/karton
+            * /packaging-sampling/others
+            *
+            * Parameter {jenis?} dibuat opsional.
+            * Jika tidak diberikan, IncomingController
+            * menggunakan nilai default "inner".
+            */
+            Route::get(
+                '/packaging-sampling/{jenis?}',
+                [IncomingController::class, 'index']
+            )->name('incoming.index');
 
-});
+        });
 
 
-/*------------------------------------------
-Master Data - Jenis Incoming
-Read-only, tanpa create/edit/delete
-Roles:
-- Head Of Dapartement
-- Supervisor
-- Foreman
---------------------------------------------*/
-Route::middleware([
-    'user-access:Head Of Dapartement,Supervisor,Foreman',
-])->group(function (): void {
+        /*------------------------------------------
+        Master Data - Jenis Incoming
+        Read-only, tanpa create/edit/delete
+        Roles:
+        - Head Of Dapartement
+        - Supervisor
+        - Foreman
+        --------------------------------------------*/
+        Route::middleware([
+            'user-access:Head Of Dapartement,Supervisor,Foreman',
+        ])->group(function (): void {
 
-    Route::resource(
-        'jenis-incoming',
-        JenisIncomingController::class
-    )->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+            Route::resource(
+                'jenis-incoming',
+                JenisIncomingController::class
+            )->only([
+                'index',
+                'store',
+                'edit',
+                'destroy',
+            ]);
 
-});
+        });
 
-Route::resource(
-    'jenis-material',
-    JenisMaterialController::class
-)->only([
-    'index',
-    'store',
-    'edit',
-    'destroy',
-]);
+        Route::resource(
+            'jenis-material',
+            JenisMaterialController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-Route::resource(
-    'supplier',
-    SupplierController::class
-)->only([
-    'index',
-    'store',
-    'edit',
-    'destroy',
-]);
+        Route::resource(
+            'supplier',
+            SupplierController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-Route::resource(
-    'sampling-status',
-    SamplingStatusController::class
-)->only([
-    'index',
-    'store',
-    'edit',
-    'destroy',
-]);
+        Route::resource(
+            'sampling-status',
+            SamplingStatusController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-Route::resource(
-    'uom',
-    UomController::class
-)->only([
-    'index',
-    'store',
-    'edit',
-    'destroy',
-]);
+        Route::resource(
+            'uom',
+            UomController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-Route::resource(
-    'recommendation',
-    RecommendationController::class
-)->only([
-    'index',
-    'store',
-    'edit',
-    'destroy',
-]);
+        Route::resource(
+            'recommendation',
+            RecommendationController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-Route::resource(
-    'nonconformity-type',
-    NonconformityTypeController::class
-)->only([
-    'index',
-    'store',
-    'edit',
-    'destroy',
-]);
-});
+        Route::resource(
+            'nonconformity-type',
+            NonconformityTypeController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+        });
