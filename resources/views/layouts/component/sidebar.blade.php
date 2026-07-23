@@ -50,6 +50,9 @@
                                 <a href="{{ route('dashboard.proses-masak.index') }}" class="nav-link {{ request()->routeIs('dashboard.proses-masak.index') ? 'active' : '' }}"><i class="mdi mdi-chef-hat"></i>Proses Masak</a>
                             </li>
                             <li class="nav-item">
+                                <a href="{{ route('dashboard.proses-masak-keseluruhan.index') }}" class="nav-link {{ request()->routeIs('dashboard.proses-masak-keseluruhan.index') ? 'active' : '' }}"><i class="mdi mdi-chart-box-outline"></i>Proses Masak (Keseluruhan)</a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="{{ route('dashboard.pelarutan.index') }}" class="nav-link {{ request()->routeIs('dashboard.pelarutan.index') ? 'active' : '' }}"><i class="mdi mdi-flask"></i>Pelarutan</a>
                             </li>
                             <li class="nav-item">
