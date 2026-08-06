@@ -76,7 +76,7 @@
                 </div>
             </div>
             <div class="row g-4 mb-3">
-                @if (auth()->user()->role == 'Analis Kimia' || auth()->user()->role == 'Foreman')
+                @if (auth()->user()->role == 'Analis Kimia' || auth()->user()->role == 'Foreman' || auth()->user()->role == 'Supervisor' || auth()->user()->role == 'Head Of Dapartement')
                     <!-- Blending Kimia Card -->
                     <div class="col-xl-6 col-lg-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
@@ -112,7 +112,7 @@
 
                 @if (auth()->user()->role == 'Analis Mikro' ||
                         auth()->user()->role == 'Analis Field' ||
-                        auth()->user()->role == 'Foreman')
+                        auth()->user()->role == 'Foreman' || auth()->user()->role == 'Supervisor' || auth()->user()->role == 'Head Of Dapartement')
                     <!-- Blending After Adjustment Mikro Card -->
                     <div class="col-xl-6 col-lg-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">

@@ -129,6 +129,88 @@
                             Dashboard
                         </span>
                     </li>
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ request()->routeIs('dashboard.*') ? 'active' : '' }}" href="#Dashboards" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="Dashboards">
+                        <i class="mdi mdi-monitor-dashboard"></i> <span data-key="t-dashboards">Dashboard</span>
+                    </a>
+                    <div class="collapse menu-dropdown {{ request()->routeIs('dashboard.*') ? 'show' : '' }}" id="Dashboards">
+                        <ul class="nav nav-sm flex-column">
+                            <li class="nav-item">
+                                <a href="{{ route('dashboard.proses-masak.index') }}" class="nav-link {{ request()->routeIs('dashboard.proses-masak.index') ? 'active' : '' }}"><i class="mdi mdi-chef-hat"></i>Proses Masak</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('dashboard.proses-masak-keseluruhan.index') }}" class="nav-link {{ request()->routeIs('dashboard.proses-masak-keseluruhan.index') ? 'active' : '' }}"><i class="mdi mdi-chart-box-outline"></i>Proses Masak (Keseluruhan)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('dashboard.pelarutan.index') }}" class="nav-link {{ request()->routeIs('dashboard.pelarutan.index') ? 'active' : '' }}"><i class="mdi mdi-flask"></i>Pelarutan</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('dashboard.blending-awal.index') }}" class="nav-link {{ request()->routeIs('dashboard.blending-awal.index') ? 'active' : '' }}"><i class="mdi mdi-blender"></i>Blending Awal</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('dashboard.blending-after-adjust.index') }}" class="nav-link {{ request()->routeIs('dashboard.blending-after-adjust.index') ? 'active' : '' }}"><i class="mdi mdi-blender-outline"></i>Blending
+                                    After Adjust</a>
+                            </li>
+                            <li class="nav-item"><a href="{{ route('dashboard.monitoring-turun-blending.index') }}" class="nav-link {{ request()->routeIs('dashboard.monitoring-turun-blending.index') ? 'active' : '' }}"><i class="mdi mdi-chart-line"></i> Monitoring Turun
+                                    Blending</a>
+                            </li>
+                            <li class="nav-item"><a href="{{ route('dashboard.monitoring-pasteurisasi.index') }}" class="nav-link {{ request()->routeIs('dashboard.monitoring-pasteurisasi.index') ? 'active' : '' }}"><i class="mdi mdi-thermometer"></i> Monitoring Pasteurisasi</a></li>
+                            <li class="nav-item"><a href="{{ route('dashboard.monitoring-storage-kimia.index') }}" class="nav-link {{ request()->routeIs('dashboard.monitoring-storage-kimia.index') ? 'active' : '' }}"><i class="mdi mdi-database"></i> Monitoring Storage</a></li>
+
+                            <li class="nav-item"><a href="{{ route('dashboard.monitoring-storage-mikro.index') }}" class="nav-link {{ request()->routeIs('dashboard.monitoring-storage-mikro.index') ? 'active' : '' }}"><i class="mdi mdi-bacteria"></i> Monitoring Storage Mikro</a>
+                            </li>
+                            <li class="nav-item"><a href="{{ route('dashboard.monitoring-on-going-mikro.index') }}" class="nav-link {{ request()->routeIs('dashboard.monitoring-on-going-mikro.index') ? 'active' : '' }}"><i class="mdi mdi-bacteria-outline"></i> Monitoring On Going Mikro</a>
+                            </li>
+                            <li class="nav-item"><a href="{{ route('dashboard.rmpm.index') }}" class="nav-link {{ request()->routeIs('dashboard.rmpm.index') ? 'active' : '' }}"><i class="mdi mdi-chemical-weapon"></i> RMPM</a></li>
+                            <li class="nav-item"><a href="{{ route('dashboard.shelf-life.index') }}" class="nav-link {{ request()->routeIs('dashboard.shelf-life.index') ? 'active' : '' }}"><i class="mdi mdi-calendar-clock"></i> Shelf Life</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link menu-link {{ request()->routeIs(['dashboard.press-test-mesin.index', 'dashboard.timbangan-retail.*']) ? 'active' : '' }}" href="#RetailFG" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="RetailFG">
+                                    <i class="mdi mdi-package-variant-closed"></i> <span>Retail Finish Good</span>
+                                </a>
+                                <div class="collapse menu-dropdown {{ request()->routeIs(['dashboard.press-test-mesin.index', 'dashboard.timbangan-retail.*']) ? 'show' : '' }}" id="RetailFG">
+                                    <ul class="nav nav-sm flex-column">
+
+                                        {{-- Press Test --}}
+                                        <li class="nav-item">
+                                            <a href="{{ route('dashboard.press-test-mesin.index') }}" class="nav-link {{ request()->routeIs('dashboard.press-test-mesin.index') ? 'active' : '' }}">
+                                                <i class="mdi mdi-clipboard-text-play-outline"></i> Press Test
+                                            </a>
+                                        </li>
+
+                                        {{-- Timbangan Retail (sub-dropdown) --}}
+                                        <li class="nav-item">
+                                            <a class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.*') ? 'active' : '' }}" href="#TimbanganRetail" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('dashboard.timbangan-retail.*') ? 'true' : 'false' }}" aria-controls="TimbanganRetail">
+                                                <i class="mdi mdi-scale-bathroom"></i> Timbangan Retail
+                                            </a>
+                                            <div class="collapse menu-dropdown {{ request()->routeIs('dashboard.timbangan-retail.*') ? 'show' : '' }}" id="TimbanganRetail">
+                                                <ul class="nav nav-sm flex-column">
+                                                    <li class="nav-item">
+                                                        <a href="{{ route('dashboard.timbangan-retail.index') }}" class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.index') ? 'active' : '' }}">
+                                                            <i class="mdi mdi-view-dashboard-outline"></i> Dashboard
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="{{ route('dashboard.timbangan-retail.analisa') }}" class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.analisa') ? 'active' : '' }}">
+                                                            <i class="mdi mdi-chart-bell-curve-cumulative"></i> Analisa Abnormal
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="{{ route('dashboard.timbangan-retail.mesin-ranking') }}" class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.mesin-ranking') ? 'active' : '' }}">
+                                                            <i class="mdi mdi-television-play"></i> Ranking Mesin (TV Mode)
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                @endif
 
                     <li class="nav-item">
 
