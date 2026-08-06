@@ -11,19 +11,27 @@ use Yajra\DataTables\Facades\DataTables;
 class JenisIncomingController extends Controller
 {
     /**
-     * Menampilkan halaman dan data Jenis Incoming.
+     * Menampilkan halaman dan data AJAX DataTables.
      */
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = JenisIncoming::query()
+            $query = JenisIncoming::query()
+                ->select([
+                    'id',
+                    'kategori',
+                    'nama',
+                    'status',
+                    'created_at',
+                    'updated_at',
+                ])
                 ->orderBy('id', 'asc');
 
-            return DataTables::of($data)
+            return DataTables::of($query)
                 ->addIndexColumn()
 
                 ->editColumn('status', function (JenisIncoming $item) {
-                    if ($item->status) {
+                    if ((bool) $item->status) {
                         return '
                             <span class="badge bg-success">
                                 <i class="mdi mdi-check-circle-outline me-1"></i>
@@ -41,6 +49,12 @@ class JenisIncomingController extends Controller
                 })
 
                 ->addColumn('action', function (JenisIncoming $item) {
+                    $nama = htmlspecialchars(
+                        $item->nama,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -56,7 +70,7 @@ class JenisIncomingController extends Controller
                                 type="button"
                                 class="btn btn-danger btn-sm btnDelete"
                                 data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama) . '"
+                                data-nama="' . $nama . '"
                                 title="Hapus"
                             >
                                 <i class="mdi mdi-delete"></i>
@@ -77,11 +91,18 @@ class JenisIncomingController extends Controller
     }
 
     /**
-     * Menyimpan data baru atau perubahan data.
+     * Menambahkan atau memperbarui data.
      */
     public function store(Request $request): JsonResponse
     {
-        $id = $request->input('id');
+        $id = $request->filled('id')
+            ? (int) $request->input('id')
+            : null;
+
+        $request->merge([
+            'kategori' => 'PM',
+            'nama' => trim((string) $request->input('nama')),
+        ]);
 
         $validated = $request->validate([
             'kategori' => [
@@ -94,50 +115,64 @@ class JenisIncomingController extends Controller
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('jenis_incomings', 'nama')->ignore($id),
+                Rule::unique('jenis_incomings', 'nama')
+                    ->ignore($id),
             ],
 
             'status' => [
                 'required',
-                'boolean',
+                Rule::in(['0', '1', 0, 1]),
             ],
         ], [
-            'kategori.required' => 'Kategori wajib diisi.',
-            'kategori.max' => 'Kategori maksimal 50 karakter.',
+            'kategori.required' =>
+                'Kategori wajib diisi.',
 
-            'nama.required' => 'Nama jenis incoming wajib diisi.',
-            'nama.max' => 'Nama maksimal 100 karakter.',
-            'nama.unique' => 'Nama jenis incoming sudah tersedia.',
+            'nama.required' =>
+                'Nama jenis incoming wajib diisi.',
 
-            'status.required' => 'Status wajib dipilih.',
-            'status.boolean' => 'Status tidak valid.',
+            'nama.max' =>
+                'Nama jenis incoming maksimal 100 karakter.',
+
+            'nama.unique' =>
+                'Nama jenis incoming sudah tersedia.',
+
+            'status.required' =>
+                'Status wajib dipilih.',
+
+            'status.in' =>
+                'Status yang dipilih tidak valid.',
         ]);
 
-        $jenisIncoming = JenisIncoming::updateOrCreate(
-            [
-                'id' => $id,
-            ],
-            [
-                'kategori' => $validated['kategori'],
-                'nama' => $validated['nama'],
-                'status' => $validated['status'],
-            ]
-        );
+        $payload = [
+            'kategori' => 'PM',
+            'nama' => $validated['nama'],
+            'status' => (int) $validated['status'],
+        ];
+
+        if ($id !== null) {
+            $jenisIncoming = JenisIncoming::findOrFail($id);
+            $jenisIncoming->update($payload);
+
+            $message = 'Jenis Incoming berhasil diperbarui.';
+        } else {
+            $jenisIncoming = JenisIncoming::create($payload);
+
+            $message = 'Jenis Incoming berhasil ditambahkan.';
+        }
 
         return response()->json([
             'success' => true,
-            'message' => $id
-                ? 'Jenis Incoming berhasil diperbarui.'
-                : 'Jenis Incoming berhasil ditambahkan.',
+            'message' => $message,
             'data' => $jenisIncoming,
         ]);
     }
 
     /**
-     * Mengambil data untuk modal edit.
+     * Mengambil satu data untuk form edit.
      */
-    public function edit(JenisIncoming $jenisIncoming): JsonResponse
-    {
+    public function edit(
+        JenisIncoming $jenisIncoming
+    ): JsonResponse {
         return response()->json([
             'success' => true,
             'data' => $jenisIncoming,
@@ -145,14 +180,16 @@ class JenisIncomingController extends Controller
     }
 
     /**
-     * Menghapus data.
+     * Menghapus data yang belum dipakai Supplier.
      */
-    public function destroy(JenisIncoming $jenisIncoming): JsonResponse
-    {
+    public function destroy(
+        JenisIncoming $jenisIncoming
+    ): JsonResponse {
         if ($jenisIncoming->suppliers()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak dapat dihapus karena sudah digunakan oleh Supplier.',
+                'message' =>
+                    'Data tidak dapat dihapus karena sudah digunakan oleh Supplier.',
             ], 422);
         }
 
@@ -160,7 +197,8 @@ class JenisIncomingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Jenis Incoming berhasil dihapus.',
+            'message' =>
+                'Jenis Incoming berhasil dihapus.',
         ]);
     }
 }

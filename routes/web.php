@@ -8,6 +8,10 @@ use App\Http\Controllers\UomController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\NonconformityTypeController;
 use App\Http\Controllers\RMPMController;
+use App\Http\Controllers\PackagingIncomingController;
+use App\Http\Controllers\PackagingInnerOuterController;
+use App\Http\Controllers\PackagingKartonController;
+use App\Http\Controllers\PackagingPouchController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -238,9 +242,127 @@ Route::middleware([
     )->name('rmpm.rm');
 
     Route::get(
+    '/rmpm/qrcode/{id}',
+    [App\Http\Controllers\RMPMController::class, 'getQRCode']
+    )->name('rmpm.qrcode');
+
+    Route::get(
         '/rmpm/pm',
         [App\Http\Controllers\RMPMController::class, 'pm']
     )->name('rmpm.pm');
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - INCOMING
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/incoming/create',
+    [PackagingIncomingController::class, 'index']
+)->name('rmpm.pm.incoming.create');
+
+Route::post(
+    '/rmpm/pm/incoming',
+    [PackagingIncomingController::class, 'store']
+)->name('rmpm.pm.incoming.store');
+
+Route::get(
+    '/rmpm/pm/incoming/{packagingIncoming}/edit',
+    [PackagingIncomingController::class, 'edit']
+)->name('rmpm.pm.incoming.edit');
+
+Route::put(
+    '/rmpm/pm/incoming/{packagingIncoming}',
+    [PackagingIncomingController::class, 'update']
+)->name('rmpm.pm.incoming.update');
+
+Route::delete(
+    '/rmpm/pm/incoming/{packagingIncoming}',
+    [PackagingIncomingController::class, 'destroy']
+)->name('rmpm.pm.incoming.destroy');
+
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - INNER / OUTER
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/inner-outer',
+    [PackagingInnerOuterController::class, 'index']
+)->name('rmpm.pm.inner-outer');
+
+Route::get(
+    '/rmpm/pm/inner-outer/{packagingIncoming}/sampling',
+    [PackagingInnerOuterController::class, 'sampling']
+)->name('rmpm.pm.inner-outer.sampling');
+
+Route::post(
+    '/rmpm/pm/inner-outer/{packagingIncoming}/sampling',
+    [
+        PackagingInnerOuterController::class,
+        'storeSampling',
+    ]
+)->name('rmpm.pm.inner-outer.sampling.store');
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - KARTON
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/karton',
+    [PackagingKartonController::class, 'index']
+)->name('rmpm.pm.karton');
+
+Route::get(
+    '/rmpm/pm/karton/{packagingIncoming}/display',
+    [RMPMController::class, 'pmKartonDisplay']
+)->name('rmpm.pm.karton.display');
+
+Route::get(
+    '/rmpm/pm/karton/{packagingIncoming}/display/bct',
+    [RMPMController::class, 'pmKartonBct']
+)->name('rmpm.pm.karton.bct');
+
+Route::get(
+    '/rmpm/pm/karton/{packagingIncoming}/sampling',
+    [PackagingKartonController::class, 'sampling']
+)->name('rmpm.pm.karton.sampling');
+
+Route::post(
+    '/rmpm/pm/karton/{packagingIncoming}/sampling',
+    [PackagingKartonController::class, 'storeSampling']
+)->name('rmpm.pm.karton.sampling.store');
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - POUCH
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/pouch',
+    [PackagingPouchController::class, 'index']
+)->name('rmpm.pm.pouch');
+
+Route::get(
+    '/rmpm/pm/pouch/{packagingIncoming}/sampling',
+    [PackagingPouchController::class, 'sampling']
+)->name('rmpm.pm.pouch.sampling');
+
+Route::post(
+    '/rmpm/pm/pouch/{packagingIncoming}/sampling',
+    [PackagingPouchController::class, 'storeSampling']
+)->name('rmpm.pm.pouch.sampling.store');
+
+Route::get(
+    '/rmpm/pm/pouch/{id}/qrcode',
+    [PackagingPouchController::class, 'getQRCode']
+)->name('rmpm.pm.pouch.qrcode');
 
     /*
     |--------------------------------------------------------------------------
@@ -280,6 +402,30 @@ Route::middleware([
         [App\Http\Controllers\RMPMController::class, 'store']
     )->name('rmpm.store');
 
+    Route::get(
+    '/rmpm/pm/incoming/create',
+    [PackagingIncomingController::class, 'index']
+)->name('rmpm.pm.incoming.create');
+
+Route::post(
+    '/rmpm/pm/incoming',
+    [PackagingIncomingController::class, 'store']
+)->name('rmpm.pm.incoming.store');
+
+    Route::get(
+        '/rmpm/pm/incoming/{packagingIncoming}/edit',
+        [PackagingIncomingController::class, 'edit']
+    )->name('rmpm.pm.incoming.edit');
+
+    Route::put(
+        '/rmpm/pm/incoming/{packagingIncoming}',
+        [PackagingIncomingController::class, 'update']
+    )->name('rmpm.pm.incoming.update');
+
+    Route::delete(
+        '/rmpm/pm/incoming/{packagingIncoming}',
+        [PackagingIncomingController::class, 'destroy']
+    )->name('rmpm.pm.incoming.destroy');
     /*
     |--------------------------------------------------------------------------
     | ANALISA
@@ -408,7 +554,9 @@ Route::middleware([
 
 });
 
-    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Field'])->group(function () {
+    Route::middleware([
+    'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,QC',
+]   )->group(function (): void {
         // Monitoring Storage Kimia
         Route::get('/monitoring-storage-kimia/getBatchData', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getBatchData'])->name('monitoring-storage-kimia.getBatchData');
         Route::get('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'index'])->name('monitoring-storage-kimia.index');

@@ -12,15 +12,8 @@
         {{-- PAGE TITLE --}}
         <div class="row">
             <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
 
-                <div
-                    class="
-                        page-title-box
-                        d-sm-flex
-                        align-items-center
-                        justify-content-between
-                    "
-                >
                     <h4 class="mb-sm-0">
                         Jenis Incoming
                     </h4>
@@ -40,28 +33,19 @@
 
                         </ol>
                     </div>
-                </div>
 
+                </div>
             </div>
         </div>
 
         {{-- CONTENT --}}
         <div class="row">
-
             <div class="col-12">
 
                 <div class="card">
 
-                    <div
-                        class="
-                            card-header
-                            d-flex
-                            flex-wrap
-                            align-items-center
-                            justify-content-between
-                            gap-3
-                        "
-                    >
+                    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+
                         <div>
                             <h4 class="card-title mb-1">
                                 Daftar Jenis Incoming
@@ -80,6 +64,7 @@
                             <i class="mdi mdi-plus-circle-outline me-1"></i>
                             Tambah Data
                         </button>
+
                     </div>
 
                     <div class="card-body">
@@ -88,14 +73,7 @@
 
                             <table
                                 id="datatable"
-                                class="
-                                    table
-                                    table-bordered
-                                    table-striped
-                                    table-hover
-                                    align-middle
-                                    w-100
-                                "
+                                class="table table-bordered table-striped table-hover align-middle w-100"
                             >
                                 <thead class="table-light">
                                     <tr>
@@ -131,7 +109,6 @@
                 </div>
 
             </div>
-
         </div>
 
     </div>
@@ -196,10 +173,9 @@
                             type="text"
                             name="kategori"
                             id="kategori"
-                            class="form-control"
+                            class="form-control bg-light"
                             value="PM"
-                            maxlength="50"
-                            placeholder="Masukkan kategori"
+                            readonly
                         >
 
                         <div
@@ -208,7 +184,7 @@
                         ></div>
 
                         <small class="text-muted">
-                            Contoh: PM
+                            Kategori otomatis untuk Packaging Material.
                         </small>
 
                     </div>
@@ -258,16 +234,8 @@
 
                                 <label
                                     for="statusAktif"
-                                    class="
-                                        border
-                                        rounded
-                                        p-3
-                                        w-100
-                                        d-flex
-                                        align-items-center
-                                        gap-2
-                                        cursor-pointer
-                                    "
+                                    class="border rounded p-3 w-100 d-flex align-items-center gap-2"
+                                    style="cursor: pointer;"
                                 >
                                     <input
                                         class="form-check-input mt-0"
@@ -279,15 +247,7 @@
                                     >
 
                                     <span>
-                                        <i
-                                            class="
-                                                mdi
-                                                mdi-check-circle-outline
-                                                text-success
-                                                me-1
-                                            "
-                                        ></i>
-
+                                        <i class="mdi mdi-check-circle-outline text-success me-1"></i>
                                         Aktif
                                     </span>
                                 </label>
@@ -298,16 +258,8 @@
 
                                 <label
                                     for="statusTidakAktif"
-                                    class="
-                                        border
-                                        rounded
-                                        p-3
-                                        w-100
-                                        d-flex
-                                        align-items-center
-                                        gap-2
-                                        cursor-pointer
-                                    "
+                                    class="border rounded p-3 w-100 d-flex align-items-center gap-2"
+                                    style="cursor: pointer;"
                                 >
                                     <input
                                         class="form-check-input mt-0"
@@ -318,15 +270,7 @@
                                     >
 
                                     <span>
-                                        <i
-                                            class="
-                                                mdi
-                                                mdi-close-circle-outline
-                                                text-danger
-                                                me-1
-                                            "
-                                        ></i>
-
+                                        <i class="mdi mdi-close-circle-outline text-danger me-1"></i>
                                         Tidak Aktif
                                     </span>
                                 </label>
@@ -404,7 +348,17 @@
 
             ajax: {
                 url: "{{ route('jenis-incoming.index') }}",
-                type: 'GET'
+                type: 'GET',
+
+                error: function (xhr) {
+                    console.error(xhr.responseText);
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal memuat data',
+                        text: 'Terjadi kesalahan saat mengambil data Jenis Incoming.'
+                    });
+                }
             },
 
             columns: [
@@ -557,7 +511,7 @@
                     );
 
                     $('#kategori').val(
-                        response.data.kategori
+                        response.data.kategori ?? 'PM'
                     );
 
                     $('#nama').val(
