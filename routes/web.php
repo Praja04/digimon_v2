@@ -1,5 +1,17 @@
 <?php
-
+use App\Http\Controllers\IncomingController;
+use App\Http\Controllers\JenisIncomingController;
+use App\Http\Controllers\JenisMaterialController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SamplingStatusController;
+use App\Http\Controllers\UomController;
+use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\NonconformityTypeController;
+use App\Http\Controllers\RMPMController;
+use App\Http\Controllers\PackagingIncomingController;
+use App\Http\Controllers\PackagingInnerOuterController;
+use App\Http\Controllers\PackagingKartonController;
+use App\Http\Controllers\PackagingPouchController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -203,46 +215,350 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/shelf-life/hasil/get-po', [App\Http\Controllers\ShelfLife\ResultController::class, 'getPoByDateAndStorage'])->name('shelf-life.result.get-po');
     });
 
-    /*------------------------------------------
-    RMPM
-    Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
-    --------------------------------------------*/
-    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM'])->group(function () {
-        Route::get('/rmpm', [App\Http\Controllers\RMPMController::class, 'index'])->name('rmpm.index');
-        Route::get('/rmpm/konfirmasi/{id}', [App\Http\Controllers\RMPMController::class, 'getKonfirmasi'])->name('rmpm.konfirmasi');
-        Route::post('/rmpm/konfirmasi/update', [App\Http\Controllers\RMPMController::class, 'updateKonfirmasi'])->name('rmpm.konfirmasi.update');
-        Route::get('/rmpm/{id}', [App\Http\Controllers\RMPMController::class, 'show'])->name('rmpm.show');
-        Route::get('/rmpm/{id}/analisa', [App\Http\Controllers\RMPMController::class, 'showAnalisa'])->name('rmpm.analisa');
-        Route::get('/rmpm/qrcode/{id}', [App\Http\Controllers\RMPMController::class, 'getQRCode'])->name('rmpm.qrcode');
-        Route::post('/rmpm', [App\Http\Controllers\RMPMController::class, 'store'])->name('rmpm.store');
-        Route::post('/rmpm/update-disposisi/long-term', [App\Http\Controllers\RMPMController::class, 'updateDisposisiLongTerm'])->name('rmpm.update-disposisi.long-term');
+   /*
+|--------------------------------------------------------------------------
+| RMPM
+|--------------------------------------------------------------------------
+| Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
+|--------------------------------------------------------------------------
+*/
 
-        Route::post('analisa/rmpm/long-term', [App\Http\Controllers\RMPMController::class, 'storeLongTerm'])->name('rmpm.store.long-term');
-        Route::post('analisa/rmpm/short-term', [App\Http\Controllers\RMPMController::class, 'storeShortTerm'])->name('rmpm.store.short-term');
-        Route::post('analisa/rmpm/garam-gula', [App\Http\Controllers\RMPMController::class, 'storeGaramGula'])->name('rmpm.store.garam-gula');
+Route::middleware([
+    'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+])->group(function (): void {
 
-        // Sampling - Kondisi Mobil
-        Route::get('/sampling/kondisi_mobil/{id}', [App\Http\Controllers\Sampling\KondisiMobilController::class, 'show'])->name('sampling-kondisi-mobil.show');
-        Route::post('/sampling/kondisi_mobil', [App\Http\Controllers\Sampling\KondisiMobilController::class, 'store'])->name('sampling-kondisi-mobil.store');
-        Route::post('/sampling/kondisi_mobil/update', [App\Http\Controllers\Sampling\KondisiMobilController::class, 'update'])->name('sampling-kondisi-mobil.update');
+    /*
+    |--------------------------------------------------------------------------
+    | MENU RMPM
+    |--------------------------------------------------------------------------
+    */
 
-        // Sampling - Dokumen
-        Route::get('/sampling/dokumen/{id}', [App\Http\Controllers\Sampling\DokumenController::class, 'show'])->name('sampling-dokumen.show');
-        Route::post('/sampling/dokumen', [App\Http\Controllers\Sampling\DokumenController::class, 'store'])->name('sampling-dokumen.store');
-        Route::post('/sampling/dokumen/update', [App\Http\Controllers\Sampling\DokumenController::class, 'update'])->name('sampling-dokumen.update');
+    Route::get(
+        '/rmpm',
+        [App\Http\Controllers\RMPMController::class, 'index']
+    )->name('rmpm.index');
 
-        // Sampling - Kemasan
-        Route::get('/sampling/kemasan/{id}', [App\Http\Controllers\Sampling\KemasanController::class, 'show'])->name('sampling-kemasan.show');
-        Route::post('/sampling/kemasan', [App\Http\Controllers\Sampling\KemasanController::class, 'store'])->name('sampling-kemasan.store');
-        Route::post('/sampling/kemasan/update', [App\Http\Controllers\Sampling\KemasanController::class, 'update'])->name('sampling-kemasan.update');
+    Route::get(
+        '/rmpm/rm',
+        [App\Http\Controllers\RMPMController::class, 'rm']
+    )->name('rmpm.rm');
 
-        // Sampling - Raw
-        Route::get('/sampling/raw/{id}', [App\Http\Controllers\Sampling\RawController::class, 'show'])->name('sampling-raw.show');
-        Route::post('/sampling/raw', [App\Http\Controllers\Sampling\RawController::class, 'store'])->name('sampling-raw.store');
-        Route::post('/sampling/raw/update', [App\Http\Controllers\Sampling\RawController::class, 'update'])->name('sampling-raw.update');
-    });
+    Route::get(
+    '/rmpm/qrcode/{id}',
+    [App\Http\Controllers\RMPMController::class, 'getQRCode']
+    )->name('rmpm.qrcode');
 
-    Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Field'])->group(function () {
+    Route::get(
+        '/rmpm/pm',
+        [App\Http\Controllers\RMPMController::class, 'pm']
+    )->name('rmpm.pm');
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - INCOMING
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/incoming/create',
+    [PackagingIncomingController::class, 'index']
+)->name('rmpm.pm.incoming.create');
+
+Route::post(
+    '/rmpm/pm/incoming',
+    [PackagingIncomingController::class, 'store']
+)->name('rmpm.pm.incoming.store');
+
+Route::get(
+    '/rmpm/pm/incoming/{packagingIncoming}/edit',
+    [PackagingIncomingController::class, 'edit']
+)->name('rmpm.pm.incoming.edit');
+
+Route::put(
+    '/rmpm/pm/incoming/{packagingIncoming}',
+    [PackagingIncomingController::class, 'update']
+)->name('rmpm.pm.incoming.update');
+
+Route::delete(
+    '/rmpm/pm/incoming/{packagingIncoming}',
+    [PackagingIncomingController::class, 'destroy']
+)->name('rmpm.pm.incoming.destroy');
+
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - INNER / OUTER
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/inner-outer',
+    [PackagingInnerOuterController::class, 'index']
+)->name('rmpm.pm.inner-outer');
+
+Route::get(
+    '/rmpm/pm/inner-outer/{packagingIncoming}/sampling',
+    [PackagingInnerOuterController::class, 'sampling']
+)->name('rmpm.pm.inner-outer.sampling');
+
+Route::post(
+    '/rmpm/pm/inner-outer/{packagingIncoming}/sampling',
+    [
+        PackagingInnerOuterController::class,
+        'storeSampling',
+    ]
+)->name('rmpm.pm.inner-outer.sampling.store');
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - KARTON
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/karton',
+    [PackagingKartonController::class, 'index']
+)->name('rmpm.pm.karton');
+
+Route::get(
+    '/rmpm/pm/karton/{packagingIncoming}/display',
+    [RMPMController::class, 'pmKartonDisplay']
+)->name('rmpm.pm.karton.display');
+
+Route::get(
+    '/rmpm/pm/karton/{packagingIncoming}/display/bct',
+    [RMPMController::class, 'pmKartonBct']
+)->name('rmpm.pm.karton.bct');
+
+Route::get(
+    '/rmpm/pm/karton/{packagingIncoming}/sampling',
+    [PackagingKartonController::class, 'sampling']
+)->name('rmpm.pm.karton.sampling');
+
+Route::post(
+    '/rmpm/pm/karton/{packagingIncoming}/sampling',
+    [PackagingKartonController::class, 'storeSampling']
+)->name('rmpm.pm.karton.sampling.store');
+
+/*
+|--------------------------------------------------------------------------
+| PACKAGING MATERIAL - POUCH
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/rmpm/pm/pouch',
+    [PackagingPouchController::class, 'index']
+)->name('rmpm.pm.pouch');
+
+Route::get(
+    '/rmpm/pm/pouch/{packagingIncoming}/sampling',
+    [PackagingPouchController::class, 'sampling']
+)->name('rmpm.pm.pouch.sampling');
+
+Route::post(
+    '/rmpm/pm/pouch/{packagingIncoming}/sampling',
+    [PackagingPouchController::class, 'storeSampling']
+)->name('rmpm.pm.pouch.sampling.store');
+
+Route::get(
+    '/rmpm/pm/pouch/{id}/qrcode',
+    [PackagingPouchController::class, 'getQRCode']
+)->name('rmpm.pm.pouch.qrcode');
+
+    /*
+    |--------------------------------------------------------------------------
+    | KONFIRMASI
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/rmpm/konfirmasi/{id}',
+        [App\Http\Controllers\RMPMController::class, 'getKonfirmasi']
+    )->name('rmpm.konfirmasi');
+
+    Route::post(
+        '/rmpm/konfirmasi/update',
+        [App\Http\Controllers\RMPMController::class, 'updateKonfirmasi']
+    )->name('rmpm.konfirmasi.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | QR CODE
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/rmpm/qrcode/{id}',
+        [App\Http\Controllers\RMPMController::class, 'getQRCode']
+    )->name('rmpm.qrcode');
+
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN DATA RM
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/rmpm',
+        [App\Http\Controllers\RMPMController::class, 'store']
+    )->name('rmpm.store');
+
+    Route::get(
+    '/rmpm/pm/incoming/create',
+    [PackagingIncomingController::class, 'index']
+)->name('rmpm.pm.incoming.create');
+
+Route::post(
+    '/rmpm/pm/incoming',
+    [PackagingIncomingController::class, 'store']
+)->name('rmpm.pm.incoming.store');
+
+    Route::get(
+        '/rmpm/pm/incoming/{packagingIncoming}/edit',
+        [PackagingIncomingController::class, 'edit']
+    )->name('rmpm.pm.incoming.edit');
+
+    Route::put(
+        '/rmpm/pm/incoming/{packagingIncoming}',
+        [PackagingIncomingController::class, 'update']
+    )->name('rmpm.pm.incoming.update');
+
+    Route::delete(
+        '/rmpm/pm/incoming/{packagingIncoming}',
+        [PackagingIncomingController::class, 'destroy']
+    )->name('rmpm.pm.incoming.destroy');
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/rmpm/update-disposisi/long-term',
+        [App\Http\Controllers\RMPMController::class, 'updateDisposisiLongTerm']
+    )->name('rmpm.update-disposisi.long-term');
+
+    Route::post(
+        '/analisa/rmpm/long-term',
+        [App\Http\Controllers\RMPMController::class, 'storeLongTerm']
+    )->name('rmpm.store.long-term');
+
+    Route::post(
+        '/analisa/rmpm/short-term',
+        [App\Http\Controllers\RMPMController::class, 'storeShortTerm']
+    )->name('rmpm.store.short-term');
+
+    Route::post(
+        '/analisa/rmpm/garam-gula',
+        [App\Http\Controllers\RMPMController::class, 'storeGaramGula']
+    )->name('rmpm.store.garam-gula');
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAMPLING - KONDISI MOBIL
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/sampling/kondisi_mobil/{id}',
+        [App\Http\Controllers\Sampling\KondisiMobilController::class, 'show']
+    )->name('sampling-kondisi-mobil.show');
+
+    Route::post(
+        '/sampling/kondisi_mobil',
+        [App\Http\Controllers\Sampling\KondisiMobilController::class, 'store']
+    )->name('sampling-kondisi-mobil.store');
+
+    Route::post(
+        '/sampling/kondisi_mobil/update',
+        [App\Http\Controllers\Sampling\KondisiMobilController::class, 'update']
+    )->name('sampling-kondisi-mobil.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAMPLING - DOKUMEN
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/sampling/dokumen/{id}',
+        [App\Http\Controllers\Sampling\DokumenController::class, 'show']
+    )->name('sampling-dokumen.show');
+
+    Route::post(
+        '/sampling/dokumen',
+        [App\Http\Controllers\Sampling\DokumenController::class, 'store']
+    )->name('sampling-dokumen.store');
+
+    Route::post(
+        '/sampling/dokumen/update',
+        [App\Http\Controllers\Sampling\DokumenController::class, 'update']
+    )->name('sampling-dokumen.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAMPLING - KEMASAN
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/sampling/kemasan/{id}',
+        [App\Http\Controllers\Sampling\KemasanController::class, 'show']
+    )->name('sampling-kemasan.show');
+
+    Route::post(
+        '/sampling/kemasan',
+        [App\Http\Controllers\Sampling\KemasanController::class, 'store']
+    )->name('sampling-kemasan.store');
+
+    Route::post(
+        '/sampling/kemasan/update',
+        [App\Http\Controllers\Sampling\KemasanController::class, 'update']
+    )->name('sampling-kemasan.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAMPLING - RAW
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/sampling/raw/{id}',
+        [App\Http\Controllers\Sampling\RawController::class, 'show']
+    )->name('sampling-raw.show');
+
+    Route::post(
+        '/sampling/raw',
+        [App\Http\Controllers\Sampling\RawController::class, 'store']
+    )->name('sampling-raw.store');
+
+    Route::post(
+        '/sampling/raw/update',
+        [App\Http\Controllers\Sampling\RawController::class, 'update']
+    )->name('sampling-raw.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | ROUTE DINAMIS HARUS PALING BAWAH
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/rmpm/{id}/analisa',
+        [App\Http\Controllers\RMPMController::class, 'showAnalisa']
+    )->name('rmpm.analisa');
+
+    Route::get(
+        '/rmpm/{id}',
+        [App\Http\Controllers\RMPMController::class, 'show']
+    )->name('rmpm.show');
+
+});
+
+    Route::middleware([
+    'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,QC',
+]   )->group(function (): void {
         // Monitoring Storage Kimia
         Route::get('/monitoring-storage-kimia/getBatchData', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getBatchData'])->name('monitoring-storage-kimia.getBatchData');
         Route::get('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'index'])->name('monitoring-storage-kimia.index');
@@ -392,14 +708,133 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/pengguna/{id}', [App\Http\Controllers\UsersController::class, 'destroy'])->name('users.destroy');
     });
 
-    /*------------------------------------------
-    Master Data - Warna
-    Roles: Foreman Only
-    --------------------------------------------*/
-    Route::middleware(['user-access:Foreman'])->group(function () {
-        Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
-        Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
-        Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');
-        Route::delete('/warna/{id}', [App\Http\Controllers\ColorController::class, 'destroy'])->name('colors.destroy');
-    });
-});
+
+
+            /*------------------------------------------
+        Master Data - Warna
+        Roles: Foreman Only
+        --------------------------------------------*/
+        Route::middleware(['user-access:Foreman'])->group(function () {
+            Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
+            Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
+            Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');
+            Route::delete('/warna/{id}', [App\Http\Controllers\ColorController::class, 'destroy'])->name('colors.destroy');
+        });
+
+
+        /*------------------------------------------
+        Packaging Sampling Online
+        Roles:
+        - Head Of Dapartement
+        - Supervisor
+        - Foreman
+        - QC
+        --------------------------------------------*/
+        Route::middleware([
+            'user-access:Head Of Dapartement,Supervisor,Foreman,QC',
+        ])->group(function (): void {
+
+            /*
+            * URL yang dihasilkan:
+            *
+            * /packaging-sampling/inner
+            * /packaging-sampling/outer
+            * /packaging-sampling/karton
+            * /packaging-sampling/others
+            *
+            * Parameter {jenis?} dibuat opsional.
+            * Jika tidak diberikan, IncomingController
+            * menggunakan nilai default "inner".
+            */
+            Route::get(
+                '/packaging-sampling/{jenis?}',
+                [IncomingController::class, 'index']
+            )->name('incoming.index');
+
+        });
+
+
+        /*------------------------------------------
+        Master Data - Jenis Incoming
+        Read-only, tanpa create/edit/delete
+        Roles:
+        - Head Of Dapartement
+        - Supervisor
+        - Foreman
+        --------------------------------------------*/
+        Route::middleware([
+            'user-access:Head Of Dapartement,Supervisor,Foreman',
+        ])->group(function (): void {
+
+            Route::resource(
+                'jenis-incoming',
+                JenisIncomingController::class
+            )->only([
+                'index',
+                'store',
+                'edit',
+                'destroy',
+            ]);
+
+        });
+
+        Route::resource(
+            'jenis-material',
+            JenisMaterialController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'supplier',
+            SupplierController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'sampling-status',
+            SamplingStatusController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'uom',
+            UomController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'recommendation',
+            RecommendationController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'nonconformity-type',
+            NonconformityTypeController::class
+        )->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+        });

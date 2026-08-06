@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Recommendation extends Model
+{
+    use HasFactory;
+
+    protected $table = 'recommendations';
+
+    protected $fillable = [
+        'kode',
+        'nama',
+        'status',
+    ];
+
+    protected $casts = [
+        'status' => 'boolean',
+    ];
+}
