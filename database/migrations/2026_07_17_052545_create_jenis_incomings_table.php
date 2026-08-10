@@ -9,21 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('jenis_incomings', function (Blueprint $table) {
-
             $table->id();
-
-            $table->enum('kategori', [
-                'Inner',
-                'Outer'
-            ]);
-
-            $table->string('nama');
-
+            $table->string('kategori', 50)->default('PM');
+            $table->string('nama', 100);
+            $table->boolean('status')->default(true);
             $table->timestamps();
-
         });
     }
-
 
     public function down(): void
     {
