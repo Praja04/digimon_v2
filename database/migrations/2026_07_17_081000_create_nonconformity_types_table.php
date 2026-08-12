@@ -8,13 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('suppliers', function (Blueprint $table) {
+        Schema::create('nonconformity_types', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('jenis_incoming_id')
-                ->constrained('jenis_incomings')
-                ->cascadeOnDelete();
             $table->string('kode', 50)->unique();
-            $table->string('nama', 150);
+            $table->string('nama', 150)->unique();
             $table->boolean('status')->default(true);
             $table->timestamps();
         });
@@ -22,6 +19,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('suppliers');
+        Schema::dropIfExists('nonconformity_types');
     }
 };
