@@ -147,6 +147,7 @@ class PackagingKartonController extends Controller
             $request->merge([
                 'konfirmasi_ketidaksesuaian' => 'Tidak Ada',
                 'jenis_ketidaksesuaian' => [],
+                'jenis_ketidaksesuaian_lainnya' => null,
             ]);
         }
 
@@ -164,17 +165,6 @@ class PackagingKartonController extends Controller
                 'max:100',
             ],
 
-            'lot_sebelum' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'lot_setelah' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
 
             'samples' => [
                 'required',
@@ -182,10 +172,74 @@ class PackagingKartonController extends Controller
                 'min:1',
             ],
 
-            'samples.*.berat' => [
+            'samples.*.panjang' => [
                 'nullable',
                 'numeric',
                 'min:0',
+            ],
+
+            'samples.*.lebar' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.tinggi' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.bct' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.scan_barcode' => [
+                'nullable',
+                'in:Terbaca,Tidak Terbaca',
+            ],
+
+            'samples.*.no_batch_lot' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
+
+            'samples.*.no_barcode' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'samples.*.design' => [
+                'nullable',
+                'in:OK,NOK',
+            ],
+
+            'samples.*.warna' => [
+                'nullable',
+                'in:OK,NOK',
+            ],
+
+            'samples.*.tulisan' => [
+                'nullable',
+                'in:OK,NOK',
+            ],
+
+            'samples.*.foto' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+
+            'samples.*.berat' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:20',
             ],
 
             'samples.*.hasil_berat' => [
@@ -193,7 +247,7 @@ class PackagingKartonController extends Controller
                 'in:OK,NOK',
             ],
 
-            'samples.*.gramasi' => [
+            'gramasi' => [
                 'nullable',
                 'numeric',
                 'min:0',
@@ -222,7 +276,14 @@ class PackagingKartonController extends Controller
 
             'jenis_ketidaksesuaian.*' => [
                 'string',
-                'in:Berat Under,Berat Over,Gramasi Tidak Standar',
+                'distinct',
+                'max:255',
+            ],
+
+            'jenis_ketidaksesuaian_lainnya' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
 
             'foto' => [
@@ -284,6 +345,61 @@ class PackagingKartonController extends Controller
             ]
         );
 
+        $jenisKetidaksesuaian =
+            array_values(
+                array_filter(
+                    $validated[
+                        'jenis_ketidaksesuaian'
+                    ] ?? [],
+                    fn ($value) =>
+                        $value !== 'Lainnya'
+                )
+            );
+
+        $jenisKetidaksesuaianLainnya =
+            trim(
+                (string) (
+                    $validated[
+                        'jenis_ketidaksesuaian_lainnya'
+                    ] ?? ''
+                )
+            );
+
+        if (
+            $adaKetidaksesuaian
+            && in_array(
+                'Lainnya',
+                $validated[
+                    'jenis_ketidaksesuaian'
+                ] ?? [],
+                true
+            )
+            && $jenisKetidaksesuaianLainnya === ''
+        ) {
+            return response()->json([
+                'message' =>
+                    'Jenis ketidaksesuaian lainnya wajib diisi.',
+
+                'errors' => [
+                    'jenis_ketidaksesuaian_lainnya' => [
+                        'Jenis ketidaksesuaian lainnya wajib diisi.',
+                    ],
+                ],
+            ], 422);
+        }
+
+        if (
+            $jenisKetidaksesuaianLainnya !== ''
+            && ! in_array(
+                $jenisKetidaksesuaianLainnya,
+                $jenisKetidaksesuaian,
+                true
+            )
+        ) {
+            $jenisKetidaksesuaian[] =
+                $jenisKetidaksesuaianLainnya;
+        }
+
         DB::transaction(
             function () use (
                 $request,
@@ -292,7 +408,8 @@ class PackagingKartonController extends Controller
                 $existingSampling,
                 $existingFoto,
                 $existingFotoKetidaksesuaian,
-                $adaKetidaksesuaian
+                $adaKetidaksesuaian,
+                $jenisKetidaksesuaian
             ): void {
                 $sampling =
                     $existingSampling
@@ -366,16 +483,13 @@ class PackagingKartonController extends Controller
                     'no_batch' =>
                         $validated['no_batch'] ?? null,
 
-                    'lot_sebelum' =>
-                        $validated['lot_sebelum'] ?? null,
-
-                    'lot_setelah' =>
-                        $validated['lot_setelah'] ?? null,
 
                     'hasil_sampel' =>
-                        $this->mergeWeightSamples(
+                        $this->mergeKartonSamples(
+                            $request,
                             $sampling->hasil_sampel ?? [],
-                            $validated['samples']
+                            $validated['samples'],
+                            $validated['gramasi'] ?? null
                         ),
 
                     'coa' =>
@@ -391,11 +505,7 @@ class PackagingKartonController extends Controller
 
                     'jenis_ketidaksesuaian' =>
                         $adaKetidaksesuaian
-                            ? array_values(
-                                $validated[
-                                    'jenis_ketidaksesuaian'
-                                ] ?? []
-                            )
+                            ? $jenisKetidaksesuaian
                             : [],
 
                     'foto' =>
@@ -452,9 +562,11 @@ class PackagingKartonController extends Controller
         ]);
     }
 
-    private function mergeWeightSamples(
+    private function mergeKartonSamples(
+        Request $request,
         array $existingSamples,
-        array $submittedSamples
+        array $submittedSamples,
+        mixed $gramasi
     ): array {
         $mergedSamples = [];
 
@@ -462,21 +574,116 @@ class PackagingKartonController extends Controller
             array_values($submittedSamples)
             as $index => $submittedSample
         ) {
-            $mergedSamples[] = array_merge(
-                $existingSamples[$index] ?? [],
+            $existingSample =
+                $existingSamples[$index] ?? [];
+
+            $sampleFoto =
+                $existingSample['foto'] ?? null;
+
+            $uploadedFoto =
+                $request->file(
+                    "samples.{$index}.foto"
+                );
+
+            if ($uploadedFoto) {
+                if (
+                    $sampleFoto
+                    && Storage::disk('public')
+                        ->exists($sampleFoto)
+                ) {
+                    Storage::disk('public')
+                        ->delete($sampleFoto);
+                }
+
+                $sampleFoto =
+                    $uploadedFoto->store(
+                        'packaging-karton/samples',
+                        'public'
+                    );
+            }
+
+            $sample = array_merge(
+                $existingSample,
                 [
+                    'panjang' =>
+                        $submittedSample[
+                            'panjang'
+                        ] ?? null,
+
+                    'lebar' =>
+                        $submittedSample[
+                            'lebar'
+                        ] ?? null,
+
+                    'tinggi' =>
+                        $submittedSample[
+                            'tinggi'
+                        ] ?? null,
+
+                    'bct' =>
+                        $submittedSample[
+                            'bct'
+                        ] ?? null,
+
+                    'scan_barcode' =>
+                        $submittedSample[
+                            'scan_barcode'
+                        ] ?? null,
+
+                    'no_batch_lot' =>
+                        $submittedSample[
+                            'no_batch_lot'
+                        ] ?? null,
+
+                    'no_barcode' =>
+                        $submittedSample[
+                            'no_barcode'
+                        ] ?? null,
+
+                    'design' =>
+                        $submittedSample[
+                            'design'
+                        ] ?? null,
+
+                    'warna' =>
+                        $submittedSample[
+                            'warna'
+                        ] ?? null,
+
+                    'tulisan' =>
+                        $submittedSample[
+                            'tulisan'
+                        ] ?? null,
+
+                    'foto' =>
+                        $sampleFoto,
+
                     'berat' =>
-                        $submittedSample['berat'] ?? null,
+                        $submittedSample[
+                            'berat'
+                        ] ?? null,
 
                     'hasil_berat' =>
                         $submittedSample[
                             'hasil_berat'
                         ] ?? null,
-
-                    'gramasi' =>
-                        $submittedSample['gramasi'] ?? null,
                 ]
             );
+
+            /*
+             * Requirement:
+             * 1 SPB hanya memiliki 1 data gramasi.
+             * Gramasi disimpan pada sampel pertama
+             * agar tidak perlu menambah kolom database.
+             */
+            if ($index === 0) {
+                $sample['gramasi'] =
+                    $gramasi;
+            } else {
+                unset($sample['gramasi']);
+            }
+
+            $mergedSamples[] = $sample;
         }
 
         return $mergedSamples;

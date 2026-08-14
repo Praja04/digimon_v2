@@ -5,17 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\JenisIncoming;
 use App\Models\JenisMaterial;
 use App\Models\PackagingIncoming;
+use App\Models\PackagingInnerOuterSampling;
+use App\Models\PackagingPouchSampling;
 use App\Models\SamplingStatus;
 use App\Models\Supplier;
+use App\Services\WpmApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class PackagingIncomingController extends Controller
 {
-    public function index(Request $request): View
+    public function index(
+        Request $request,
+        WpmApiService $wpmApiService
+    ): View
     {
         $jenisIncomings = JenisIncoming::query()
             ->where('status', 1)
@@ -104,15 +111,55 @@ class PackagingIncomingController extends Controller
         }
 
         if ($request->filled('status_filter')) {
-            $query->where(
-                'sampling_status_id',
-                $request->input('status_filter')
-            );
+            $statusFilter =
+                (string) $request->input(
+                    'status_filter'
+                );
+
+            if ($statusFilter === 'draft') {
+                $draftIncomingIds = collect()
+                    ->merge(
+                        PackagingPouchSampling::query()
+                            ->where(
+                                'status_proses',
+                                'draft'
+                            )
+                            ->pluck(
+                                'packaging_incoming_id'
+                            )
+                    )
+                    ->merge(
+                        PackagingInnerOuterSampling::query()
+                            ->where(
+                                'status_proses',
+                                'draft'
+                            )
+                            ->pluck(
+                                'packaging_incoming_id'
+                            )
+                    )
+                    ->unique()
+                    ->values();
+
+                $query->whereIn(
+                    'id',
+                    $draftIncomingIds
+                );
+            } else {
+                $query->where(
+                    'sampling_status_id',
+                    $statusFilter
+                );
+            }
         }
 
         $incomings = $query
             ->paginate(10)
             ->withQueryString();
+
+        $this->attachSamplingProcessStatus(
+            $incomings->getCollection()
+        );
 
         if ($request->boolean('partial')) {
             return view(
@@ -125,6 +172,20 @@ class PackagingIncomingController extends Controller
             );
         }
 
+        try {
+            $masterBarangWpm =
+                $wpmApiService->getMasterBarang();
+
+            $wpmError = null;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $masterBarangWpm = [];
+
+            $wpmError =
+                'Data MID dari WPM gagal dimuat. Periksa jaringan atau API WPM.';
+        }
+
         return view(
             'app.rmpm.incoming-index',
             compact(
@@ -132,7 +193,9 @@ class PackagingIncomingController extends Controller
                 'jenisMaterials',
                 'suppliers',
                 'samplingStatuses',
-                'incomings'
+                'incomings',
+                'masterBarangWpm',
+                'wpmError'
             )
         );
     }
@@ -264,10 +327,9 @@ class PackagingIncomingController extends Controller
                         ->jumlah_sampel,
 
                 'status_name' =>
-                    $packagingIncoming
-                        ->samplingStatus
-                        ?->nama
-                    ?? 'Belum Sampling',
+                    $this->resolveEffectiveStatusName(
+                        $packagingIncoming
+                    ),
 
                 'keterangan' =>
                     $packagingIncoming
@@ -346,12 +408,36 @@ class PackagingIncomingController extends Controller
             ?? ''
         );
 
+        $hasDraftSampling =
+            PackagingPouchSampling::query()
+                ->where(
+                    'packaging_incoming_id',
+                    $packagingIncoming->id
+                )
+                ->where(
+                    'status_proses',
+                    'draft'
+                )
+                ->exists()
+            || PackagingInnerOuterSampling::query()
+                ->where(
+                    'packaging_incoming_id',
+                    $packagingIncoming->id
+                )
+                ->where(
+                    'status_proses',
+                    'draft'
+                )
+                ->exists();
+
         if (
             str_contains($statusName, 'sudah')
             || str_contains($statusName, 'selesai')
+            || $hasDraftSampling
         ) {
-            $message =
-                'Data yang sudah sampling tidak dapat dihapus.';
+            $message = $hasDraftSampling
+                ? 'Data memiliki draft sampling. Lanjutkan proses sampling terlebih dahulu.'
+                : 'Data yang sudah sampling tidak dapat dihapus.';
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -380,6 +466,144 @@ class PackagingIncomingController extends Controller
         return redirect()
             ->route('rmpm.pm.incoming.create')
             ->with('success', $message);
+    }
+
+    private function attachSamplingProcessStatus(
+        $incomings
+    ): void {
+        $incomingIds =
+            $incomings
+                ->pluck('id')
+                ->filter()
+                ->values();
+
+        if ($incomingIds->isEmpty()) {
+            return;
+        }
+
+        $pouchStatuses =
+            PackagingPouchSampling::query()
+                ->whereIn(
+                    'packaging_incoming_id',
+                    $incomingIds
+                )
+                ->pluck(
+                    'status_proses',
+                    'packaging_incoming_id'
+                );
+
+        $innerOuterStatuses =
+            PackagingInnerOuterSampling::query()
+                ->whereIn(
+                    'packaging_incoming_id',
+                    $incomingIds
+                )
+                ->pluck(
+                    'status_proses',
+                    'packaging_incoming_id'
+                );
+
+        $incomings->each(
+            function (
+                PackagingIncoming $incoming
+            ) use (
+                $pouchStatuses,
+                $innerOuterStatuses
+            ): void {
+                $jenisName = strtolower(
+                    trim(
+                        $incoming
+                            ->jenisIncoming
+                            ?->nama
+                        ?? ''
+                    )
+                );
+
+                $processStatus = null;
+
+                if (
+                    str_contains(
+                        $jenisName,
+                        'pouch'
+                    )
+                ) {
+                    $processStatus =
+                        $pouchStatuses[
+                            $incoming->id
+                        ] ?? null;
+                } elseif (
+                    str_contains(
+                        $jenisName,
+                        'inner'
+                    )
+                    || str_contains(
+                        $jenisName,
+                        'outer'
+                    )
+                ) {
+                    $processStatus =
+                        $innerOuterStatuses[
+                            $incoming->id
+                        ] ?? null;
+                }
+
+                $incoming->setAttribute(
+                    'process_status',
+                    $processStatus
+                );
+            }
+        );
+    }
+
+    private function resolveEffectiveStatusName(
+        PackagingIncoming $packagingIncoming
+    ): string {
+        $jenisName = strtolower(
+            trim(
+                $packagingIncoming
+                    ->jenisIncoming
+                    ?->nama
+                ?? ''
+            )
+        );
+
+        if (
+            str_contains($jenisName, 'pouch')
+        ) {
+            $processStatus =
+                PackagingPouchSampling::query()
+                    ->where(
+                        'packaging_incoming_id',
+                        $packagingIncoming->id
+                    )
+                    ->value('status_proses');
+
+            if ($processStatus === 'draft') {
+                return 'Draft';
+            }
+        }
+
+        if (
+            str_contains($jenisName, 'inner')
+            || str_contains($jenisName, 'outer')
+        ) {
+            $processStatus =
+                PackagingInnerOuterSampling::query()
+                    ->where(
+                        'packaging_incoming_id',
+                        $packagingIncoming->id
+                    )
+                    ->value('status_proses');
+
+            if ($processStatus === 'draft') {
+                return 'Draft';
+            }
+        }
+
+        return $packagingIncoming
+                ->samplingStatus
+                ?->nama
+            ?? 'Belum Sampling';
     }
 
     private function validateIncoming(
@@ -438,7 +662,7 @@ class PackagingIncomingController extends Controller
                 ],
 
                 'mid' => [
-                    'nullable',
+                    'required',
                     'string',
                     'max:100',
                 ],
@@ -497,6 +721,9 @@ class PackagingIncomingController extends Controller
 
                 'jenis_material_id.required' =>
                     'Jenis material wajib dipilih.',
+
+                'mid.required' =>
+                    'MID dari WPM wajib dipilih.',
             ]
         );
     }

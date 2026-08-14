@@ -309,6 +309,16 @@ Route::post(
     ]
 )->name('rmpm.pm.inner-outer.sampling.store');
 
+Route::get(
+    '/rmpm/pm/inner-outer/{packagingIncoming}/resume',
+    [PackagingInnerOuterController::class, 'resume']
+)->name('rmpm.pm.inner-outer.resume');
+
+Route::get(
+    '/rmpm/pm/inner-outer/{id}/qrcode',
+    [PackagingInnerOuterController::class, 'getQRCode']
+)->name('rmpm.pm.inner-outer.qrcode');
+
 /*
 |--------------------------------------------------------------------------
 | PACKAGING MATERIAL - KARTON
@@ -365,6 +375,11 @@ Route::get(
     '/rmpm/pm/pouch/{id}/qrcode',
     [PackagingPouchController::class, 'getQRCode']
 )->name('rmpm.pm.pouch.qrcode');
+
+Route::get(
+    '/rmpm/pm/pouch/{packagingIncoming}/resume',
+    [PackagingPouchController::class, 'resume']
+)->name('rmpm.pm.pouch.resume');
 
     /*
     |--------------------------------------------------------------------------

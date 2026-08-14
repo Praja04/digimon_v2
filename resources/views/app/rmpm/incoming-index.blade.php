@@ -6,6 +6,28 @@
 
 @section('content')
 
+@php
+    $masterBarangWpmMap = collect($masterBarangWpm ?? [])
+        ->mapWithKeys(function ($barang) {
+            $mid = (string) ($barang['mid'] ?? '');
+
+            if ($mid === '') {
+                return [];
+            }
+
+            return [
+                $mid => [
+                    'nama_barang' =>
+                        $barang['nama_barang'] ?? '-',
+
+                    'uom' =>
+                        $barang['uom'] ?? '-',
+                ],
+            ];
+        })
+        ->all();
+@endphp
+
 <div class="page-content">
     <div class="container-fluid">
 
@@ -395,17 +417,98 @@
 
                                 <div class="col-xl-4 col-md-6">
                                     <label for="mid" class="form-label">
-                                        MID
+                                        MID dari WPM
+                                        <span class="text-danger">*</span>
+                                    </label>
+
+                                    <div
+                                        class="wpm-autosuggest"
+                                        id="wpmAutosuggest"
+                                    >
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="mdi mdi-magnify"></i>
+                                            </span>
+
+                                            <input
+                                                type="text"
+                                                name="mid"
+                                                id="mid"
+                                                class="form-control @error('mid') is-invalid @enderror"
+                                                value="{{ old('mid') }}"
+                                                placeholder="Ketik MID atau nama barang..."
+                                                maxlength="100"
+                                                autocomplete="off"
+                                                spellcheck="false"
+                                                required
+                                                role="combobox"
+                                                aria-autocomplete="list"
+                                                aria-expanded="false"
+                                                aria-controls="wpmSuggestionList"
+                                            >
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-secondary d-none"
+                                                id="btnClearMid"
+                                                title="Hapus pilihan MID"
+                                            >
+                                                <i class="mdi mdi-close"></i>
+                                            </button>
+                                        </div>
+
+                                        <div
+                                            id="wpmSuggestionList"
+                                            class="wpm-suggestion-panel d-none"
+                                            role="listbox"
+                                        ></div>
+                                    </div>
+
+                                    <small class="text-muted d-block mt-1">
+                                        Ketik MID atau nama barang, lalu pilih hasil autosuggest dari WPM.
+                                    </small>
+
+                                    @if (! empty($wpmError))
+                                        <small class="text-danger d-block mt-1">
+                                            <i class="mdi mdi-alert-circle-outline me-1"></i>
+                                            {{ $wpmError }}
+                                        </small>
+                                    @endif
+
+                                    @error('mid')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-xl-4 col-md-6">
+                                    <label for="nama_barang_wpm" class="form-label">
+                                        Nama Barang WPM
                                     </label>
 
                                     <input
                                         type="text"
-                                        name="mid"
-                                        id="mid"
-                                        class="form-control"
-                                        value="{{ old('mid') }}"
-                                        placeholder="Masukkan MID"
-                                        maxlength="100"
+                                        id="nama_barang_wpm"
+                                        class="form-control bg-light"
+                                        value=""
+                                        placeholder="Terisi otomatis setelah MID dipilih"
+                                        readonly
+                                    >
+                                </div>
+
+                                <div class="col-xl-4 col-md-6">
+                                    <label for="uom_wpm" class="form-label">
+                                        UOM WPM
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="uom_wpm"
+                                        class="form-control bg-light"
+                                        value=""
+                                        placeholder="Terisi otomatis"
+                                        readonly
                                     >
                                 </div>
 
@@ -772,6 +875,102 @@
     }
     @keyframes incomingSpin { to { transform: rotate(360deg); } }
 
+    /* WPM AUTOSUGGEST */
+    .wpm-autosuggest {
+        position: relative;
+        z-index: 50;
+    }
+
+    .wpm-suggestion-panel {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 1055;
+        max-height: 330px;
+        overflow-y: auto;
+        border: 1px solid #dbe4f0;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.15);
+    }
+
+    .wpm-suggestion-item {
+        width: 100%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 0;
+        border-bottom: 1px solid #eef2f7;
+        background: transparent;
+        text-align: left;
+        color: #1e293b;
+        cursor: pointer;
+    }
+
+    .wpm-suggestion-item:last-child {
+        border-bottom: 0;
+    }
+
+    .wpm-suggestion-item:hover,
+    .wpm-suggestion-item.is-active {
+        background: #f5f7ff;
+    }
+
+    .wpm-suggestion-main {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .wpm-suggestion-mid {
+        display: block;
+        margin-bottom: 3px;
+        color: #172554;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .wpm-suggestion-name {
+        display: block;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+
+    .wpm-suggestion-uom {
+        flex-shrink: 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #047857;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .wpm-suggestion-empty {
+        padding: 16px;
+        color: #64748b;
+        text-align: center;
+        font-size: 12px;
+    }
+
+    .wpm-suggestion-hint {
+        padding: 10px 14px;
+        border-top: 1px solid #eef2f7;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 11px;
+    }
+
+    @media (max-width: 575.98px) {
+        .wpm-suggestion-panel {
+            max-height: 280px;
+        }
+    }
+
 </style>
 
 @endsection
@@ -799,6 +998,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const defaultDate = @json(now()->format('Y-m-d'));
     const defaultTime = @json(now()->format('H:i'));
     const listContainer = document.getElementById('incomingListContainer');
+    const midInput = document.getElementById('mid');
+    const namaBarangWpmInput = document.getElementById('nama_barang_wpm');
+    const uomWpmInput = document.getElementById('uom_wpm');
+    const wpmAutosuggest = document.getElementById('wpmAutosuggest');
+    const wpmSuggestionList = document.getElementById('wpmSuggestionList');
+    const btnClearMid = document.getElementById('btnClearMid');
+
+    const masterBarangWpm = @json($masterBarangWpmMap);
+
+    const masterBarangWpmList = Object.entries(masterBarangWpm)
+        .map(function ([mid, barang]) {
+            return {
+                mid: String(mid ?? ''),
+                nama_barang: String(barang?.nama_barang ?? '-'),
+                uom: String(barang?.uom ?? '-')
+            };
+        });
+
+    let wpmActiveIndex = -1;
+    let wpmCurrentResults = [];
 
     function setListLoading(loading) {
         if (!listContainer) return;
@@ -1065,6 +1284,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         updateStatusDisplay('Belum Sampling');
 
+        namaBarangWpmInput.value = '';
+        uomWpmInput.value = '';
+        btnClearMid.classList.add('d-none');
+        closeWpmSuggestions();
+
         clearValidationErrors();
         setLoading(false);
 
@@ -1276,6 +1500,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('mid').value =
                 data.mid ?? '';
 
+            updateWpmDetail();
+
             document.getElementById('no_mobil').value =
                 data.no_mobil ?? '';
 
@@ -1324,7 +1550,293 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    function normalizeWpmText(value) {
+        return String(value ?? '')
+            .trim()
+            .toLowerCase();
+    }
+
+    function closeWpmSuggestions() {
+        wpmSuggestionList.classList.add('d-none');
+        wpmSuggestionList.innerHTML = '';
+        midInput.setAttribute('aria-expanded', 'false');
+        wpmActiveIndex = -1;
+        wpmCurrentResults = [];
+    }
+
+    function setWpmDetail(mid) {
+        const selectedMid = String(mid ?? '').trim();
+        const selectedBarang = masterBarangWpm[selectedMid] ?? null;
+
+        namaBarangWpmInput.value =
+            selectedBarang?.nama_barang ?? '';
+
+        uomWpmInput.value =
+            selectedBarang?.uom ?? '';
+
+        btnClearMid.classList.toggle(
+            'd-none',
+            selectedMid === ''
+        );
+
+        return selectedBarang;
+    }
+
+    function selectWpmItem(item) {
+        if (!item) {
+            return;
+        }
+
+        midInput.value = item.mid;
+        setWpmDetail(item.mid);
+        closeWpmSuggestions();
+
+        midInput.classList.remove('is-invalid');
+
+        const existingFeedback =
+            midInput
+                .closest('.wpm-autosuggest')
+                ?.parentElement
+                ?.querySelector('.ajax-invalid-feedback');
+
+        existingFeedback?.remove();
+    }
+
+    function renderWpmSuggestions(query) {
+        const keyword = normalizeWpmText(query);
+
+        if (keyword === '') {
+            closeWpmSuggestions();
+            return;
+        }
+
+        const startsWithResults = [];
+        const containsResults = [];
+
+        masterBarangWpmList.forEach(function (item) {
+            const mid = normalizeWpmText(item.mid);
+            const name = normalizeWpmText(item.nama_barang);
+            const uom = normalizeWpmText(item.uom);
+
+            const isStartsWith =
+                mid.startsWith(keyword)
+                || name.startsWith(keyword);
+
+            const isContains =
+                mid.includes(keyword)
+                || name.includes(keyword)
+                || uom.includes(keyword);
+
+            if (isStartsWith) {
+                startsWithResults.push(item);
+            } else if (isContains) {
+                containsResults.push(item);
+            }
+        });
+
+        wpmCurrentResults = [
+            ...startsWithResults,
+            ...containsResults
+        ].slice(0, 12);
+
+        wpmActiveIndex = -1;
+
+        if (wpmCurrentResults.length === 0) {
+            wpmSuggestionList.innerHTML = `
+                <div class="wpm-suggestion-empty">
+                    <i class="mdi mdi-magnify-close me-1"></i>
+                    MID atau nama barang tidak ditemukan.
+                </div>
+            `;
+
+            wpmSuggestionList.classList.remove('d-none');
+            midInput.setAttribute('aria-expanded', 'true');
+            return;
+        }
+
+        const itemsHtml = wpmCurrentResults
+            .map(function (item, index) {
+                return `
+                    <button
+                        type="button"
+                        class="wpm-suggestion-item"
+                        data-index="${index}"
+                        role="option"
+                    >
+                        <span class="wpm-suggestion-main">
+                            <span class="wpm-suggestion-mid">
+                                ${escapeHtml(item.mid)}
+                            </span>
+
+                            <span class="wpm-suggestion-name">
+                                ${escapeHtml(item.nama_barang)}
+                            </span>
+                        </span>
+
+                        <span class="wpm-suggestion-uom">
+                            ${escapeHtml(item.uom)}
+                        </span>
+                    </button>
+                `;
+            })
+            .join('');
+
+        wpmSuggestionList.innerHTML = `
+            ${itemsHtml}
+
+            <div class="wpm-suggestion-hint">
+                Menampilkan maksimal 12 hasil. Ketik lebih spesifik untuk mempersempit pencarian.
+            </div>
+        `;
+
+        wpmSuggestionList.classList.remove('d-none');
+        midInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function updateWpmActiveItem() {
+        const items =
+            wpmSuggestionList.querySelectorAll(
+                '.wpm-suggestion-item'
+            );
+
+        items.forEach(function (item, index) {
+            item.classList.toggle(
+                'is-active',
+                index === wpmActiveIndex
+            );
+        });
+
+        if (
+            wpmActiveIndex >= 0
+            && items[wpmActiveIndex]
+        ) {
+            items[wpmActiveIndex].scrollIntoView({
+                block: 'nearest'
+            });
+        }
+    }
+
+    function updateWpmDetail() {
+        const selectedMid =
+            String(midInput.value ?? '').trim();
+
+        setWpmDetail(selectedMid);
+    }
+
+    midInput.addEventListener('input', function () {
+        const typedValue =
+            String(midInput.value ?? '');
+
+        const exactMid =
+            String(typedValue).trim();
+
+        setWpmDetail(exactMid);
+        renderWpmSuggestions(typedValue);
+    });
+
+    midInput.addEventListener('focus', function () {
+        if (String(midInput.value ?? '').trim() !== '') {
+            renderWpmSuggestions(midInput.value);
+        }
+    });
+
+    midInput.addEventListener('keydown', function (event) {
+        if (
+            wpmSuggestionList.classList.contains('d-none')
+            || wpmCurrentResults.length === 0
+        ) {
+            if (
+                event.key === 'ArrowDown'
+                && String(midInput.value ?? '').trim() !== ''
+            ) {
+                renderWpmSuggestions(midInput.value);
+            }
+
+            return;
+        }
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+
+            wpmActiveIndex =
+                Math.min(
+                    wpmActiveIndex + 1,
+                    wpmCurrentResults.length - 1
+                );
+
+            updateWpmActiveItem();
+            return;
+        }
+
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+
+            wpmActiveIndex =
+                Math.max(
+                    wpmActiveIndex - 1,
+                    0
+                );
+
+            updateWpmActiveItem();
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            if (wpmActiveIndex >= 0) {
+                event.preventDefault();
+                selectWpmItem(
+                    wpmCurrentResults[wpmActiveIndex]
+                );
+            }
+
+            return;
+        }
+
+        if (event.key === 'Escape') {
+            closeWpmSuggestions();
+        }
+    });
+
+    wpmSuggestionList.addEventListener(
+        'mousedown',
+        function (event) {
+            const itemButton =
+                event.target.closest(
+                    '.wpm-suggestion-item'
+                );
+
+            if (!itemButton) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const item =
+                wpmCurrentResults[
+                    Number(itemButton.dataset.index)
+                ];
+
+            selectWpmItem(item);
+        }
+    );
+
+    btnClearMid.addEventListener('click', function () {
+        midInput.value = '';
+        namaBarangWpmInput.value = '';
+        uomWpmInput.value = '';
+        btnClearMid.classList.add('d-none');
+        closeWpmSuggestions();
+        midInput.focus();
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!wpmAutosuggest.contains(event.target)) {
+            closeWpmSuggestions();
+        }
+    });
+
     updateStatusDisplay('Belum Sampling');
+    updateWpmDetail();
 
     document.addEventListener('submit', function (event) {
         const deleteForm = event.target.closest('.deleteForm');

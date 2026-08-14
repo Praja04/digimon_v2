@@ -1,4 +1,4 @@
-﻿@extends('layouts.component.main')
+@extends('layouts.component.main')
 
 @section('title', 'Pemeriksaan Berat Karton')
 
@@ -21,10 +21,54 @@
             )
             : [];
 
+    $opsiJenisKetidaksesuaian = [
+        'Dimensi Tidak Standar',
+        'BCT Tidak Standar',
+        'Berat Under',
+        'Berat Over',
+        'Gramasi Tidak Standar',
+        'Barcode Tidak Terbaca',
+        'Design Tidak Sesuai',
+        'Warna Tidak Sesuai',
+        'Tulisan Tidak Sesuai',
+    ];
+
     $jenisKetidaksesuaianTerpilih =
         is_array($sampling?->jenis_ketidaksesuaian)
             ? $sampling->jenis_ketidaksesuaian
             : [];
+
+    $jenisKetidaksesuaianLainnyaTersimpan =
+        collect($jenisKetidaksesuaianTerpilih)
+            ->first(
+                fn ($value) =>
+                    ! in_array(
+                        $value,
+                        $opsiJenisKetidaksesuaian,
+                        true
+                    )
+            );
+
+    $jenisKetidaksesuaianLainnyaValue = old(
+        'jenis_ketidaksesuaian_lainnya',
+        $jenisKetidaksesuaianLainnyaTersimpan
+    );
+
+    $lainnyaTerpilih =
+        filled($jenisKetidaksesuaianLainnyaValue);
+
+    $gramasiTersimpan = collect(
+        $sampling?->hasil_sampel ?? []
+    )
+        ->pluck('gramasi')
+        ->first(
+            fn ($value) => filled($value)
+        );
+
+    $gramasiSpb = old(
+        'gramasi',
+        $gramasiTersimpan
+    );
 @endphp
 
 <div class="page-content">
@@ -39,7 +83,7 @@
                         </h4>
 
                         <p class="text-muted mb-0 mt-1">
-                            Pengisian berat dan gramasi Karton berdasarkan nomor SPB.
+                            Pemeriksaan dimensi, BCT, gramasi, barcode, visual, foto, dan berat Karton berdasarkan nomor SPB.
                         </p>
                     </div>
 
@@ -95,7 +139,7 @@
                         </h2>
 
                         <p class="mb-0">
-                            Pemeriksaan berat, gramasi, dan hasil kesesuaian Karton.
+                            Pemeriksaan lengkap Karton sesuai standar Packaging Online.
                         </p>
                     </div>
 
@@ -178,7 +222,7 @@
 
                     <div class="row g-3 mb-4">
 
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-6 col-md-6">
                             <label
                                 for="jumlah_sampel"
                                 class="form-label"
@@ -201,7 +245,7 @@
                             >
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-6 col-md-6">
                             <label
                                 for="no_batch"
                                 class="form-label"
@@ -221,61 +265,67 @@
                             >
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
+
+
+
+
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-4 col-md-6">
                             <label
-                                for="lot_sebelum"
+                                for="gramasi"
                                 class="form-label"
                             >
-                                Lot Sebelum
+                                Gramasi SPB
                             </label>
 
                             <input
-                                type="text"
-                                name="lot_sebelum"
-                                id="lot_sebelum"
+                                type="number"
+                                name="gramasi"
+                                id="gramasi"
                                 class="form-control"
-                                value="{{ old(
-                                    'lot_sebelum',
-                                    $sampling?->lot_sebelum
-                                ) }}"
+                                step="0.01"
+                                min="0"
+                                value="{{ $gramasiSpb }}"
+                                placeholder="Masukkan gramasi"
                             >
+
+                            <small class="text-muted d-block mt-1">
+                                Gramasi cukup diisi satu kali untuk SPB ini.
+                            </small>
                         </div>
-
-                        <div class="col-xl-3 col-md-6">
-                            <label
-                                for="lot_setelah"
-                                class="form-label"
-                            >
-                                Lot Setelah
-                            </label>
-
-                            <input
-                                type="text"
-                                name="lot_setelah"
-                                id="lot_setelah"
-                                class="form-control"
-                                value="{{ old(
-                                    'lot_setelah',
-                                    $sampling?->lot_setelah
-                                ) }}"
-                            >
-                        </div>
-
                     </div>
 
                     <div class="section-title">
-                        <i class="mdi mdi-scale-balance"></i>
-                        Hasil Pemeriksaan Berat
+                        <i class="mdi mdi-clipboard-text-outline"></i>
+                        Hasil Pemeriksaan Sampel Karton
                     </div>
 
-                    <div class="table-responsive">
+                    <div class="alert alert-info py-2 px-3 mb-3">
+                        <i class="mdi mdi-barcode-scan me-1"></i>
+                        Kolom <strong>No Barcode</strong> dapat diisi manual
+                        atau langsung menggunakan barcode scanner fisik (HID/keyboard).
+                    </div>
+
+                    <div class="table-responsive inspection-table-wrapper">
                         <table class="table table-bordered align-middle inspection-table">
                             <thead>
                                 <tr>
                                     <th>No. Sampel</th>
-                                    <th>Berat</th>
+                                    <th>Panjang (mm)</th>
+                                    <th>Lebar (mm)</th>
+                                    <th>Tinggi (mm)</th>
+                                    <th>BCT (kgf)</th>
+                                    <th>Scan Barcode</th>
+                                    <th>No Batch/Lot</th>
+                                    <th>No Barcode</th>
+                                    <th>Design</th>
+                                    <th>Warna</th>
+                                    <th>Tulisan</th>
+                                    <th>Foto</th>
+                                    <th>Berat<br><small>(xx dari 20)</small></th>
                                     <th>Hasil Berat</th>
-                                    <th>Gramasi</th>
                                 </tr>
                             </thead>
 
@@ -466,11 +516,7 @@
                             </label>
 
                             <div class="checkbox-card">
-                                @foreach ([
-                                    'Berat Under',
-                                    'Berat Over',
-                                    'Gramasi Tidak Standar',
-                                ] as $item)
+                                @foreach ($opsiJenisKetidaksesuaian as $item)
                                     <div class="form-check mb-2">
                                         <input
                                             type="checkbox"
@@ -495,6 +541,47 @@
                                         </label>
                                     </div>
                                 @endforeach
+
+                                <div class="form-check mb-0">
+                                    <input
+                                        type="checkbox"
+                                        name="jenis_ketidaksesuaian[]"
+                                        value="Lainnya"
+                                        id="jenis_lainnya"
+                                        class="form-check-input jenis-ketidaksesuaian"
+                                        @checked($lainnyaTerpilih)
+                                    >
+
+                                    <label
+                                        for="jenis_lainnya"
+                                        class="form-check-label"
+                                    >
+                                        Lainnya
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div
+                                id="jenisLainnyaWrapper"
+                                class="mt-3 {{ $lainnyaTerpilih ? '' : 'd-none' }}"
+                            >
+                                <label
+                                    for="jenis_ketidaksesuaian_lainnya"
+                                    class="form-label"
+                                >
+                                    Jenis Ketidaksesuaian Lainnya
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="jenis_ketidaksesuaian_lainnya"
+                                    id="jenis_ketidaksesuaian_lainnya"
+                                    class="form-control"
+                                    maxlength="255"
+                                    value="{{ $jenisKetidaksesuaianLainnyaValue }}"
+                                    placeholder="Tulis jenis ketidaksesuaian lainnya"
+                                >
                             </div>
                         </div>
 
@@ -711,11 +798,62 @@
         font-weight: 700;
     }
 
+    .inspection-table-wrapper {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+    }
+
+    .inspection-table {
+        min-width: 2100px;
+        margin-bottom: 0;
+    }
+
     .inspection-table thead th {
-        min-width: 170px;
+        padding: 10px 8px;
         background: #f1f5f9;
         text-align: center;
         vertical-align: middle;
+        white-space: nowrap;
+        font-size: 13px;
+    }
+
+    .inspection-table tbody td {
+        padding: 8px;
+        vertical-align: middle;
+    }
+
+    .inspection-table th:first-child,
+    .inspection-table td:first-child {
+        width: 85px;
+        min-width: 85px;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #ffffff;
+    }
+
+    .inspection-table thead th:first-child {
+        z-index: 3;
+        background: #f1f5f9;
+    }
+
+    .inspection-table input,
+    .inspection-table select {
+        min-width: 115px;
+    }
+
+    .inspection-table .barcode-input {
+        min-width: 190px;
+    }
+
+    .inspection-table .foto-sample-input {
+        min-width: 160px;
+    }
+
+    .sample-photo-saved {
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
         white-space: nowrap;
     }
 
@@ -793,6 +931,21 @@ document.addEventListener(
                 'fotoKetidaksesuaianWrapper'
             );
 
+        const jenisLainnyaCheckbox =
+            document.getElementById(
+                'jenis_lainnya'
+            );
+
+        const jenisLainnyaWrapper =
+            document.getElementById(
+                'jenisLainnyaWrapper'
+            );
+
+        const jenisLainnyaInput =
+            document.getElementById(
+                'jenis_ketidaksesuaian_lainnya'
+            );
+
         const submitButton =
             document.getElementById(
                 'submitButton'
@@ -829,6 +982,17 @@ document.addEventListener(
                 .replaceAll("'", '&#039;');
         }
 
+        function option(value, current, label = value) {
+            return `
+                <option
+                    value="${escapeHtml(value)}"
+                    ${current === value ? 'selected' : ''}
+                >
+                    ${escapeHtml(label)}
+                </option>
+            `;
+        }
+
         function buildRows(total) {
             const safeTotal = Math.max(
                 1,
@@ -848,11 +1012,24 @@ document.addEventListener(
                 const sample =
                     savedSamples[index] ?? {};
 
+                const savedFoto = sample.foto
+                    ? `
+                        <a
+                            href="/storage/${escapeHtml(sample.foto)}"
+                            target="_blank"
+                            class="sample-photo-saved"
+                        >
+                            <i class="mdi mdi-image-outline"></i>
+                            Lihat foto
+                        </a>
+                    `
+                    : '';
+
                 rowsContainer.insertAdjacentHTML(
                     'beforeend',
                     `
                         <tr>
-                            <td class="text-center">
+                            <td class="text-center fw-semibold">
                                 ${index + 1}
                             </td>
 
@@ -861,43 +1038,11 @@ document.addEventListener(
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    name="samples[${index}][berat]"
-                                    value="${escapeHtml(sample.berat)}"
-                                    class="form-control"
+                                    name="samples[${index}][panjang]"
+                                    value="${escapeHtml(sample.panjang)}"
+                                    class="form-control form-control-sm"
+                                    placeholder="mm"
                                 >
-                            </td>
-
-                            <td>
-                                <select
-                                    name="samples[${index}][hasil_berat]"
-                                    class="form-select"
-                                >
-                                    <option value="">
-                                        Pilih
-                                    </option>
-
-                                    <option
-                                        value="OK"
-                                        ${
-                                            sample.hasil_berat === 'OK'
-                                                ? 'selected'
-                                                : ''
-                                        }
-                                    >
-                                        OK
-                                    </option>
-
-                                    <option
-                                        value="NOK"
-                                        ${
-                                            sample.hasil_berat === 'NOK'
-                                                ? 'selected'
-                                                : ''
-                                        }
-                                    >
-                                        NOK
-                                    </option>
-                                </select>
                             </td>
 
                             <td>
@@ -905,15 +1050,186 @@ document.addEventListener(
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    name="samples[${index}][gramasi]"
-                                    value="${escapeHtml(sample.gramasi)}"
-                                    class="form-control"
+                                    name="samples[${index}][lebar]"
+                                    value="${escapeHtml(sample.lebar)}"
+                                    class="form-control form-control-sm"
+                                    placeholder="mm"
                                 >
+                            </td>
+
+                            <td>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    name="samples[${index}][tinggi]"
+                                    value="${escapeHtml(sample.tinggi)}"
+                                    class="form-control form-control-sm"
+                                    placeholder="mm"
+                                >
+                            </td>
+
+                            <td>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    name="samples[${index}][bct]"
+                                    value="${escapeHtml(sample.bct)}"
+                                    class="form-control form-control-sm"
+                                    placeholder="kgf"
+                                >
+                            </td>
+
+                            <td>
+                                <select
+                                    name="samples[${index}][scan_barcode]"
+                                    class="form-select form-select-sm"
+                                >
+                                    <option value="">Pilih</option>
+                                    ${option(
+                                        'Terbaca',
+                                        sample.scan_barcode
+                                    )}
+                                    ${option(
+                                        'Tidak Terbaca',
+                                        sample.scan_barcode
+                                    )}
+                                </select>
+                            </td>
+
+                            <td>
+                                <input
+                                    type="text"
+                                    name="samples[${index}][no_batch_lot]"
+                                    value="${escapeHtml(sample.no_batch_lot)}"
+                                    class="form-control form-control-sm"
+                                    placeholder="No batch/lot"
+                                >
+                            </td>
+
+                            <td>
+                                <input
+                                    type="text"
+                                    name="samples[${index}][no_barcode]"
+                                    value="${escapeHtml(sample.no_barcode)}"
+                                    class="form-control form-control-sm barcode-input"
+                                    data-barcode-index="${index}"
+                                    autocomplete="off"
+                                    placeholder="Scan / ketik barcode"
+                                >
+                            </td>
+
+                            <td>
+                                <select
+                                    name="samples[${index}][design]"
+                                    class="form-select form-select-sm"
+                                >
+                                    <option value="">Pilih</option>
+                                    ${option('OK', sample.design)}
+                                    ${option('NOK', sample.design)}
+                                </select>
+                            </td>
+
+                            <td>
+                                <select
+                                    name="samples[${index}][warna]"
+                                    class="form-select form-select-sm"
+                                >
+                                    <option value="">Pilih</option>
+                                    ${option('OK', sample.warna)}
+                                    ${option('NOK', sample.warna)}
+                                </select>
+                            </td>
+
+                            <td>
+                                <select
+                                    name="samples[${index}][tulisan]"
+                                    class="form-select form-select-sm"
+                                >
+                                    <option value="">Pilih</option>
+                                    ${option('OK', sample.tulisan)}
+                                    ${option('NOK', sample.tulisan)}
+                                </select>
+                            </td>
+
+                            <td>
+                                <input
+                                    type="file"
+                                    name="samples[${index}][foto]"
+                                    accept="image/*"
+                                    class="form-control form-control-sm foto-sample-input"
+                                >
+                                ${savedFoto}
+                            </td>
+
+                            <td>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    name="samples[${index}][berat]"
+                                    value="${escapeHtml(sample.berat)}"
+                                    class="form-control form-control-sm"
+                                    placeholder="0 - 20"
+                                >
+                                <small class="text-muted">
+                                    ${escapeHtml(sample.berat || 0)} dari 20
+                                </small>
+                            </td>
+
+                            <td>
+                                <select
+                                    name="samples[${index}][hasil_berat]"
+                                    class="form-select form-select-sm"
+                                >
+                                    <option value="">Pilih</option>
+                                    ${option(
+                                        'OK',
+                                        sample.hasil_berat
+                                    )}
+                                    ${option(
+                                        'NOK',
+                                        sample.hasil_berat
+                                    )}
+                                </select>
                             </td>
                         </tr>
                     `
                 );
             }
+
+            bindBarcodeInputs();
+        }
+
+        function bindBarcodeInputs() {
+            rowsContainer
+                .querySelectorAll('.barcode-input')
+                .forEach(function (input) {
+                    input.addEventListener(
+                        'keydown',
+                        function (event) {
+                            if (event.key !== 'Enter') {
+                                return;
+                            }
+
+                            event.preventDefault();
+
+                            const row =
+                                input.closest('tr');
+
+                            const designSelect =
+                                row?.querySelector(
+                                    'select[name$="[design]"]'
+                                );
+
+                            if (designSelect) {
+                                designSelect.focus();
+                            }
+                        }
+                    );
+                });
         }
 
         function showAlert(
@@ -1070,6 +1386,25 @@ document.addEventListener(
 
             fotoKetidaksesuaianInput
                 .disabled = !ada;
+
+            const tampilkanLainnya =
+                ada
+                && jenisLainnyaCheckbox.checked;
+
+            jenisLainnyaWrapper.classList.toggle(
+                'd-none',
+                !tampilkanLainnya
+            );
+
+            jenisLainnyaInput.disabled =
+                !tampilkanLainnya;
+
+            jenisLainnyaInput.required =
+                tampilkanLainnya;
+
+            if (!tampilkanLainnya) {
+                jenisLainnyaInput.value = '';
+            }
         }
 
         jumlahInput.addEventListener(
@@ -1083,6 +1418,28 @@ document.addEventListener(
             'change',
             updateKetidaksesuaian
         );
+
+        document
+            .querySelectorAll(
+                '.jenis-ketidaksesuaian'
+            )
+            .forEach(function (checkbox) {
+                checkbox.addEventListener(
+                    'change',
+                    function () {
+                        if (
+                            checkbox.checked
+                            && konfirmasiSelect.value
+                                !== 'Ada'
+                        ) {
+                            konfirmasiSelect.value =
+                                'Ada';
+                        }
+
+                        updateKetidaksesuaian();
+                    }
+                );
+            });
 
         let stream = null;
         let activeInputId = null;
@@ -1281,6 +1638,21 @@ document.addEventListener(
                         'danger',
                         'Pilih minimal satu jenis ketidaksesuaian.'
                     );
+
+                    return;
+                }
+
+                if (
+                    konfirmasiSelect.value === 'Ada'
+                    && jenisLainnyaCheckbox.checked
+                    && jenisLainnyaInput.value.trim() === ''
+                ) {
+                    showAlert(
+                        'danger',
+                        'Jenis ketidaksesuaian lainnya wajib diisi.'
+                    );
+
+                    jenisLainnyaInput.focus();
 
                     return;
                 }

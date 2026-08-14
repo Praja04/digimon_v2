@@ -8,10 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('jenis_incomings', function (Blueprint $table) {
+        if (Schema::hasTable('jenis_incomings')) {
+            return;
+        }
+
+        Schema::create('jenis_incomings', function (Blueprint $table): void {
             $table->id();
-            $table->string('kategori', 50)->default('PM');
-            $table->string('nama', 100);
+            $table->string('kategori', 50);
+            $table->string('nama', 255);
             $table->boolean('status')->default(true);
             $table->timestamps();
         });

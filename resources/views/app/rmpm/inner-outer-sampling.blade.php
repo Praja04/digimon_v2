@@ -31,12 +31,50 @@
         $sampling?->foto_ketidaksesuaian ?? []
     )->filter()->values()->all();
 
+    $nonconformityOptions = [
+        'Miss Print',
+        'Berat Under',
+        'Dimensi Tidak Standar',
+        'Pitch Under',
+        'Delaminasi',
+        'Salah Design',
+        'Barcode Tidak Terbaca',
+    ];
+
+    $savedJenisKetidaksesuaian = collect(
+        $sampling?->jenis_ketidaksesuaian ?? []
+    )->filter()->values()->all();
+
+    $customJenisTersimpan = collect(
+        $savedJenisKetidaksesuaian
+    )->first(
+        fn ($value) =>
+            ! in_array(
+                $value,
+                $nonconformityOptions,
+                true
+            )
+    );
+
     $selectedJenisKetidaksesuaian = collect(
         old(
             'jenis_ketidaksesuaian',
-            $sampling?->jenis_ketidaksesuaian ?? []
+            $savedJenisKetidaksesuaian
         )
     )->filter()->values()->all();
+
+    $jenisLainnyaValue = old(
+        'jenis_ketidaksesuaian_lainnya',
+        $customJenisTersimpan
+    );
+
+    $lainnyaSelected =
+        in_array(
+            'Lainnya',
+            $selectedJenisKetidaksesuaian,
+            true
+        )
+        || filled($jenisLainnyaValue);
 @endphp
 
 <div class="page-content">
@@ -518,26 +556,59 @@
                                 id="jenisKetidaksesuaianGroup"
                                 class="nonconformity-grid"
                             >
-                                @foreach ([
-                                    'Miss Print',
-                                    'Berat Under',
-                                    'Dimensi Tidak Standar',
-                                    'Pitch Under',
-                                    'Delaminasi',
-                                    'Salah Design',
-                                    'Barcode Tidak Terbaca',
-                                ] as $option)
+                                @foreach ($nonconformityOptions as $option)
                                     <label class="nonconformity-option">
                                         <input
                                             type="checkbox"
                                             name="jenis_ketidaksesuaian[]"
                                             value="{{ $option }}"
+                                            class="jenis-ketidaksesuaian-checkbox"
                                             @checked(in_array($option, $selectedJenisKetidaksesuaian, true))
                                         >
 
                                         <span>{{ $option }}</span>
                                     </label>
                                 @endforeach
+
+                                <label class="nonconformity-option">
+                                    <input
+                                        type="checkbox"
+                                        name="jenis_ketidaksesuaian[]"
+                                        value="Lainnya"
+                                        id="jenisKetidaksesuaianLainnyaCheckbox"
+                                        class="jenis-ketidaksesuaian-checkbox"
+                                        @checked($lainnyaSelected)
+                                    >
+
+                                    <span>Lainnya</span>
+                                </label>
+                            </div>
+
+                            <div
+                                id="jenisKetidaksesuaianLainnyaWrap"
+                                class="mt-3 {{ $lainnyaSelected ? '' : 'd-none' }}"
+                            >
+                                <label
+                                    for="jenis_ketidaksesuaian_lainnya"
+                                    class="form-label"
+                                >
+                                    Jenis Ketidaksesuaian Lainnya
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="jenis_ketidaksesuaian_lainnya"
+                                    id="jenis_ketidaksesuaian_lainnya"
+                                    class="form-control"
+                                    value="{{ $jenisLainnyaValue }}"
+                                    maxlength="255"
+                                    placeholder="Tulis jenis ketidaksesuaian lainnya"
+                                >
+
+                                <small class="text-muted d-block mt-1">
+                                    Isi jenis ketidaksesuaian yang belum tersedia pada pilihan.
+                                </small>
                             </div>
 
                             <small
@@ -939,6 +1010,9 @@
         const konfirmasiSelect = document.getElementById('konfirmasi_ketidaksesuaian');
         const jenisKetidaksesuaianGroup = document.getElementById('jenisKetidaksesuaianGroup');
         const jenisKetidaksesuaianHelp = document.getElementById('jenisKetidaksesuaianHelp');
+        const lainnyaCheckbox = document.getElementById('jenisKetidaksesuaianLainnyaCheckbox');
+        const lainnyaWrap = document.getElementById('jenisKetidaksesuaianLainnyaWrap');
+        const lainnyaInput = document.getElementById('jenis_ketidaksesuaian_lainnya');
         const fotoPengecekanInput = document.getElementById('foto_pengecekan');
         const fotoKetidaksesuaianInput = document.getElementById('foto_ketidaksesuaian');
         const fotoKetidaksesuaianHelp = document.getElementById('fotoKetidaksesuaianHelp');
@@ -1240,6 +1314,27 @@
             ).length;
         }
 
+        function updateLainnyaField() {
+            const showLainnya =
+                konfirmasiSelect.value === 'Ada'
+                && lainnyaCheckbox.checked;
+
+            lainnyaWrap.classList.toggle(
+                'd-none',
+                !showLainnya
+            );
+
+            lainnyaInput.disabled =
+                !showLainnya;
+
+            lainnyaInput.required =
+                showLainnya;
+
+            if (!showLainnya) {
+                lainnyaInput.value = '';
+            }
+        }
+
         function updateKetidaksesuaianFields() {
             const adaKetidaksesuaian =
                 konfirmasiSelect.value === 'Ada';
@@ -1266,6 +1361,8 @@
             fotoKetidaksesuaianHelp.textContent = adaKetidaksesuaian
                 ? 'Wajib minimal 1 foto. Maksimal 10 foto.'
                 : 'Tidak wajib apabila hasil pemeriksaan sesuai.';
+
+            updateLainnyaField();
         }
 
         function mergeFiles(input, files) {
@@ -1413,7 +1510,33 @@
             stopCamera
         );
 
-        konfirmasiSelect.addEventListener('change', updateKetidaksesuaianFields);
+        konfirmasiSelect.addEventListener(
+            'change',
+            updateKetidaksesuaianFields
+        );
+
+        jenisKetidaksesuaianGroup
+            .querySelectorAll('input[type="checkbox"]')
+            .forEach(function (checkbox) {
+                checkbox.addEventListener(
+                    'change',
+                    function () {
+                        if (
+                            checkbox.checked
+                            && konfirmasiSelect.value !== 'Ada'
+                        ) {
+                            konfirmasiSelect.value = 'Ada';
+                        }
+
+                        updateKetidaksesuaianFields();
+                    }
+                );
+            });
+
+        lainnyaCheckbox.addEventListener(
+            'change',
+            updateLainnyaField
+        );
 
         jumlahSampelInput.addEventListener(
             'input',
@@ -1454,6 +1577,15 @@
                     if (konfirmasiSelect.value === 'Ada') {
                         if (getCheckedKetidaksesuaianCount() < 1) {
                             alert('Pilih minimal satu jenis ketidaksesuaian.');
+                            return;
+                        }
+
+                        if (
+                            lainnyaCheckbox.checked
+                            && lainnyaInput.value.trim() === ''
+                        ) {
+                            alert('Jenis ketidaksesuaian lainnya wajib diisi.');
+                            lainnyaInput.focus();
                             return;
                         }
 
