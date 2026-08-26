@@ -8,9 +8,11 @@ use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
 use App\Http\Controllers\Controller;
 use App\Models\Pelarutan1;
+use App\Models\Pelarutan1Draft;
 
 class Pelarutan1Controller extends Controller
 {
@@ -73,24 +75,38 @@ class Pelarutan1Controller extends Controller
                     </a>
                 ';
                 })
-                ->rawColumns(['pelarutan_1_count', 'status_pelarutan_1', 'action'])
+                ->rawColumns([
+                    'pelarutan_1_count',
+                    'status_pelarutan_1',
+                    'action'
+                ])
                 ->make(true);
         }
+
         return view('app.pelarutan_1.index');
     }
 
     public function show($id)
     {
-        $productionBatch = ProductionBatch::with('pelarutan_1')->findOrFail($id);
+        $productionBatch = ProductionBatch::with('pelarutan_1')
+            ->findOrFail($id);
 
         $suhuData = [];
+
         if ($productionBatch->pelarutan_1->isNotEmpty()) {
-            $ids = $productionBatch->pelarutan_1->pluck('id')->toArray();
+            $ids = $productionBatch->pelarutan_1
+                ->pluck('id')
+                ->toArray();
+
             try {
-                $response = \Illuminate\Support\Facades\Http::post(env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch', [
-                    'ids' => $ids,
-                    'type' => 'pelarutan_1'
-                ]);
+                $response = Http::post(
+                    env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch',
+                    [
+                        'ids' => $ids,
+                        'type' => 'pelarutan_1'
+                    ]
+                );
+
                 if ($response->successful()) {
                     $suhuData = $response->json('data') ?? [];
                 }
@@ -99,30 +115,215 @@ class Pelarutan1Controller extends Controller
             }
         }
 
-        return view('app.pelarutan_1.show', compact(['productionBatch', 'suhuData']));
+        return view(
+            'app.pelarutan_1.show',
+            compact(['productionBatch', 'suhuData'])
+        );
     }
 
     public function show_batch($id)
     {
-        $pelarutan_1 = Pelarutan1::with('productionBatch')->findOrFail($id);
+        $pelarutan_1 = Pelarutan1::with('productionBatch')
+            ->findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | TAMBAHAN DRAFT
+        |--------------------------------------------------------------------------
+        */
+        $draft = Pelarutan1Draft::where(
+            'pelarutan_1_id',
+            $pelarutan_1->id
+        )->first();
 
         try {
-            $response = \Illuminate\Support\Facades\Http::post(env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch', [
-                'ids' => [$id],
-                'type' => 'pelarutan_1'
-            ]);
+            $response = Http::post(
+                env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch',
+                [
+                    'ids' => [$id],
+                    'type' => 'pelarutan_1'
+                ]
+            );
+
             if ($response->successful()) {
                 $suhuData = $response->json("data.{$id}");
+
                 if ($suhuData) {
-                    $pelarutan_1->suhu = $suhuData['suhu'] ?? null;
-                    $pelarutan_1->jam_mulai = $suhuData['jam_mulai'] ?? null;
+                    $pelarutan_1->suhu =
+                        $suhuData['suhu'] ?? null;
+
+                    $pelarutan_1->jam_mulai =
+                        $suhuData['jam_mulai'] ?? null;
                 }
             }
         } catch (\Exception $e) {
             // Ignore
         }
 
-        return view('app.pelarutan_1.show_batch', compact(['pelarutan_1']));
+        return view(
+            'app.pelarutan_1.show_batch',
+            compact(['pelarutan_1', 'draft'])
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN SEMENTARA
+    |--------------------------------------------------------------------------
+    */
+    public function saveDraft(Request $request)
+    {
+        if (auth()->user()->role !== 'Analis Kimia') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya Analis Kimia yang dapat menyimpan sementara.'
+            ], 403);
+        }
+
+        $data = $request->all();
+
+        /*
+        |--------------------------------------------------------------------------
+        | NORMALISASI DESIMAL
+        |--------------------------------------------------------------------------
+        */
+        foreach ([
+            'brix',
+            'nacl',
+            'adjustment_qty_gula_tebu',
+            'adjustment_qty_gula_kelapa'
+        ] as $field) {
+            if (
+                isset($data[$field]) &&
+                is_string($data[$field]) &&
+                $data[$field] !== ''
+            ) {
+                $cleanedValue = str_replace(
+                    ' ',
+                    '',
+                    $data[$field]
+                );
+
+                $data[$field] = str_replace(
+                    ',',
+                    '.',
+                    $cleanedValue
+                );
+            }
+        }
+
+        $validator = Validator::make($data, [
+            'id' => [
+                'required',
+                'integer',
+                'exists:pelarutan_1,id'
+            ],
+
+            'brix' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:100'
+            ],
+
+            'nacl' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:100'
+            ],
+
+            'organo' => [
+                'nullable',
+                'string'
+            ],
+
+            'status_disposition' => [
+                'nullable'
+            ],
+
+            'disposition_remark' => [
+                'nullable',
+                'string',
+                'max:255'
+            ],
+
+            'adjustment_qty_gula_tebu' => [
+                'nullable',
+                'numeric'
+            ],
+
+            'adjustment_qty_gula_kelapa' => [
+                'nullable',
+                'numeric'
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data sementara tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $pelarutan_1 = Pelarutan1::findOrFail(
+            $data['id']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | JIKA SUDAH FINAL, JANGAN BUAT DRAFT BARU
+        |--------------------------------------------------------------------------
+        */
+        if (!is_null($pelarutan_1->status)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data ini sudah disimpan final.'
+            ], 409);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SATU ID PELARUTAN = SATU DRAFT
+        |--------------------------------------------------------------------------
+        */
+        $draft = Pelarutan1Draft::updateOrCreate(
+            [
+                'pelarutan_1_id' => $pelarutan_1->id
+            ],
+            [
+                'brix' =>
+                    $data['brix'] ?? null,
+
+                'nacl' =>
+                    $data['nacl'] ?? null,
+
+                'organo' =>
+                    $data['organo'] ?? null,
+
+                'status_disposition' =>
+                    $data['status_disposition'] ?? null,
+
+                'disposition_remark' =>
+                    $data['disposition_remark'] ?? null,
+
+                'adjustment_qty_gula_tebu' =>
+                    $data['adjustment_qty_gula_tebu'] ?? null,
+
+                'adjustment_qty_gula_kelapa' =>
+                    $data['adjustment_qty_gula_kelapa'] ?? null,
+
+                'created_by' =>
+                    auth()->id(),
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data berhasil disimpan sementara.',
+            'data' => $draft,
+        ], 200);
     }
 
     public function edit($id)
@@ -138,15 +339,24 @@ class Pelarutan1Controller extends Controller
             }
 
             try {
-                $response = \Illuminate\Support\Facades\Http::post(env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch', [
-                    'ids' => [$id],
-                    'type' => 'pelarutan_1'
-                ]);
+                $response = Http::post(
+                    env('PRODUCTION_URL') . 'api/pelarutan-suhu-batch',
+                    [
+                        'ids' => [$id],
+                        'type' => 'pelarutan_1'
+                    ]
+                );
+
                 if ($response->successful()) {
-                    $suhuData = $response->json("data.{$id}");
+                    $suhuData =
+                        $response->json("data.{$id}");
+
                     if ($suhuData) {
-                        $data->suhu = $suhuData['suhu'] ?? null;
-                        $data->jam_mulai = $suhuData['jam_mulai'] ?? null;
+                        $data->suhu =
+                            $suhuData['suhu'] ?? null;
+
+                        $data->jam_mulai =
+                            $suhuData['jam_mulai'] ?? null;
                     }
                 }
             } catch (\Exception $e) {
@@ -154,6 +364,7 @@ class Pelarutan1Controller extends Controller
             }
 
             return response()->json($data);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -168,308 +379,605 @@ class Pelarutan1Controller extends Controller
         DB::beginTransaction();
 
         try {
-            $pelarutan_1 = Pelarutan1::findOrFail($request->id);
-            $isUpdate = !is_null($pelarutan_1->status);
-            $userRole = auth()->user()->role;
+            $pelarutan_1 = Pelarutan1::findOrFail(
+                $request->id
+            );
 
-            // Validasi akses berdasarkan role
+            $isUpdate =
+                !is_null($pelarutan_1->status);
+
+            $userRole =
+                auth()->user()->role;
+
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDASI ROLE - ASLI
+            |--------------------------------------------------------------------------
+            */
             if ($userRole === 'Analis Kimia') {
+
                 if (!is_null($pelarutan_1->disposition)) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Data sudah di disposisi oleh Foreman. Tidak dapat diubah.'
+                        'message' =>
+                            'Data sudah di disposisi oleh Foreman. Tidak dapat diubah.'
                     ], 403);
                 }
+
             } elseif ($userRole === 'Foreman') {
+
                 if (is_null($pelarutan_1->status)) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
+                        'message' =>
+                            'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
                     ], 403);
                 }
             }
 
-            $status_disposition = $request->status_disposition;
-            $remark = $request->disposition_remark ?? null;
-            $disposition = $request->disposition ?? null;
+            $status_disposition =
+                $request->status_disposition;
 
-            // Validasi enum disposition (khusus Foreman)
-            $allowedDispositions = ['Release', 'Release Bersyarat', 'Resampling', 'Reject', 'Adjustment', 'Repro'];
+            $remark =
+                $request->disposition_remark ?? null;
+
+            $disposition =
+                $request->disposition ?? null;
+
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDASI DISPOSITION - ASLI
+            |--------------------------------------------------------------------------
+            */
+            $allowedDispositions = [
+                'Release',
+                'Release Bersyarat',
+                'Resampling',
+                'Reject',
+                'Adjustment',
+                'Repro'
+            ];
 
             if ($userRole === 'Foreman') {
+
                 if (!$request->filled('disposition')) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Foreman wajib memilih disposisi.'
+                        'message' =>
+                            'Foreman wajib memilih disposisi.'
                     ], 409);
                 }
 
-                if (!in_array($disposition, $allowedDispositions)) {
+                if (!in_array(
+                    $disposition,
+                    $allowedDispositions
+                )) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Disposition tidak valid.'
+                        'message' =>
+                            'Disposition tidak valid.'
                     ], 422);
                 }
 
-                // 🔥 Override status jika Release / Release Bersyarat
-                if (in_array($disposition, ['Release', 'Release Bersyarat'])) {
+                if (in_array(
+                    $disposition,
+                    ['Release', 'Release Bersyarat']
+                )) {
                     $status_disposition = 'OK';
                 }
             }
 
-            // Validasi remark wajib
-            if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
+            /*
+            |--------------------------------------------------------------------------
+            | REMARK - ASLI
+            |--------------------------------------------------------------------------
+            */
+            if (
+                in_array(
+                    $status_disposition,
+                    ['NOT OK', 'Adjustment']
+                ) &&
+                empty($remark)
+            ) {
                 DB::rollBack();
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.'
+                    'message' =>
+                        'Kolom keterangan (remarks) wajib diisi untuk status ini.'
                 ], 409);
             }
 
-            // Cek perubahan status
-            $statusChanged = ($pelarutan_1->status !== $status_disposition);
+            $statusChanged =
+                $pelarutan_1->status !==
+                $status_disposition;
 
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE DATA - ASLI
+            |--------------------------------------------------------------------------
+            */
             $updateData = [
-                'brix' => $request->brix,
-                'nacl' => $request->nacl,
-                'organo' => $request->organo,
-                'disposition_remark' => $remark,
-                'status' => $status_disposition,
+                'brix' =>
+                    $request->brix,
+
+                'nacl' =>
+                    $request->nacl,
+
+                'organo' =>
+                    $request->organo,
+
+                'disposition_remark' =>
+                    $remark,
+
+                'status' =>
+                    $status_disposition,
             ];
 
             if ($userRole === 'Analis Kimia') {
+
                 $updateData['disposition'] = null;
 
                 if (!$isUpdate) {
-                    $updateData['created_by'] = auth()->user()->id;
+                    $updateData['created_by'] =
+                        auth()->user()->id;
                 }
+
             } elseif ($userRole === 'Foreman') {
-                $updateData['disposition'] = $disposition;
+
+                $updateData['disposition'] =
+                    $disposition;
             }
 
-            // =========================
-            // HANDLE ADJUSTMENT
-            // =========================
+            /*
+            |--------------------------------------------------------------------------
+            | ADJUSTMENT - ASLI
+            |--------------------------------------------------------------------------
+            */
             $adjustmentGulaTebu = null;
             $adjustmentGulaKelapa = null;
 
-            if ($status_disposition === 'Adjustment') {
-                if (!empty($request->adjustment_qty_gula_tebu)) {
-                    $adjustmentGulaTebu = str_replace(',', '.', $request->adjustment_qty_gula_tebu);
+            if (
+                $status_disposition === 'Adjustment'
+            ) {
+                if (
+                    !empty(
+                        $request->adjustment_qty_gula_tebu
+                    )
+                ) {
+                    $adjustmentGulaTebu =
+                        str_replace(
+                            ',',
+                            '.',
+                            $request->adjustment_qty_gula_tebu
+                        );
                 }
 
-                if (!empty($request->adjustment_qty_gula_kelapa)) {
-                    $adjustmentGulaKelapa = str_replace(',', '.', $request->adjustment_qty_gula_kelapa);
+                if (
+                    !empty(
+                        $request->adjustment_qty_gula_kelapa
+                    )
+                ) {
+                    $adjustmentGulaKelapa =
+                        str_replace(
+                            ',',
+                            '.',
+                            $request->adjustment_qty_gula_kelapa
+                        );
                 }
 
-                $updateData['adjustment_qty_gula_tebu'] = $adjustmentGulaTebu;
-                $updateData['adjustment_qty_gula_kelapa'] = $adjustmentGulaKelapa;
+                $updateData['adjustment_qty_gula_tebu'] =
+                    $adjustmentGulaTebu;
+
+                $updateData['adjustment_qty_gula_kelapa'] =
+                    $adjustmentGulaKelapa;
+
                 $updateData['not_standard'] = true;
+
             } else {
+
                 if ($statusChanged) {
-                    $updateData['adjustment_qty_gula_tebu'] = null;
-                    $updateData['adjustment_qty_gula_kelapa'] = null;
-                    $updateData['not_standard'] = false;
+                    $updateData['adjustment_qty_gula_tebu'] =
+                        null;
+
+                    $updateData['adjustment_qty_gula_kelapa'] =
+                        null;
+
+                    $updateData['not_standard'] =
+                        false;
                 }
             }
 
-            // =========================
-            // HANDLE RESAMPLING
-            // =========================
-            if ($userRole === 'Foreman' && $disposition === 'Resampling') {
-                $updateData['disposition_remark'] = $remark
-                    ? $remark . ' (Resampling)'
-                    : 'Resampling';
+            /*
+            |--------------------------------------------------------------------------
+            | RESAMPLING - ASLI
+            |--------------------------------------------------------------------------
+            */
+            if (
+                $userRole === 'Foreman' &&
+                $disposition === 'Resampling'
+            ) {
+                $updateData['disposition_remark'] =
+                    $remark
+                        ? $remark . ' (Resampling)'
+                        : 'Resampling';
 
-                $updateData['not_standard'] = true;
+                $updateData['not_standard'] =
+                    true;
             }
 
-            // =========================
-            // HANDLE REVISI
-            // =========================
-            $updateData['revisi'] = $request->filled('revisi')
-            ? $request->revisi
-                : $pelarutan_1->revisi;
+            /*
+            |--------------------------------------------------------------------------
+            | REVISI - ASLI
+            |--------------------------------------------------------------------------
+            */
+            $updateData['revisi'] =
+                $request->filled('revisi')
+                    ? $request->revisi
+                    : $pelarutan_1->revisi;
 
-            // =========================
-            // UPDATE DB
-            // =========================
-            $pelarutan_1->update($updateData);
+            /*
+            |--------------------------------------------------------------------------
+            | SIMPAN FINAL KE DB - ASLI
+            |--------------------------------------------------------------------------
+            */
+            $pelarutan_1->update(
+                $updateData
+            );
 
-            // =========================
-            // BUILD REMARK API
-            // =========================
-            if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
+            /*
+            |--------------------------------------------------------------------------
+            | REMARK API - ASLI
+            |--------------------------------------------------------------------------
+            */
+            if (
+                $remark !== null &&
+                $remark !== '-' &&
+                $status_disposition !== 'Adjustment'
+            ) {
                 $remarkText = $remark;
-            } elseif ($status_disposition === 'Adjustment') {
+
+            } elseif (
+                $status_disposition === 'Adjustment'
+            ) {
                 $remarkText = sprintf(
                     'Adjustment Gula Tebu: %s Kg, Gula Kelapa: %s Kg',
                     $adjustmentGulaTebu ?? 0,
                     $adjustmentGulaKelapa ?? 0
                 );
+
             } else {
+
                 $remarkText = '-';
             }
 
-            $jamSelesai = ($status_disposition === 'OK')
-            ? now()->format('Y-m-d H:i:s')
-            : null;
+            $jamSelesai =
+                ($status_disposition === 'OK')
+                    ? now()->format('Y-m-d H:i:s')
+                    : null;
 
-            // =========================
-            // API PAYLOAD
-            // =========================
+            /*
+            |--------------------------------------------------------------------------
+            | PAYLOAD API - ASLI
+            |--------------------------------------------------------------------------
+            */
             $apiPayload = [
-                'disposition' => $updateData['disposition'] ?? null,
-                'revisi' => $updateData['revisi'] ?? null,
-                'not_standard' => $updateData['not_standard'] ?? false,
-                'status' => $status_disposition,
-                'disposition_remark' => $remarkText,
-                'jam_selesai' => $jamSelesai,
+                'disposition' =>
+                    $updateData['disposition'] ?? null,
+
+                'revisi' =>
+                    $updateData['revisi'] ?? null,
+
+                'not_standard' =>
+                    $updateData['not_standard'] ?? false,
+
+                'status' =>
+                    $status_disposition,
+
+                'disposition_remark' =>
+                    $remarkText,
+
+                'jam_selesai' =>
+                    $jamSelesai,
             ];
 
-            $client = new \GuzzleHttp\Client();
+            /*
+            |--------------------------------------------------------------------------
+            | KIRIM KE PRODUCTION - ASLI
+            |--------------------------------------------------------------------------
+            */
+            $client =
+                new \GuzzleHttp\Client();
 
-            $apiResponse = $client->request(
-                'POST',
-                env('PRODUCTION_URL') . "api/pelarutan-1/{$pelarutan_1->id}",
-                [
-                    'json' => $apiPayload,
-                    'headers' => [
-                        'Accept' => 'application/json',
-                        'Content-Type' => 'application/json',
-                    ],
-                ]
-            );
+            $apiResponse =
+                $client->request(
+                    'POST',
+                    env('PRODUCTION_URL')
+                        . "api/pelarutan-1/{$pelarutan_1->id}",
+                    [
+                        'json' => $apiPayload,
 
-            if ($apiResponse->getStatusCode() !== 200) {
+                        'headers' => [
+                            'Accept' =>
+                                'application/json',
+
+                            'Content-Type' =>
+                                'application/json',
+                        ],
+                    ]
+                );
+
+            if (
+                $apiResponse->getStatusCode() !== 200
+            ) {
                 DB::rollBack();
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal update data ke API eksternal.',
+                    'message' =>
+                        'Gagal update data ke API eksternal.',
                 ], 500);
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | TAMBAHAN:
+            | CEK DRAFT SEBELUM DIHAPUS
+            |--------------------------------------------------------------------------
+            |
+            | Hanya setelah final + API Production berhasil.
+            |
+            */
+            if ($userRole === 'Analis Kimia') {
+
+                $draft =
+                    Pelarutan1Draft::where(
+                        'pelarutan_1_id',
+                        $pelarutan_1->id
+                    )->first();
+
+                if ($draft) {
+                    $draft->delete();
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | COMMIT - ASLI
+            |--------------------------------------------------------------------------
+            */
             DB::commit();
 
-            // =========================
-            // NOTIFIKASI
-            // =========================
-            $shouldSendNotification = false;
-            $notificationTitle = "Pelarutan 1 - Batch " . $pelarutan_1->batch_number;
+            /*
+            |--------------------------------------------------------------------------
+            | NOTIFIKASI - ASLI
+            |--------------------------------------------------------------------------
+            */
+            $shouldSendNotification =
+                false;
+
+            $notificationTitle =
+                "Pelarutan 1 - Batch "
+                . $pelarutan_1->batch_number;
 
             if ($userRole === 'Analis Kimia') {
-                $shouldSendNotification = true;
-                $notificationTitle .= " - Menunggu Review Foreman";
+
+                $shouldSendNotification =
+                    true;
+
+                $notificationTitle .=
+                    " - Menunggu Review Foreman";
             }
 
             if ($shouldSendNotification) {
-                event(new ProcessOutsideDisposition(
-                    $notificationTitle,
-                    $pelarutan_1->production_batch_id,
-                    'Pelarutan 1',
-                    $status_disposition,
-                    $remarkText,
-                    route('pelarutan-1.show', $pelarutan_1->production_batch_id)
-                ));
+
+                event(
+                    new ProcessOutsideDisposition(
+                        $notificationTitle,
+                        $pelarutan_1->production_batch_id,
+                        'Pelarutan 1',
+                        $status_disposition,
+                        $remarkText,
+                        route(
+                            'pelarutan-1.show',
+                            $pelarutan_1->production_batch_id
+                        )
+                    )
+                );
             }
 
-            // =========================
-            // RESPONSE
-            // =========================
+            /*
+            |--------------------------------------------------------------------------
+            | RESPONSE - ASLI
+            |--------------------------------------------------------------------------
+            */
             if ($userRole === 'Analis Kimia') {
-                $message = $isUpdate
-                    ? 'Data Pelarutan 1 berhasil diperbarui.'
-                    : 'Data Pelarutan 1 berhasil disimpan.';
+
+                $message =
+                    $isUpdate
+                        ? 'Data Pelarutan 1 berhasil diperbarui.'
+                        : 'Data Pelarutan 1 berhasil disimpan.';
+
             } elseif ($userRole === 'Foreman') {
-                $message = 'Disposisi berhasil diberikan.';
+
+                $message =
+                    'Disposisi berhasil diberikan.';
+
             } else {
-                $message = 'Data berhasil disimpan.';
+
+                $message =
+                    'Data berhasil disimpan.';
             }
 
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => $message,
             ], 200);
+
         } catch (\Exception $e) {
+
             DB::rollBack();
 
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Error occurred, please try again.',
-                'error'   => $e->getMessage(),
+                'status' => 'error',
+                'message' =>
+                    'Error occurred, please try again.',
+                'error' =>
+                    $e->getMessage(),
             ], 500);
         }
     }
 
-
     public function formulasi(Request $request)
     {
         try {
-            $pelarutan_1 = Pelarutan1::with('productionBatch:id,po_number,variant,date,batch_range')
+            $pelarutan_1 =
+                Pelarutan1::with(
+                    'productionBatch:id,po_number,variant,date,batch_range'
+                )
                 ->findOrFail($request->id);
 
-            $apiUrl = url(env('PRODUCTION_URL') . 'api/formulasi/dissolver');
+            $apiUrl =
+                url(
+                    env('PRODUCTION_URL')
+                    . 'api/formulasi/dissolver'
+                );
 
-            $response = Http::get($apiUrl, [
-                'production_batch_id' => $pelarutan_1->production_batch_id,
-                'batch_number' => $pelarutan_1->batch_number,
-            ]);
+            $response =
+                Http::get(
+                    $apiUrl,
+                    [
+                        'production_batch_id' =>
+                            $pelarutan_1->production_batch_id,
+
+                        'batch_number' =>
+                            $pelarutan_1->batch_number,
+                    ]
+                );
 
             if ($response->successful()) {
+
                 $data = $response->json();
 
                 if ($data['success']) {
+
                     return response()->json([
-                        'success' => true,
-                        'message' => 'Data formulasi berhasil diambil',
+                        'success' =>
+                            true,
+
+                        'message' =>
+                            'Data formulasi berhasil diambil',
+
                         'pelarutan_1_info' => [
-                            'id' => $pelarutan_1->id,
-                            'batch_number' => $pelarutan_1->batch_number,
-                            'dissolver_number' => $pelarutan_1->dissolver_number,
-                            'production_batch_id' => $pelarutan_1->production_batch_id,
-                            'brix' => $pelarutan_1->brix,
-                            'nacl' => $pelarutan_1->nacl,
-                            'organo' => $pelarutan_1->organo,
-                            'disposition' => $pelarutan_1->disposition,
-                            'status' => $pelarutan_1->status,
+                            'id' =>
+                                $pelarutan_1->id,
+
+                            'batch_number' =>
+                                $pelarutan_1->batch_number,
+
+                            'dissolver_number' =>
+                                $pelarutan_1->dissolver_number,
+
+                            'production_batch_id' =>
+                                $pelarutan_1->production_batch_id,
+
+                            'brix' =>
+                                $pelarutan_1->brix,
+
+                            'nacl' =>
+                                $pelarutan_1->nacl,
+
+                            'organo' =>
+                                $pelarutan_1->organo,
+
+                            'disposition' =>
+                                $pelarutan_1->disposition,
+
+                            'status' =>
+                                $pelarutan_1->status,
                         ],
-                        'production_batch' => $data['data']['production_batch'] ?? null,
-                        'formulasi' => $data['data']['formulasi'] ?? [],
-                        'repro' => $data['data']['repro'] ?? [],
-                        'dissolver_info' => $data['data']['dissolver_info'] ?? null,
-                        'formulasi_source' => $data['data']['formulasi_source'] ?? null,
+
+                        'production_batch' =>
+                            $data['data']['production_batch']
+                            ?? null,
+
+                        'formulasi' =>
+                            $data['data']['formulasi']
+                            ?? [],
+
+                        'repro' =>
+                            $data['data']['repro']
+                            ?? [],
+
+                        'dissolver_info' =>
+                            $data['data']['dissolver_info']
+                            ?? null,
+
+                        'formulasi_source' =>
+                            $data['data']['formulasi_source']
+                            ?? null,
                     ], 200);
+
                 } else {
+
                     return response()->json([
-                        'success' => false,
-                        'message' => $data['message'] ?? 'Data formulasi tidak ditemukan',
+                        'success' =>
+                            false,
+
+                        'message' =>
+                            $data['message']
+                            ?? 'Data formulasi tidak ditemukan',
+
                         'pelarutan_1_info' => [
-                            'id' => $pelarutan_1->id,
-                            'batch_number' => $pelarutan_1->batch_number,
-                            'dissolver_number' => $pelarutan_1->dissolver_number,
-                            'production_batch_id' => $pelarutan_1->production_batch_id,
+                            'id' =>
+                                $pelarutan_1->id,
+
+                            'batch_number' =>
+                                $pelarutan_1->batch_number,
+
+                            'dissolver_number' =>
+                                $pelarutan_1->dissolver_number,
+
+                            'production_batch_id' =>
+                                $pelarutan_1->production_batch_id,
                         ],
                     ], 404);
                 }
+
             } else {
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal mengambil data dari API',
+                    'message' =>
+                        'Gagal mengambil data dari API',
                 ], 500);
             }
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+        } catch (
+            \Illuminate\Database\Eloquent\ModelNotFoundException $e
+        ) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Data Pelarutan 1 tidak ditemukan',
+                'message' =>
+                    'Data Pelarutan 1 tidak ditemukan',
             ], 404);
+
         } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' =>
+                    'Terjadi kesalahan: '
+                    . $e->getMessage(),
             ], 500);
         }
     }

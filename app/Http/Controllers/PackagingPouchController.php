@@ -336,6 +336,18 @@ class PackagingPouchController extends Controller
                 'min:0',
             ],
 
+            'samples.*.thickness_1' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.thickness_2' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
             'samples.*.berat' => [
                 'nullable',
                 'numeric',

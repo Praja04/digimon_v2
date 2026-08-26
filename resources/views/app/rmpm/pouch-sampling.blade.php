@@ -110,20 +110,25 @@
                         <table class="table table-bordered align-middle inspection-table">
                             <thead>
                                 <tr>
-                                    <th>No. Sampel</th>
-                                    <th>Panjang (mm)</th>
-                                    <th>Lebar (mm)</th>
-                                    <th>Thickness (mikron)</th>
-                                    <th>Berat (g)</th>
-                                    <th>Side Seal 1 (mm)</th>
-                                    <th>Side Seal 2 (mm)</th>
-                                    <th>Bottom Seal (mm)</th>
-                                    <th>Bottom High (mm)</th>
-                                    <th>Design</th>
-                                    <th>Warna</th>
-                                    <th>Tulisan</th>
-                                    <th>Drop Test</th>
-                                    <th>Pretest</th>
+                                    <th rowspan="2">No. Sampel</th>
+                                    <th rowspan="2">Panjang (mm)</th>
+                                    <th rowspan="2">Lebar (mm)</th>
+                                    <th rowspan="2">Tebal (mikron)</th>
+                                    <th colspan="2">Thickness</th>
+                                    <th rowspan="2">Berat (g)</th>
+                                    <th rowspan="2">Side Seal 1 (mm)</th>
+                                    <th rowspan="2">Side Seal 2 (mm)</th>
+                                    <th rowspan="2">Bottom Seal (mm)</th>
+                                    <th rowspan="2">Bottom High (mm)</th>
+                                    <th rowspan="2">Design</th>
+                                    <th rowspan="2">Warna</th>
+                                    <th rowspan="2">Tulisan</th>
+                                    <th rowspan="2">Drop Test</th>
+                                    <th rowspan="2">Pretest</th>
+                                </tr>
+                                <tr>
+                                    <th>1</th>
+                                    <th>2</th>
                                 </tr>
                             </thead>
                             <tbody id="sampleRows"></tbody>
@@ -137,8 +142,9 @@
 
                     <div class="inspection-note mb-3">
                         <small class="text-muted d-block">
-                            Thickness Bottom diperiksa pada 3 baris tetap dengan 2 titik pengukuran.
-                            Jumlah baris tidak mengikuti Jumlah Sampel.
+                            Field <strong>Thickness</strong> diisi per sampel dengan <strong>2 titik pengukuran</strong>.
+                            Thickness Bottom diperiksa terpisah pada 3 baris tetap dengan 2 titik pengukuran.
+                            Jumlah baris Thickness Bottom tidak mengikuti Jumlah Sampel.
                         </small>
                     </div>
 
@@ -614,7 +620,7 @@
 
 @section('styles')
 <style>
-.sampling-card{overflow:hidden;border-radius:18px}.sampling-header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:4px solid #ef4444;background:linear-gradient(135deg,#ecfeff,#f8fafc)}.sampling-label{display:block;margin-bottom:5px;color:#0f766e;font-size:12px;font-weight:700;letter-spacing:1px}.sampling-header-icon{width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:#fff;color:#14b8a6;font-size:42px;box-shadow:0 8px 20px rgba(15,23,42,.08)}.section-title{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:700}.inspection-table thead th{min-width:135px;background:#f1f5f9;text-align:center;vertical-align:middle;white-space:nowrap}.inspection-table tbody td{vertical-align:middle}.inspection-table input,.inspection-table select{min-width:110px}.sample-number{min-width:80px!important;text-align:center;font-weight:700}
+.sampling-card{overflow:hidden;border-radius:18px}.sampling-header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:4px solid #ef4444;background:linear-gradient(135deg,#ecfeff,#f8fafc)}.sampling-label{display:block;margin-bottom:5px;color:#0f766e;font-size:12px;font-weight:700;letter-spacing:1px}.sampling-header-icon{width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:#fff;color:#14b8a6;font-size:42px;box-shadow:0 8px 20px rgba(15,23,42,.08)}.section-title{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:700}.inspection-table thead th{min-width:135px;background:#f1f5f9;text-align:center;vertical-align:middle;white-space:nowrap}.inspection-table thead th[rowspan]{vertical-align:middle}.inspection-table tbody td{vertical-align:middle}.inspection-table input,.inspection-table select{min-width:110px}.sample-number{min-width:80px!important;text-align:center;font-weight:700}
 
 .inspection-note{
     padding:12px 14px;
@@ -904,6 +910,8 @@ document.addEventListener('DOMContentLoaded', function () {
             'panjang',
             'lebar',
             'tebal',
+            'thickness_1',
+            'thickness_2',
             'berat',
             'side_seal_1',
             'side_seal_2',
@@ -934,6 +942,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${inputHtml(index, 'panjang', sample.panjang)}</td>
                     <td>${inputHtml(index, 'lebar', sample.lebar)}</td>
                     <td>${inputHtml(index, 'tebal', sample.tebal)}</td>
+                    <td>${inputHtml(index, 'thickness_1', sample.thickness_1 ?? sample.thickness)}</td>
+                    <td>${inputHtml(index, 'thickness_2', sample.thickness_2)}</td>
                     <td>${inputHtml(index, 'berat', sample.berat)}</td>
                     <td>${inputHtml(index, 'side_seal_1', sample.side_seal_1)}</td>
                     <td>${inputHtml(index, 'side_seal_2', sample.side_seal_2)}</td>

@@ -1,175 +1,653 @@
 @extends('layouts.component.main')
 @section('title', 'Raw Material')
 @section('content')
-    <div class="page-content">
+    <style>
+        .rm-page {
+            --rm-primary: #16b89f;
+            --rm-primary-dark: #0d927d;
+            --rm-indigo: #4f46e5;
+            --rm-orange: #f97316;
+            --rm-cyan: #0891b2;
+            --rm-border: #e5e7eb;
+            --rm-muted: #64748b;
+            --rm-dark: #0f172a;
+            --rm-soft: #f8fafc;
+        }
+
+        .rm-page .page-title-box h4 {
+            font-weight: 700;
+            color: var(--rm-dark);
+        }
+
+        .rm-page .rm-hero {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--rm-primary) 0%, var(--rm-primary-dark) 100%);
+            box-shadow: 0 14px 30px rgba(13, 146, 125, .18);
+        }
+
+        .rm-page .rm-hero-icon {
+            width: 76px;
+            height: 76px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .18);
+            color: #fff;
+            font-size: 40px;
+        }
+
+        .rm-page .rm-hero-label {
+            display: block;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, .74);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .rm-page .rm-process-card {
+            min-height: 255px;
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+            transition: transform .22s ease, box-shadow .22s ease;
+        }
+
+        .rm-page .rm-process-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, .13);
+        }
+
+        .rm-page .rm-process-card.incoming {
+            border-top: 5px solid #14b8a6;
+        }
+
+        .rm-page .rm-process-card.sampling {
+            border-top: 5px solid #f97316;
+        }
+
+        .rm-page .rm-process-card.analysis {
+            border-top: 5px solid #06b6d4;
+        }
+
+        .rm-page .rm-step-badge {
+            display: inline-flex;
+            padding: 6px 12px;
+            border-radius: 50px;
+            background: #eef2ff;
+            color: var(--rm-indigo);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .rm-page .rm-process-icon {
+            width: 72px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 18px;
+            margin-top: 20px;
+            font-size: 37px;
+        }
+
+        .rm-page .incoming .rm-process-icon {
+            background: #ecfdf5;
+            color: #14b8a6;
+        }
+
+        .rm-page .sampling .rm-process-icon {
+            background: #fff7ed;
+            color: #f97316;
+        }
+
+        .rm-page .analysis .rm-process-icon {
+            background: #ecfeff;
+            color: #0891b2;
+        }
+
+        .rm-page .rm-process-action {
+            margin-top: auto;
+            padding-top: 18px;
+        }
+
+        .rm-page .rm-process-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .rm-page .rm-process-btn:hover {
+            color: var(--rm-indigo);
+        }
+
+        .rm-page .rm-data-toggle {
+            border: 1px solid var(--rm-border);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+            padding: 18px 20px;
+        }
+
+        .rm-page .rm-data-card {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+        }
+
+        .rm-page .rm-data-card .card-header {
+            background: #fff;
+            border-bottom: 1px solid #eef2f7;
+            padding: 20px 22px;
+        }
+
+        .rm-page .rm-data-card .card-body {
+            padding: 22px;
+        }
+
+        .rm-page .rm-filter-panel {
+            padding: 18px;
+            margin-bottom: 22px;
+            border: 1px solid var(--rm-border);
+            border-radius: 16px;
+            background: var(--rm-soft);
+        }
+
+        .rm-page .form-control,
+        .rm-page .form-select {
+            min-height: 42px;
+            border-radius: 10px;
+            border-color: #dbe3ee;
+            box-shadow: none;
+        }
+
+        .rm-page .form-control:focus,
+        .rm-page .form-select:focus {
+            border-color: rgba(79, 70, 229, .55);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .08);
+        }
+
+        .rm-page .btn {
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .rm-page .rm-table-wrap {
+            border: 1px solid var(--rm-border);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .rm-page #datatable thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: 12px 13px;
+        }
+
+        .rm-page #datatable tbody td {
+            padding: 12px 13px;
+            vertical-align: middle;
+            border-color: #eef2f7;
+        }
+
+        .rm-page .modal-content {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .2);
+        }
+
+
+
+        .rm-page .rm-process-column {
+            transition: all .25s ease;
+        }
+
+        .rm-page .rm-process-column.is-hidden {
+            display: none;
+        }
+
+        .rm-page .rm-process-card.incoming.is-expanded {
+            min-height: auto;
+        }
+
+        .rm-page .rm-process-card.incoming.is-expanded:hover {
+            transform: none;
+        }
+
+        .rm-page .incoming-form-inside {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eef2f7;
+        }
+
+        .rm-page .incoming-form-inside .form-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 7px;
+        }
+
+        .rm-page .incoming-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+
+        .rm-page .rm-card-column {
+            transition: all .25s ease;
+        }
+
+        .rm-page .rm-card-column.is-hidden {
+            display: none;
+        }
+
+        .rm-page .rm-process-card.is-expanded {
+            min-height: auto;
+        }
+
+        .rm-page .rm-process-card.is-expanded:hover {
+            transform: none;
+        }
+
+        .rm-page .rm-card-detail {
+            margin-top: 22px;
+            padding-top: 22px;
+            border-top: 1px solid #eef2f7;
+        }
+
+        .rm-page .rm-card-detail-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .rm-page .rm-card-detail .form-label {
+            margin-bottom: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .rm-page .rm-card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .rm-page .rm-data-detail .rm-filter-panel {
+            margin-bottom: 18px;
+        }
+
+        @media (max-width: 575.98px) {
+            .rm-page .rm-hero-icon {
+                width: 64px;
+                height: 64px;
+                font-size: 32px;
+            }
+
+            .rm-page .rm-process-card {
+                min-height: auto;
+            }
+        }
+    </style>
+
+    <div class="page-content rm-page">
         <div class="container-fluid">
-            <!-- start page title -->
+
+            {{-- PAGE TITLE --}}
             <div class="row">
                 <div class="col-12">
                     <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                        <h4 class="mb-sm-0">@yield('title')</h4>
+                        <div>
+                            <h4 class="mb-sm-0">Raw Material</h4>
+                            <p class="text-muted mb-0 mt-1">
+                                Pilih proses Raw Material yang akan dikerjakan.
+                            </p>
+                        </div>
 
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript: void(0);">Menu</a></li>
-                                <li class="breadcrumb-item active">@yield('title')</li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('rmpm.index') }}">RMPM</a>
+                                </li>
+                                <li class="breadcrumb-item active">RM</li>
                             </ol>
                         </div>
-
                     </div>
                 </div>
             </div>
-            <!-- end page title -->
 
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-header d-flex align-items-center justify-content-between">
-                            <h5 class="card-title mb-0">Daftar @yield('title')</h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Filter Section -->
-                            <div class="row mb-3 g-2">
-                                <div class="col-12 col-sm-6 col-md-2">
-                                    <label for="start_date" class="form-label">Tanggal Mulai</label>
-                                    <input type="date" id="start_date" class="form-control">
+            {{-- HERO --}}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card rm-hero">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="rm-hero-icon">
+                                    <i class="mdi mdi-flask-outline"></i>
                                 </div>
-                                <div class="col-12 col-sm-6 col-md-2">
-                                    <label for="end_date" class="form-label">Tanggal Akhir</label>
-                                    <input type="date" id="end_date" class="form-control">
-                                </div>
-                                <div class="col-12 col-sm-6 col-md-3">
-                                    <label for="jenis" class="form-label">Jenis</label>
-                                    <select id="jenis" class="form-select">
-                                        <option value="">-- Semua --</option>
-                                        <option value="Gula Tebu">Gula Tebu</option>
-                                        <option value="Gula Kelapa">Gula Kelapa</option>
-                                        <option value="Gula">Gula</option>
-                                        <option value="Garam">Garam</option>
-                                    </select>
-                                </div>
-                                <div class="col-12 col-sm-6 col-md-2 d-flex align-items-end gap-2">
-                                    <button type="button" id="btnFilter" class="btn btn-primary flex-fill">
-                                        <i class="mdi mdi-filter"></i> Filter
-                                    </button>
-                                    <button type="button" id="btnReset" class="btn btn-secondary flex-fill">
-                                        <i class="mdi mdi-refresh"></i> Reset
-                                    </button>
-                                </div>
-                                <div class="col-12 col-sm-6 col-md-3 d-flex align-items-end">
-                                    <button type="button" id="btnAdd" class="btn btn-success w-100">
-                                        <i class="mdi mdi-plus"></i> Tambah Data
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- End Filter Section -->
 
-                            <div class="table-responsive">
-                                <table id="datatable" class="table nowrap align-middle" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>No SPB</th>
-                                            <th>Jenis</th>
-                                            <th>Supplier</th>
-                                            <th>Tanggal Kedatangan</th>
-                                            <th>Asal Bahan</th>
-                                            <th>Jumlah Kedatangan</th>
-                                            <th>Selesai Analisa</th>
-                                            <th>Keterangan</th>
-                                            <th>QR Code</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
+                                <div class="ms-4">
+                                    <span class="rm-hero-label">RAW MATERIAL</span>
+                                    <h2 class="text-white mb-1">RM</h2>
+                                    <p class="text-white-50 mb-0">
+                                        Penerimaan, sampling, dan analisa bahan baku.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- modal -->
-    <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form id="form">
-                    <div class="modal-header border-0 pb-2">
-                        <h5 class="modal-title" id="modalLabel"></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            {{-- PILIH PROSES --}}
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="d-flex align-items-end justify-content-between flex-wrap gap-2">
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase">Alur Kerja</span>
+                            <h5 class="mb-0 mt-1 fw-bold">Pilih proses yang akan dikerjakan</h5>
+                        </div>
                     </div>
-                    <div class="modal-body pt-0">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="jenis" class="form-label">Jenis Bahan <span
-                                        style="color: red;">*</span></label>
-                                <select class="form-control" name="jenis" id="jenis">
-                                    <option value="">-- Pilih Jenis Bahan --</option>
-                                    <option value="Gula Tebu">Gula Tebu</option>
-                                    <option value="Gula Kelapa">Gula Kelapa</option>
-                                    <option value="Gula">Gula</option>
-                                    <option value="Garam">Garam</option>
-                                </select>
-                                <small class="text-danger errorJenis"></small>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4" id="rmProcessRow">
+
+                {{-- INPUT INCOMING --}}
+                <div class="col-xl-6 col-lg-6 col-md-6 rm-card-column" id="incomingCardColumn">
+                    <div class="card rm-process-card incoming h-100" id="incomingProcessCard">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-start justify-content-between gap-3">
+                                <div>
+                                    <span class="rm-step-badge">Raw Material</span>
+
+                                    <div class="rm-process-icon">
+                                        <i class="mdi mdi-truck-delivery-outline"></i>
+                                    </div>
+
+                                    <h4 class="text-dark mt-4 mb-2">Input Incoming</h4>
+
+                                    <p class="text-muted mb-0">
+                                        Input identitas dan data kedatangan Raw Material.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-light d-none"
+                                    id="btnCloseIncomingCard"
+                                    title="Tutup"
+                                >
+                                    <i class="mdi mdi-close"></i>
+                                </button>
                             </div>
-                            <div class="col-md-6">
-                                <label for="tanggal_kedatangan" class="form-label">Tanggal & Jam Kedatangan <span
-                                        style="color: red;">*</span></label>
-                                <input type="datetime-local" class="form-control" id="tanggal_kedatangan"
-                                    name="tanggal_kedatangan" value="{{ now()->format('Y-m-d\TH:i') }}">
-                                <small class="text-danger errorTanggalKedatangan"></small>
+
+                            <div class="rm-process-action" id="incomingOpenAction">
+                                <button type="button" id="btnOpenIncomingCard" class="rm-process-btn">
+                                    Tambah Incoming
+                                    <i class="mdi mdi-arrow-right"></i>
+                                </button>
                             </div>
-                            <div class="col-md-6">
-                                <label for="supplier" class="form-label">Supplier / Manufactur <span
-                                        style="color: red;">*</span></label>
-                                <input type="text" class="form-control" id="supplier" name="supplier">
-                                <small class="text-danger errorSupplier"></small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="asal_bahan" class="form-label">Asal Bahan <span
-                                        style="color: red;">*</span></label>
-                                <input type="text" class="form-control" id="asal_bahan" name="asal_bahan">
-                                <small class="text-danger errorAsalBahan"></small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="no_plat" class="form-label">No Plat <span
-                                        style="color: red;">*</span></label>
-                                <input type="text" class="form-control" id="no_plat" name="no_plat">
-                                <small class="text-danger errorNoPlat"></small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="no_spb" class="form-label">No SPB <span
-                                        style="color: red;">*</span></label>
-                                <input type="number" class="form-control" id="no_spb" name="no_spb">
-                                <small class="text-danger errorNoSPB"></small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="jumlah_kedatangan" class="form-label">Jumlah Kedatangan (kg) <span
-                                        style="color: red;">*</span></label>
-                                <input type="number" class="form-control" id="jumlah_kedatangan"
-                                    name="jumlah_kedatangan" placeholder="dalam kilogram">
-                                <small class="text-danger errorJumlahKedatangan"></small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="lot_batch" class="form-label">Lot / Batch <span
-                                        style="color: red;">*</span></label>
-                                <input type="text" class="form-control" id="lot_batch" name="lot_batch">
-                                <small class="text-danger errorLotBatch"></small>
+
+                            {{-- FORM BENAR-BENAR ADA DI DALAM CARD INPUT INCOMING --}}
+                            <div class="collapse rm-card-detail" id="incomingCardDetail">
+                                <div class="rm-card-detail-header">
+                                    <div>
+                                        <h5 class="fw-bold mb-1">Tambah Incoming Raw Material</h5>
+                                        <p class="text-muted small mb-0">
+                                            Lengkapi identitas kedatangan Raw Material.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <form id="form">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="jenis" class="form-label">
+                                                Jenis Bahan <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-select" name="jenis" id="jenis">
+                                                <option value="">-- Pilih Jenis Bahan --</option>
+                                                <option value="Gula Tebu">Gula Tebu</option>
+                                                <option value="Gula Kelapa">Gula Kelapa</option>
+                                                <option value="Gula">Gula</option>
+                                                <option value="Garam">Garam</option>
+                                            </select>
+                                            <small class="text-danger errorJenis"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="tanggal_kedatangan" class="form-label">
+                                                Tanggal & Jam Kedatangan <span class="text-danger">*</span>
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                class="form-control"
+                                                id="tanggal_kedatangan"
+                                                name="tanggal_kedatangan"
+                                                value="{{ now()->format('Y-m-d\TH:i') }}"
+                                            >
+                                            <small class="text-danger errorTanggalKedatangan"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="supplier" class="form-label">
+                                                Supplier / Manufactur <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="supplier" name="supplier">
+                                            <small class="text-danger errorSupplier"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="asal_bahan" class="form-label">
+                                                Asal Bahan <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="asal_bahan" name="asal_bahan">
+                                            <small class="text-danger errorAsalBahan"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="no_plat" class="form-label">
+                                                No Plat <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="no_plat" name="no_plat">
+                                            <small class="text-danger errorNoPlat"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="no_spb" class="form-label">
+                                                No SPB <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" class="form-control" id="no_spb" name="no_spb">
+                                            <small class="text-danger errorNoSPB"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="jumlah_kedatangan" class="form-label">
+                                                Jumlah Kedatangan (kg) <span class="text-danger">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                class="form-control"
+                                                id="jumlah_kedatangan"
+                                                name="jumlah_kedatangan"
+                                                placeholder="Dalam kilogram"
+                                            >
+                                            <small class="text-danger errorJumlahKedatangan"></small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="lot_batch" class="form-label">
+                                                Lot / Batch <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="lot_batch" name="lot_batch">
+                                            <small class="text-danger errorLotBatch"></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="rm-card-actions">
+                                        <button type="button" class="btn btn-light px-4" id="btnCancelIncomingCard">
+                                            Batal
+                                        </button>
+
+                                        <button type="submit" class="btn btn-primary px-4" id="save">
+                                            <i class="mdi mdi-content-save-outline me-1"></i>
+                                            Simpan
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                </div>
+
+                {{-- DATA RAW MATERIAL --}}
+                <div class="col-xl-6 col-lg-6 col-md-6 rm-card-column" id="dataCardColumn">
+                    <div class="card rm-process-card analysis h-100" id="dataProcessCard">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-start justify-content-between gap-3">
+                                <div>
+                                    <span class="rm-step-badge">Raw Material</span>
+
+                                    <div class="rm-process-icon">
+                                        <i class="mdi mdi-format-list-bulleted-square"></i>
+                                    </div>
+
+                                    <h4 class="text-dark mt-4 mb-2">Data Raw Material</h4>
+
+                                    <p class="text-muted mb-0">
+                                        Lihat seluruh data incoming Raw Material dan lanjutkan proses yang sudah ada.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-light d-none"
+                                    id="btnCloseDataCard"
+                                    title="Tutup"
+                                >
+                                    <i class="mdi mdi-close"></i>
+                                </button>
+                            </div>
+
+                            <div class="rm-process-action" id="dataOpenAction">
+                                <button type="button" id="btnOpenDataCard" class="rm-process-btn">
+                                    Lihat Data Raw Material
+                                    <i class="mdi mdi-arrow-right"></i>
+                                </button>
+                            </div>
+
+                            {{-- TABEL BENAR-BENAR ADA DI DALAM CARD DATA RAW MATERIAL --}}
+                            <div class="collapse rm-card-detail rm-data-detail" id="dataCardDetail">
+                                <div class="rm-card-detail-header">
+                                    <div>
+                                        <h5 class="fw-bold mb-1">Daftar Raw Material</h5>
+                                        <p class="text-muted small mb-0">
+                                            Pilih data melalui tombol Lihat untuk melanjutkan proses yang sudah ada.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="rm-filter-panel">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-12 col-md-2">
+                                            <label for="start_date" class="form-label fw-semibold">Tanggal Mulai</label>
+                                            <input type="date" id="start_date" class="form-control">
+                                        </div>
+
+                                        <div class="col-12 col-md-2">
+                                            <label for="end_date" class="form-label fw-semibold">Tanggal Akhir</label>
+                                            <input type="date" id="end_date" class="form-control">
+                                        </div>
+
+                                        <div class="col-12 col-md-3">
+                                            <label for="filter_jenis" class="form-label fw-semibold">Jenis</label>
+                                            <select id="filter_jenis" class="form-select">
+                                                <option value="">-- Semua --</option>
+                                                <option value="Gula Tebu">Gula Tebu</option>
+                                                <option value="Gula Kelapa">Gula Kelapa</option>
+                                                <option value="Gula">Gula</option>
+                                                <option value="Garam">Garam</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-6 col-md-2">
+                                            <button type="button" id="btnFilter" class="btn btn-primary w-100">
+                                                <i class="mdi mdi-filter-variant me-1"></i> Filter
+                                            </button>
+                                        </div>
+
+                                        <div class="col-6 col-md-1">
+                                            <button type="button" id="btnReset" class="btn btn-light w-100">
+                                                <i class="mdi mdi-refresh"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="col-12 col-md-2">
+                                            <button type="button" id="btnAdd" class="btn btn-success w-100">
+                                                <i class="mdi mdi-plus me-1"></i> Tambah Data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="rm-table-wrap">
+                                    <div class="table-responsive">
+                                        <table id="datatable" class="table nowrap align-middle" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>No SPB</th>
+                                                    <th>Jenis</th>
+                                                    <th>Supplier</th>
+                                                    <th>Tanggal Kedatangan</th>
+                                                    <th>Asal Bahan</th>
+                                                    <th>Jumlah Kedatangan</th>
+                                                    <th>Selesai Analisa</th>
+                                                    <th>Keterangan</th>
+                                                    <th>QR Code</th>
+                                                    <th>Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </div>
+
             </div>
+
         </div>
     </div>
 
+    <!-- QR modal -->
     <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-sm">
@@ -263,7 +741,7 @@
                     data: function(d) {
                         d.start_date = $('#start_date').val();
                         d.end_date = $('#end_date').val();
-                        d.jenis = $('#jenis').val();
+                        d.jenis = $('#filter_jenis').val();
                     }
                 },
                 columns: [
@@ -293,26 +771,123 @@
                 ]
             });
 
+            // INPUT INCOMING: card melebar dan form tampil di dalam card.
+            function openIncomingCard() {
+                const detailElement = document.getElementById('incomingCardDetail');
+                const detailCollapse = bootstrap.Collapse.getOrCreateInstance(detailElement, {
+                    toggle: false
+                });
+
+                $('#form').trigger('reset');
+                $('#tanggal_kedatangan').val("{{ now()->format('Y-m-d\TH:i') }}");
+                $('.form-control, .form-select').removeClass('is-invalid');
+                $('.text-danger').html('');
+
+                $('#incomingCardColumn')
+                    .removeClass('col-xl-6 col-lg-6 col-md-6')
+                    .addClass('col-12');
+
+                $('#incomingProcessCard').addClass('is-expanded');
+                $('#dataCardColumn').addClass('is-hidden');
+                $('#incomingOpenAction').addClass('d-none');
+                $('#btnCloseIncomingCard').removeClass('d-none');
+
+                detailCollapse.show();
+
+                setTimeout(function() {
+                    document.getElementById('incomingProcessCard').scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 160);
+            }
+
+            function closeIncomingCard() {
+                const detailElement = document.getElementById('incomingCardDetail');
+                const detailCollapse = bootstrap.Collapse.getOrCreateInstance(detailElement, {
+                    toggle: false
+                });
+
+                detailCollapse.hide();
+
+                $('#incomingCardColumn')
+                    .removeClass('col-12')
+                    .addClass('col-xl-6 col-lg-6 col-md-6');
+
+                $('#incomingProcessCard').removeClass('is-expanded');
+                $('#dataCardColumn').removeClass('is-hidden');
+                $('#incomingOpenAction').removeClass('d-none');
+                $('#btnCloseIncomingCard').addClass('d-none');
+            }
+
+            $('#btnOpenIncomingCard').on('click', openIncomingCard);
+            $('#btnAdd').on('click', openIncomingCard);
+            $('#btnCloseIncomingCard, #btnCancelIncomingCard').on('click', closeIncomingCard);
+
+            // DATA RAW MATERIAL: card melebar dan tabel tampil di dalam card.
+            function openDataCard() {
+                const detailElement = document.getElementById('dataCardDetail');
+                const detailCollapse = bootstrap.Collapse.getOrCreateInstance(detailElement, {
+                    toggle: false
+                });
+
+                $('#dataCardColumn')
+                    .removeClass('col-xl-6 col-lg-6 col-md-6')
+                    .addClass('col-12');
+
+                $('#dataProcessCard').addClass('is-expanded');
+                $('#incomingCardColumn').addClass('is-hidden');
+                $('#dataOpenAction').addClass('d-none');
+                $('#btnCloseDataCard').removeClass('d-none');
+
+                detailCollapse.show();
+
+                setTimeout(function() {
+                    table.columns.adjust().draw(false);
+
+                    document.getElementById('dataProcessCard').scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 200);
+            }
+
+            function closeDataCard() {
+                const detailElement = document.getElementById('dataCardDetail');
+                const detailCollapse = bootstrap.Collapse.getOrCreateInstance(detailElement, {
+                    toggle: false
+                });
+
+                detailCollapse.hide();
+
+                $('#dataCardColumn')
+                    .removeClass('col-12')
+                    .addClass('col-xl-6 col-lg-6 col-md-6');
+
+                $('#dataProcessCard').removeClass('is-expanded');
+                $('#incomingCardColumn').removeClass('is-hidden');
+                $('#dataOpenAction').removeClass('d-none');
+                $('#btnCloseDataCard').addClass('d-none');
+            }
+
+            $('#btnOpenDataCard').on('click', openDataCard);
+            $('#btnCloseDataCard').on('click', closeDataCard);
+
+            $('#dataCardDetail').on('shown.bs.collapse', function() {
+                table.columns.adjust().draw(false);
+            });
+
             $('#btnFilter').click(function() { table.ajax.reload(); });
 
             $('#btnReset').click(function() {
                 $('#start_date').val('');
                 $('#end_date').val('');
-                $('#jenis').val('');
+                $('#filter_jenis').val('');
                 table.ajax.reload();
             });
 
             $('#start_date, #end_date').on('keypress', function(e) {
                 if (e.which == 13) table.ajax.reload();
-            });
-
-            $('body').on('click', '#btnAdd', function() {
-                $('#id').val('');
-                $('#modalLabel').html("Tambah Data - Identitas RM");
-                $('#modal').modal('show');
-                $('#form').trigger("reset");
-                $('.form-control').removeClass('is-invalid');
-                $('.text-danger').html('');
             });
 
             $('body').on('click', '#btnQRCode', function() {
@@ -349,12 +924,12 @@
                     dataType: 'json',
                     beforeSend: function() {
                         $('#save').prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...');
-                        $('.form-control').removeClass('is-invalid');
+                        $('.form-control, .form-select').removeClass('is-invalid');
                         $('.text-danger').html('');
                     },
                     complete: function() { $('#save').prop('disabled', false).text('Simpan'); },
                     success: function(response) {
-                        $('#modal').modal('hide');
+                        closeIncomingCard();
                         $('#form').trigger("reset");
                         Swal.fire({ icon: 'success', title: 'Sukses', text: response.message });
                         $('#datatable').DataTable().ajax.reload();

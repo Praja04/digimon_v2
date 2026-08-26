@@ -78,7 +78,7 @@
                 <div class="display-card display-orange">
                     <div class="display-card-top">
                         <div class="display-icon">
-                            <i class="mdi mdi-package-variant-closed-check"></i>
+                            <i class="mdi mdi-arrow-collapse-vertical"></i>
                         </div>
 
                         <span class="display-number">1</span>

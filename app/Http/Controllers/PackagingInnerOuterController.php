@@ -373,11 +373,6 @@ class PackagingInnerOuterController extends Controller
                 'in:V,-',
             ],
 
-            'samples.*.arah_terbalik' => [
-                'nullable',
-                'in:V,-',
-            ],
-
             'samples.*.laminasi' => [
                 'nullable',
                 'in:OK,NG',

@@ -594,13 +594,37 @@ Route::post(
     --------------------------------------------*/
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia'])->group(function () {
         // Analisa - Pelarutan 1
-        Route::get('/pelarutan-1/menu', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'menu'])->name('pelarutan-1.menu');
-        Route::get('/pelarutan-1', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'index'])->name('pelarutan-1.index');
-        Route::get('/pelarutan-1/formulasi/', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'formulasi'])->name('pelarutan-1.formulasi');
-        Route::get('/pelarutan-1/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show'])->name('pelarutan-1.show');
-        Route::get('/pelarutan-1/edit/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'edit'])->name('pelarutan-1.edit');
-        Route::post('/pelarutan-1', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'update'])->name('pelarutan-1.update');
-        Route::get('/scan/batch/pelarutan-1/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show_batch'])->name('pelarutan-1.show_batch');
+        Route::get('/pelarutan-1/menu',
+        [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'menu'])
+        ->name('pelarutan-1.menu');
+
+        Route::get('/pelarutan-1',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'index'])
+            ->name('pelarutan-1.index');
+
+        Route::get('/pelarutan-1/formulasi/',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'formulasi'])
+            ->name('pelarutan-1.formulasi');
+
+        Route::get('/pelarutan-1/{id}',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show'])
+            ->name('pelarutan-1.show');
+
+        Route::get('/pelarutan-1/edit/{id}',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'edit'])
+            ->name('pelarutan-1.edit');
+
+        Route::post('/pelarutan-1',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'update'])
+            ->name('pelarutan-1.update');
+
+        Route::post('/pelarutan-1/draft',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'saveDraft'])
+            ->name('pelarutan-1.draft.store');
+
+        Route::get('/scan/batch/pelarutan-1/{id}',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show_batch'])
+            ->name('pelarutan-1.show_batch');
 
         // Analisa - Pelarutan 2
         Route::get('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'index'])->name('pelarutan-2.index');
@@ -610,7 +634,8 @@ Route::post(
         Route::get('/pelarutan-2/edit/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'edit'])->name('pelarutan-2.edit');
         Route::post('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'update'])->name('pelarutan-2.update');
         Route::get('/scan/batch/pelarutan-2/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show_batch'])->name('pelarutan-2.show_batch');
-
+        Route::post('/pelarutan-2/draft', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'saveDraft'])->name('pelarutan-2.draft.store');
+        
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');

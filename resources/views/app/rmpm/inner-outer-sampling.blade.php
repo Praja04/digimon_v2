@@ -370,8 +370,7 @@
                                     <th>Lebar (mm)</th>
                                     <th>Pitch (mm)</th>
                                     <th>Thickness (Mikron)</th>
-                                    <th>Arah Vertikal</th>
-                                    <th>Arah Terbalik</th>
+                                    <th>Arah Gulungan</th>
                                     <th>Laminasi</th>
                                     <th>Barcode</th>
                                     <th>Design</th>
@@ -464,6 +463,10 @@
 
                         <small class="text-muted d-block">
                             Field <strong>Pitch</strong> hanya dapat diisi untuk Outer.
+                        </small>
+
+                        <small class="text-muted d-block">
+                            Field <strong>Arah Gulungan</strong> menggantikan tampilan Arah Vertikal dan Arah Terbalik menjadi satu kolom pemeriksaan.
                         </small>
                     </div>
 
@@ -1187,13 +1190,6 @@
                             </td>
 
                             <td>
-                                ${buildDirectionSelect(
-                                    `samples[${index}][arah_terbalik]`,
-                                    sample.arah_terbalik
-                                )}
-                            </td>
-
-                            <td>
                                 ${buildStatusSelect(
                                     `samples[${index}][laminasi]`,
                                     sample.laminasi
@@ -1244,7 +1240,6 @@
                 'pitch',
                 'thickness',
                 'arah_vertikal',
-                'arah_terbalik',
                 'laminasi',
                 'barcode',
                 'design',
