@@ -635,7 +635,7 @@ Route::post(
         Route::post('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'update'])->name('pelarutan-2.update');
         Route::get('/scan/batch/pelarutan-2/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show_batch'])->name('pelarutan-2.show_batch');
         Route::post('/pelarutan-2/draft', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'saveDraft'])->name('pelarutan-2.draft.store');
-        
+
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');
@@ -643,6 +643,8 @@ Route::post(
         Route::get('/analisa/blending-awal/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show'])->name('analisa.blending-awal.show');
         Route::post('/analisa/blending-awal/update', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'update'])->name('analisa.blending-awal.update');
         Route::get('scan/batch/blending-awal/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show_batch'])->name('analisa.blending-awal.show_batch');
+        Route::post('analisa/blending-awal/draft',[App\Http\Controllers\Analisa\BlendingAwalController::class, 'saveDraft'])->name('analisa.blending-awal.draft.store');
+        Route::post('/analisa/blending-awal/foreman-draft',[App\Http\Controllers\Analisa\BlendingAwalController::class, 'saveForemanDraft'])->name('analisa.blending-awal.foreman-draft.store');
 
         // Analisa - Monitoring Turun Blending
         Route::get('/analisa/monitoring-turun-blending', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'index'])->name('analisa.monitoring-turun-blending.index');
