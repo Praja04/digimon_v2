@@ -163,6 +163,40 @@ class PackagingPouchController extends Controller
         );
     }
 
+    public function resume(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'samplingStatus',
+        ]);
+
+        $this->ensurePouch($packagingIncoming);
+
+        $sampling = PackagingPouchSampling::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->firstOrFail();
+
+        abort_unless(
+            $sampling->status_proses === 'final',
+            404,
+            'Laporan hanya tersedia untuk sampling yang sudah final.'
+        );
+
+        return view(
+            'app.rmpm.pouch-resume',
+            compact(
+                'packagingIncoming',
+                'sampling'
+            )
+        );
+    }
+
     public function storeSampling(
         Request $request,
         PackagingIncoming $packagingIncoming
@@ -211,14 +245,14 @@ class PackagingPouchController extends Controller
             'uom' => [
                 'nullable',
                 'string',
-                'max:50',
+                'max:200',
             ],
 
             'jumlah_sampel' => [
                 $isFinal ? 'required' : 'nullable',
                 'integer',
                 'min:1',
-                'max:50',
+                'max:200',
             ],
 
             'coa' => [
@@ -246,6 +280,12 @@ class PackagingPouchController extends Controller
                 'string',
                 'distinct',
                 'in:Miss Print,Ukuran Tidak Standar,Seal Tidak Standar,Thickness Tidak Standar,Barcode Tidak Terbaca',
+            ],
+
+            'jenis_ketidaksesuaian_lainnya' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
 
             'foto_pengecekan' => [
@@ -285,6 +325,24 @@ class PackagingPouchController extends Controller
             ],
 
             'samples.*.lebar' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.tebal' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.thickness_1' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.thickness_2' => [
                 'nullable',
                 'numeric',
                 'min:0',
@@ -335,9 +393,16 @@ class PackagingPouchController extends Controller
                 'in:OK,NOK',
             ],
 
-            'samples.*.barcode_qr' => [
+            'barcode' => [
                 'nullable',
-                'in:OK,NOK',
+                'string',
+                'max:500',
+            ],
+
+            'qr_code' => [
+                'nullable',
+                'string',
+                'max:500',
             ],
 
             'samples.*.drop_test' => [
@@ -445,6 +510,43 @@ class PackagingPouchController extends Controller
             ]
         );
 
+        $jenisKetidaksesuaianFinal = array_values(
+            array_filter(
+                $validated['jenis_ketidaksesuaian'] ?? []
+            )
+        );
+
+        $jenisLainnya = trim(
+            (string) (
+                $validated[
+                    'jenis_ketidaksesuaian_lainnya'
+                ] ?? ''
+            )
+        );
+
+        if ($jenisLainnya !== '') {
+            $jenisKetidaksesuaianFinal[] =
+                $jenisLainnya;
+        }
+
+        $jenisKetidaksesuaianFinal = array_values(
+            array_unique(
+                $jenisKetidaksesuaianFinal
+            )
+        );
+
+        if (
+            $isFinal
+            && $adaKetidaksesuaian
+            && count($jenisKetidaksesuaianFinal) === 0
+        ) {
+            throw ValidationException::withMessages([
+                'jenis_ketidaksesuaian' => [
+                    'Pilih jenis ketidaksesuaian atau isi field Lainnya.',
+                ],
+            ]);
+        }
+
         $existingPhotoCount = count(
             array_filter(
                 $existingSampling?->foto_ketidaksesuaian
@@ -470,7 +572,8 @@ class PackagingPouchController extends Controller
                 $validated,
                 $packagingIncoming,
                 $existingSampling,
-                $isFinal
+                $isFinal,
+                $jenisKetidaksesuaianFinal
             ): void {
                 $sampling = $existingSampling
                     ?? new PackagingPouchSampling();
@@ -569,8 +672,11 @@ class PackagingPouchController extends Controller
                         ?? 1,
 
                     'hasil_sampel' =>
-                        array_values(
-                            $validated['samples'] ?? []
+                        $this->mergeSingleBarcodeQrSample(
+                            $validated['samples'] ?? [],
+                            $sampling->hasil_sampel ?? [],
+                            $validated['barcode'] ?? null,
+                            $validated['qr_code'] ?? null
                         ),
 
                     'hasil_thickness' =>
@@ -596,11 +702,7 @@ class PackagingPouchController extends Controller
                         ] ?? null,
 
                     'jenis_ketidaksesuaian' =>
-                        array_values(
-                            $validated[
-                                'jenis_ketidaksesuaian'
-                            ] ?? []
-                        ),
+                        $jenisKetidaksesuaianFinal,
 
                     'foto_pengecekan' =>
                         $fotoPengecekanPath,
@@ -669,8 +771,55 @@ class PackagingPouchController extends Controller
                     : 'Data sampling Pouch berhasil disimpan sementara.',
 
             'redirect_url' =>
-                route('rmpm.pm.pouch'),
+                $isFinal
+                    ? route(
+                        'rmpm.pm.pouch.resume',
+                        $packagingIncoming
+                    )
+                    : route(
+                        'rmpm.pm.pouch.sampling',
+                        $packagingIncoming
+                    ),
         ]);
+    }
+
+    private function mergeSingleBarcodeQrSample(
+        array $submittedSamples,
+        array $existingSamples,
+        ?string $barcode,
+        ?string $qrCode
+    ): array {
+        $samples = array_values(
+            $submittedSamples
+        );
+
+        if (count($samples) === 0) {
+            $samples[] = [];
+        }
+
+        foreach ($samples as $index => &$sample) {
+            unset(
+                $sample['barcode_qr'],
+                $sample['barcode'],
+                $sample['qr_code']
+            );
+
+            if ($index === 0) {
+                $sample['barcode'] =
+                    filled($barcode)
+                        ? trim($barcode)
+                        : null;
+
+                $sample['qr_code'] =
+                    filled($qrCode)
+                        ? trim($qrCode)
+                        : null;
+            }
+        }
+
+        unset($sample);
+
+        return $samples;
     }
 
     public function getQRCode(
@@ -693,10 +842,16 @@ class PackagingPouchController extends Controller
             )
             ->first();
 
-        $qrText = route(
-            'rmpm.pm.pouch.sampling',
-            $packagingIncoming
-        );
+        $qrText =
+            $sampling?->status_proses === 'final'
+                ? route(
+                    'rmpm.pm.pouch.resume',
+                    $packagingIncoming
+                )
+                : route(
+                    'rmpm.pm.pouch.sampling',
+                    $packagingIncoming
+                );
 
         $qrCode = DNS2DFacade::getBarcodePNG(
             $qrText,

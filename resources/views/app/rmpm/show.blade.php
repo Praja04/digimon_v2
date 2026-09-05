@@ -47,17 +47,23 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header border-0">
-                            <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-2">
-                                <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                    data-bs-target="#samplingModal">
-                                    <i class="ri-add-line align-bottom me-1"></i> Sampling
-                                </button>
-                                <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi">
-                                    Konfirmasi
-                                </button>
-                                <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info">
-                                    <i class="ri-filter-3-line align-bottom me-1"></i> Analisa
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <a href="{{ route('rmpm.rm') }}" class="btn btn-light">
+                                    <i class="ri-arrow-left-line align-bottom me-1"></i> Kembali
                                 </a>
+
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                        data-bs-target="#samplingModal">
+                                        <i class="ri-add-line align-bottom me-1"></i> Sampling
+                                    </button>
+                                    <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi">
+                                        Konfirmasi
+                                    </button>
+                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info">
+                                        <i class="ri-filter-3-line align-bottom me-1"></i> Analisa
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -289,29 +289,28 @@
                                     <td>
                                         @if ($sudahSampling)
 
-                                            <div class="d-flex flex-wrap gap-1">
+                                            <div class="d-flex flex-wrap gap-2">
                                                 <a
                                                     href="{{ route(
-                                                        'rmpm.pm.pouch.sampling',
+                                                        'rmpm.pm.pouch.resume',
                                                         $incoming
                                                     ) }}"
                                                     class="btn btn-success btn-sm"
                                                 >
-                                                    <i class="mdi mdi-eye-outline me-1"></i>
-                                                    Lihat Data
+                                                    <i class="mdi mdi-file-document-outline me-1"></i>
+                                                    Lihat Resume
                                                 </a>
 
                                                 <button
                                                     type="button"
-                                                    class="btn btn-primary btn-sm btn-pouch-qrcode"
-                                                    data-id="{{ $incoming->id }}"
+                                                    class="btn btn-primary btn-sm btnPouchQr"
                                                     data-url="{{ route(
                                                         'rmpm.pm.pouch.qrcode',
-                                                        $incoming,
-                                                        false
+                                                        $incoming->id
                                                     ) }}"
+                                                    data-spb="{{ $incoming->no_spb }}"
                                                 >
-                                                    <i class="mdi mdi-qrcode me-1"></i>
+                                                    <i class="mdi mdi-qrcode-scan me-1"></i>
                                                     QR Code
                                                 </button>
                                             </div>
@@ -325,8 +324,8 @@
                                                 ) }}"
                                                 class="btn btn-primary btn-sm"
                                             >
-                                                <i class="mdi mdi-play-circle-outline me-1"></i>
-                                                Continue
+                                                <i class="mdi mdi-progress-clock me-1"></i>
+                                                Lanjutkan
                                             </a>
 
                                             <span class="badge bg-warning text-dark ms-1">
@@ -396,51 +395,87 @@
     </div>
 </div>
 
-<div class="modal fade" id="pouchQrModal" tabindex="-1" aria-hidden="true">
+{{-- QR CODE MODAL --}}
+<div
+    class="modal fade"
+    id="pouchQrModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-sm">
-            <div class="modal-header bg-light py-2">
-                <h6 class="modal-title" id="pouchQrModalLabel">
-                    QR Code Pouch
-                </h6>
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1">
+                        QR Code Laporan Pouch
+                    </h5>
+
+                    <small
+                        id="pouchQrSpb"
+                        class="text-muted"
+                    >
+                        -
+                    </small>
+                </div>
 
                 <button
                     type="button"
                     class="btn-close"
                     data-bs-dismiss="modal"
+                    aria-label="Close"
                 ></button>
             </div>
 
-            <div
-                class="modal-body text-center p-3"
-                id="pouchQrPrintArea"
-            >
-                <div id="pouchQrImageArea"></div>
+            <div class="modal-body text-center p-4">
 
                 <div
-                    class="mt-2 small text-muted"
-                    id="pouchQrLabelText"
-                ></div>
+                    id="pouchQrLoading"
+                    class="py-5"
+                >
+                    <div
+                        class="spinner-border text-primary"
+                        role="status"
+                    ></div>
+
+                    <div class="text-muted mt-3">
+                        Memuat QR Code...
+                    </div>
+                </div>
+
+                <div
+                    id="pouchQrContent"
+                    class="d-none"
+                >
+                    <div class="pouch-qr-box">
+                        <img
+                            id="pouchQrImage"
+                            src=""
+                            alt="QR Code Laporan Pouch"
+                        >
+                    </div>
+
+                    <div
+                        id="pouchQrLabel"
+                        class="fw-bold mt-3"
+                    >
+                        -
+                    </div>
+
+                    <div class="text-muted small mt-2">
+                        Scan QR Code untuk membuka laporan final Pouch secara langsung.
+                    </div>
+                </div>
+
+                <div
+                    id="pouchQrError"
+                    class="alert alert-danger d-none mt-3 mb-0"
+                >
+                    QR Code gagal dimuat.
+                </div>
+
             </div>
 
-            <div class="modal-footer bg-light py-2">
-                <button
-                    type="button"
-                    class="btn btn-sm btn-light"
-                    data-bs-dismiss="modal"
-                >
-                    Tutup
-                </button>
-
-                <button
-                    type="button"
-                    id="btnPrintPouchQr"
-                    class="btn btn-sm btn-primary"
-                >
-                    <i class="mdi mdi-printer"></i>
-                    Cetak
-                </button>
-            </div>
         </div>
     </div>
 </div>
@@ -538,6 +573,27 @@
     
 
     
+
+
+    .pouch-qr-box {
+        width: 220px;
+        height: 220px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .pouch-qr-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
 
     @media (max-width: 767.98px) {
         .pouch-header {
@@ -669,216 +725,141 @@
 
 @section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modalElement =
-        document.getElementById('pouchQrModal');
-
-    const modal =
-        new bootstrap.Modal(modalElement);
-
-    const imageArea =
-        document.getElementById('pouchQrImageArea');
-
-    const labelArea =
-        document.getElementById('pouchQrLabelText');
-
-    const modalLabel =
-        document.getElementById('pouchQrModalLabel');
-
-    document.addEventListener(
-        'click',
-        async function (event) {
-            const button =
-                event.target.closest(
-                    '.btn-pouch-qrcode'
-                );
-
-            if (!button) {
-                return;
-            }
-
-            modalLabel.textContent =
-                `QR Code - Pouch #${button.dataset.id}`;
-
-            imageArea.innerHTML = `
-                <div class="spinner-border" role="status"></div>
-            `;
-
-            labelArea.textContent =
-                'Memuat QR Code...';
-
-            modal.show();
-
-            try {
-                const response =
-                    await fetch(
-                        button.dataset.url,
-                        {
-                            method: 'GET',
-                            credentials: 'same-origin',
-                            headers: {
-                                Accept: 'application/json',
-                                'X-Requested-With':
-                                    'XMLHttpRequest'
-                            }
-                        }
-                    );
-
-                const result =
-                    await response.json();
-
-                if (
-                    !response.ok
-                    || result.status !== 'success'
-                ) {
-                    throw new Error(
-                        result.message
-                        ?? 'QR Code gagal dibuat.'
-                    );
-                }
-
-                imageArea.innerHTML = `
-                    <img
-                        src="data:image/png;base64,${result.qrCode}"
-                        alt="QR Code Pouch"
-                        style="max-width:300px;width:100%;"
-                    >
-                `;
-
-                labelArea.innerHTML = `
-                    <strong>${escapeHtml(result.label)}</strong>
-                `;
-            } catch (error) {
-                imageArea.innerHTML = `
-                    <p class="text-danger mb-0">
-                        QR Code gagal dimuat.
-                    </p>
-                `;
-
-                labelArea.textContent =
-                    error.message
-                    ?? 'Terjadi kesalahan.';
-            }
-        }
-    );
-
-    document
-        .getElementById('btnPrintPouchQr')
-        .addEventListener(
-            'click',
-            function () {
-                printPouchQr();
-            }
-        );
-
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#039;');
-    }
-
-    function printPouchQr() {
-        const printArea =
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+        const modalElement =
             document.getElementById(
-                'pouchQrPrintArea'
+                'pouchQrModal'
+            );
+
+        const qrModal =
+            new bootstrap.Modal(
+                modalElement
+            );
+
+        const qrLoading =
+            document.getElementById(
+                'pouchQrLoading'
+            );
+
+        const qrContent =
+            document.getElementById(
+                'pouchQrContent'
+            );
+
+        const qrError =
+            document.getElementById(
+                'pouchQrError'
             );
 
         const qrImage =
-            printArea.querySelector('img');
-
-        if (!qrImage) {
-            alert('QR Code belum tersedia.');
-            return;
-        }
-
-        const label =
-            labelArea.textContent.trim();
-
-        const printWindow =
-            window.open(
-                '',
-                '_blank',
-                'width=340,height=430'
+            document.getElementById(
+                'pouchQrImage'
             );
 
-        if (!printWindow) {
-            alert(
-                'Izinkan pop-up browser untuk mencetak QR Code.'
+        const qrLabel =
+            document.getElementById(
+                'pouchQrLabel'
             );
-            return;
-        }
 
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Print QR Pouch</title>
-                <style>
-                    @page {
-                        size: 75mm 100mm;
-                        margin: 0;
+        const qrSpb =
+            document.getElementById(
+                'pouchQrSpb'
+            );
+
+        document.addEventListener(
+            'click',
+            async function (event) {
+                const button =
+                    event.target.closest(
+                        '.btnPouchQr'
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+                const url =
+                    button.dataset.url;
+
+                const spb =
+                    button.dataset.spb
+                    ?? '-';
+
+                qrSpb.textContent =
+                    `SPB: ${spb}`;
+
+                qrLoading.classList.remove(
+                    'd-none'
+                );
+
+                qrContent.classList.add(
+                    'd-none'
+                );
+
+                qrError.classList.add(
+                    'd-none'
+                );
+
+                qrImage.src = '';
+                qrLabel.textContent = '-';
+
+                qrModal.show();
+
+                try {
+                    const response =
+                        await fetch(
+                            url,
+                            {
+                                headers: {
+                                    Accept:
+                                        'application/json',
+                                    'X-Requested-With':
+                                        'XMLHttpRequest'
+                                }
+                            }
+                        );
+
+                    const result =
+                        await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            result.message
+                            ?? 'QR Code gagal dimuat.'
+                        );
                     }
 
-                    * {
-                        box-sizing: border-box;
-                    }
+                    qrImage.src =
+                        `data:image/png;base64,${result.qrCode}`;
 
-                    body {
-                        width: 75mm;
-                        height: 100mm;
-                        margin: 0;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-family: Arial, sans-serif;
-                    }
+                    qrLabel.textContent =
+                        result.label ?? spb;
 
-                    .print-wrap {
-                        width: 100%;
-                        padding: 4mm;
-                        text-align: center;
-                    }
+                    qrLoading.classList.add(
+                        'd-none'
+                    );
 
-                    img {
-                        width: 58mm;
-                        height: 58mm;
-                    }
+                    qrContent.classList.remove(
+                        'd-none'
+                    );
+                } catch (error) {
+                    qrLoading.classList.add(
+                        'd-none'
+                    );
 
-                    .label {
-                        margin-top: 3mm;
-                        font-size: 8pt;
-                        font-weight: 700;
-                        word-break: break-word;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-wrap">
-                    <img
-                        src="${qrImage.src}"
-                        alt="QR Pouch"
-                    >
+                    qrError.textContent =
+                        error.message
+                        ?? 'QR Code gagal dimuat.';
 
-                    <div class="label">
-                        ${escapeHtml(label)}
-                    </div>
-                </div>
-            </body>
-            </html>
-        `);
-
-        printWindow.document.close();
-
-        printWindow.onload = function () {
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-        };
+                    qrError.classList.remove(
+                        'd-none'
+                    );
+                }
+            }
+        );
     }
-});
+);
 </script>
 @endsection

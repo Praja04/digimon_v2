@@ -101,15 +101,15 @@
                     <div class="col-xl-4">
                         <div class="result-panel">
                             <div class="result-panel-title">
-                                Hasil BCT 4gt
+                                Hasil BCT kgf
                             </div>
 
                             <div class="table-responsive">
                                 <table class="table table-bordered text-center align-middle mb-0">
                                     <thead>
                                         <tr>
-                                            <th>BCT 4gt 1</th>
-                                            <th>BCT 4gt 2</th>
+                                            <th>BCT kgf 1</th>
+                                            <th>BCT kgf 2</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -473,7 +473,7 @@
                     const value = state.values[globalIndex] ?? '';
 
                     headers += `
-                        <th>BCT 4gt ${number}</th>
+                        <th>BCT kgf ${number}</th>
                     `;
 
                     inputs += `

@@ -30,24 +30,31 @@ class Pelarutan1Request extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => 'required|integer|exists:pelarutan_1,id',
             'brix' => 'required|numeric|min:0|max:100',
             'nacl' => 'required|numeric|min:0|max:100',
             'organo' => 'required|string',
             'status_disposition' => 'required',
-            'disposition_remaks' => 'nullable|string|max:255',
+            'disposition_remark' => 'nullable|string|max:255',
             'adjustment_qty_gula_tebu' => 'nullable|numeric',
             'adjustment_qty_gula_kelapa' => 'nullable|numeric',
+            'disposition' => 'nullable|string',
+            'revisi' => 'nullable',
         ];
     }
 
     public function attributes()
     {
-        return  [
+        return [
+            'id' => 'ID Pelarutan 1',
             'brix' => 'Brix',
             'nacl' => 'NACL',
             'organo' => 'Organo',
             'status_disposition' => 'Status',
-            'disposition_remaks' => 'Catatan disposisi',
+            'disposition_remark' => 'Catatan disposisi',
+            'adjustment_qty_gula_tebu' => 'Adjustment Gula Tebu',
+            'adjustment_qty_gula_kelapa' => 'Adjustment Gula Kelapa',
+            'disposition' => 'Disposisi',
         ];
     }
 }

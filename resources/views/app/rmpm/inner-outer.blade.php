@@ -214,6 +214,15 @@
                                     </option>
 
                                     <option
+                                        value="Draft"
+                                        @selected(
+                                            request('status') === 'Draft'
+                                        )
+                                    >
+                                        Draft
+                                    </option>
+
+                                    <option
                                         value="Sudah Sampling"
                                         @selected(
                                             request('status') === 'Sudah Sampling'
@@ -262,7 +271,11 @@
                                         <th>Jenis Incoming</th>
                                         <th>Jenis Material</th>
 
-                                        <th style="width: 180px;">
+                                        <th style="width: 130px;">
+                                            Status
+                                        </th>
+
+                                        <th style="width: 240px;">
                                             Action
                                         </th>
                                     </tr>
@@ -278,21 +291,21 @@
                                                     $incoming->id
                                                 );
 
+                                            $processStatus =
+                                                strtolower(
+                                                    trim(
+                                                        (string) (
+                                                            $sampling?->status_proses
+                                                            ?? ''
+                                                        )
+                                                    )
+                                                );
+
                                             $isDraft =
-                                                $sampling
-                                                && $sampling->status_proses
-                                                    === 'draft';
-
-                                            $statusName =
-                                                $incoming->samplingStatus?->nama
-                                                ?? 'Belum Sampling';
-
-                                            $statusLower =
-                                                strtolower($statusName);
+                                                $processStatus === 'draft';
 
                                             $sudahSampling =
-                                                str_contains($statusLower, 'sudah') ||
-                                                str_contains($statusLower, 'selesai');
+                                                $processStatus === 'final';
                                         @endphp
 
                                         <tr>
@@ -316,17 +329,49 @@
 
                                             <td>
                                                 @if ($sudahSampling)
+                                                    <span class="badge bg-success">
+                                                        Sudah Sampling
+                                                    </span>
+                                                @elseif ($isDraft)
+                                                    <span class="badge bg-warning text-dark">
+                                                        Draft
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-info">
+                                                        Belum Sampling
+                                                    </span>
+                                                @endif
+                                            </td>
 
-                                                    <a
-                                                        href="{{ route(
-                                                            'rmpm.pm.inner-outer.sampling',
-                                                            $incoming
-                                                        ) }}"
-                                                        class="btn btn-success btn-sm"
-                                                    >
-                                                        <i class="mdi mdi-eye-outline me-1"></i>
-                                                        Lihat Data
-                                                    </a>
+                                            <td>
+                                                @if ($sudahSampling)
+
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <a
+                                                            href="{{ route(
+                                                                'rmpm.pm.inner-outer.resume',
+                                                                $incoming
+                                                            ) }}"
+                                                            class="btn btn-success btn-sm"
+                                                        >
+                                                            <i class="mdi mdi-file-document-outline me-1"></i>
+                                                            Lihat Resume
+                                                        </a>
+
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-primary btn-sm btnInnerOuterQr"
+                                                            data-url="{{ route(
+                                                                'rmpm.pm.inner-outer.qrcode',
+                                                                $incoming->id
+                                                            ) }}"
+                                                            data-spb="{{ $incoming->no_spb }}"
+                                                            data-jenis="{{ $incoming->jenisIncoming?->nama ?? 'Inner / Outer' }}"
+                                                        >
+                                                            <i class="mdi mdi-qrcode-scan me-1"></i>
+                                                            QR Code
+                                                        </button>
+                                                    </div>
 
                                                 @elseif ($isDraft)
 
@@ -337,13 +382,9 @@
                                                         ) }}"
                                                         class="btn btn-primary btn-sm"
                                                     >
-                                                        <i class="mdi mdi-play-circle-outline me-1"></i>
-                                                        Continue
+                                                        <i class="mdi mdi-progress-clock me-1"></i>
+                                                        Lanjutkan
                                                     </a>
-
-                                                    <span class="badge bg-warning text-dark ms-1">
-                                                        Draft
-                                                    </span>
 
                                                 @else
 
@@ -366,7 +407,7 @@
 
                                         <tr>
                                             <td
-                                                colspan="5"
+                                                colspan="6"
                                                 class="text-center py-5"
                                             >
                                                 <div class="empty-state-icon">
@@ -402,6 +443,91 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+{{-- QR CODE MODAL --}}
+<div
+    class="modal fade"
+    id="innerOuterQrModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1">
+                        QR Code Laporan Inner / Outer
+                    </h5>
+
+                    <small
+                        id="innerOuterQrSpb"
+                        class="text-muted"
+                    >
+                        -
+                    </small>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body text-center p-4">
+
+                <div
+                    id="innerOuterQrLoading"
+                    class="py-5"
+                >
+                    <div
+                        class="spinner-border text-primary"
+                        role="status"
+                    ></div>
+
+                    <div class="text-muted mt-3">
+                        Memuat QR Code...
+                    </div>
+                </div>
+
+                <div
+                    id="innerOuterQrContent"
+                    class="d-none"
+                >
+                    <div class="inner-outer-qr-box">
+                        <img
+                            id="innerOuterQrImage"
+                            src=""
+                            alt="QR Code Laporan Inner / Outer"
+                        >
+                    </div>
+
+                    <div
+                        id="innerOuterQrLabel"
+                        class="fw-bold mt-3"
+                    >
+                        -
+                    </div>
+
+                    <div class="text-muted small mt-2">
+                        Scan QR Code untuk membuka laporan final secara langsung.
+                    </div>
+                </div>
+
+                <div
+                    id="innerOuterQrError"
+                    class="alert alert-danger d-none mt-3 mb-0"
+                >
+                    QR Code gagal dimuat.
+                </div>
+
+            </div>
+
+        </div>
     </div>
 </div>
 
@@ -497,6 +623,27 @@
         }
     }
 
+
+    .inner-outer-qr-box {
+        width: 220px;
+        height: 220px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .inner-outer-qr-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
     @media (max-width: 575.98px) {
         .back-action-card {
             max-width: 100%;
@@ -525,6 +672,46 @@
         );
 
         const baseUrl = @json(route('rmpm.pm.inner-outer'));
+
+        const qrModalElement =
+            document.getElementById(
+                'innerOuterQrModal'
+            );
+
+        const qrModal =
+            new bootstrap.Modal(
+                qrModalElement
+            );
+
+        const qrLoading =
+            document.getElementById(
+                'innerOuterQrLoading'
+            );
+
+        const qrContent =
+            document.getElementById(
+                'innerOuterQrContent'
+            );
+
+        const qrError =
+            document.getElementById(
+                'innerOuterQrError'
+            );
+
+        const qrImage =
+            document.getElementById(
+                'innerOuterQrImage'
+            );
+
+        const qrLabel =
+            document.getElementById(
+                'innerOuterQrLabel'
+            );
+
+        const qrSpb =
+            document.getElementById(
+                'innerOuterQrSpb'
+            );
 
         let activeRequest = null;
         let searchTimer = null;
@@ -717,6 +904,102 @@
 
                 filterForm.reset();
                 loadTable(baseUrl);
+            }
+        );
+
+        document.addEventListener(
+            'click',
+            async function (event) {
+                const qrButton =
+                    event.target.closest(
+                        '.btnInnerOuterQr'
+                    );
+
+                if (!qrButton) {
+                    return;
+                }
+
+                const url =
+                    qrButton.dataset.url;
+
+                const spb =
+                    qrButton.dataset.spb
+                    ?? '-';
+
+                const jenis =
+                    qrButton.dataset.jenis
+                    ?? 'Inner / Outer';
+
+                qrSpb.textContent =
+                    `${jenis} • SPB: ${spb}`;
+
+                qrLoading.classList.remove(
+                    'd-none'
+                );
+
+                qrContent.classList.add(
+                    'd-none'
+                );
+
+                qrError.classList.add(
+                    'd-none'
+                );
+
+                qrImage.src = '';
+                qrLabel.textContent = '-';
+
+                qrModal.show();
+
+                try {
+                    const response =
+                        await fetch(
+                            url,
+                            {
+                                headers: {
+                                    Accept:
+                                        'application/json',
+                                    'X-Requested-With':
+                                        'XMLHttpRequest'
+                                }
+                            }
+                        );
+
+                    const result =
+                        await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            result.message
+                            ?? 'QR Code gagal dimuat.'
+                        );
+                    }
+
+                    qrImage.src =
+                        `data:image/png;base64,${result.qrCode}`;
+
+                    qrLabel.textContent =
+                        result.label ?? spb;
+
+                    qrLoading.classList.add(
+                        'd-none'
+                    );
+
+                    qrContent.classList.remove(
+                        'd-none'
+                    );
+                } catch (error) {
+                    qrLoading.classList.add(
+                        'd-none'
+                    );
+
+                    qrError.textContent =
+                        error.message
+                        ?? 'QR Code gagal dimuat.';
+
+                    qrError.classList.remove(
+                        'd-none'
+                    );
+                }
             }
         );
 
