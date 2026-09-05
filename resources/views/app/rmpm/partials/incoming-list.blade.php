@@ -1,3 +1,9 @@
+@php
+    $canManageIncoming =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+@endphp
+
 <div class="card border-0 shadow-sm incoming-list-card">
 
     <div class="card-header bg-transparent border-bottom">
@@ -152,9 +158,11 @@
                         <th class="text-center" style="min-width: 175px;">
                             Proses
                         </th>
-                        <th class="text-center" style="width: 105px;">
-                            Kelola Data
-                        </th>
+                        @if ($canManageIncoming)
+                            <th class="text-center" style="width: 105px;">
+                                Kelola Data
+                            </th>
+                        @endif
                     </tr>
                 </thead>
 
@@ -404,48 +412,50 @@
                                 @endif
                             </td>
 
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-1">
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-warning btn-sm btnEdit"
-                                        data-url="{{ route(
-                                            'rmpm.pm.incoming.edit',
-                                            $incoming
-                                        ) }}"
-                                        title="Edit Incoming"
-                                    >
-                                        <i class="mdi mdi-pencil"></i>
-                                    </button>
-
-                                    @if (! $isDraft && ! $isFinished)
-                                        <form
-                                            method="POST"
-                                            action="{{ route(
-                                                'rmpm.pm.incoming.destroy',
+                            @if ($canManageIncoming)
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-warning btn-sm btnEdit"
+                                            data-url="{{ route(
+                                                'rmpm.pm.incoming.edit',
                                                 $incoming
                                             ) }}"
-                                            class="deleteForm"
+                                            title="Edit Incoming"
                                         >
-                                            @csrf
-                                            @method('DELETE')
+                                            <i class="mdi mdi-pencil"></i>
+                                        </button>
 
-                                            <button
-                                                type="submit"
-                                                class="btn btn-outline-danger btn-sm"
-                                                title="Hapus Incoming"
+                                        @if (! $isDraft && ! $isFinished)
+                                            <form
+                                                method="POST"
+                                                action="{{ route(
+                                                    'rmpm.pm.incoming.destroy',
+                                                    $incoming
+                                                ) }}"
+                                                class="deleteForm"
                                             >
-                                                <i class="mdi mdi-delete"></i>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
+                                                @csrf
+                                                @method('DELETE')
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    title="Hapus Incoming"
+                                                >
+                                                    <i class="mdi mdi-delete"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
                             <td
-                                colspan="11"
+                                colspan="{{ $canManageIncoming ? 11 : 10 }}"
                                 class="text-center py-5"
                             >
                                 <div class="empty-state-icon">

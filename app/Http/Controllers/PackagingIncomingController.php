@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -241,8 +242,14 @@ class PackagingIncomingController extends Controller
                 'jenis_incoming_id' =>
                     $validated['jenis_incoming_id'],
 
+                'jenis_incoming_lainnya' =>
+                    $validated['jenis_incoming_lainnya'] ?? null,
+
                 'supplier_id' =>
                     $validated['supplier_id'],
+
+                'supplier_lainnya' =>
+                    $validated['supplier_lainnya'] ?? null,
 
                 'jenis_material_id' =>
                     $validated['jenis_material_id'],
@@ -281,6 +288,7 @@ class PackagingIncomingController extends Controller
     public function edit(
         PackagingIncoming $packagingIncoming
     ): JsonResponse {
+        $this->ensureForeman();
         return response()->json([
             'success' => true,
             'data' => [
@@ -294,9 +302,17 @@ class PackagingIncomingController extends Controller
                     $packagingIncoming
                         ->jenis_incoming_id,
 
+                'jenis_incoming_lainnya' =>
+                    $packagingIncoming
+                        ->jenis_incoming_lainnya,
+
                 'supplier_id' =>
                     $packagingIncoming
                         ->supplier_id,
+
+                'supplier_lainnya' =>
+                    $packagingIncoming
+                        ->supplier_lainnya,
 
                 'jenis_material_id' =>
                     $packagingIncoming
@@ -342,6 +358,7 @@ class PackagingIncomingController extends Controller
         Request $request,
         PackagingIncoming $packagingIncoming
     ): JsonResponse {
+        $this->ensureForeman();
         $validated = $this->validateIncoming(
             $request,
             $packagingIncoming->id
@@ -366,8 +383,14 @@ class PackagingIncomingController extends Controller
             'jenis_incoming_id' =>
                 $validated['jenis_incoming_id'],
 
+            'jenis_incoming_lainnya' =>
+                $validated['jenis_incoming_lainnya'] ?? null,
+
             'supplier_id' =>
                 $validated['supplier_id'],
+
+            'supplier_lainnya' =>
+                $validated['supplier_lainnya'] ?? null,
 
             'jenis_material_id' =>
                 $validated['jenis_material_id'],
@@ -401,6 +424,7 @@ class PackagingIncomingController extends Controller
         Request $request,
         PackagingIncoming $packagingIncoming
     ): JsonResponse|RedirectResponse {
+        $this->ensureForeman();
         $statusName = strtolower(
             $packagingIncoming
                 ->samplingStatus
@@ -610,7 +634,7 @@ class PackagingIncomingController extends Controller
         Request $request,
         ?int $ignoreId = null
     ): array {
-        return $request->validate(
+        $validated = $request->validate(
             [
                 'no_spb' => [
                     'required',
@@ -651,9 +675,21 @@ class PackagingIncomingController extends Controller
                     'exists:jenis_incomings,id',
                 ],
 
+                'jenis_incoming_lainnya' => [
+                    'nullable',
+                    'string',
+                    'max:255',
+                ],
+
                 'supplier_id' => [
                     'required',
                     'exists:suppliers,id',
+                ],
+
+                'supplier_lainnya' => [
+                    'nullable',
+                    'string',
+                    'max:255',
                 ],
 
                 'jenis_material_id' => [
@@ -725,6 +761,96 @@ class PackagingIncomingController extends Controller
                 'mid.required' =>
                     'MID dari WPM wajib dipilih.',
             ]
+        );
+
+        $jenisIncoming = JenisIncoming::query()
+            ->find($validated['jenis_incoming_id']);
+
+        $isJenisIncomingOthers =
+            strtolower(
+                trim(
+                    (string) ($jenisIncoming?->nama ?? '')
+                )
+            ) === 'others';
+
+        $supplier = Supplier::query()
+            ->find($validated['supplier_id']);
+
+        $supplierName = strtolower(
+            trim(
+                (string) (
+                    $supplier?->nama
+                    ?? $supplier?->nama_supplier
+                    ?? ''
+                )
+            )
+        );
+
+        $isSupplierOthers =
+            $supplierName === 'others';
+
+        if (
+            $isJenisIncomingOthers
+            && trim(
+                (string) (
+                    $validated['jenis_incoming_lainnya']
+                    ?? ''
+                )
+            ) === ''
+        ) {
+            throw ValidationException::withMessages([
+                'jenis_incoming_lainnya' => [
+                    'Jenis incoming lainnya wajib diisi saat memilih Others.',
+                ],
+            ]);
+        }
+
+        if (
+            $isSupplierOthers
+            && trim(
+                (string) (
+                    $validated['supplier_lainnya']
+                    ?? ''
+                )
+            ) === ''
+        ) {
+            throw ValidationException::withMessages([
+                'supplier_lainnya' => [
+                    'Supplier lainnya wajib diisi saat memilih Others.',
+                ],
+            ]);
+        }
+
+        $validated['jenis_incoming_lainnya'] =
+            $isJenisIncomingOthers
+                ? trim(
+                    (string) (
+                        $validated['jenis_incoming_lainnya']
+                        ?? ''
+                    )
+                )
+                : null;
+
+        $validated['supplier_lainnya'] =
+            $isSupplierOthers
+                ? trim(
+                    (string) (
+                        $validated['supplier_lainnya']
+                        ?? ''
+                    )
+                )
+                : null;
+
+        return $validated;
+    }
+
+    private function ensureForeman(): void
+    {
+        abort_unless(
+            auth()->check()
+            && auth()->user()?->role === 'Foreman',
+            403,
+            'Kelola data incoming hanya dapat dilakukan oleh Foreman.'
         );
     }
 

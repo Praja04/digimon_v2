@@ -19,6 +19,18 @@
         'qr_code',
         $samplePertama['qr_code'] ?? ''
     );
+
+    $isForeman =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+
+    $isFinal =
+        $sampling?->status_proses === 'final';
+
+    // Jika sudah Final, hanya Foreman yang boleh koreksi.
+    $isLocked =
+        $isFinal
+        && ! $isForeman;
 @endphp
 <div class="page-content">
     <div class="container-fluid">
@@ -50,6 +62,21 @@
             </div>
         @endif
 
+        @if ($isLocked)
+            <div class="alert alert-info">
+                <i class="mdi mdi-lock-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Data hanya dapat dilihat. Koreksi data final hanya dapat dilakukan oleh
+                <strong>Foreman</strong>.
+            </div>
+        @elseif ($isFinal && $isForeman)
+            <div class="alert alert-warning">
+                <i class="mdi mdi-account-edit-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+            </div>
+        @endif
+
         <form
             id="pouchSamplingForm"
             method="POST"
@@ -61,6 +88,10 @@
         >
             @csrf
 
+            <fieldset
+                id="samplingFieldset"
+                @disabled($isLocked)
+            >
             <div class="card border-0 shadow-sm sampling-card">
                 <div class="sampling-header">
                     <div>
@@ -522,7 +553,7 @@
 
                             <small id="fotoHelp" class="text-muted d-block mt-1">
                                 Tidak wajib apabila tidak terdapat ketidaksesuaian.
-                                Maksimal 10 foto, masing-masing maksimal 5 MB.
+                                Maksimal 10 foto, masing-masing maksimal 2 MB.
                             </small>
 
                             @php
@@ -588,30 +619,37 @@
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         <a href="{{ route('rmpm.pm.pouch') }}" class="btn btn-light">
                             <i class="mdi mdi-arrow-left me-1"></i>
-                            Batal
+                            Kembali
                         </a>
 
-                        <button
-                            type="submit"
-                            value="draft"
-                            class="btn btn-warning px-4 save-button"
-                        >
-                            <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                            Simpan Sementara
-                        </button>
+                        @if (! $isLocked)
+                            @if (! $isFinal)
+                                <button
+                                    type="submit"
+                                    value="draft"
+                                    class="btn btn-warning px-4 save-button"
+                                >
+                                    <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                                    Simpan Sementara
+                                </button>
+                            @endif
 
-                        <button
-                            type="submit"
-                            value="final"
-                            id="submitButton"
-                            class="btn btn-primary px-4 save-button"
-                        >
-                            <i class="mdi mdi-check-circle-outline me-1"></i>
-                            Simpan Final
-                        </button>
+                            <button
+                                type="submit"
+                                value="final"
+                                id="submitButton"
+                                class="btn btn-primary px-4 save-button"
+                            >
+                                <i class="mdi mdi-check-circle-outline me-1"></i>
+                                {{ $isFinal && $isForeman
+                                    ? 'Simpan Koreksi'
+                                    : 'Simpan Final' }}
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
+            </fieldset>
         </form>
     </div>
 </div>
@@ -785,6 +823,7 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const isSamplingLocked = @json($isLocked);
     const form = document.getElementById('pouchSamplingForm');
     const jumlahInput = document.getElementById('jumlah_sampel');
     const rowsContainer = document.getElementById('sampleRows');
@@ -1124,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 getExistingPhotoCount() === 0;
 
             fotoHelp.textContent =
-                'Pilih maksimal 10 foto termasuk foto yang sudah tersimpan. Maksimal 5 MB per foto.';
+                'Pilih maksimal 10 foto termasuk foto yang sudah tersimpan. Maksimal 2 MB per foto.';
 
             return;
         }
@@ -1361,6 +1400,14 @@ document.addEventListener('DOMContentLoaded', function () {
         'submit',
         async function (event) {
             event.preventDefault();
+
+            if (isSamplingLocked) {
+                showAlert(
+                    'warning',
+                    'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                );
+                return;
+            }
 
             const saveMode =
                 event.submitter?.value ?? 'final';
