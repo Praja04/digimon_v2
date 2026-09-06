@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\PressTestMesin1Created;
 use App\Http\Controllers\Controller;
 use App\Models\PressTestMesin1;
 use Illuminate\Http\Request;
