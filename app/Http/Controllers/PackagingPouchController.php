@@ -228,6 +228,16 @@ class PackagingPouchController extends Controller
             )
             ->first();
 
+        /*
+         * Setelah data sudah FINAL:
+         * - Foreman boleh melakukan koreksi.
+         * - Role selain Foreman tidak boleh mengubah data lagi,
+         *   baik melalui tombol maupun request manual.
+         */
+        $this->ensureFinalCanBeChanged(
+            $existingSampling
+        );
+
         $isFinal = $saveMode === 'final';
 
         $rules = [
@@ -292,7 +302,7 @@ class PackagingPouchController extends Controller
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'foto' => [
@@ -304,7 +314,7 @@ class PackagingPouchController extends Controller
             'foto.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'keterangan' => [
@@ -503,7 +513,7 @@ class PackagingPouchController extends Controller
                     'Semua file ketidaksesuaian harus berupa gambar.',
 
                 'foto.*.max' =>
-                    'Ukuran setiap foto maksimal 5 MB.',
+                    'Ukuran setiap foto maksimal 2 MB.',
 
                 'jenis_ketidaksesuaian.required' =>
                     'Pilih minimal satu jenis ketidaksesuaian.',
@@ -878,6 +888,27 @@ class PackagingPouchController extends Controller
             'label' => $label,
             'url' => $qrText,
         ]);
+    }
+
+
+    private function isForeman(): bool
+    {
+        return auth()->check()
+            && auth()->user()?->role === 'Foreman';
+    }
+
+    private function ensureFinalCanBeChanged(
+        ?PackagingPouchSampling $sampling
+    ): void {
+        if (
+            $sampling?->status_proses === 'final'
+            && ! $this->isForeman()
+        ) {
+            abort(
+                403,
+                'Data sampling yang sudah final hanya dapat dikoreksi oleh Foreman.'
+            );
+        }
     }
 
     private function ensurePouch(
