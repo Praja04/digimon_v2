@@ -31,8 +31,8 @@ return [
         ],
     ],
 
-     'wpm' => [
-    'master_barang_url' => env('WPM_API_URL'),
+    'wpm' => [
+        'master_barang_url' => env('WPM_API_URL'),
     ],
 
 ];
