@@ -75,6 +75,17 @@
             true
         )
         || filled($jenisLainnyaValue);
+
+    $isForeman =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+
+    $isFinal =
+        $sampling?->status_proses === 'final';
+
+    $isLocked =
+        $isFinal
+        && ! $isForeman;
 @endphp
 
 <div class="page-content">
@@ -127,6 +138,21 @@
             </div>
         @endif
 
+        @if ($isLocked)
+            <div class="alert alert-info">
+                <i class="mdi mdi-lock-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Data hanya dapat dilihat. Koreksi data final hanya dapat dilakukan oleh
+                <strong>Foreman</strong>.
+            </div>
+        @elseif ($isFinal && $isForeman)
+            <div class="alert alert-warning">
+                <i class="mdi mdi-account-edit-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+            </div>
+        @endif
+
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-end">
@@ -163,6 +189,10 @@
         >
             @csrf
 
+            <fieldset
+                id="innerOuterSamplingFieldset"
+                @disabled($isLocked)
+            >
             <div class="card border-0 shadow-sm sampling-card mb-4">
 
                 <div class="sampling-header">
@@ -370,7 +400,8 @@
                                     <th>Lebar (mm)</th>
                                     <th>Pitch (mm)</th>
                                     <th>Thickness (Mikron)</th>
-                                    <th>Arah Gulungan</th>
+                                    <th>Arah Vertikal</th>
+                                    <th>Arah Terbalik</th>
                                     <th>Laminasi</th>
                                     <th>Barcode</th>
                                     <th>Design</th>
@@ -463,10 +494,6 @@
 
                         <small class="text-muted d-block">
                             Field <strong>Pitch</strong> hanya dapat diisi untuk Outer.
-                        </small>
-
-                        <small class="text-muted d-block">
-                            Field <strong>Arah Gulungan</strong> menggantikan tampilan Arah Vertikal dan Arah Terbalik menjadi satu kolom pemeriksaan.
                         </small>
                     </div>
 
@@ -726,31 +753,39 @@
                             class="btn btn-light"
                         >
                             <i class="mdi mdi-arrow-left me-1"></i>
-                            Batal
+                            Kembali
                         </a>
 
-                        <button
-                            type="submit"
-                            value="draft"
-                            class="btn btn-warning px-4 save-button"
-                        >
-                            <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                            Simpan Sementara
-                        </button>
+                        @if (! $isLocked)
+                            @if (! $isFinal)
+                                <button
+                                    type="submit"
+                                    value="draft"
+                                    class="btn btn-warning px-4 save-button"
+                                    formnovalidate
+                                >
+                                    <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                                    Simpan Sementara
+                                </button>
+                            @endif
 
-                        <button
-                            type="submit"
-                            value="final"
-                            id="submitButton"
-                            class="btn btn-primary px-4 save-button"
-                        >
-                            <i class="mdi mdi-check-circle-outline me-1"></i>
-                            Simpan Final
-                        </button>
+                            <button
+                                type="submit"
+                                value="final"
+                                id="submitButton"
+                                class="btn btn-primary px-4 save-button"
+                            >
+                                <i class="mdi mdi-check-circle-outline me-1"></i>
+                                {{ $isFinal && $isForeman
+                                    ? 'Simpan Koreksi'
+                                    : 'Simpan Final' }}
+                            </button>
+                        @endif
                     </div>
 
                 </div>
             </div>
+            </fieldset>
         </form>
 
     </div>
@@ -990,6 +1025,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const isSamplingLocked = @json($isLocked);
         const form = document.getElementById(
             'innerOuterSamplingForm'
         );
@@ -1190,6 +1226,13 @@
                             </td>
 
                             <td>
+                                ${buildDirectionSelect(
+                                    `samples[${index}][arah_terbalik]`,
+                                    sample.arah_terbalik
+                                )}
+                            </td>
+
+                            <td>
                                 ${buildStatusSelect(
                                     `samples[${index}][laminasi]`,
                                     sample.laminasi
@@ -1240,6 +1283,7 @@
                 'pitch',
                 'thickness',
                 'arah_vertikal',
+                'arah_terbalik',
                 'laminasi',
                 'barcode',
                 'design',
@@ -1545,6 +1589,13 @@
             async function (event) {
                 event.preventDefault();
 
+                if (isSamplingLocked) {
+                    alert(
+                        'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                    );
+                    return;
+                }
+
                 const saveMode =
                     event.submitter?.value ?? 'final';
 
@@ -1617,14 +1668,22 @@
                 );
 
                 try {
+                    const csrfToken =
+                        form.querySelector(
+                            'input[name="_token"]'
+                        )?.value ?? '';
+
                     const response = await fetch(
                         form.action,
                         {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 Accept: 'application/json',
                                 'X-Requested-With':
-                                    'XMLHttpRequest'
+                                    'XMLHttpRequest',
+                                'X-CSRF-TOKEN':
+                                    csrfToken
                             },
                             body: formData
                         }

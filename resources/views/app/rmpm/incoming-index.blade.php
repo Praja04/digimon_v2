@@ -349,6 +349,39 @@
                                             {{ $message }}
                                         </div>
                                     @enderror
+
+                                    <div
+                                        id="jenisIncomingLainnyaWrapper"
+                                        class="other-inline-field d-none"
+                                    >
+                                        <label
+                                            for="jenis_incoming_lainnya"
+                                            class="form-label mb-1"
+                                        >
+                                            Jenis Incoming Lainnya
+                                            <span class="text-danger">*</span>
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            name="jenis_incoming_lainnya"
+                                            id="jenis_incoming_lainnya"
+                                            class="form-control @error('jenis_incoming_lainnya') is-invalid @enderror"
+                                            value="{{ old('jenis_incoming_lainnya') }}"
+                                            placeholder="Contoh: Paper Bag, Label Sticker, dll."
+                                            maxlength="255"
+                                        >
+
+                                        <small class="text-muted d-block mt-1">
+                                            Isi manual karena memilih Others.
+                                        </small>
+
+                                        @error('jenis_incoming_lainnya')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                    </div>
                                 </div>
 
                                 <div class="col-xl-4 col-md-6">
@@ -413,6 +446,39 @@
                                             {{ $message }}
                                         </div>
                                     @enderror
+
+                                    <div
+                                        id="supplierLainnyaWrapper"
+                                        class="other-inline-field d-none"
+                                    >
+                                        <label
+                                            for="supplier_lainnya"
+                                            class="form-label mb-1"
+                                        >
+                                            Supplier Lainnya
+                                            <span class="text-danger">*</span>
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            name="supplier_lainnya"
+                                            id="supplier_lainnya"
+                                            class="form-control @error('supplier_lainnya') is-invalid @enderror"
+                                            value="{{ old('supplier_lainnya') }}"
+                                            placeholder="Contoh: PT ABC Packaging"
+                                            maxlength="255"
+                                        >
+
+                                        <small class="text-muted d-block mt-1">
+                                            Isi manual karena memilih Others.
+                                        </small>
+
+                                        @error('supplier_lainnya')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                    </div>
                                 </div>
 
                                 <div class="col-xl-4 col-md-6">
@@ -875,6 +941,24 @@
     }
     @keyframes incomingSpin { to { transform: rotate(360deg); } }
 
+    .other-inline-field {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border: 1px solid #dbe4f0;
+        border-radius: 10px;
+        background: #f8fafc;
+    }
+
+    .other-inline-field .form-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .other-inline-field .form-control {
+        min-height: 38px;
+    }
+
     /* WPM AUTOSUGGEST */
     .wpm-autosuggest {
         position: relative;
@@ -1004,6 +1088,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const wpmAutosuggest = document.getElementById('wpmAutosuggest');
     const wpmSuggestionList = document.getElementById('wpmSuggestionList');
     const btnClearMid = document.getElementById('btnClearMid');
+
+    const jenisIncomingSelect =
+        document.getElementById('jenis_incoming_id');
+
+    const jenisIncomingLainnyaWrapper =
+        document.getElementById('jenisIncomingLainnyaWrapper');
+
+    const jenisIncomingLainnyaInput =
+        document.getElementById('jenis_incoming_lainnya');
+
+    const supplierSelect =
+        document.getElementById('supplier_id');
+
+    const supplierLainnyaWrapper =
+        document.getElementById('supplierLainnyaWrapper');
+
+    const supplierLainnyaInput =
+        document.getElementById('supplier_lainnya');
 
     const masterBarangWpm = @json($masterBarangWpmMap);
 
@@ -1269,6 +1371,92 @@ document.addEventListener('DOMContentLoaded', function () {
             'Status ditentukan otomatis oleh sistem.';
     }
 
+    function isJenisIncomingOthers() {
+        const selectedOption =
+            jenisIncomingSelect?.options[
+                jenisIncomingSelect.selectedIndex
+            ];
+
+        const selectedText =
+            String(selectedOption?.textContent ?? '')
+                .trim()
+                .toLowerCase();
+
+        return selectedText === 'others';
+    }
+
+    function updateJenisIncomingLainnya(
+        clearWhenHidden = true
+    ) {
+        const isOthers =
+            isJenisIncomingOthers();
+
+        jenisIncomingLainnyaWrapper?.classList.toggle(
+            'd-none',
+            !isOthers
+        );
+
+        if (!jenisIncomingLainnyaInput) {
+            return;
+        }
+
+        jenisIncomingLainnyaInput.required =
+            isOthers;
+
+        jenisIncomingLainnyaInput.disabled =
+            !isOthers;
+
+        if (
+            !isOthers
+            && clearWhenHidden
+        ) {
+            jenisIncomingLainnyaInput.value = '';
+        }
+    }
+
+    function isSupplierOthers() {
+        const selectedOption =
+            supplierSelect?.options[
+                supplierSelect.selectedIndex
+            ];
+
+        const selectedText =
+            String(selectedOption?.textContent ?? '')
+                .trim()
+                .toLowerCase();
+
+        return selectedText === 'others';
+    }
+
+    function updateSupplierLainnya(
+        clearWhenHidden = true
+    ) {
+        const isOthers =
+            isSupplierOthers();
+
+        supplierLainnyaWrapper?.classList.toggle(
+            'd-none',
+            !isOthers
+        );
+
+        if (!supplierLainnyaInput) {
+            return;
+        }
+
+        supplierLainnyaInput.required =
+            isOthers;
+
+        supplierLainnyaInput.disabled =
+            !isOthers;
+
+        if (
+            !isOthers
+            && clearWhenHidden
+        ) {
+            supplierLainnyaInput.value = '';
+        }
+    }
+
     function resetForm(scrollToTop = true) {
         form.reset();
         form.action = defaultAction;
@@ -1283,6 +1471,18 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('jam_kedatangan').value = defaultTime;
 
         updateStatusDisplay('Belum Sampling');
+
+        if (jenisIncomingLainnyaInput) {
+            jenisIncomingLainnyaInput.value = '';
+        }
+
+        updateJenisIncomingLainnya();
+
+        if (supplierLainnyaInput) {
+            supplierLainnyaInput.value = '';
+        }
+
+        updateSupplierLainnya();
 
         namaBarangWpmInput.value = '';
         uomWpmInput.value = '';
@@ -1491,8 +1691,22 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('jenis_incoming_id').value =
                 data.jenis_incoming_id ?? '';
 
+            if (jenisIncomingLainnyaInput) {
+                jenisIncomingLainnyaInput.value =
+                    data.jenis_incoming_lainnya ?? '';
+            }
+
+            updateJenisIncomingLainnya(false);
+
             document.getElementById('supplier_id').value =
                 data.supplier_id ?? '';
+
+            if (supplierLainnyaInput) {
+                supplierLainnyaInput.value =
+                    data.supplier_lainnya ?? '';
+            }
+
+            updateSupplierLainnya(false);
 
             document.getElementById('jenis_material_id').value =
                 data.jenis_material_id ?? '';
@@ -1723,6 +1937,20 @@ document.addEventListener('DOMContentLoaded', function () {
         setWpmDetail(selectedMid);
     }
 
+    jenisIncomingSelect?.addEventListener(
+        'change',
+        function () {
+            updateJenisIncomingLainnya();
+        }
+    );
+
+    supplierSelect?.addEventListener(
+        'change',
+        function () {
+            updateSupplierLainnya();
+        }
+    );
+
     midInput.addEventListener('input', function () {
         const typedValue =
             String(midInput.value ?? '');
@@ -1837,6 +2065,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateStatusDisplay('Belum Sampling');
     updateWpmDetail();
+    updateJenisIncomingLainnya(false);
+    updateSupplierLainnya(false);
 
     document.addEventListener('submit', function (event) {
         const deleteForm = event.target.closest('.deleteForm');

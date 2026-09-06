@@ -1,4 +1,4 @@
-@extends('layouts.component.main')
+﻿@extends('layouts.component.main')
 
 @section('title', 'Pemeriksaan Berat Karton')
 
@@ -69,6 +69,21 @@
         'gramasi',
         $gramasiTersimpan
     );
+
+    $isForeman =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+
+    /*
+     * Pada Karton, data Draft dan Final disimpan di tabel terpisah.
+     * Kalau $finalSampling sudah ada, berarti proses pernah disimpan Final.
+     */
+    $isFinal =
+        $finalSampling !== null;
+
+    $isLocked =
+        $isFinal
+        && ! $isForeman;
 @endphp
 
 <div class="page-content">
@@ -115,6 +130,32 @@
 
         <div id="alertContainer" class="mb-3"></div>
 
+        @if (
+            ! $isFinal
+            && $sampling?->status_proses === 'draft'
+        )
+            <div class="alert alert-warning">
+                <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                Data sementara ditemukan. Silakan lanjutkan pengisian lalu pilih
+                <strong>Simpan Final</strong>.
+            </div>
+        @endif
+
+        @if ($isLocked)
+            <div class="alert alert-info">
+                <i class="mdi mdi-lock-outline me-1"></i>
+                Data pemeriksaan Karton ini sudah <strong>Final</strong>.
+                Data hanya dapat dilihat. Koreksi data Final hanya dapat dilakukan oleh
+                <strong>Foreman</strong>.
+            </div>
+        @elseif ($isFinal && $isForeman)
+            <div class="alert alert-warning">
+                <i class="mdi mdi-account-edit-outline me-1"></i>
+                Data pemeriksaan Karton ini sudah <strong>Final</strong>.
+                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+            </div>
+        @endif
+
         <form
             id="kartonSamplingForm"
             method="POST"
@@ -126,6 +167,10 @@
         >
             @csrf
 
+            <fieldset
+                id="kartonSamplingFieldset"
+                @disabled($isLocked)
+            >
             <div class="card border-0 shadow-sm sampling-card">
 
                 <div class="sampling-header">
@@ -366,7 +411,7 @@
                         </div>
 
                         <small class="text-muted d-block mt-2">
-                            Maksimal total 10 foto. Maksimal 5 MB per foto.
+                            Maksimal total 10 foto. Maksimal 2 MB per foto.
                         </small>
 
                         <div
@@ -621,7 +666,7 @@
                         </div>
 
                         <small class="text-muted d-block mt-2">
-                            Maksimal total 10 foto. Maksimal 5 MB per foto.
+                            Maksimal total 10 foto. Maksimal 2 MB per foto.
                         </small>
 
                         <div
@@ -673,21 +718,39 @@
                             class="btn btn-light"
                         >
                             <i class="mdi mdi-arrow-left me-1"></i>
-                            Batal
+                            Kembali
                         </a>
 
-                        <button
-                            type="submit"
-                            id="submitButton"
-                            class="btn btn-primary px-4"
-                        >
-                            <i class="mdi mdi-content-save-outline me-1"></i>
-                            Simpan Berat
-                        </button>
+                        @if (! $isLocked)
+                            @if (! $isFinal)
+                                <button
+                                    type="submit"
+                                    value="draft"
+                                    class="btn btn-warning px-4 save-button"
+                                    formnovalidate
+                                >
+                                    <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                                    Simpan Sementara
+                                </button>
+                            @endif
+
+                            <button
+                                type="submit"
+                                value="final"
+                                id="submitButton"
+                                class="btn btn-primary px-4 save-button"
+                            >
+                                <i class="mdi mdi-check-circle-outline me-1"></i>
+                                {{ $isFinal && $isForeman
+                                    ? 'Simpan Koreksi'
+                                    : 'Simpan Final' }}
+                            </button>
+                        @endif
                     </div>
 
                 </div>
             </div>
+            </fieldset>
         </form>
 
     </div>
@@ -901,6 +964,15 @@
 document.addEventListener(
     'DOMContentLoaded',
     function () {
+        const isSamplingLocked =
+            @json($isLocked);
+
+        const isFinalRecord =
+            @json($isFinal);
+
+        const isForeman =
+            @json($isForeman);
+
         const form =
             document.getElementById(
                 'kartonSamplingForm'
@@ -1623,13 +1695,30 @@ document.addEventListener(
             async function (event) {
                 event.preventDefault();
 
-                if (!form.reportValidity()) {
+                if (isSamplingLocked) {
+                    showAlert(
+                        'warning',
+                        'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                    );
+                    return;
+                }
+
+                const saveMode =
+                    event.submitter?.value ?? 'final';
+
+                const isFinal =
+                    saveMode === 'final';
+
+                if (
+                    isFinal
+                    && ! form.reportValidity()
+                ) {
                     return;
                 }
 
                 if (
-                    konfirmasiSelect.value
-                    === 'Ada'
+                    isFinal
+                    && konfirmasiSelect.value === 'Ada'
                     && document.querySelectorAll(
                         '.jenis-ketidaksesuaian:checked'
                     ).length === 0
@@ -1643,7 +1732,8 @@ document.addEventListener(
                 }
 
                 if (
-                    konfirmasiSelect.value === 'Ada'
+                    isFinal
+                    && konfirmasiSelect.value === 'Ada'
                     && jenisLainnyaCheckbox.checked
                     && jenisLainnyaInput.value.trim() === ''
                 ) {
@@ -1658,7 +1748,8 @@ document.addEventListener(
                 }
 
                 if (
-                    existingFotoCount === 0
+                    isFinal
+                    && existingFotoCount === 0
                     && fotoInput.files.length === 0
                 ) {
                     showAlert(
@@ -1670,10 +1761,10 @@ document.addEventListener(
                 }
 
                 if (
-                    konfirmasiSelect.value === 'Ada'
+                    isFinal
+                    && konfirmasiSelect.value === 'Ada'
                     && existingFotoKetidaksesuaianCount === 0
-                    && fotoKetidaksesuaianInput
-                        .files.length === 0
+                    && fotoKetidaksesuaianInput.files.length === 0
                 ) {
                     showAlert(
                         'danger',
@@ -1683,15 +1774,37 @@ document.addEventListener(
                     return;
                 }
 
-                submitButton.disabled = true;
+                document
+                    .querySelectorAll('.save-button')
+                    .forEach(function (button) {
+                        button.disabled = true;
+                    });
 
-                submitButton.innerHTML = `
-                    <span
-                        class="spinner-border
-                               spinner-border-sm me-1"
-                    ></span>
-                    Menyimpan...
-                `;
+                const clickedButton =
+                    event.submitter;
+
+                if (clickedButton) {
+                    clickedButton.innerHTML = `
+                        <span
+                            class="spinner-border
+                                   spinner-border-sm me-1"
+                        ></span>
+                        Menyimpan...
+                    `;
+                }
+
+                const formData =
+                    new FormData(form);
+
+                formData.set(
+                    'save_mode',
+                    saveMode
+                );
+
+                const csrfToken =
+                    form.querySelector(
+                        'input[name="_token"]'
+                    )?.value ?? '';
 
                 try {
                     const response =
@@ -1699,14 +1812,17 @@ document.addEventListener(
                             form.action,
                             {
                                 method: 'POST',
+                                credentials: 'same-origin',
                                 headers: {
                                     Accept:
                                         'application/json',
                                     'X-Requested-With':
-                                        'XMLHttpRequest'
+                                        'XMLHttpRequest',
+                                    'X-CSRF-TOKEN':
+                                        csrfToken
                                 },
                                 body:
-                                    new FormData(form)
+                                    formData
                             }
                         );
 
@@ -1745,12 +1861,39 @@ document.addEventListener(
                         ?? 'Terjadi kesalahan.'
                     );
                 } finally {
-                    submitButton.disabled = false;
+                    document
+                        .querySelectorAll('.save-button')
+                        .forEach(function (button) {
+                            button.disabled = false;
+                        });
 
-                    submitButton.innerHTML = `
-                        <i class="mdi mdi-content-save-outline me-1"></i>
-                        Simpan Berat
-                    `;
+                    const draftButton =
+                        document.querySelector(
+                            '.save-button[value="draft"]'
+                        );
+
+                    const finalButton =
+                        document.querySelector(
+                            '.save-button[value="final"]'
+                        );
+
+                    if (draftButton) {
+                        draftButton.innerHTML = `
+                            <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                            Simpan Sementara
+                        `;
+                    }
+
+                    if (finalButton) {
+                        finalButton.innerHTML = `
+                            <i class="mdi mdi-check-circle-outline me-1"></i>
+                            ${
+                                isFinalRecord && isForeman
+                                    ? 'Simpan Koreksi'
+                                    : 'Simpan Final'
+                            }
+                        `;
+                    }
                 }
             }
         );
