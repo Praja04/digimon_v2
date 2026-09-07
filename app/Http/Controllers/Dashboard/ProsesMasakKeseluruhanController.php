@@ -512,7 +512,7 @@ class ProsesMasakKeseluruhanController extends Controller
             ],
             'trend_gh' => $trendGhData,
             'trend_h2o' => $trendH2oData,
-            'cts_table_rows' => array_slice($ctsTableRows, 0, 15),
+            'cts_table_rows' => $ctsTableRows,
             'grand_total_row' => $grandTotalRow,
             'catatan_proses' => array_slice($catatanProses, 0, 15),
             'sfg_dispositions' => $sfgDispositions,
