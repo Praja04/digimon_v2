@@ -18,13 +18,34 @@ class WpmApiService
 
     public function getMasterBarang(): array
     {
-        $response = Http::timeout(10)
-            ->get($this->masterBarangUrl);
+        try {
+            $response = Http::timeout(8)
+                ->withOptions([
+                    'proxy' => '',
+                    'curl' => [
+                        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                    ],
+                ])
+                ->get($this->masterBarangUrl);
 
-        $response->throw();
+            $response->throw();
 
-        $payload = $response->json();
+            $payload = $response->json();
+            $data = $payload['data'] ?? (is_array($payload) ? $payload : []);
 
-        return $payload['data'] ?? (is_array($payload) ? $payload : []);
+            if (!empty($data)) {
+                cache()->put('wpm_master_barang_cache', $data, now()->addHours(12));
+            }
+
+            return $data;
+        } catch (\Throwable $exception) {
+            $cached = cache()->get('wpm_master_barang_cache');
+
+            if (!empty($cached) && is_array($cached)) {
+                return $cached;
+            }
+
+            throw $exception;
+        }
     }
 }
