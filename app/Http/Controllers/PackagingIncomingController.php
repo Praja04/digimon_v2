@@ -173,19 +173,8 @@ class PackagingIncomingController extends Controller
             );
         }
 
-        try {
-            $masterBarangWpm =
-                $wpmApiService->getMasterBarang();
-
-            $wpmError = null;
-        } catch (Throwable $exception) {
-            report($exception);
-
-            $masterBarangWpm = [];
-
-            $wpmError =
-                'Data MID dari WPM gagal dimuat. Periksa jaringan atau API WPM.';
-        }
+        $masterBarangWpm = [];
+        $wpmError = null;
 
         return view(
             'app.rmpm.incoming-index',
@@ -199,6 +188,29 @@ class PackagingIncomingController extends Controller
                 'wpmError'
             )
         );
+    }
+
+    public function getWpmBarang(
+        WpmApiService $wpmApiService
+    ): JsonResponse {
+        try {
+            $data = $wpmApiService->getMasterBarang();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data master barang WPM berhasil dimuat via AJAX.',
+                'total' => count($data),
+                'data' => $data,
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data dari WPM: ' . $exception->getMessage(),
+                'error' => $exception->getMessage(),
+            ], 500);
+        }
     }
 
     public function store(

@@ -6,31 +6,7 @@
 
 @section('content')
 
-@php
-    $rawWpmList = isset($masterBarangWpm['data']) && is_array($masterBarangWpm['data'])
-        ? $masterBarangWpm['data']
-        : ($masterBarangWpm ?? []);
 
-    $masterBarangWpmMap = collect($rawWpmList)
-        ->mapWithKeys(function ($barang) {
-            $mid = (string) ($barang['mid'] ?? '');
-
-            if ($mid === '') {
-                return [];
-            }
-
-            return [
-                $mid => [
-                    'nama_barang' =>
-                        $barang['nama_barang'] ?? '-',
-
-                    'uom' =>
-                        $barang['uom'] ?? '-',
-                ],
-            ];
-        })
-        ->all();
-@endphp
 
 <div class="page-content">
     <div class="container-fluid">
@@ -486,9 +462,14 @@
                                 </div>
 
                                 <div class="col-xl-4 col-md-6">
-                                    <label for="mid" class="form-label">
-                                        MID dari WPM
-                                        <span class="text-danger">*</span>
+                                    <label for="mid" class="form-label d-flex justify-content-between align-items-center">
+                                        <span>
+                                            MID dari WPM
+                                            <span class="text-danger">*</span>
+                                        </span>
+                                        <span id="wpmApiBadge" class="badge bg-secondary-subtle text-secondary fs-11">
+                                            <i class="mdi mdi-loading mdi-spin me-1"></i>Memuat WPM via AJAX...
+                                        </span>
                                     </label>
 
                                     <div
@@ -534,16 +515,12 @@
                                         ></div>
                                     </div>
 
-                                    <small class="text-muted d-block mt-1">
-                                        Ketik MID atau nama barang, lalu pilih hasil autosuggest dari WPM.
-                                    </small>
-
-                                    @if (! empty($wpmError))
-                                        <small class="text-danger d-block mt-1">
-                                            <i class="mdi mdi-alert-circle-outline me-1"></i>
-                                            {{ $wpmError }}
+                                    <div id="wpmStatusFeedback" class="mt-1">
+                                        <small class="text-muted d-block">
+                                            <span class="spinner-border spinner-border-sm text-primary me-1" role="status"></span>
+                                            Menghubungkan ke API WPM via AJAX...
                                         </small>
-                                    @endif
+                                    </div>
 
                                     @error('mid')
                                         <div class="invalid-feedback">
@@ -1111,16 +1088,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const supplierLainnyaInput =
         document.getElementById('supplier_lainnya');
 
-    const masterBarangWpm = @json($masterBarangWpmMap);
+    const wpmApiEndpoint = @json(route('rmpm.pm.incoming.wpm-barang'));
+    const wpmApiBadge = document.getElementById('wpmApiBadge');
+    const wpmStatusFeedback = document.getElementById('wpmStatusFeedback');
 
-    const masterBarangWpmList = Object.entries(masterBarangWpm)
-        .map(function ([mid, barang]) {
-            return {
-                mid: String(mid ?? ''),
-                nama_barang: String(barang?.nama_barang ?? '-'),
-                uom: String(barang?.uom ?? '-')
-            };
-        });
+    let masterBarangWpm = {};
+    let masterBarangWpmList = [];
+    let isWpmLoading = false;
+    let wpmLoadError = null;
 
     let wpmActiveIndex = -1;
     let wpmCurrentResults = [];
@@ -1828,6 +1803,30 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        if (isWpmLoading) {
+            wpmSuggestionList.innerHTML = `
+                <div class="wpm-suggestion-empty">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+                    Sedang memuat data dari WPM via AJAX...
+                </div>
+            `;
+            wpmSuggestionList.classList.remove('d-none');
+            midInput.setAttribute('aria-expanded', 'true');
+            return;
+        }
+
+        if (wpmLoadError) {
+            wpmSuggestionList.innerHTML = `
+                <div class="wpm-suggestion-empty text-danger">
+                    <i class="mdi mdi-alert-circle me-1"></i>
+                    Gagal memuat data WPM: ${escapeHtml(wpmLoadError)}
+                </div>
+            `;
+            wpmSuggestionList.classList.remove('d-none');
+            midInput.setAttribute('aria-expanded', 'true');
+            return;
+        }
+
         const startsWithResults = [];
         const containsResults = [];
 
@@ -1939,6 +1938,125 @@ document.addEventListener('DOMContentLoaded', function () {
             String(midInput.value ?? '').trim();
 
         setWpmDetail(selectedMid);
+    }
+
+    async function loadWpmDataViaAjax() {
+        isWpmLoading = true;
+        wpmLoadError = null;
+
+        if (wpmApiBadge) {
+            wpmApiBadge.className = 'badge bg-warning-subtle text-warning fs-11';
+            wpmApiBadge.innerHTML = '<i class="mdi mdi-loading mdi-spin me-1"></i>Memuat WPM...';
+        }
+
+        if (wpmStatusFeedback) {
+            wpmStatusFeedback.innerHTML = `
+                <small class="text-muted d-block">
+                    <span class="spinner-border spinner-border-sm text-primary me-1" role="status"></span>
+                    Menghubungkan ke API WPM via AJAX (<code>${escapeHtml(wpmApiEndpoint)}</code>)...
+                </small>
+            `;
+        }
+
+        try {
+            console.info('[WPM AJAX] Mengambil master barang dari:', wpmApiEndpoint);
+
+            const response = await fetch(wpmApiEndpoint, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json().catch(() => null);
+
+            if (!response.ok || !result || result.success === false) {
+                const message =
+                    result?.message
+                    || result?.error
+                    || `HTTP ${response.status} ${response.statusText}`;
+
+                throw new Error(message);
+            }
+
+            const rawList = Array.isArray(result.data)
+                ? result.data
+                : (Array.isArray(result) ? result : []);
+
+            masterBarangWpm = {};
+            masterBarangWpmList = [];
+
+            rawList.forEach(function (barang) {
+                const mid = String(barang?.mid ?? '').trim();
+                if (mid !== '') {
+                    const itemData = {
+                        nama_barang: String(barang?.nama_barang ?? '-'),
+                        uom: String(barang?.uom ?? '-')
+                    };
+
+                    masterBarangWpm[mid] = itemData;
+                    masterBarangWpmList.push({
+                        mid: mid,
+                        nama_barang: itemData.nama_barang,
+                        uom: itemData.uom
+                    });
+                }
+            });
+
+            console.info(
+                `[WPM AJAX] Sukses memuat ${masterBarangWpmList.length} data barang WPM:`,
+                masterBarangWpmList
+            );
+
+            if (wpmApiBadge) {
+                wpmApiBadge.className = 'badge bg-success-subtle text-success fs-11';
+                wpmApiBadge.innerHTML = `<i class="mdi mdi-check-circle me-1"></i>WPM Online (${masterBarangWpmList.length})`;
+            }
+
+            if (wpmStatusFeedback) {
+                wpmStatusFeedback.innerHTML = `
+                    <small class="text-muted d-block">
+                        Ketik MID atau nama barang, lalu pilih hasil autosuggest dari WPM (${masterBarangWpmList.length} item siap).
+                    </small>
+                `;
+            }
+
+            updateWpmDetail();
+
+            if (document.activeElement === midInput && String(midInput.value ?? '').trim() !== '') {
+                renderWpmSuggestions(midInput.value);
+            }
+        } catch (error) {
+            wpmLoadError = error.message || 'Gagal terhubung ke API WPM';
+            console.error('[WPM AJAX Error]:', error);
+
+            if (wpmApiBadge) {
+                wpmApiBadge.className = 'badge bg-danger-subtle text-danger fs-11';
+                wpmApiBadge.innerHTML = '<i class="mdi mdi-alert-circle me-1"></i>WPM Error';
+            }
+
+            if (wpmStatusFeedback) {
+                wpmStatusFeedback.innerHTML = `
+                    <div class="alert alert-danger py-1 px-2 mt-1 mb-0 fs-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="mdi mdi-alert-circle me-1"></i>
+                                <strong>Error API WPM:</strong> ${escapeHtml(wpmLoadError)}
+                            </div>
+                            <button type="button" id="btnRetryWpm" class="btn btn-sm btn-outline-danger py-0 px-2 fs-11 ms-2">
+                                <i class="mdi mdi-reload me-1"></i>Coba Lagi
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('btnRetryWpm')?.addEventListener('click', function () {
+                    loadWpmDataViaAjax();
+                });
+            }
+        } finally {
+            isWpmLoading = false;
+        }
     }
 
     jenisIncomingSelect?.addEventListener(
@@ -2071,6 +2189,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateWpmDetail();
     updateJenisIncomingLainnya(false);
     updateSupplierLainnya(false);
+    loadWpmDataViaAjax();
 
     document.addEventListener('submit', function (event) {
         const deleteForm = event.target.closest('.deleteForm');
