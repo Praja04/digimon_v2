@@ -773,6 +773,15 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="d-flex align-items-center justify-content-between p-3 border-top" id="ctsPaginationWrapper">
+                                <div class="fs-12 text-muted" id="ctsPaginationInfo">
+                                    Menampilkan 0 data
+                                </div>
+                                <nav>
+                                    <ul class="pagination pagination-sm mb-0 gap-1" id="ctsPaginationNav">
+                                    </ul>
+                                </nav>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1012,52 +1021,115 @@
                 });
             }
 
+            let ctsAllRows = [];
+            let ctsGrandTotalRowData = null;
+            let ctsCurrentPage = 1;
+            const ctsRowsPerPage = 10;
+
             function renderCtsPerParamTable(rows, grandTotalRow) {
+                ctsAllRows = rows || [];
+                ctsGrandTotalRowData = grandTotalRow || null;
+                ctsCurrentPage = 1;
+                renderCtsPage(1);
+            }
+
+            window.renderCtsPage = function(page) {
+                ctsCurrentPage = page;
                 const tbody = $('#ctsPerParamTbody');
                 tbody.empty();
 
-                if (rows && rows.length > 0) {
-                    rows.forEach(r => {
-                        tbody.append(`
-                            <tr>
-                                <td>${r.tgl}</td>
-                                <td><span class="badge bg-slate-100 text-slate-700">${r.stk}</span></td>
-                                <td>${r.cts_bj}</td>
-                                <td>${r.cts_brix}</td>
-                                <td>${r.cts_nacl}</td>
-                                <td>${r.cts_visco}</td>
-                                <td>${r.cts_aw}</td>
-                                <td>${r.cts_ph}</td>
-                                <td>${r.cts_organo}</td>
-                                <td>${r.cts_endapan}</td>
-                                <td>${r.cts_buih}</td>
-                                <td><span class="badge bg-emerald-100 text-emerald-700 fw-bold">${r.cts_overall}</span></td>
-                                <td>${r.adjust_gh_percent}</td>
-                            </tr>
-                        `);
-                    });
+                const totalRows = ctsAllRows.length;
+                if (totalRows === 0) {
+                    tbody.append('<tr><td colspan="13" class="text-center py-4 text-muted">Tidak ada data CTS</td></tr>');
+                    $('#ctsPaginationInfo').text('Menampilkan 0 data');
+                    $('#ctsPaginationNav').empty();
+                    return;
                 }
 
-                if (grandTotalRow) {
+                const totalPages = Math.ceil(totalRows / ctsRowsPerPage);
+                if (page < 1) page = 1;
+                if (page > totalPages) page = totalPages;
+
+                const start = (page - 1) * ctsRowsPerPage;
+                const end = Math.min(start + ctsRowsPerPage, totalRows);
+                const pageRows = ctsAllRows.slice(start, end);
+
+                pageRows.forEach(r => {
+                    tbody.append(`
+                        <tr>
+                            <td>${r.tgl}</td>
+                            <td><span class="badge bg-slate-100 text-slate-700">${r.stk}</span></td>
+                            <td>${r.cts_bj}</td>
+                            <td>${r.cts_brix}</td>
+                            <td>${r.cts_nacl}</td>
+                            <td>${r.cts_visco}</td>
+                            <td>${r.cts_aw}</td>
+                            <td>${r.cts_ph}</td>
+                            <td>${r.cts_organo}</td>
+                            <td>${r.cts_endapan}</td>
+                            <td>${r.cts_buih}</td>
+                            <td><span class="badge bg-emerald-100 text-emerald-700 fw-bold">${r.cts_overall}</span></td>
+                            <td>${r.adjust_gh_percent}</td>
+                        </tr>
+                    `);
+                });
+
+                if (ctsGrandTotalRowData) {
                     tbody.append(`
                         <tr class="highlight-total">
-                            <td>${grandTotalRow.tgl}</td>
-                            <td>${grandTotalRow.stk}</td>
-                            <td>${grandTotalRow.cts_bj}</td>
-                            <td>${grandTotalRow.cts_brix}</td>
-                            <td>${grandTotalRow.cts_nacl}</td>
-                            <td>${grandTotalRow.cts_visco}</td>
-                            <td>${grandTotalRow.cts_aw}</td>
-                            <td>${grandTotalRow.cts_ph}</td>
-                            <td>${grandTotalRow.cts_organo}</td>
-                            <td>${grandTotalRow.cts_endapan}</td>
-                            <td>${grandTotalRow.cts_buih}</td>
-                            <td>${grandTotalRow.cts_overall}</td>
-                            <td>${grandTotalRow.adjust_gh_percent}</td>
+                            <td>${ctsGrandTotalRowData.tgl}</td>
+                            <td>${ctsGrandTotalRowData.stk}</td>
+                            <td>${ctsGrandTotalRowData.cts_bj}</td>
+                            <td>${ctsGrandTotalRowData.cts_brix}</td>
+                            <td>${ctsGrandTotalRowData.cts_nacl}</td>
+                            <td>${ctsGrandTotalRowData.cts_visco}</td>
+                            <td>${ctsGrandTotalRowData.cts_aw}</td>
+                            <td>${ctsGrandTotalRowData.cts_ph}</td>
+                            <td>${ctsGrandTotalRowData.cts_organo}</td>
+                            <td>${ctsGrandTotalRowData.cts_endapan}</td>
+                            <td>${ctsGrandTotalRowData.cts_buih}</td>
+                            <td>${ctsGrandTotalRowData.cts_overall}</td>
+                            <td>${ctsGrandTotalRowData.adjust_gh_percent}</td>
                         </tr>
                     `);
                 }
-            }
+
+                // Render Pagination Info & Navigation
+                $('#ctsPaginationInfo').text(`Menampilkan ${start + 1} - ${end} dari ${totalRows} data`);
+
+                const nav = $('#ctsPaginationNav');
+                nav.empty();
+
+                // Prev Button
+                const prevDisabled = (page === 1) ? 'disabled' : '';
+                nav.append(`
+                    <li class="page-item ${prevDisabled}">
+                        <button class="page-link shadow-none" type="button" onclick="renderCtsPage(${page - 1})"><i class="ri-arrow-left-s-line"></i></button>
+                    </li>
+                `);
+
+                // Page Number Buttons
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+                        const activeClass = (i === page) ? 'active' : '';
+                        nav.append(`
+                            <li class="page-item ${activeClass}">
+                                <button class="page-link shadow-none" type="button" onclick="renderCtsPage(${i})">${i}</button>
+                            </li>
+                        `);
+                    } else if (i === page - 2 || i === page + 2) {
+                        nav.append(`<li class="page-item disabled"><span class="page-link border-0">...</span></li>`);
+                    }
+                }
+
+                // Next Button
+                const nextDisabled = (page === totalPages) ? 'disabled' : '';
+                nav.append(`
+                    <li class="page-item ${nextDisabled}">
+                        <button class="page-link shadow-none" type="button" onclick="renderCtsPage(${page + 1})"><i class="ri-arrow-right-s-line"></i></button>
+                    </li>
+                `);
+            };
 
             // Event Listeners
             $('#filterBtn').on('click', function() {
