@@ -7,7 +7,11 @@
 @section('content')
 
 @php
-    $masterBarangWpmMap = collect($masterBarangWpm ?? [])
+    $rawWpmList = isset($masterBarangWpm['data']) && is_array($masterBarangWpm['data'])
+        ? $masterBarangWpm['data']
+        : ($masterBarangWpm ?? []);
+
+    $masterBarangWpmMap = collect($rawWpmList)
         ->mapWithKeys(function ($barang) {
             $mid = (string) ($barang['mid'] ?? '');
 
