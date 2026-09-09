@@ -279,15 +279,17 @@
                                 type="number"
                                 name="jumlah_sampel"
                                 id="jumlah_sampel"
-                                class="form-control"
+                                class="form-control bg-light"
                                 min="1"
                                 max="50"
-                                value="{{ old(
-                                    'jumlah_sampel',
-                                    $sampling?->jumlah_sampel ?? 4
-                                ) }}"
+                                value="{{ $packagingIncoming->jumlah_sampel }}"
+                                readonly
                                 required
                             >
+
+                            <small class="text-muted d-block mt-1">
+                                Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
+                            </small>
                         </div>
 
                         <div class="col-xl-6 col-md-6">
@@ -1479,13 +1481,6 @@ document.addEventListener(
             }
         }
 
-        jumlahInput.addEventListener(
-            'input',
-            function () {
-                buildRows(this.value);
-            }
-        );
-
         konfirmasiSelect.addEventListener(
             'change',
             updateKetidaksesuaian
@@ -1825,6 +1820,18 @@ document.addEventListener(
                                     formData
                             }
                         );
+
+                    const contentType =
+                        response.headers.get('content-type') ?? '';
+
+                    if (!contentType.includes('application/json')) {
+                        const body = await response.text();
+
+                        throw new Error(
+                            'Server tidak mengembalikan JSON. ' +
+                            body.slice(0, 150)
+                        );
+                    }
 
                     const result =
                         await response.json();

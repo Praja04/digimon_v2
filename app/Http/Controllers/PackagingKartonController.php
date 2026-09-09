@@ -160,6 +160,16 @@ class PackagingKartonController extends Controller
 
         $isFinal = $saveMode === 'final';
 
+        $request->merge([
+            'jumlah_sampel' =>
+                $packagingIncoming->jumlah_sampel,
+        ]);
+
+        /*
+         * Quantity Incoming tetap bersumber dari packaging_incomings.jumlah
+         * dan tidak diinput ulang pada proses sampling Karton.
+         */
+
         $existingFinal = PackagingKartonSampling::query()
             ->where(
                 'packaging_incoming_id',

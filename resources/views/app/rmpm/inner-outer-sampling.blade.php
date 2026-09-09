@@ -309,15 +309,17 @@
                                 type="number"
                                 name="jumlah_sampel"
                                 id="jumlah_sampel"
-                                class="form-control"
+                                class="form-control bg-light"
                                 min="1"
                                 max="50"
-                                value="{{ old(
-                                    'jumlah_sampel',
-                                    $sampling?->jumlah_sampel ?? 5
-                                ) }}"
+                                value="{{ $packagingIncoming->jumlah_sampel }}"
+                                readonly
                                 required
                             >
+
+                            <small class="text-muted d-block mt-1">
+                                Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
+                            </small>
                         </div>
 
                         <div class="col-xl-3 col-md-6">
@@ -493,7 +495,7 @@
                         </small>
 
                         <small class="text-muted d-block">
-                            Field <strong>Pitch</strong> hanya dapat diisi untuk Outer.
+                            Field <strong>Pitch</strong> dapat diisi bebas sesuai hasil pemeriksaan.
                         </small>
                     </div>
 
@@ -1142,6 +1144,23 @@
             `;
         }
 
+        function buildTextInput(
+            index,
+            field,
+            value,
+            placeholder = ''
+        ) {
+            return `
+                <input
+                    type="text"
+                    name="samples[${index}][${field}]"
+                    value="${escapeHtml(value)}"
+                    class="form-control form-control-sm"
+                    placeholder="${escapeHtml(placeholder)}"
+                >
+            `;
+        }
+
         function buildSampleRows(total) {
             const safeTotal = Math.max(
                 1,
@@ -1191,23 +1210,12 @@
                             </td>
 
                             <td>
-                                ${
-                                    isOuter
-                                        ? buildNumberInput(
-                                            index,
-                                            'pitch',
-                                            sample.pitch
-                                        )
-                                        : `
-                                            <input
-                                                type="text"
-                                                name="samples[${index}][pitch]"
-                                                class="form-control form-control-sm text-center"
-                                                value="-"
-                                                readonly
-                                            >
-                                        `
-                                }
+                                ${buildTextInput(
+                                    index,
+                                    'pitch',
+                                    sample.pitch,
+                                    'Masukkan pitch'
+                                )}
                             </td>
 
                             <td>
@@ -1577,13 +1585,6 @@
             updateLainnyaField
         );
 
-        jumlahSampelInput.addEventListener(
-            'input',
-            function () {
-                buildSampleRows(this.value);
-            }
-        );
-
         form.addEventListener(
             'submit',
             async function (event) {
@@ -1688,6 +1689,18 @@
                             body: formData
                         }
                     );
+
+                    const contentType =
+                        response.headers.get('content-type') ?? '';
+
+                    if (!contentType.includes('application/json')) {
+                        const body = await response.text();
+
+                        throw new Error(
+                            'Server tidak mengembalikan JSON. ' +
+                            body.slice(0, 150)
+                        );
+                    }
 
                     const result = await response.json();
 

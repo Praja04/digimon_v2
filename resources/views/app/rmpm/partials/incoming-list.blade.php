@@ -158,6 +158,7 @@
                         <th class="text-center" style="min-width: 175px;">
                             Proses
                         </th>
+
                         @if ($canManageIncoming)
                             <th class="text-center" style="width: 105px;">
                                 Kelola Data
@@ -203,16 +204,21 @@
 
                             if ($isDraft) {
                                 $statusName = 'Draft';
+
                                 $statusClass =
                                     'bg-warning text-dark';
+
                             } elseif ($isFinished) {
                                 $statusName =
                                     $databaseStatusName;
+
                                 $statusClass =
                                     'bg-success';
+
                             } else {
                                 $statusName =
                                     $databaseStatusName;
+
                                 $statusClass =
                                     'bg-info';
                             }
@@ -228,6 +234,11 @@
 
                             $samplingUrl = null;
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | POUCH
+                            |--------------------------------------------------------------------------
+                            */
                             if (
                                 str_contains(
                                     $jenisName,
@@ -243,6 +254,12 @@
                                         'rmpm.pm.pouch.sampling',
                                         $incoming
                                     );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | KARTON / KARDUS
+                            |--------------------------------------------------------------------------
+                            */
                             } elseif (
                                 str_contains(
                                     $jenisName,
@@ -257,6 +274,12 @@
                                     'rmpm.pm.karton.sampling',
                                     $incoming
                                 );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | INNER / OUTER
+                            |--------------------------------------------------------------------------
+                            */
                             } elseif (
                                 str_contains(
                                     $jenisName,
@@ -267,43 +290,67 @@
                                     'outer'
                                 )
                             ) {
-                                $samplingUrl = route(
-                                    'rmpm.pm.inner-outer.sampling',
-                                    $incoming
-                                );
+                                $samplingUrl = $isFinished
+                                    ? route(
+                                        'rmpm.pm.inner-outer.resume',
+                                        $incoming
+                                    )
+                                    : route(
+                                        'rmpm.pm.inner-outer.sampling',
+                                        $incoming
+                                    );
                             }
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | LABEL BUTTON
+                            |--------------------------------------------------------------------------
+                            */
                             if ($isDraft) {
                                 $samplingLabel =
                                     'Lanjutkan';
+
                                 $samplingIcon =
                                     'mdi-progress-clock';
+
                                 $samplingClass =
                                     'btn-warning';
+
                             } elseif ($isFinished) {
-                                $isPouch =
+                                $isResumeType =
                                     str_contains(
                                         $jenisName,
                                         'pouch'
+                                    )
+                                    || str_contains(
+                                        $jenisName,
+                                        'inner'
+                                    )
+                                    || str_contains(
+                                        $jenisName,
+                                        'outer'
                                     );
 
                                 $samplingLabel =
-                                    $isPouch
+                                    $isResumeType
                                         ? 'Lihat Resume'
                                         : 'Lihat Hasil';
 
                                 $samplingIcon =
-                                    $isPouch
+                                    $isResumeType
                                         ? 'mdi-file-document-outline'
                                         : 'mdi-eye-outline';
 
                                 $samplingClass =
                                     'btn-success';
+
                             } else {
                                 $samplingLabel =
                                     'Mulai Sampling';
+
                                 $samplingIcon =
                                     'mdi-play-circle-outline';
+
                                 $samplingClass =
                                     'btn-primary';
                             }

@@ -240,6 +240,14 @@ class PackagingPouchController extends Controller
 
         $isFinal = $saveMode === 'final';
 
+        $request->merge([
+            'qty' =>
+                $packagingIncoming->jumlah,
+
+            'jumlah_sampel' =>
+                $packagingIncoming->jumlah_sampel,
+        ]);
+
         $rules = [
             'save_mode' => [
                 'required',
