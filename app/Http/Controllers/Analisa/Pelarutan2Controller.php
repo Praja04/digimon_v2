@@ -163,10 +163,17 @@ class Pelarutan2Controller extends Controller
     */
     public function saveDraft(Request $request)
     {
-        if (auth()->user()->role !== 'Analis Kimia') {
+        $userRole = auth()->user()->role;
+
+        if (!in_array(
+            $userRole,
+            ['Analis Kimia', 'Foreman'],
+            true
+        )) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Hanya Analis Kimia yang dapat menyimpan sementara.'
+                'message' =>
+                    'Simpan sementara hanya dapat dilakukan oleh Analis Kimia atau Foreman.'
             ], 403);
         }
 
@@ -233,6 +240,11 @@ class Pelarutan2Controller extends Controller
                 'nullable'
             ],
 
+            'disposition' => [
+                'nullable',
+                'in:Release,Release Bersyarat,Resampling,Reject,Repro'
+            ],
+
             'disposition_remark' => [
                 'nullable',
                 'string',
@@ -254,14 +266,35 @@ class Pelarutan2Controller extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | JANGAN BUAT DRAFT JIKA SUDAH FINAL
+        | ATURAN DRAFT BERDASARKAN ROLE
         |--------------------------------------------------------------------------
+        |
+        | Analis Kimia:
+        | - hanya boleh draft sebelum final.
+        |
+        | Foreman:
+        | - hanya boleh draft setelah final Analis Kimia.
+        |
         */
-        if (!is_null($pelarutan_2->status)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Pelarutan 2 ini sudah disimpan final.'
-            ], 409);
+        if ($userRole === 'Analis Kimia') {
+
+            if (!is_null($pelarutan_2->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Pelarutan 2 sudah disimpan final oleh Analis Kimia.'
+                ], 409);
+            }
+
+        } elseif ($userRole === 'Foreman') {
+
+            if (is_null($pelarutan_2->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Analis Kimia belum final. Foreman belum dapat menyimpan sementara.'
+                ], 409);
+            }
         }
 
         /*
@@ -290,6 +323,9 @@ class Pelarutan2Controller extends Controller
                 'status_disposition' =>
                     $data['status_disposition'] ?? null,
 
+                'disposition' =>
+                    $data['disposition'] ?? null,
+
                 'disposition_remark' =>
                     $data['disposition_remark'] ?? null,
 
@@ -300,7 +336,10 @@ class Pelarutan2Controller extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Data Pelarutan 2 berhasil disimpan sementara.',
+            'message' =>
+                $userRole === 'Foreman'
+                    ? 'Data Foreman berhasil disimpan sementara.'
+                    : 'Data Pelarutan 2 berhasil disimpan sementara.',
             'data' => $draft,
         ], 200);
     }
@@ -637,17 +676,14 @@ class Pelarutan2Controller extends Controller
             | HAPUS DRAFT SETELAH FINAL + PRODUCTION BERHASIL
             |--------------------------------------------------------------------------
             */
-            if ($userRole === 'Analis Kimia') {
+            $draft =
+                Pelarutan2Draft::where(
+                    'pelarutan_2_id',
+                    $pelarutan_2->id
+                )->first();
 
-                $draft =
-                    Pelarutan2Draft::where(
-                        'pelarutan_2_id',
-                        $pelarutan_2->id
-                    )->first();
-
-                if ($draft) {
-                    $draft->delete();
-                }
+            if ($draft) {
+                $draft->delete();
             }
 
             DB::commit();

@@ -173,10 +173,17 @@ class Pelarutan1Controller extends Controller
     */
     public function saveDraft(Request $request)
     {
-        if (auth()->user()->role !== 'Analis Kimia') {
+        $userRole = auth()->user()->role;
+
+        if (!in_array(
+            $userRole,
+            ['Analis Kimia', 'Foreman'],
+            true
+        )) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Hanya Analis Kimia yang dapat menyimpan sementara.'
+                'message' =>
+                    'Simpan sementara hanya dapat dilakukan oleh Analis Kimia atau Foreman.'
             ], 403);
         }
 
@@ -242,6 +249,11 @@ class Pelarutan1Controller extends Controller
                 'nullable'
             ],
 
+            'disposition' => [
+                'nullable',
+                'in:Release,Release Bersyarat,Resampling,Reject,Adjustment,Repro'
+            ],
+
             'disposition_remark' => [
                 'nullable',
                 'string',
@@ -273,14 +285,35 @@ class Pelarutan1Controller extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | JIKA SUDAH FINAL, JANGAN BUAT DRAFT BARU
+        | ATURAN DRAFT BERDASARKAN ROLE
         |--------------------------------------------------------------------------
+        |
+        | Analis Kimia:
+        | - draft hanya sebelum final Analis.
+        |
+        | Foreman:
+        | - draft hanya setelah final Analis.
+        |
         */
-        if (!is_null($pelarutan_1->status)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data ini sudah disimpan final.'
-            ], 409);
+        if ($userRole === 'Analis Kimia') {
+
+            if (!is_null($pelarutan_1->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Analis Kimia sudah disimpan final.'
+                ], 409);
+            }
+
+        } elseif ($userRole === 'Foreman') {
+
+            if (is_null($pelarutan_1->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Analis Kimia belum final. Foreman belum dapat menyimpan sementara.'
+                ], 409);
+            }
         }
 
         /*
@@ -305,6 +338,9 @@ class Pelarutan1Controller extends Controller
                 'status_disposition' =>
                     $data['status_disposition'] ?? null,
 
+                'disposition' =>
+                    $data['disposition'] ?? null,
+
                 'disposition_remark' =>
                     $data['disposition_remark'] ?? null,
 
@@ -321,7 +357,10 @@ class Pelarutan1Controller extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Data berhasil disimpan sementara.',
+            'message' =>
+                $userRole === 'Foreman'
+                    ? 'Data Foreman berhasil disimpan sementara.'
+                    : 'Data berhasil disimpan sementara.',
             'data' => $draft,
         ], 200);
     }
@@ -362,6 +401,20 @@ class Pelarutan1Controller extends Controller
             } catch (\Exception $e) {
                 // Ignore
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | DRAFT SEMENTARA
+            |--------------------------------------------------------------------------
+            |
+            | Jika Foreman pernah Simpan Sementara, kirim draft bersama data final
+            | agar modal Kelola Data dapat melanjutkan nilai terakhir.
+            |
+            */
+            $data->draft = Pelarutan1Draft::where(
+                'pelarutan_1_id',
+                $data->id
+            )->first();
 
             return response()->json($data);
 
@@ -736,17 +789,14 @@ class Pelarutan1Controller extends Controller
             | Hanya setelah final + API Production berhasil.
             |
             */
-            if ($userRole === 'Analis Kimia') {
+            $draft =
+                Pelarutan1Draft::where(
+                    'pelarutan_1_id',
+                    $pelarutan_1->id
+                )->first();
 
-                $draft =
-                    Pelarutan1Draft::where(
-                        'pelarutan_1_id',
-                        $pelarutan_1->id
-                    )->first();
-
-                if ($draft) {
-                    $draft->delete();
-                }
+            if ($draft) {
+                $draft->delete();
             }
 
             /*

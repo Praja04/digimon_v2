@@ -250,7 +250,7 @@
         </div>
     </div>
 
-    <!-- Modal input GGA tunggal -->
+    <!-- Modal input analisa mikro -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <form id="form">
@@ -259,44 +259,103 @@
                         <h5 class="modal-title" id="modalTitle">Input Data Analisa</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
+
                     <div class="modal-body">
                         <div class="alert alert-danger d-none error-alert"></div>
+
+                        <div class="alert alert-warning d-none" id="draftAlert">
+                            <i class="mdi mdi-content-save-outline me-1"></i>
+                            <strong>Draft ditemukan.</strong>
+                            Nilai sementara sebelumnya dimuat. Anda boleh lanjut menyimpan sementara atau langsung Simpan Final.
+                        </div>
+
                         <input type="hidden" name="id" id="id">
 
-                        <!-- ✅ Info Status -->
                         <div class="mb-3">
                             <div class="alert alert-info" id="statusInfo">
                                 <strong>Status:</strong> <span id="statusText"></span>
                             </div>
                         </div>
 
-                        <!-- EB Field -->
+                        <div id="analisContainer" class="d-none">
+                            <div class="row g-3 mb-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label">
+                                        Shift <span style="color: red;">*</span>
+                                    </label>
+
+                                    <select name="shift_analis" id="shift_analis" class="form-control">
+                                        <option value="">-- Pilih Shift --</option>
+                                        <option value="1">Shift 1</option>
+                                        <option value="2">Shift 2</option>
+                                        <option value="3">Shift 3</option>
+                                    </select>
+
+                                    <small class="text-danger errorShiftAnalis"></small>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <label class="form-label">
+                                        Nama Analis <span style="color: red;">*</span>
+                                    </label>
+
+                                    <input type="text"
+                                        name="nama_analis"
+                                        id="nama_analis"
+                                        class="form-control"
+                                        placeholder="Masukkan Nama Analis"
+                                        oninput="this.value = this.value.toUpperCase();">
+
+                                    <small class="text-danger errorNamaAnalis"></small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="ebContainer" class="mb-3 d-none">
                             <label class="form-label">EB <span style="color: red;">*</span></label>
-                            <input type="text" name="eb" id="eb" class="form-control comma-input"
+                            <input type="text"
+                                name="eb"
+                                id="eb"
+                                class="form-control comma-input"
                                 placeholder="Masukkan nilai EB">
                             <small class="text-danger errorEb"></small>
                         </div>
 
-                        <!-- TPC Field -->
                         <div id="tpcContainer" class="mb-3 d-none">
                             <label class="form-label">TPC <span style="color: red;">*</span></label>
-                            <input type="text" name="tpc" id="tpc" class="form-control comma-input"
+                            <input type="text"
+                                name="tpc"
+                                id="tpc"
+                                class="form-control comma-input"
                                 placeholder="Masukkan nilai TPC">
                             <small class="text-danger errorTpc"></small>
                         </div>
 
-                        <!-- YM Field -->
                         <div id="ymContainer" class="mb-3 d-none">
                             <label class="form-label">YM <span style="color: red;">*</span></label>
-                            <input type="text" name="ym" id="ym" class="form-control comma-input"
+                            <input type="text"
+                                name="ym"
+                                id="ym"
+                                class="form-control comma-input"
                                 placeholder="Masukkan nilai YM">
                             <small class="text-danger errorYm"></small>
                         </div>
                     </div>
+
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="btnSave">Simpan</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Tutup
+                        </button>
+
+                        <button type="button" class="btn btn-warning" id="btnDraft">
+                            <i class="mdi mdi-content-save-outline me-1"></i>
+                            Simpan Sementara
+                        </button>
+
+                        <button type="submit" class="btn btn-success" id="btnFinal">
+                            <i class="mdi mdi-check-circle-outline me-1"></i>
+                            Simpan Final
+                        </button>
                     </div>
                 </div>
             </form>
@@ -550,13 +609,15 @@
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
                 }
             });
 
             document.querySelectorAll('.comma-input').forEach(function(el) {
                 el.addEventListener('input', function() {
                     const value = this.value;
+
                     if (value.includes('.')) {
                         Swal.fire({
                             icon: 'warning',
@@ -565,6 +626,7 @@
                             confirmButtonText: 'Mengerti',
                             confirmButtonColor: '#3085d6'
                         });
+
                         this.value = value.replace(/\./g, ',');
                     }
                 });
@@ -572,147 +634,342 @@
 
             let currentBlendingData = null;
 
-            $('body').on('click', '#btnAnalisa', function() {
-                let blendingId = $(this).attr('blending-id');
-
-                // Reset form
-                $('#form')[0].reset();
+            function clearErrors() {
                 $('.form-control').removeClass('is-invalid');
-                $('.text-danger').html('');
-                $('#ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('.errorShiftAnalis, .errorNamaAnalis, .errorEb, .errorTpc, .errorYm').html('');
+            }
 
-                // Set ID
-                $('#id').val(blendingId);
+            function showValidationErrors(errors) {
+                if (!errors) {
+                    return;
+                }
 
+                if (errors.shift_analis) {
+                    $('#shift_analis').addClass('is-invalid');
+                    $('.errorShiftAnalis').html(errors.shift_analis.join('<br>'));
+                }
+
+                if (errors.nama_analis) {
+                    $('#nama_analis').addClass('is-invalid');
+                    $('.errorNamaAnalis').html(errors.nama_analis.join('<br>'));
+                }
+
+                if (errors.eb) {
+                    $('#eb').addClass('is-invalid');
+                    $('.errorEb').html(errors.eb.join('<br>'));
+                }
+
+                if (errors.tpc) {
+                    $('#tpc').addClass('is-invalid');
+                    $('.errorTpc').html(errors.tpc.join('<br>'));
+                }
+
+                if (errors.ym) {
+                    $('#ym').addClass('is-invalid');
+                    $('.errorYm').html(errors.ym.join('<br>'));
+                }
+            }
+
+            function getErrorMessage(xhr, fallback) {
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    return xhr.responseJSON.message;
+                }
+
+                if (
+                    xhr.responseText &&
+                    xhr.responseText.trim().startsWith('<')
+                ) {
+                    return fallback + ' Server mengembalikan response non-JSON.';
+                }
+
+                return fallback;
+            }
+
+            function showCurrentStep() {
+                const step = currentBlendingData.current_step;
+                const draft = currentBlendingData.draft || {};
+                const shift = currentBlendingData.shift;
+                const namaAnalis = currentBlendingData.nama_analis;
+                const eb = currentBlendingData.eb;
+                const tpc = currentBlendingData.tpc;
+                const ym = currentBlendingData.ym;
+                const baseTime = currentBlendingData.updated_at;
+
+                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
+
+                $('#shift_analis, #nama_analis, #eb, #tpc, #ym')
+                    .val('')
+                    .prop('disabled', true);
+
+                $('#btnDraft, #btnFinal').prop('disabled', true);
+
+                if (step === 'analis') {
+                    $('#modalTitle').text('Input Data Analisa - Analis');
+                    $('#statusText').html(
+                        'Langkah 1/4 - Input <strong>Shift</strong> dan <strong>Nama Analis</strong>.'
+                    );
+
+                    $('#analisContainer').removeClass('d-none');
+
+                    $('#shift_analis')
+                        .val(draft.shift ?? '')
+                        .prop('disabled', false);
+
+                    $('#nama_analis')
+                        .val(draft.nama_analis ?? '')
+                        .prop('disabled', false);
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
+                    return;
+                }
+
+                if (step === 'eb') {
+
+                    $('#modalTitle').text('Input Data Analisa - EB');
+                    $('#statusText').html(
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${namaAnalis}</strong><br>` +
+                        'Langkah 2/4 - Input EB.'
+                    );
+
+                    $('#ebContainer').removeClass('d-none');
+
+                    $('#eb')
+                        .val(draft.eb ?? '')
+                        .prop('disabled', false)
+                        .focus();
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
+                    return;
+                }
+
+                if (step === 'tpc') {
+
+                    $('#modalTitle').text('Input Data Analisa - TPC');
+                    $('#statusText').html(
+                        `EB final: <strong>${eb}</strong><br>` +
+                        'Langkah 3/4 - Input TPC.'
+                    );
+
+                    $('#tpcContainer').removeClass('d-none');
+
+                    $('#tpc')
+                        .val(draft.tpc ?? '')
+                        .prop('disabled', false)
+                        .focus();
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
+                    return;
+                }
+
+                if (step === 'ym') {
+
+                    $('#modalTitle').text('Input Data Analisa - YM');
+                    $('#statusText').html(
+                        `EB final: <strong>${eb}</strong> | TPC final: <strong>${tpc}</strong><br>` +
+                        'Langkah 4/4 - Input YM.'
+                    );
+
+                    $('#ymContainer').removeClass('d-none');
+
+                    $('#ym')
+                        .val(draft.ym ?? '')
+                        .prop('disabled', false)
+                        .focus();
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
+                    return;
+                }
+
+                $('#modalTitle').text('Data Analisa Lengkap');
+                $('#statusText').html(
+                    `EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong> | YM: <strong>${ym}</strong>`
+                );
+            }
+
+            function loadBlendingData(blendingId, showModal = false) {
                 $.ajax({
-                    type: "GET",
+                    type: 'GET',
                     url: "{{ route('analisa.blending-awal-mikro.getBlendingData') }}",
                     data: {
                         id: blendingId
                     },
-                    dataType: "json",
+                    dataType: 'json',
+
                     success: function(response) {
                         currentBlendingData = response.data;
-                        showNextField();
-                        $('#modal').modal('show');
+
+                        if (currentBlendingData.has_draft) {
+                            $('#draftAlert').removeClass('d-none');
+                        } else {
+                            $('#draftAlert').addClass('d-none');
+                        }
+
+                        showCurrentStep();
+
+                        if (showModal) {
+                            $('#modal').modal('show');
+                        }
                     },
-                    error: function() {
+
+                    error: function(xhr) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Kesalahan',
-                            text: 'Gagal mengambil data blending.'
+                            text: getErrorMessage(
+                                xhr,
+                                'Gagal mengambil data blending.'
+                            )
+                        });
+                    }
+                });
+            }
+
+
+            $('body').on('click', '#btnAnalisa', function() {
+                const blendingId = $(this).attr('blending-id');
+
+                $('#form')[0].reset();
+                clearErrors();
+                $('#draftAlert').addClass('d-none');
+                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#id').val(blendingId);
+
+                loadBlendingData(blendingId, true);
+            });
+
+            /*
+             * SIMPAN SEMENTARA = OPSIONAL.
+             * Field aktif tetap wajib, tetapi tidak membuat step maju
+             * dan tidak mengirim apa pun ke Production.
+             */
+            $('#btnDraft').on('click', function() {
+                clearErrors();
+
+                const button = $(this);
+                const blendingId = $('#id').val();
+
+                $.ajax({
+                    url: "{{ route('analisa.blending-awal-mikro.draft.store') }}",
+                    type: 'POST',
+                    data: $('#form').serialize(),
+                    dataType: 'json',
+
+                    beforeSend: function() {
+                        button
+                            .prop('disabled', true)
+                            .html('<i class="mdi mdi-loading mdi-spin me-1"></i> Menyimpan...');
+
+                        $('#btnFinal').prop('disabled', true);
+                    },
+
+                    complete: function() {
+                        button.html(
+                            '<i class="mdi mdi-content-save-outline me-1"></i> Simpan Sementara'
+                        );
+                    },
+
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Draft Tersimpan',
+                            text: response.message
+                        }).then(function() {
+                            loadBlendingData(blendingId, false);
+                        });
+                    },
+
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+
+                        $('#btnDraft, #btnFinal').prop('disabled', false);
+
+                        if (response && response.errors) {
+                            showValidationErrors(response.errors);
+                        }
+
+                        Swal.fire({
+                            icon: xhr.status === 422 || xhr.status === 409 ? 'warning' : 'error',
+                            title: 'Gagal Disimpan',
+                            text: getErrorMessage(xhr, 'Draft gagal disimpan.')
                         });
                     }
                 });
             });
 
-            function showNextField() {
-                let eb = currentBlendingData.eb;
-                let tpc = currentBlendingData.tpc;
-                let ym = currentBlendingData.ym;
-
-                // Sembunyikan semua field dulu
-                $('#ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
-                $('#eb, #tpc, #ym').val('').prop('disabled', true);
-
-                // ✅ Logika urutan: EB → TPC → YM (cek null/undefined secara eksplisit)
-                if (eb === null || eb === undefined) {
-                    // Jika EB belum diisi
-                    $('#modalTitle').text('Input Data Analisa - EB');
-                    $('#statusText').text('Langkah 1/3 - Input EB terlebih dahulu');
-                    $('#ebContainer').removeClass('d-none');
-                    $('#eb').prop('disabled', false).focus();
-
-                } else if (tpc === null || tpc === undefined) {
-                    // Jika EB sudah, tapi TPC belum
-                    $('#modalTitle').text('Input Data Analisa - TPC');
-                    $('#statusText').html(`EB sudah diisi: <strong>${eb}</strong><br>Langkah 2/3 - Input TPC`);
-                    $('#tpcContainer').removeClass('d-none');
-                    $('#tpc').prop('disabled', false).focus();
-
-                } else if (ym === null || ym === undefined) {
-                    // Jika EB & TPC sudah, tapi YM belum
-                    $('#modalTitle').text('Input Data Analisa - YM');
-                    $('#statusText').html(
-                        `EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>Langkah 3/3 - Input YM (terakhir)`
-                    );
-                    $('#ymContainer').removeClass('d-none');
-                    $('#ym').prop('disabled', false).focus();
-
-                } else {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Data Lengkap',
-                        text: 'Semua parameter analisa sudah diisi.'
-                    });
-                    $('#modal').modal('hide');
-                }
-            }
-
-            $('#form').submit(function(e) {
+            /*
+             * SIMPAN FINAL boleh dipilih langsung TANPA draft.
+             * Hanya step aktif yang difinalkan.
+             */
+            $('#form').on('submit', function(e) {
                 e.preventDefault();
 
-                $.ajax({
-                    data: $(this).serialize(),
-                    url: "{{ route('analisa.blending-awal-mikro.update') }}",
-                    type: "POST",
-                    dataType: 'json',
-                    beforeSend: function() {
-                        $('#btnSave').prop('disabled', true).html(
-                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                        );
-                        $('.form-control').removeClass('is-invalid');
-                        $('.text-danger').html('');
-                    },
-                    complete: function() {
-                        $('#btnSave').prop('disabled', false).text('Simpan');
-                    },
-                    success: function(response) {
-                        $('#modal').modal('hide');
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sukses',
-                            text: response.message,
-                        }).then(() => {
-                            window.location.reload();
-                        });
-                    },
-                    error: function(xhr) {
-                        let response = xhr.responseJSON;
+                clearErrors();
 
-                        if (xhr.status === 409 && response && response.message) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Gagal Disimpan',
-                                text: response.message,
-                            });
-                            return;
-                        }
+                const form = $(this);
 
-                        if (xhr.status === 422 && response && response.errors) {
-                            let errors = response.errors;
-
-                            if (errors.eb) {
-                                $('#eb').addClass('is-invalid');
-                                $('.errorEb').html(errors.eb.join('<br>'));
-                            }
-                            if (errors.tpc) {
-                                $('#tpc').addClass('is-invalid');
-                                $('.errorTpc').html(errors.tpc.join('<br>'));
-                            }
-                            if (errors.ym) {
-                                $('#ym').addClass('is-invalid');
-                                $('.errorYm').html(errors.ym.join('<br>'));
-                            }
-                            return;
-                        }
-
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Kesalahan',
-                            text: 'Terjadi kesalahan, silakan coba lagi.',
-                        });
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Simpan Final?',
+                    text: 'Data pada langkah ini akan difinalkan dan proses akan lanjut ke langkah berikutnya.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Simpan Final',
+                    cancelButtonText: 'Batal'
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
                     }
+
+                    $.ajax({
+                        url: "{{ route('analisa.blending-awal-mikro.update') }}",
+                        type: 'POST',
+                        data: form.serialize(),
+                        dataType: 'json',
+
+                        beforeSend: function() {
+                            $('#btnDraft, #btnFinal').prop('disabled', true);
+
+                            $('#btnFinal').html(
+                                '<i class="mdi mdi-loading mdi-spin me-1"></i> Proses Final...'
+                            );
+                        },
+
+                        complete: function() {
+                            $('#btnFinal').html(
+                                '<i class="mdi mdi-check-circle-outline me-1"></i> Simpan Final'
+                            );
+                        },
+
+                        success: function(response) {
+                            $('#modal').modal('hide');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Simpan Final Berhasil',
+                                text: response.message
+                            }).then(function() {
+                                window.location.reload();
+                            });
+                        },
+
+                        error: function(xhr) {
+                            const response = xhr.responseJSON;
+
+                            $('#btnDraft, #btnFinal').prop('disabled', false);
+
+                            if (response && response.errors) {
+                                showValidationErrors(response.errors);
+                            }
+
+                            Swal.fire({
+                                icon: xhr.status === 422 || xhr.status === 409 ? 'warning' : 'error',
+                                title: 'Simpan Final Gagal',
+                                text: getErrorMessage(
+                                    xhr,
+                                    'Data final gagal disimpan. Draft tetap aman.'
+                                )
+                            });
+                        }
+                    });
                 });
             });
         });

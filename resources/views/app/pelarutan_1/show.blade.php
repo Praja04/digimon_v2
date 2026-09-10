@@ -245,7 +245,8 @@
                                                             $batchSuhu = $suhuData[$pelarutan_1->id] ?? null;
                                                         @endphp
                                                         @if ($batchSuhu && !empty($batchSuhu['suhu']))
-                                                            <div class="text-muted small" style="font-size: 11px;" title="Suhu Pelarutan / Waktu Input">
+                                                            <div class="text-muted small" style="font-size: 11px;"
+                                                                title="Suhu Pelarutan / Waktu Input">
                                                                 Suhu: {{ $batchSuhu['suhu'] }} °C
                                                                 @if (!empty($batchSuhu['jam_mulai']))
                                                                     <br>({{ \Carbon\Carbon::parse($batchSuhu['jam_mulai'])->format('d/m/Y H:i') }})
@@ -409,8 +410,21 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Tutup
+                        </button>
+
+                        @if (auth()->user()->role === 'Foreman')
+                            <button type="button" class="btn btn-warning" id="saveDraftForeman">
+                                <i class="ri-save-3-line me-1"></i>
+                                Simpan Sementara
+                            </button>
+                        @endif
+
+                        <button type="submit" class="btn btn-primary" id="save">
+                            <i class="ri-checkbox-circle-line me-1"></i>
+                            Simpan Final
+                        </button>
                     </div>
                 </div>
             </form>
@@ -851,38 +865,91 @@
                     },
                     success: function(response) {
                         const userRole = "{{ auth()->user()->role }}";
+                        const draft = response.draft || null;
+                        const source = draft || response;
 
                         $('.modal-title').text('Kelola Data Pelarutan 1');
 
+                        /*
+                         * ID tetap memakai ID data Pelarutan 1 final.
+                         * Nilai field memakai Draft bila Foreman sebelumnya
+                         * pernah memilih Simpan Sementara.
+                         */
                         $('#id').val(response.id);
-                        $('#brix').val(formatDecimal(response.brix));
-                        $('#nacl').val(formatDecimal(response.nacl));
-                        $('#organo').val(response.organo || '');
-                        $('#disposition_remark').val(response.disposition_remark || '');
+                        $('#brix').val(formatDecimal(source.brix));
+                        $('#nacl').val(formatDecimal(source.nacl));
+                        $('#organo').val(source.organo || '');
+                        $('#disposition_remark').val(
+                            source.disposition_remark || ''
+                        );
 
-                        // Jika role Foreman, field Status menjadi readonly (tidak bisa diedit)
-                        if (userRole === 'Foreman') {
-                            $('#status_disposition').val(response.status);
-                            $('#status_disposition').prop('disabled', false);
-                        } else {
-                            $('#status_disposition').val(response.status);
-                            $('#status_disposition').prop('disabled', false);
-                        }
+                        $('#status_disposition').val(
+                            source.status_disposition ||
+                            response.status ||
+                            ''
+                        );
+                        $('#status_disposition').prop('disabled', false);
 
-                        $('#disposition').val(response.disposition || '');
+                        $('#disposition').val(
+                            source.disposition ||
+                            response.disposition ||
+                            ''
+                        );
 
-                        // Tampilkan adjustment qty jika ada
-                        if (response.status === 'Adjustment') {
-                            $('.adjustment-qty-wrapper').removeClass('d-none');
-                            $('input[name="adjustment_qty_gula_tebu"]').val(response
-                                .adjustment_qty_gula_tebu || '');
-                            $('input[name="adjustment_qty_gula_kelapa"]').val(response
-                                .adjustment_qty_gula_kelapa || '');
+                        const adjustmentStatus =
+                            source.status_disposition ||
+                            response.status ||
+                            '';
+
+                        const adjustmentDisposition =
+                            source.disposition ||
+                            response.disposition ||
+                            '';
+
+                        if (
+                            adjustmentStatus === 'Adjustment' ||
+                            adjustmentDisposition === 'Adjustment'
+                        ) {
+                            $('.adjustment-qty-wrapper')
+                                .removeClass('d-none');
+
+                            $('input[name="adjustment_qty_gula_tebu"]')
+                                .val(
+                                    formatDecimal(
+                                        source.adjustment_qty_gula_tebu ||
+                                        ''
+                                    )
+                                );
+
+                            $('input[name="adjustment_qty_gula_kelapa"]')
+                                .val(
+                                    formatDecimal(
+                                        source.adjustment_qty_gula_kelapa ||
+                                        ''
+                                    )
+                                );
 
                             $('.adjustment-qty').prop('required', true);
                         } else {
                             $('.adjustment-qty-wrapper').addClass('d-none');
                             $('.adjustment-qty').prop('required', false).val('');
+                        }
+
+                        if (draft && userRole === 'Foreman') {
+                            $('.error-alert')
+                                .removeClass('d-none alert-danger')
+                                .addClass('alert-warning')
+                                .html(
+                                    '<i class="ri-draft-line me-1"></i>' +
+                                    'Data sementara Foreman ditemukan. ' +
+                                    'Silakan lanjutkan lalu Simpan Final.'
+                                );
+                        } else {
+                            $('.error-alert')
+                                .addClass('d-none')
+                                .removeClass('alert-warning')
+                                .addClass('alert-danger')
+                                .html('');
                         }
 
                         $('#modal').modal('show');
@@ -932,7 +999,7 @@
                         }
 
                         $('#suhu_detail').val(response.suhu ? response.suhu + ' °C' : '-');
-                        
+
                         let formatJamMulai = '-';
                         if (response.jam_mulai) {
                             const date = new Date(response.jam_mulai);
@@ -994,6 +1061,140 @@
                 });
             });
 
+            /*
+            |--------------------------------------------------------------------------
+            | SIMPAN SEMENTARA FOREMAN
+            |--------------------------------------------------------------------------
+            */
+            $('#saveDraftForeman').on('click', function() {
+                const button = $(this);
+
+                $('.form-control').removeClass('is-invalid');
+                $('.text-danger').html('');
+                $('.error-alert')
+                    .addClass('d-none')
+                    .removeClass('alert-warning')
+                    .addClass('alert-danger')
+                    .html('');
+
+                $.ajax({
+                    data: $('#form').serialize(),
+                    url: "{{ route('pelarutan-1.draft.store') }}",
+                    type: "POST",
+                    dataType: "json",
+
+                    beforeSend: function() {
+                        button
+                            .prop('disabled', true)
+                            .html(
+                                '<i class="mdi mdi-loading mdi-spin me-2"></i>' +
+                                'Menyimpan...'
+                            );
+
+                        $('#save').prop('disabled', true);
+                    },
+
+                    complete: function() {
+                        button
+                            .prop('disabled', false)
+                            .html(
+                                '<i class="ri-save-3-line me-1"></i>' +
+                                'Simpan Sementara'
+                            );
+
+                        $('#save').prop('disabled', false);
+                    },
+
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Tersimpan Sementara',
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        });
+                    },
+
+                    error: function(xhr) {
+                        const response = xhr.responseJSON || {};
+
+                        if (
+                            xhr.status === 422 &&
+                            response.errors
+                        ) {
+                            const errors = response.errors;
+
+                            if (errors.brix) {
+                                $('#brix').addClass('is-invalid');
+                                $('.errorBrix').html(
+                                    errors.brix.join('<br>')
+                                );
+                            }
+
+                            if (errors.nacl) {
+                                $('#nacl').addClass('is-invalid');
+                                $('.errorNacl').html(
+                                    errors.nacl.join('<br>')
+                                );
+                            }
+
+                            if (errors.organo) {
+                                $('#organo').addClass('is-invalid');
+                                $('.errorOrgano').html(
+                                    errors.organo.join('<br>')
+                                );
+                            }
+
+                            if (errors.status_disposition) {
+                                $('#status_disposition')
+                                    .addClass('is-invalid');
+                                $('.errorStatusDisposition').html(
+                                    errors.status_disposition.join('<br>')
+                                );
+                            }
+
+                            if (errors.disposition) {
+                                $('#disposition')
+                                    .addClass('is-invalid');
+                                $('.errorDisposition').html(
+                                    errors.disposition.join('<br>')
+                                );
+                            }
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Belum Valid',
+                                text: response.message ||
+                                    'Periksa kembali data yang diisi.'
+                            });
+
+                            return;
+                        }
+
+                        if (
+                            xhr.status === 403 ||
+                            xhr.status === 409
+                        ) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Tidak Dapat Disimpan',
+                                text: response.message ||
+                                    'Data tidak dapat disimpan sementara.'
+                            });
+
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kesalahan',
+                            text: response.message ||
+                                'Terjadi kesalahan saat menyimpan sementara.'
+                        });
+                    }
+                });
+            });
+
+
             $('#form').submit(function(e) {
                 e.preventDefault();
 
@@ -1013,11 +1214,20 @@
                             '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
                         );
 
+                        $('#saveDraftForeman').prop('disabled', true);
+
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
                     },
                     complete: function() {
-                        $('#save').prop('disabled', false).text('Simpan');
+                        $('#save')
+                            .prop('disabled', false)
+                            .html(
+                                '<i class="ri-checkbox-circle-line me-1"></i>' +
+                                'Simpan Final'
+                            );
+
+                        $('#saveDraftForeman').prop('disabled', false);
 
                         // Kembalikan disabled state jika diperlukan
                         if (wasDisabled) {

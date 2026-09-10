@@ -179,8 +179,7 @@
                                                         {{ $pelarutan_2->batch_number }}
 
                                                         @if ($pelarutan_2->revisi != null)
-                                                            <span
-                                                                class="badge bg-secondary ms-1"
+                                                            <span class="badge bg-secondary ms-1"
                                                                 title="Revisi ke-{{ $pelarutan_2->revisi }}">
                                                                 Rev. {{ $pelarutan_2->revisi }}
                                                             </span>
@@ -197,9 +196,7 @@
                                                         @endphp
 
                                                         @if ($batchSuhu && !empty($batchSuhu['suhu']))
-                                                            <div
-                                                                class="text-muted small"
-                                                                style="font-size:11px;"
+                                                            <div class="text-muted small" style="font-size:11px;"
                                                                 title="Suhu Pelarutan / Waktu Input">
 
                                                                 Suhu:
@@ -235,14 +232,11 @@
                                                     </td>
 
                                                     <td>
-                                                        {{ $pelarutan_2->scanned_at
-                                                            ? \Carbon\Carbon::parse($pelarutan_2->scanned_at)->format('d/m/Y H:i:s')
-                                                            : '-' }}
+                                                        {{ $pelarutan_2->scanned_at ? \Carbon\Carbon::parse($pelarutan_2->scanned_at)->format('d/m/Y H:i:s') : '-' }}
                                                     </td>
 
                                                     <td>
                                                         @if ($pelarutan_2->status)
-
                                                             <span
                                                                 class="badge {{ match (strtoupper($pelarutan_2->status)) {
                                                                     'OK' => 'bg-success',
@@ -252,13 +246,10 @@
                                                                 } }}">
                                                                 {{ $pelarutan_2->status }}
                                                             </span>
-
                                                         @else
-
                                                             <span class="text-muted">
                                                                 -
                                                             </span>
-
                                                         @endif
                                                     </td>
 
@@ -267,58 +258,42 @@
                                                     </td>
 
                                                     <td>
-                                                        <button
-                                                            class="btn btn-sm btn-info"
-                                                            id="btnDetail"
+                                                        <button class="btn btn-sm btn-info" id="btnDetail"
                                                             data-id="{{ $pelarutan_2->id }}">
 
                                                             <i class="ri-eye-line"></i>
                                                         </button>
 
                                                         @if (auth()->user()->role == 'Foreman')
-
-                                                            <button
-                                                                class="btn btn-sm btn-secondary ms-1"
-                                                                id="btnFormulasi"
+                                                            <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
                                                                 data-id="{{ $pelarutan_2->id }}">
 
                                                                 <i class="ri-file-list-line"></i>
                                                             </button>
-
                                                         @endif
                                                     </td>
 
                                                     <td>
                                                         @if (is_null($pelarutan_2->status))
-
-                                                            <button
-                                                                class="btn btn-sm btn-primary open-pelarutan-2-modal"
+                                                            <button class="btn btn-sm btn-primary open-pelarutan-2-modal"
                                                                 data-id="{{ $pelarutan_2->id }}">
 
                                                                 Input Data
                                                             </button>
-
                                                         @else
-
                                                             @if (auth()->user()->role == 'Foreman')
-
-                                                                <button
-                                                                    type="button"
+                                                                <button type="button"
                                                                     class="btn btn-sm btn-warning open-pelarutan-2-modal-edit"
                                                                     data-id="{{ $pelarutan_2->id }}">
 
                                                                     Kelola Data
                                                                 </button>
-
                                                             @else
-
                                                                 <span class="badge bg-success-subtle text-success">
                                                                     <i class="ri-check-line align-middle"></i>
                                                                     Lengkap
                                                                 </span>
-
                                                             @endif
-
                                                         @endif
                                                     </td>
 
@@ -327,16 +302,13 @@
                                             @empty
 
                                                 <tr>
-                                                    <td
-                                                        colspan="12"
-                                                        class="text-center text-muted py-4">
+                                                    <td colspan="12" class="text-center text-muted py-4">
 
                                                         <i class="ri-inbox-line fs-1 d-block mb-2 opacity-50"></i>
 
                                                         Tidak ada data tersedia.
                                                     </td>
                                                 </tr>
-
                                             @endforelse
 
                                         </tbody>
@@ -357,12 +329,7 @@
     <!-- ====================================================== -->
     <!-- MODAL INPUT / KELOLA PELARUTAN 2 -->
     <!-- ====================================================== -->
-    <div
-        class="modal fade"
-        id="modal"
-        tabindex="-1"
-        aria-labelledby="modalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
 
         <div class="modal-dialog modal-lg">
 
@@ -377,11 +344,7 @@
                             Kelola Data Pelarutan 2
                         </h5>
 
-                        <button
-                            type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Tutup">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup">
                         </button>
 
                     </div>
@@ -391,9 +354,7 @@
                         <div class="alert alert-danger d-none error-alert"></div>
 
                         <!-- INFO DRAFT -->
-                        <div
-                            class="col-12 d-none"
-                            id="draftInfo">
+                        <div class="col-12 d-none" id="draftInfo">
 
                             <div class="alert alert-warning mb-0">
                                 <i class="ri-information-line me-1"></i>
@@ -407,10 +368,7 @@
 
                         </div>
 
-                        <input
-                            type="hidden"
-                            name="id"
-                            id="id">
+                        <input type="hidden" name="id" id="id">
 
                         <!-- BRIX -->
                         <div class="col-lg-6">
@@ -420,11 +378,7 @@
                                 <span style="color:red">*</span>
                             </label>
 
-                            <input
-                                type="text"
-                                name="brix"
-                                id="brix"
-                                class="form-control comma-input"
+                            <input type="text" name="brix" id="brix" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
 
                             <small class="text-danger errorBrix"></small>
@@ -438,11 +392,7 @@
                                 NACL
                             </label>
 
-                            <input
-                                type="text"
-                                name="nacl"
-                                id="nacl"
-                                class="form-control comma-input"
+                            <input type="text" name="nacl" id="nacl" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
 
                             <small class="text-danger errorNacl"></small>
@@ -456,11 +406,7 @@
                                 Visco
                             </label>
 
-                            <input
-                                type="text"
-                                name="visco"
-                                id="visco"
-                                class="form-control comma-input"
+                            <input type="text" name="visco" id="visco" class="form-control comma-input"
                                 placeholder="Contoh: 0,00">
 
                             <small class="text-danger errorVisco"></small>
@@ -475,11 +421,7 @@
                                 <span style="color:red">*</span>
                             </label>
 
-                            <input
-                                type="text"
-                                name="organo"
-                                id="organo"
-                                class="form-control"
+                            <input type="text" name="organo" id="organo" class="form-control"
                                 oninput="this.value = this.value.toUpperCase();">
 
                             <small class="text-danger errorOrgano"></small>
@@ -494,9 +436,7 @@
                                 <span style="color:red">*</span>
                             </label>
 
-                            <select
-                                name="status_disposition"
-                                id="status_disposition"
+                            <select name="status_disposition" id="status_disposition"
                                 class="form-control disposition-select">
 
                                 <option value="">
@@ -519,7 +459,6 @@
 
 
                         @if (auth()->user()->role == 'Foreman')
-
                             <!-- DISPOSISI -->
                             <div class="col-lg-12">
 
@@ -527,10 +466,7 @@
                                     Disposisi
                                 </label>
 
-                                <select
-                                    name="disposition"
-                                    id="disposition"
-                                    class="form-control disposition-select">
+                                <select name="disposition" id="disposition" class="form-control disposition-select">
 
                                     <option value="">
                                         -- Pilih Disposisi --
@@ -561,7 +497,6 @@
                                 <small class="text-danger errorDisposition"></small>
 
                             </div>
-
                         @endif
 
 
@@ -572,13 +507,8 @@
                                 Catatan
                             </label>
 
-                            <textarea
-                                name="disposition_remark"
-                                id="disposition_remark"
-                                class="form-control"
-                                rows="2"
-                                placeholder="Isi catatan jika diperlukan..."
-                                oninput="this.value = this.value.toUpperCase();"></textarea>
+                            <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
+                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();"></textarea>
 
                         </div>
 
@@ -586,35 +516,23 @@
 
                     <div class="modal-footer">
 
-                        <button
-                            type="button"
-                            class="btn btn-light"
-                            data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
 
                             Tutup
                         </button>
 
 
-                        @if (auth()->user()->role === 'Analis Kimia')
-
-                            <button
-                                type="button"
-                                class="btn btn-warning"
-                                id="saveDraft">
+                        @if (in_array(auth()->user()->role, ['Analis Kimia', 'Foreman'], true))
+                            <button type="button" class="btn btn-warning" id="saveDraft">
 
                                 <i class="ri-save-line me-1"></i>
 
                                 Simpan Sementara
                             </button>
-
                         @endif
 
 
-                        <button
-                            type="submit"
-                            class="btn btn-primary"
-                            id="saveFinal"
-                            disabled>
+                        <button type="submit" class="btn btn-primary" id="saveFinal" disabled>
 
                             Simpan Final
                         </button>
@@ -631,12 +549,7 @@
     <!-- ====================================================== -->
     <!-- MODAL DETAIL PELARUTAN 2 -->
     <!-- ====================================================== -->
-    <div
-        class="modal fade"
-        id="detailModal"
-        tabindex="-1"
-        aria-labelledby="detailModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
 
         <div class="modal-dialog modal-lg">
 
@@ -648,11 +561,7 @@
                         Detail Pelarutan 2
                     </h5>
 
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Tutup">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup">
                     </button>
 
                 </div>
@@ -665,11 +574,7 @@
                             Suhu Pelarutan (dari PRD)
                         </label>
 
-                        <input
-                            type="text"
-                            id="suhu_detail"
-                            class="form-control"
-                            disabled>
+                        <input type="text" id="suhu_detail" class="form-control" disabled>
 
                     </div>
 
@@ -679,11 +584,7 @@
                             Waktu Input Suhu (dari PRD)
                         </label>
 
-                        <input
-                            type="text"
-                            id="waktu_input_suhu_detail"
-                            class="form-control"
-                            disabled>
+                        <input type="text" id="waktu_input_suhu_detail" class="form-control" disabled>
 
                     </div>
 
@@ -693,11 +594,7 @@
                             Catatan
                         </label>
 
-                        <textarea
-                            name="disposition_remark_detail"
-                            id="disposition_remark_detail"
-                            class="form-control"
-                            rows="2"
+                        <textarea name="disposition_remark_detail" id="disposition_remark_detail" class="form-control" rows="2"
                             disabled></textarea>
 
                     </div>
@@ -706,10 +603,7 @@
 
                 <div class="modal-footer">
 
-                    <button
-                        type="button"
-                        class="btn btn-light"
-                        data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
 
                         Tutup
                     </button>
@@ -725,11 +619,7 @@
     <!-- ====================================================== -->
     <!-- MODAL FORMULASI DISSOLVER -->
     <!-- ====================================================== -->
-    <div
-        class="modal fade"
-        id="formulasiModal"
-        tabindex="-1"
-        aria-labelledby="formulasiModalLabel"
+    <div class="modal fade" id="formulasiModal" tabindex="-1" aria-labelledby="formulasiModalLabel"
         aria-hidden="true">
 
         <div class="modal-dialog modal-lg">
@@ -738,18 +628,12 @@
 
                 <div class="modal-header">
 
-                    <h5
-                        class="modal-title"
-                        id="formulasiModalLabel">
+                    <h5 class="modal-title" id="formulasiModalLabel">
 
                         Detail Formulasi Dissolver
                     </h5>
 
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                     </button>
 
                 </div>
@@ -774,9 +658,7 @@
                                         PO Number
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-po-number">
+                                    <p class="mb-2" id="formulasi-po-number">
                                         -
                                     </p>
                                 </div>
@@ -786,9 +668,7 @@
                                         Variant
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-variant">
+                                    <p class="mb-2" id="formulasi-variant">
                                         -
                                     </p>
                                 </div>
@@ -798,9 +678,7 @@
                                         Tanggal
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-date">
+                                    <p class="mb-2" id="formulasi-date">
                                         -
                                     </p>
                                 </div>
@@ -810,9 +688,7 @@
                                         Batch Range
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-batch-range">
+                                    <p class="mb-2" id="formulasi-batch-range">
                                         -
                                     </p>
                                 </div>
@@ -841,9 +717,7 @@
                                         Batch Number
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-batch-number">
+                                    <p class="mb-2" id="formulasi-batch-number">
                                         -
                                     </p>
                                 </div>
@@ -853,9 +727,7 @@
                                         Dissolver Number
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-dissolver-number">
+                                    <p class="mb-2" id="formulasi-dissolver-number">
                                         -
                                     </p>
                                 </div>
@@ -865,9 +737,7 @@
                                         Brix
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-brix">
+                                    <p class="mb-2" id="formulasi-brix">
                                         -
                                     </p>
                                 </div>
@@ -877,9 +747,7 @@
                                         NaCl
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-nacl">
+                                    <p class="mb-2" id="formulasi-nacl">
                                         -
                                     </p>
                                 </div>
@@ -889,9 +757,7 @@
                                         Visco
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-visco">
+                                    <p class="mb-2" id="formulasi-visco">
                                         -
                                     </p>
                                 </div>
@@ -901,9 +767,7 @@
                                         Organo
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-organo">
+                                    <p class="mb-2" id="formulasi-organo">
                                         -
                                     </p>
                                 </div>
@@ -918,9 +782,7 @@
                                         Status
                                     </small>
 
-                                    <p
-                                        class="mb-0"
-                                        id="formulasi-status">
+                                    <p class="mb-0" id="formulasi-status">
                                         -
                                     </p>
 
@@ -932,9 +794,7 @@
                                         Disposition
                                     </small>
 
-                                    <p
-                                        class="mb-0"
-                                        id="formulasi-disposition">
+                                    <p class="mb-0" id="formulasi-disposition">
                                         -
                                     </p>
 
@@ -947,9 +807,7 @@
 
 
                     <!-- DISSOLVER INFO -->
-                    <div
-                        class="card border mb-4 d-none"
-                        id="dissolverInfoCard">
+                    <div class="card border mb-4 d-none" id="dissolverInfoCard">
 
                         <div class="card-header">
                             <h6 class="mb-0 fw-semibold">
@@ -967,9 +825,7 @@
                                         Dissolver Number
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-prod-dissolver">
+                                    <p class="mb-2" id="formulasi-prod-dissolver">
                                         -
                                     </p>
 
@@ -981,9 +837,7 @@
                                         Line Pasteurisasi
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-line">
+                                    <p class="mb-2" id="formulasi-line">
                                         -
                                     </p>
 
@@ -995,9 +849,7 @@
                                         Jam Mulai Transfer
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-jam-mulai">
+                                    <p class="mb-2" id="formulasi-jam-mulai">
                                         -
                                     </p>
 
@@ -1009,9 +861,7 @@
                                         Jam Mulai Transfer
                                     </small>
 
-                                    <p
-                                        class="mb-2"
-                                        id="formulasi-jam-transfer">
+                                    <p class="mb-2" id="formulasi-jam-transfer">
                                         -
                                     </p>
 
@@ -1024,9 +874,7 @@
 
 
                     <!-- SOURCE INFO -->
-                    <div
-                        class="alert alert-light border d-none"
-                        id="formulasiSourceInfo">
+                    <div class="alert alert-light border d-none" id="formulasiSourceInfo">
 
                         <div class="d-flex align-items-center">
 
@@ -1036,9 +884,7 @@
 
                             <div class="flex-grow-1 ms-3">
 
-                                <small
-                                    class="mb-0"
-                                    id="formulasi-source-text">
+                                <small class="mb-0" id="formulasi-source-text">
                                     -
                                 </small>
 
@@ -1061,16 +907,12 @@
 
                             <div class="table-responsive">
 
-                                <table
-                                    class="table table-bordered table-sm mb-0"
-                                    id="formulasiTable">
+                                <table class="table table-bordered table-sm mb-0" id="formulasiTable">
 
                                     <thead class="table-light">
                                         <tr>
 
-                                            <th
-                                                class="text-center"
-                                                style="width:50px;">
+                                            <th class="text-center" style="width:50px;">
                                                 No
                                             </th>
 
@@ -1094,9 +936,7 @@
                                                 Variant
                                             </th>
 
-                                            <th
-                                                class="text-end"
-                                                style="width:120px;">
+                                            <th class="text-end" style="width:120px;">
                                                 Qty
                                             </th>
 
@@ -1106,13 +946,9 @@
                                     <tbody id="formulasiTableBody">
 
                                         <tr>
-                                            <td
-                                                colspan="7"
-                                                class="text-center text-muted py-4">
+                                            <td colspan="7" class="text-center text-muted py-4">
 
-                                                <div
-                                                    class="spinner-border spinner-border-sm me-2"
-                                                    role="status">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status">
 
                                                     <span class="visually-hidden">
                                                         Loading...
@@ -1137,9 +973,7 @@
 
                                     Total Items:
 
-                                    <span
-                                        class="fw-semibold"
-                                        id="formulasi-total">
+                                    <span class="fw-semibold" id="formulasi-total">
                                         0
                                     </span>
 
@@ -1152,9 +986,7 @@
 
 
                     <!-- EMPTY STATE -->
-                    <div
-                        class="alert alert-secondary border-secondary d-none"
-                        id="formulasiEmptyState">
+                    <div class="alert alert-secondary border-secondary d-none" id="formulasiEmptyState">
 
                         <div class="d-flex align-items-center">
 
@@ -1172,10 +1004,7 @@
 
                 <div class="modal-footer">
 
-                    <button
-                        type="button"
-                        class="btn btn-light"
-                        data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
 
                         Tutup
                     </button>
@@ -1194,12 +1023,11 @@
 @section('scripts')
 
     <script>
-
         /*
-        |--------------------------------------------------------------------------
-        | FORMULASI MODAL
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | FORMULASI MODAL
+            |--------------------------------------------------------------------------
+            */
         function showFormulasiModal(response) {
 
             const data =
@@ -1273,11 +1101,11 @@
                 if (pelarutan_2_info.status) {
 
                     const statusClass =
-                        pelarutan_2_info.status === 'OK'
-                            ? 'success'
-                            : pelarutan_2_info.status === 'NOT OK'
-                                ? 'danger'
-                                : 'warning';
+                        pelarutan_2_info.status === 'OK' ?
+                        'success' :
+                        pelarutan_2_info.status === 'NOT OK' ?
+                        'danger' :
+                        'warning';
 
 
                     $('#formulasi-status').html(
@@ -1338,15 +1166,15 @@
 
 
                 const matchType =
-                    data.formulasi_source.matched_by_production_batch
-                        ? 'Production Batch ID'
-                        : 'Batch Number';
+                    data.formulasi_source.matched_by_production_batch ?
+                    'Production Batch ID' :
+                    'Batch Number';
 
 
                 const badgeClass =
-                    data.formulasi_source.matched_by_production_batch
-                        ? 'success'
-                        : 'warning';
+                    data.formulasi_source.matched_by_production_batch ?
+                    'success' :
+                    'warning';
 
 
                 $('#formulasi-source-text').html(
@@ -1564,12 +1392,12 @@
 
                     const materialA =
                         (a.material_type || '')
-                            .toUpperCase();
+                        .toUpperCase();
 
 
                     const materialB =
                         (b.material_type || '')
-                            .toUpperCase();
+                        .toUpperCase();
 
 
                     if (
@@ -1691,18 +1519,23 @@
                 "{{ auth()->user()->role }}";
 
 
-            /*
-             * Foreman tetap bisa simpan disposisi.
-             */
             if (
                 userRole ===
                 'Foreman'
             ) {
 
+                const disposition =
+                    String(
+                        $('#disposition').val() || ''
+                    ).trim();
+
                 $('#saveFinal')
                     .prop(
                         'disabled',
-                        false
+                        !(
+                            isPelarutan2FinalComplete() &&
+                            disposition !== ''
+                        )
                     );
 
                 return;
@@ -1822,7 +1655,7 @@
                 $('.errorStatusDisposition')
                     .html(
                         errors.status_disposition
-                            .join('<br>')
+                        .join('<br>')
                     );
             }
 
@@ -1840,7 +1673,7 @@
                 $('.errorDisposition')
                     .html(
                         errors.disposition
-                            .join('<br>')
+                        .join('<br>')
                     );
             }
         }
@@ -1862,9 +1695,8 @@
                 */
                 $.ajaxSetup({
                     headers: {
-                        'X-CSRF-TOKEN':
-                            $('meta[name="csrf-token"]')
-                                .attr('content')
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]')
+                            .attr('content')
                     }
                 });
 
@@ -1875,11 +1707,9 @@
                 |--------------------------------------------------------------------------
                 */
                 $('.select2').select2({
-                    placeholder:
-                        '-- Pilih Opsi --',
+                    placeholder: '-- Pilih Opsi --',
 
-                    dropdownParent:
-                        $('#modal')
+                    dropdownParent: $('#modal')
                 });
 
 
@@ -1908,20 +1738,15 @@
                                     ) {
 
                                         Swal.fire({
-                                            icon:
-                                                'warning',
+                                            icon: 'warning',
 
-                                            title:
-                                                'Format Salah!',
+                                            title: 'Format Salah!',
 
-                                            text:
-                                                'Gunakan tanda koma (,) untuk desimal, bukan titik (.)',
+                                            text: 'Gunakan tanda koma (,) untuk desimal, bukan titik (.)',
 
-                                            confirmButtonText:
-                                                'Mengerti',
+                                            confirmButtonText: 'Mengerti',
 
-                                            confirmButtonColor:
-                                                '#3085d6'
+                                            confirmButtonColor: '#3085d6'
                                         });
 
 
@@ -1947,7 +1772,7 @@
                 */
                 $(document).on(
                     'input change',
-                    '#brix, #organo, #status_disposition',
+                    '#brix, #organo, #status_disposition, #disposition',
                     function() {
 
                         updatePelarutan2FinalButton();
@@ -1968,9 +1793,9 @@
 
                         const id =
                             $(this)
-                                .data(
-                                    'id'
-                                );
+                            .data(
+                                'id'
+                            );
 
 
                         $('#form')[0]
@@ -2007,171 +1832,173 @@
 
                         $.ajax({
 
-                            type:
-                                "GET",
+                            type: "GET",
 
-                            url:
-                                "{{ route('pelarutan-2.edit', '') }}/"
-                                + id,
+                            url: "{{ route('pelarutan-2.edit', '') }}/" +
+                                id,
 
-                            dataType:
-                                "json",
+                            dataType: "json",
 
 
-                            success:
-                                function(response) {
+                            success: function(response) {
 
 
-                                    const draft =
-                                        response.draft;
+                                const draft =
+                                    response.draft;
 
 
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | ADA DRAFT
-                                    |--------------------------------------------------------------------------
-                                    */
-                                    if (draft) {
+                                /*
+                                |--------------------------------------------------------------------------
+                                | ADA DRAFT
+                                |--------------------------------------------------------------------------
+                                */
+                                if (draft) {
 
-                                        $('#draftInfo')
-                                            .removeClass(
-                                                'd-none'
-                                            );
+                                    $('#draftInfo')
+                                        .removeClass(
+                                            'd-none'
+                                        );
 
 
-                                        $('#brix')
+                                    $('#brix')
+                                        .val(
+                                            formatDecimal(
+                                                draft.brix
+                                            )
+                                        );
+
+
+                                    $('#nacl')
+                                        .val(
+                                            formatDecimal(
+                                                draft.nacl
+                                            )
+                                        );
+
+
+                                    $('#visco')
+                                        .val(
+                                            formatDecimal(
+                                                draft.visco
+                                            )
+                                        );
+
+
+                                    $('#organo')
+                                        .val(
+                                            draft.organo || ''
+                                        );
+
+
+                                    $('#status_disposition')
+                                        .val(
+                                            draft.status_disposition || ''
+                                        )
+                                        .trigger(
+                                            'change'
+                                        );
+
+
+                                    $('#disposition_remark')
+                                        .val(
+                                            draft.disposition_remark || ''
+                                        );
+
+                                    @if (auth()->user()->role == 'Foreman')
+
+                                        $('#disposition')
                                             .val(
-                                                formatDecimal(
-                                                    draft.brix
-                                                )
-                                            );
-
-
-                                        $('#nacl')
-                                            .val(
-                                                formatDecimal(
-                                                    draft.nacl
-                                                )
-                                            );
-
-
-                                        $('#visco')
-                                            .val(
-                                                formatDecimal(
-                                                    draft.visco
-                                                )
-                                            );
-
-
-                                        $('#organo')
-                                            .val(
-                                                draft.organo || ''
-                                            );
-
-
-                                        $('#status_disposition')
-                                            .val(
-                                                draft.status_disposition || ''
+                                                draft.disposition || ''
                                             )
                                             .trigger(
                                                 'change'
                                             );
-
-
-                                        $('#disposition_remark')
-                                            .val(
-                                                draft.disposition_remark || ''
-                                            );
+                                    @endif
 
                                     /*
                                     |--------------------------------------------------------------------------
                                     | TIDAK ADA DRAFT
                                     |--------------------------------------------------------------------------
                                     */
-                                    } else {
+                                } else {
 
-                                        $('#draftInfo')
-                                            .addClass(
-                                                'd-none'
-                                            );
-
-
-                                        $('#brix')
-                                            .val('');
+                                    $('#draftInfo')
+                                        .addClass(
+                                            'd-none'
+                                        );
 
 
-                                        $('#nacl')
-                                            .val('');
+                                    $('#brix')
+                                        .val('');
 
 
-                                        $('#visco')
-                                            .val('');
+                                    $('#nacl')
+                                        .val('');
 
 
-                                        $('#organo')
-                                            .val('');
+                                    $('#visco')
+                                        .val('');
 
 
-                                        $('#status_disposition')
-                                            .val('')
-                                            .trigger(
-                                                'change'
-                                            );
-
-
-                                        $('#disposition_remark')
-                                            .val('');
-                                    }
+                                    $('#organo')
+                                        .val('');
 
 
                                     $('#status_disposition')
-                                        .prop(
-                                            'disabled',
-                                            false
+                                        .val('')
+                                        .trigger(
+                                            'change'
                                         );
 
 
-                                    @if (auth()->user()->role == 'Foreman')
-
-                                        $('#disposition')
-                                            .val('')
-                                            .trigger(
-                                                'change'
-                                            );
-
-                                    @endif
-
-
-                                    updatePelarutan2FinalButton();
-
-
-                                    $('#modal')
-                                        .modal(
-                                            'show'
-                                        );
-                                },
-
-
-                            error:
-                                function(xhr) {
-
-
-                                    const response =
-                                        xhr.responseJSON;
-
-
-                                    Swal.fire({
-                                        icon:
-                                            'error',
-
-                                        title:
-                                            'Gagal',
-
-                                        text:
-                                            response?.message
-                                            || 'Gagal memuat data Pelarutan 2.'
-                                    });
+                                    $('#disposition_remark')
+                                        .val('');
                                 }
+
+
+                                $('#status_disposition')
+                                    .prop(
+                                        'disabled',
+                                        false
+                                    );
+
+
+                                @if (auth()->user()->role == 'Foreman')
+
+                                    $('#disposition')
+                                        .val('')
+                                        .trigger(
+                                            'change'
+                                        );
+                                @endif
+
+
+                                updatePelarutan2FinalButton();
+
+
+                                $('#modal')
+                                    .modal(
+                                        'show'
+                                    );
+                            },
+
+
+                            error: function(xhr) {
+
+
+                                const response =
+                                    xhr.responseJSON;
+
+
+                                Swal.fire({
+                                    icon: 'error',
+
+                                    title: 'Gagal',
+
+                                    text: response?.message ||
+                                        'Gagal memuat data Pelarutan 2.'
+                                });
+                            }
                         });
                     }
                 );
@@ -2190,153 +2017,170 @@
 
                         const id =
                             $(this)
-                                .data(
-                                    'id'
-                                );
+                            .data(
+                                'id'
+                            );
 
 
                         $.ajax({
 
-                            type:
-                                "GET",
+                            type: "GET",
 
-                            url:
-                                "{{ route('pelarutan-2.edit', '') }}/"
-                                + id,
+                            url: "{{ route('pelarutan-2.edit', '') }}/" +
+                                id,
 
-                            dataType:
-                                "json",
+                            dataType: "json",
 
 
-                            beforeSend:
-                                function() {
+                            beforeSend: function() {
 
 
-                                    $('#form')[0]
-                                        .reset();
+                                $('#form')[0]
+                                    .reset();
 
 
-                                    resetPelarutan2Errors();
+                                resetPelarutan2Errors();
 
+
+                                $('#draftInfo')
+                                    .addClass(
+                                        'd-none'
+                                    );
+                            },
+
+
+                            success: function(response) {
+
+
+                                $('.modal-title')
+                                    .text(
+                                        'Kelola Data Pelarutan 2'
+                                    );
+
+
+                                const draft =
+                                    response.draft || null;
+
+                                const source =
+                                    draft || response;
+
+
+                                $('#id')
+                                    .val(
+                                        response.id
+                                    );
+
+
+                                $('#brix')
+                                    .val(
+                                        formatDecimal(
+                                            source.brix
+                                        )
+                                    );
+
+
+                                $('#nacl')
+                                    .val(
+                                        formatDecimal(
+                                            source.nacl
+                                        )
+                                    );
+
+
+                                $('#visco')
+                                    .val(
+                                        formatDecimal(
+                                            source.visco
+                                        )
+                                    );
+
+
+                                $('#organo')
+                                    .val(
+                                        source.organo || ''
+                                    );
+
+
+                                $('#disposition_remark')
+                                    .val(
+                                        source.disposition_remark || ''
+                                    );
+
+
+                                $('#status_disposition')
+                                    .val(
+                                        source.status_disposition ||
+                                        response.status ||
+                                        ''
+                                    )
+                                    .trigger(
+                                        'change'
+                                    );
+
+
+                                $('#status_disposition')
+                                    .prop(
+                                        'disabled',
+                                        false
+                                    );
+
+
+                                @if (auth()->user()->role == 'Foreman')
+
+                                    $('#disposition')
+                                        .val(
+                                            source.disposition ||
+                                            response.disposition ||
+                                            ''
+                                        )
+                                        .trigger(
+                                            'change'
+                                        );
+                                @endif
+
+
+                                if (draft) {
+
+                                    $('#draftInfo')
+                                        .removeClass(
+                                            'd-none'
+                                        );
+
+                                } else {
 
                                     $('#draftInfo')
                                         .addClass(
                                             'd-none'
                                         );
-                                },
-
-
-                            success:
-                                function(response) {
-
-
-                                    $('.modal-title')
-                                        .text(
-                                            'Kelola Data Pelarutan 2'
-                                        );
-
-
-                                    $('#id')
-                                        .val(
-                                            response.id
-                                        );
-
-
-                                    $('#brix')
-                                        .val(
-                                            formatDecimal(
-                                                response.brix
-                                            )
-                                        );
-
-
-                                    $('#nacl')
-                                        .val(
-                                            formatDecimal(
-                                                response.nacl
-                                            )
-                                        );
-
-
-                                    $('#visco')
-                                        .val(
-                                            formatDecimal(
-                                                response.visco
-                                            )
-                                        );
-
-
-                                    $('#organo')
-                                        .val(
-                                            response.organo || ''
-                                        );
-
-
-                                    $('#disposition_remark')
-                                        .val(
-                                            response.disposition_remark || ''
-                                        );
-
-
-                                    $('#status_disposition')
-                                        .val(
-                                            response.status || ''
-                                        )
-                                        .trigger(
-                                            'change'
-                                        );
-
-
-                                    $('#status_disposition')
-                                        .prop(
-                                            'disabled',
-                                            false
-                                        );
-
-
-                                    @if (auth()->user()->role == 'Foreman')
-
-                                        $('#disposition')
-                                            .val(
-                                                response.disposition || ''
-                                            )
-                                            .trigger(
-                                                'change'
-                                            );
-
-                                    @endif
-
-
-                                    updatePelarutan2FinalButton();
-
-
-                                    $('#modal')
-                                        .modal(
-                                            'show'
-                                        );
-                                },
-
-
-                            error:
-                                function(xhr) {
-
-
-                                    const response =
-                                        xhr.responseJSON;
-
-
-                                    Swal.fire({
-                                        icon:
-                                            'error',
-
-                                        title:
-                                            'Gagal',
-
-                                        text:
-                                            response?.message
-                                            || 'Gagal memuat data. Silakan coba lagi.'
-                                    });
                                 }
+
+
+                                updatePelarutan2FinalButton();
+
+
+                                $('#modal')
+                                    .modal(
+                                        'show'
+                                    );
+                            },
+
+
+                            error: function(xhr) {
+
+
+                                const response =
+                                    xhr.responseJSON;
+
+
+                                Swal.fire({
+                                    icon: 'error',
+
+                                    title: 'Gagal',
+
+                                    text: response?.message ||
+                                        'Gagal memuat data. Silakan coba lagi.'
+                                });
+                            }
                         });
                     }
                 );
@@ -2355,153 +2199,144 @@
 
                         const id =
                             $(this)
-                                .data(
-                                    'id'
-                                );
+                            .data(
+                                'id'
+                            );
 
 
                         $.ajax({
 
-                            type:
-                                "GET",
+                            type: "GET",
 
-                            url:
-                                "{{ route('pelarutan-2.edit', '') }}/"
-                                + id,
+                            url: "{{ route('pelarutan-2.edit', '') }}/" +
+                                id,
 
-                            dataType:
-                                "json",
+                            dataType: "json",
 
 
-                            beforeSend:
-                                function() {
+                            beforeSend: function() {
 
 
-                                    $('#disposition_remark_detail')
-                                        .val('');
-                                },
+                                $('#disposition_remark_detail')
+                                    .val('');
+                            },
 
 
-                            success:
-                                function(response) {
+                            success: function(response) {
 
 
-                                    let remarkText =
-                                        '-';
+                                let remarkText =
+                                    '-';
 
 
-                                    if (
-                                        response.disposition_remark != null &&
-                                        response.disposition_remark != '-'
-                                    ) {
+                                if (
+                                    response.disposition_remark != null &&
+                                    response.disposition_remark != '-'
+                                ) {
 
-                                        remarkText =
-                                            response.disposition_remark;
-                                    }
-
-
-                                    $('#suhu_detail')
-                                        .val(
-                                            response.suhu
-                                                ? response.suhu + ' °C'
-                                                : '-'
-                                        );
-
-
-                                    let formatJamMulai =
-                                        '-';
-
-
-                                    if (
-                                        response.jam_mulai
-                                    ) {
-
-
-                                        const date =
-                                            new Date(
-                                                response.jam_mulai
-                                            );
-
-
-                                        const day =
-                                            String(
-                                                date.getDate()
-                                            ).padStart(
-                                                2,
-                                                '0'
-                                            );
-
-
-                                        const month =
-                                            String(
-                                                date.getMonth() + 1
-                                            ).padStart(
-                                                2,
-                                                '0'
-                                            );
-
-
-                                        const year =
-                                            date.getFullYear();
-
-
-                                        const hours =
-                                            String(
-                                                date.getHours()
-                                            ).padStart(
-                                                2,
-                                                '0'
-                                            );
-
-
-                                        const minutes =
-                                            String(
-                                                date.getMinutes()
-                                            ).padStart(
-                                                2,
-                                                '0'
-                                            );
-
-
-                                        formatJamMulai =
-                                            `${day}/${month}/${year} ${hours}:${minutes}`;
-                                    }
-
-
-                                    $('#waktu_input_suhu_detail')
-                                        .val(
-                                            formatJamMulai
-                                        );
-
-
-                                    $('#disposition_remark_detail')
-                                        .val(
-                                            remarkText
-                                        );
-
-
-                                    $('#detailModal')
-                                        .modal(
-                                            'show'
-                                        );
-                                },
-
-
-                            error:
-                                function(xhr) {
-
-
-                                    Swal.fire({
-                                        icon:
-                                            'error',
-
-                                        title:
-                                            'Gagal',
-
-                                        text:
-                                            'Gagal memuat data. Silakan coba lagi.'
-                                    });
+                                    remarkText =
+                                        response.disposition_remark;
                                 }
+
+
+                                $('#suhu_detail')
+                                    .val(
+                                        response.suhu ?
+                                        response.suhu + ' °C' :
+                                        '-'
+                                    );
+
+
+                                let formatJamMulai =
+                                    '-';
+
+
+                                if (
+                                    response.jam_mulai
+                                ) {
+
+
+                                    const date =
+                                        new Date(
+                                            response.jam_mulai
+                                        );
+
+
+                                    const day =
+                                        String(
+                                            date.getDate()
+                                        ).padStart(
+                                            2,
+                                            '0'
+                                        );
+
+
+                                    const month =
+                                        String(
+                                            date.getMonth() + 1
+                                        ).padStart(
+                                            2,
+                                            '0'
+                                        );
+
+
+                                    const year =
+                                        date.getFullYear();
+
+
+                                    const hours =
+                                        String(
+                                            date.getHours()
+                                        ).padStart(
+                                            2,
+                                            '0'
+                                        );
+
+
+                                    const minutes =
+                                        String(
+                                            date.getMinutes()
+                                        ).padStart(
+                                            2,
+                                            '0'
+                                        );
+
+
+                                    formatJamMulai =
+                                        `${day}/${month}/${year} ${hours}:${minutes}`;
+                                }
+
+
+                                $('#waktu_input_suhu_detail')
+                                    .val(
+                                        formatJamMulai
+                                    );
+
+
+                                $('#disposition_remark_detail')
+                                    .val(
+                                        remarkText
+                                    );
+
+
+                                $('#detailModal')
+                                    .modal(
+                                        'show'
+                                    );
+                            },
+
+
+                            error: function(xhr) {
+
+
+                                Swal.fire({
+                                    icon: 'error',
+
+                                    title: 'Gagal',
+
+                                    text: 'Gagal memuat data. Silakan coba lagi.'
+                                });
+                            }
                         });
                     }
                 );
@@ -2520,9 +2355,9 @@
 
                         const id =
                             $(this)
-                                .data(
-                                    'id'
-                                );
+                            .data(
+                                'id'
+                            );
 
 
                         $('#formulasiModal')
@@ -2533,63 +2368,29 @@
 
                         $.ajax({
 
-                            type:
-                                "GET",
+                            type: "GET",
 
-                            url:
-                                "{{ route('pelarutan-2.formulasi') }}",
+                            url: "{{ route('pelarutan-2.formulasi') }}",
 
                             data: {
-                                id:
-                                    id
+                                id: id
                             },
 
-                            dataType:
-                                "json",
+                            dataType: "json",
 
 
-                            success:
-                                function(response) {
+                            success: function(response) {
 
 
-                                    if (
-                                        response.success
-                                    ) {
+                                if (
+                                    response.success
+                                ) {
 
-                                        showFormulasiModal(
-                                            response
-                                        );
+                                    showFormulasiModal(
+                                        response
+                                    );
 
-                                    } else {
-
-
-                                        $('#formulasiModal')
-                                            .modal(
-                                                'hide'
-                                            );
-
-
-                                        Swal.fire({
-                                            icon:
-                                                'warning',
-
-                                            title:
-                                                'Data Tidak Ditemukan',
-
-                                            text:
-                                                response.message
-                                                || 'Data formulasi tidak ditemukan untuk batch ini'
-                                        });
-                                    }
-                                },
-
-
-                            error:
-                                function(xhr) {
-
-
-                                    const response =
-                                        xhr.responseJSON;
+                                } else {
 
 
                                     $('#formulasiModal')
@@ -2599,17 +2400,39 @@
 
 
                                     Swal.fire({
-                                        icon:
-                                            'error',
+                                        icon: 'warning',
 
-                                        title:
-                                            'Gagal',
+                                        title: 'Data Tidak Ditemukan',
 
-                                        text:
-                                            response?.message
-                                            || 'Gagal memuat data. Silakan coba lagi.'
+                                        text: response.message ||
+                                            'Data formulasi tidak ditemukan untuk batch ini'
                                     });
                                 }
+                            },
+
+
+                            error: function(xhr) {
+
+
+                                const response =
+                                    xhr.responseJSON;
+
+
+                                $('#formulasiModal')
+                                    .modal(
+                                        'hide'
+                                    );
+
+
+                                Swal.fire({
+                                    icon: 'error',
+
+                                    title: 'Gagal',
+
+                                    text: response?.message ||
+                                        'Gagal memuat data. Silakan coba lagi.'
+                                });
+                            }
                         });
                     }
                 );
@@ -2631,158 +2454,144 @@
 
                         $.ajax({
 
-                            data:
-                                $('#form')
-                                    .serialize(),
+                            data: $('#form')
+                                .serialize(),
 
-                            url:
-                                "{{ route('pelarutan-2.draft.store') }}",
+                            url: "{{ route('pelarutan-2.draft.store') }}",
 
-                            type:
-                                "POST",
+                            type: "POST",
 
-                            dataType:
-                                "json",
+                            dataType: "json",
 
 
-                            beforeSend:
-                                function() {
+                            beforeSend: function() {
 
 
-                                    $('#saveDraft')
-                                        .prop(
-                                            'disabled',
-                                            true
-                                        )
-                                        .html(
-                                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Menyimpan...'
-                                        );
-                                },
+                                $('#saveDraft')
+                                    .prop(
+                                        'disabled',
+                                        true
+                                    )
+                                    .html(
+                                        '<i class="mdi mdi-loading mdi-spin me-2"></i> Menyimpan...'
+                                    );
+
+                                $('#saveFinal')
+                                    .prop(
+                                        'disabled',
+                                        true
+                                    );
+                            },
 
 
-                            complete:
-                                function() {
+                            complete: function() {
 
 
-                                    $('#saveDraft')
-                                        .prop(
-                                            'disabled',
-                                            false
-                                        )
-                                        .html(
-                                            '<i class="ri-save-line me-1"></i> Simpan Sementara'
-                                        );
+                                $('#saveDraft')
+                                    .prop(
+                                        'disabled',
+                                        false
+                                    )
+                                    .html(
+                                        '<i class="ri-save-line me-1"></i> Simpan Sementara'
+                                    );
 
 
-                                    updatePelarutan2FinalButton();
-                                },
+                                updatePelarutan2FinalButton();
+                            },
 
 
-                            success:
-                                function(response) {
+                            success: function(response) {
 
 
-                                    $('#draftInfo')
-                                        .removeClass(
-                                            'd-none'
-                                        );
+                                $('#draftInfo')
+                                    .removeClass(
+                                        'd-none'
+                                    );
 
 
-                                    Swal.fire({
-                                        icon:
-                                            'success',
+                                Swal.fire({
+                                    icon: 'success',
 
-                                        title:
-                                            'Tersimpan',
+                                    title: 'Tersimpan',
 
-                                        text:
-                                            response.message
-                                    });
-                                },
+                                    text: response.message
+                                });
+                            },
 
 
-                            error:
-                                function(xhr) {
+                            error: function(xhr) {
 
 
-                                    const response =
-                                        xhr.responseJSON;
+                                const response =
+                                    xhr.responseJSON;
 
 
-                                    if (
-                                        xhr.status === 422 &&
-                                        response &&
+                                if (
+                                    xhr.status === 422 &&
+                                    response &&
+                                    response.errors
+                                ) {
+
+
+                                    showPelarutan2ValidationErrors(
                                         response.errors
-                                    ) {
+                                    );
 
 
-                                        showPelarutan2ValidationErrors(
-                                            response.errors
-                                        );
+                                    return;
+                                }
 
 
-                                        return;
-                                    }
-
-
-                                    if (
-                                        xhr.status === 403 &&
-                                        response &&
-                                        response.message
-                                    ) {
-
-
-                                        Swal.fire({
-                                            icon:
-                                                'error',
-
-                                            title:
-                                                'Akses Ditolak',
-
-                                            text:
-                                                response.message
-                                        });
-
-
-                                        return;
-                                    }
-
-
-                                    if (
-                                        xhr.status === 409 &&
-                                        response &&
-                                        response.message
-                                    ) {
-
-
-                                        Swal.fire({
-                                            icon:
-                                                'warning',
-
-                                            title:
-                                                'Tidak Dapat Disimpan',
-
-                                            text:
-                                                response.message
-                                        });
-
-
-                                        return;
-                                    }
+                                if (
+                                    xhr.status === 403 &&
+                                    response &&
+                                    response.message
+                                ) {
 
 
                                     Swal.fire({
-                                        icon:
-                                            'error',
+                                        icon: 'error',
 
-                                        title:
-                                            'Gagal',
+                                        title: 'Akses Ditolak',
 
-                                        text:
-                                            response?.message
-                                            || 'Data sementara gagal disimpan.'
+                                        text: response.message
                                     });
+
+
+                                    return;
                                 }
+
+
+                                if (
+                                    xhr.status === 409 &&
+                                    response &&
+                                    response.message
+                                ) {
+
+
+                                    Swal.fire({
+                                        icon: 'warning',
+
+                                        title: 'Tidak Dapat Disimpan',
+
+                                        text: response.message
+                                    });
+
+
+                                    return;
+                                }
+
+
+                                Swal.fire({
+                                    icon: 'error',
+
+                                    title: 'Gagal',
+
+                                    text: response?.message ||
+                                        'Data sementara gagal disimpan.'
+                                });
+                            }
                         });
                     }
                 );
@@ -2807,6 +2616,37 @@
                             "{{ auth()->user()->role }}";
 
 
+                        if (
+                            userRole === 'Foreman'
+                        ) {
+
+                            const disposition =
+                                String(
+                                    $('#disposition').val() || ''
+                                ).trim();
+
+                            if (
+                                !isPelarutan2FinalComplete() ||
+                                disposition === ''
+                            ) {
+
+                                Swal.fire({
+                                    icon: 'warning',
+
+                                    title: 'Data Belum Lengkap',
+
+                                    text: 'BRIX, Organo, Status, dan Disposisi wajib diisi sebelum Simpan Final.'
+                                });
+
+
+                                updatePelarutan2FinalButton();
+
+
+                                return;
+                            }
+                        }
+
+
                         /*
                         |--------------------------------------------------------------------------
                         | CEK FIELD WAJIB ANALIS
@@ -2819,14 +2659,11 @@
 
 
                             Swal.fire({
-                                icon:
-                                    'warning',
+                                icon: 'warning',
 
-                                title:
-                                    'Data Belum Lengkap',
+                                title: 'Data Belum Lengkap',
 
-                                text:
-                                    'BRIX, Organo, dan Status wajib diisi sebelum Simpan Final.'
+                                text: 'BRIX, Organo, dan Status wajib diisi sebelum Simpan Final.'
                             });
 
 
@@ -2839,80 +2676,83 @@
 
                         $.ajax({
 
-                            data:
-                                $(this)
-                                    .serialize(),
+                            data: $(this)
+                                .serialize(),
 
-                            url:
-                                "{{ route('pelarutan-2.update') }}",
+                            url: "{{ route('pelarutan-2.update') }}",
 
-                            type:
-                                "POST",
+                            type: "POST",
 
-                            dataType:
-                                "json",
+                            dataType: "json",
 
 
-                            beforeSend:
-                                function() {
+                            beforeSend: function() {
 
 
-                                    $('#saveFinal')
-                                        .prop(
-                                            'disabled',
-                                            true
-                                        )
-                                        .html(
-                                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                                        );
-                                },
+                                $('#saveFinal')
+                                    .prop(
+                                        'disabled',
+                                        true
+                                    )
+                                    .html(
+                                        '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
+                                    );
+
+                                $('#saveDraft')
+                                    .prop(
+                                        'disabled',
+                                        true
+                                    );
+                            },
 
 
-                            complete:
-                                function() {
+                            complete: function() {
 
 
-                                    $('#saveFinal')
-                                        .text(
-                                            'Simpan Final'
-                                        );
+                                $('#saveFinal')
+                                    .text(
+                                        'Simpan Final'
+                                    );
 
 
-                                    updatePelarutan2FinalButton();
-                                },
+                                $('#saveDraft')
+                                    .prop(
+                                        'disabled',
+                                        false
+                                    );
 
 
-                            success:
-                                function(response) {
+                                updatePelarutan2FinalButton();
+                            },
 
 
-                                    $('#modal')
-                                        .modal(
-                                            'hide'
-                                        );
+                            success: function(response) {
 
 
-                                    $('#form')
-                                        .trigger(
-                                            'reset'
-                                        );
+                                $('#modal')
+                                    .modal(
+                                        'hide'
+                                    );
 
 
-                                    $('#draftInfo')
-                                        .addClass(
-                                            'd-none'
-                                        );
+                                $('#form')
+                                    .trigger(
+                                        'reset'
+                                    );
 
 
-                                    Swal.fire({
-                                        icon:
-                                            'success',
+                                $('#draftInfo')
+                                    .addClass(
+                                        'd-none'
+                                    );
 
-                                        title:
-                                            'Sukses',
 
-                                        text:
-                                            response.message
+                                Swal.fire({
+                                        icon: 'success',
+
+                                        title: 'Sukses',
+
+                                        text: response.message
                                     })
                                     .then(
                                         () => {
@@ -2922,92 +2762,82 @@
                                                 .reload();
                                         }
                                     );
-                                },
+                            },
 
 
-                            error:
-                                function(xhr) {
+                            error: function(xhr) {
 
 
-                                    const response =
-                                        xhr.responseJSON;
+                                const response =
+                                    xhr.responseJSON;
 
 
-                                    if (
-                                        xhr.status === 409 &&
-                                        response &&
-                                        response.message
-                                    ) {
-
-
-                                        Swal.fire({
-                                            icon:
-                                                'warning',
-
-                                            title:
-                                                'Gagal Disimpan',
-
-                                            text:
-                                                response.message
-                                        });
-
-
-                                        return;
-                                    }
-
-
-                                    if (
-                                        xhr.status === 403 &&
-                                        response &&
-                                        response.message
-                                    ) {
-
-
-                                        Swal.fire({
-                                            icon:
-                                                'error',
-
-                                            title:
-                                                'Akses Ditolak',
-
-                                            text:
-                                                response.message
-                                        });
-
-
-                                        return;
-                                    }
-
-
-                                    if (
-                                        xhr.status === 422 &&
-                                        response &&
-                                        response.errors
-                                    ) {
-
-
-                                        showPelarutan2ValidationErrors(
-                                            response.errors
-                                        );
-
-
-                                        return;
-                                    }
+                                if (
+                                    xhr.status === 409 &&
+                                    response &&
+                                    response.message
+                                ) {
 
 
                                     Swal.fire({
-                                        icon:
-                                            'error',
+                                        icon: 'warning',
 
-                                        title:
-                                            'Kesalahan',
+                                        title: 'Gagal Disimpan',
 
-                                        text:
-                                            response?.error
-                                            || response?.message
-                                            || 'Terjadi kesalahan, silakan coba lagi.'
+                                        text: response.message
                                     });
+
+
+                                    return;
                                 }
+
+
+                                if (
+                                    xhr.status === 403 &&
+                                    response &&
+                                    response.message
+                                ) {
+
+
+                                    Swal.fire({
+                                        icon: 'error',
+
+                                        title: 'Akses Ditolak',
+
+                                        text: response.message
+                                    });
+
+
+                                    return;
+                                }
+
+
+                                if (
+                                    xhr.status === 422 &&
+                                    response &&
+                                    response.errors
+                                ) {
+
+
+                                    showPelarutan2ValidationErrors(
+                                        response.errors
+                                    );
+
+
+                                    return;
+                                }
+
+
+                                Swal.fire({
+                                    icon: 'error',
+
+                                    title: 'Kesalahan',
+
+                                    text: response?.error ||
+                                        response?.message ||
+                                        'Terjadi kesalahan, silakan coba lagi.'
+                                });
+                            }
                         });
                     }
                 );
@@ -3022,7 +2852,6 @@
 
             }
         );
-
     </script>
 
 @endsection

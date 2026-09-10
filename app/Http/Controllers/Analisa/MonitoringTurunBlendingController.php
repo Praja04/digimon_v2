@@ -7,10 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Analisa\MonitoringTurunBlendingUpdateRequest;
 use App\Models\Color;
 use App\Models\MonitoringTurunBlending;
+use App\Models\MonitoringTurunBlendingDraft;
 use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
 
 class MonitoringTurunBlendingController extends Controller
@@ -49,17 +51,19 @@ class MonitoringTurunBlendingController extends Controller
                 }
             }
 
-            $monitoringTurunBlending = $monitoringTurunBlending->sortBy(function ($batch) {
-                return ($batch->isMonitoringTurunBlendingComplete()) ? 1 : 0;
-            })->values();
+            $monitoringTurunBlending = $monitoringTurunBlending
+                ->sortBy(function ($batch) {
+                    return ($batch->isMonitoringTurunBlendingComplete()) ? 1 : 0;
+                })
+                ->values();
 
             return DataTables::of($monitoringTurunBlending)
                 ->addIndexColumn()
                 ->addColumn('description', function ($data) {
-                    return  $data->description ?? '-';
+                    return $data->description ?? '-';
                 })
                 ->addColumn('blending_count', function ($data) {
-                    return  $data->monitoringTurunBlending->count() ?? '-';
+                    return $data->monitoringTurunBlending->count() ?? '-';
                 })
                 ->addColumn('status', function ($data) {
                     $isComplete = $data->isMonitoringTurunBlendingComplete();
@@ -69,7 +73,10 @@ class MonitoringTurunBlendingController extends Controller
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
-                    $showUrl = route('analisa.monitoring-turun-blending.show', ['id' => $data->id]);
+                    $showUrl = route(
+                        'analisa.monitoring-turun-blending.show',
+                        ['id' => $data->id]
+                    );
 
                     return '
                     <a href="' . $showUrl . '" class="btn btn-sm btn-primary" title="Lihat Detail">
@@ -80,6 +87,7 @@ class MonitoringTurunBlendingController extends Controller
                 ->rawColumns(['status', 'action'])
                 ->make(true);
         }
+
         return view('app.analisa.monitoring_turun_blending.index');
     }
 
@@ -90,7 +98,6 @@ class MonitoringTurunBlendingController extends Controller
         ])->findOrFail($id);
 
         foreach ($productionBatch->monitoringTurunBlending as $blending) {
-            // Tambahkan properti custom 'additional_batch_info' ke setiap data
             $blending->additional_batch_info = $blending->additionalBatches->isNotEmpty()
                 ? $blending->additionalBatches
                 : null;
@@ -98,7 +105,10 @@ class MonitoringTurunBlendingController extends Controller
             $blending->po_number = $productionBatch->po_number;
         }
 
-        return view('app.analisa.monitoring_turun_blending.show', compact('productionBatch'));
+        return view(
+            'app.analisa.monitoring_turun_blending.show',
+            compact('productionBatch')
+        );
     }
 
     public function show_batch($id)
@@ -108,7 +118,15 @@ class MonitoringTurunBlendingController extends Controller
             'productionBatch',
         ])->findOrFail($id);
 
-        return view('app.analisa.monitoring_turun_blending.show_batch', compact('blending'));
+        $draft = MonitoringTurunBlendingDraft::where(
+            'monitoring_turun_blending_id',
+            $blending->id
+        )->first();
+
+        return view(
+            'app.analisa.monitoring_turun_blending.show_batch',
+            compact('blending', 'draft')
+        );
     }
 
     public function edit($id)
@@ -123,19 +141,155 @@ class MonitoringTurunBlendingController extends Controller
                 ], 404);
             }
 
-            return response()->json($data);
+            $responseData = $data->toArray();
+
+            $draft = MonitoringTurunBlendingDraft::where(
+                'monitoring_turun_blending_id',
+                $data->id
+            )->first();
+
+            $responseData['draft'] = $draft
+                ? $draft->toArray()
+                : null;
+
+            return response()->json($responseData);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan, silakan coba lagi.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function saveDraft(Request $request)
+    {
+        $userRole = auth()->user()->role;
+
+        if (!in_array($userRole, ['Analis Kimia', 'Foreman'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Simpan sementara hanya dapat dilakukan oleh Analis Kimia atau Foreman.',
+            ], 403);
+        }
+
+        $data = $request->all();
+
+        foreach ([
+            'brix',
+            'visco',
+            'aw',
+            'adjustment_qty_air',
+            'adjustment_qty_gula',
+            'adjustment_qty_garam',
+        ] as $field) {
+            if (
+                isset($data[$field]) &&
+                is_string($data[$field]) &&
+                $data[$field] !== ''
+            ) {
+                $data[$field] = str_replace(
+                    ',',
+                    '.',
+                    str_replace(' ', '', $data[$field])
+                );
+            }
+        }
+
+        $validator = Validator::make($data, [
+            'id' => [
+                'required',
+                'integer',
+                'exists:monitoring_turun_blending,id',
+            ],
+            'brix' => ['nullable', 'numeric', 'min:0'],
+            'visco' => ['nullable', 'numeric', 'min:0'],
+            'aw' => ['nullable', 'numeric', 'min:0'],
+            'status_disposition' => [
+                'nullable',
+                'in:OK,NOT OK,Adjustment',
+            ],
+            'disposition' => [
+                'nullable',
+                'in:Release,Release Bersyarat,Resampling,Adjustment,Reject,Repro,Jalan Bareng,Leveling',
+            ],
+            'disposition_remark' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'adjustment_qty_air' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'adjustment_qty_gula' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'adjustment_qty_garam' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data sementara tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $blending = MonitoringTurunBlending::findOrFail($data['id']);
+
+        if ($userRole === 'Analis Kimia' && !is_null($blending->status)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data sudah disimpan final oleh Analis Kimia.',
+            ], 409);
+        }
+
+        if ($userRole === 'Foreman' && is_null($blending->status)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data Analis Kimia belum final. Foreman belum dapat menyimpan sementara.',
+            ], 409);
+        }
+
+        $draft = MonitoringTurunBlendingDraft::updateOrCreate(
+            [
+                'monitoring_turun_blending_id' => $blending->id,
+            ],
+            [
+                'brix' => $data['brix'] ?? null,
+                'visco' => $data['visco'] ?? null,
+                'aw' => $data['aw'] ?? null,
+                'status_disposition' => $data['status_disposition'] ?? null,
+                'disposition' => $data['disposition'] ?? null,
+                'disposition_remark' => $data['disposition_remark'] ?? null,
+                'adjustment_qty_air' => $data['adjustment_qty_air'] ?? null,
+                'adjustment_qty_gula' => $data['adjustment_qty_gula'] ?? null,
+                'adjustment_qty_garam' => $data['adjustment_qty_garam'] ?? null,
+                'created_by' => auth()->id(),
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $userRole === 'Foreman'
+                ? 'Data Foreman berhasil disimpan sementara.'
+                : 'Data Analis Kimia berhasil disimpan sementara.',
+            'data' => $draft,
+        ]);
     }
 
     public function update(MonitoringTurunBlendingUpdateRequest $request)
     {
         DB::beginTransaction();
+
         try {
             $id = $request->id;
 
@@ -143,41 +297,43 @@ class MonitoringTurunBlendingController extends Controller
             $isUpdate = !is_null($blending->status);
             $userRole = auth()->user()->role;
 
-            // Validasi akses berdasarkan role
             if ($userRole === 'Analis Kimia') {
-                // Analis hanya bisa input/update jika belum ada disposition
                 if (!is_null($blending->disposition)) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Data sudah di-dispose oleh Foreman. Tidak dapat diubah.'
+                        'message' => 'Data sudah di-dispose oleh Foreman. Tidak dapat diubah.',
                     ], 403);
                 }
             } elseif ($userRole === 'Foreman') {
-                // Foreman hanya bisa update disposition jika sudah ada status dari Analis
                 if (is_null($blending->status)) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
+                        'message' => 'Belum ada status dari Analis. Tidak dapat memberi disposisi.',
                     ], 403);
                 }
             }
 
-            $status_disposition = $request->status_disposition;
+            $statusDisposition = $request->status_disposition;
             $remark = $request->disposition_remark ?? null;
 
-            // Validasi remarks wajib untuk status tertentu
-            if (in_array($status_disposition, ['NOT OK', 'Adjustment']) && empty($remark)) {
+            if (
+                in_array($statusDisposition, ['NOT OK', 'Adjustment'], true) &&
+                empty($remark)
+            ) {
                 DB::rollBack();
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.'
+                    'message' => 'Kolom keterangan (remarks) wajib diisi untuk status ini.',
                 ], 409);
             }
 
-            // Hitung shift otomatis
             $currentHour = (int) now()->format('H');
+
             if ($currentHour >= 6 && $currentHour < 14) {
                 $shift = 1;
             } elseif ($currentHour >= 14 && $currentHour < 22) {
@@ -186,101 +342,50 @@ class MonitoringTurunBlendingController extends Controller
                 $shift = 3;
             }
 
-            // Cek apakah status berubah
-            $statusChanged = ($blending->status !== $status_disposition);
+            $statusChanged = ($blending->status !== $statusDisposition);
 
             $updateData = [
                 'brix' => $request->brix,
                 'visco' => $request->visco,
                 'aw' => $request->aw,
                 'disposition_remark' => $remark,
-                'status' => $status_disposition,
+                'status' => $statusDisposition,
                 'shift' => $shift,
             ];
 
-            // PERBAIKAN: Logic berdasarkan Role
             if ($userRole === 'Analis Kimia') {
-                // Analis hanya update status, disposition tetap null (menunggu Foreman)
                 $updateData['disposition'] = null;
 
                 if (!$isUpdate) {
                     $updateData['created_by'] = auth()->user()->id;
                 }
-
-                // // Validasi shift untuk Analis (hanya saat create/update status)
-                // $existingShift = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
-                //     ->where('batch_range', $blending->batch_range)
-                //     ->where('shift', $shift)
-                //     ->where('id', '!=', $id)
-                //     ->whereNotNull('status') // Yang sudah ada status dari analis
-                //     ->first();
-
-                // if ($existingShift) {
-                //     DB::rollBack();
-                //     return response()->json([
-                //         'status' => 'error',
-                //         'message' => 'Data untuk shift ' . $shift . ' sudah ada. Silakan tunggu shift berikutnya.'
-                //     ], 409);
-                // }
-
-                // // Validasi maksimal 3 shift
-                // $totalShifts = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
-                //     ->where('batch_range', $blending->batch_range)
-                //     ->where('id', '!=', $id)
-                //     ->whereNotNull('status')
-                //     ->distinct('shift')
-                //     ->count('shift');
-
-                // if ($totalShifts >= 3) {
-                //     DB::rollBack();
-                //     return response()->json([
-                //         'status' => 'error',
-                //         'message' => 'Data sudah mencapai maksimal 3 shift.'
-                //     ], 409);
-                // }
             } elseif ($userRole === 'Foreman') {
-                // Foreman wajib pilih disposition
                 if (!$request->filled('disposition')) {
                     DB::rollBack();
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Foreman wajib memilih disposisi.'
+                        'message' => 'Foreman wajib memilih disposisi.',
                     ], 409);
                 }
 
                 $disposition = $request->disposition;
-                $dispositionChanged = ($blending->disposition !== $disposition);
                 $updateData['disposition'] = $disposition;
-
-                // Validasi disposition untuk shift yang sama (khusus Foreman)
-                // $existingDisposition = MonitoringTurunBlending::where('production_batch_id', $blending->production_batch_id)
-                //     ->where('batch_range', $blending->batch_range)
-                //     ->where('shift', $shift)
-                //     ->where('disposition', $disposition)
-                //     ->where('id', '!=', $id)
-                //     ->first();
-
-                // if ($existingDisposition) {
-                //     DB::rollBack();
-                //     return response()->json([
-                //         'status' => 'error',
-                //         'message' => 'Data untuk shift ' . $shift . ' dengan disposisi ' . $disposition . ' sudah ada.'
-                //     ], 409);
-                // }
             }
 
-            // Handle Adjustment
             $adjustmentAir = null;
             $adjustmentGaram = null;
             $adjustmentGula = null;
 
-            if ($status_disposition === 'Adjustment') {
+            if ($statusDisposition === 'Adjustment') {
                 if (!empty($request->adjustment_qty_air)) {
                     $adjustmentAir = str_replace(',', '.', $request->adjustment_qty_air);
                 }
+
                 if (!empty($request->adjustment_qty_garam)) {
                     $adjustmentGaram = str_replace(',', '.', $request->adjustment_qty_garam);
                 }
+
                 if (!empty($request->adjustment_qty_gula)) {
                     $adjustmentGula = str_replace(',', '.', $request->adjustment_qty_gula);
                 }
@@ -290,7 +395,6 @@ class MonitoringTurunBlendingController extends Controller
                 $updateData['adjustment_qty_gula'] = $adjustmentGula;
                 $updateData['not_standard'] = true;
             } else {
-                // Jika status bukan Adjustment lagi, clear adjustment data
                 if ($statusChanged) {
                     $updateData['adjustment_qty_air'] = null;
                     $updateData['adjustment_qty_garam'] = null;
@@ -299,18 +403,20 @@ class MonitoringTurunBlendingController extends Controller
                 }
             }
 
-            // Handle disposition khusus (hanya untuk Foreman)
             if ($userRole === 'Foreman') {
-                if ($updateData['disposition'] === 'Resampling') {
-                    $updateData['disposition_remark'] = $remark ? $remark . ' (Resampling)' : 'Resampling';
+                if (($updateData['disposition'] ?? null) === 'Resampling') {
+                    $updateData['disposition_remark'] = $remark
+                        ? $remark . ' (Resampling)'
+                        : 'Resampling';
+
                     $updateData['not_standard'] = true;
                 }
 
-                if ($updateData['disposition'] === 'Jalan Bareng') {
+                if (($updateData['disposition'] ?? null) === 'Jalan Bareng') {
                     $updateData['not_standard'] = true;
                 }
 
-                if ($updateData['disposition'] === 'Leveling') {
+                if (($updateData['disposition'] ?? null) === 'Leveling') {
                     $updateData['not_standard'] = true;
                 }
             }
@@ -323,10 +429,13 @@ class MonitoringTurunBlendingController extends Controller
 
             $blending->update($updateData);
 
-            // Build remark text for API payload
-            if ($remark !== null && $remark !== '-' && $status_disposition !== 'Adjustment') {
+            if (
+                $remark !== null &&
+                $remark !== '-' &&
+                $statusDisposition !== 'Adjustment'
+            ) {
                 $remarkText = $remark;
-            } elseif ($status_disposition === 'Adjustment') {
+            } elseif ($statusDisposition === 'Adjustment') {
                 $remarkText = sprintf(
                     'Adjustment Air: %s Liter, Garam: %s Kg, Gula: %s Kg',
                     $adjustmentAir ?? 0,
@@ -339,23 +448,40 @@ class MonitoringTurunBlendingController extends Controller
                 $remarkText = '-';
             }
 
-            Http::post(env('PRODUCTION_URL') . 'api/monitoring-turun-blending/' . $blending->id, [
-                'disposition' => $updateData['disposition'] ?? null,
-                'disposition_remark' => $remarkText,
-                'revisi' => $updateData['revisi'],
-                'is_adjustment' => $status_disposition === 'Adjustment',
-                'not_standard' => $updateData['not_standard'] ?? false,
-                'status' => $status_disposition,
-            ]);
+            $apiResponse = Http::post(
+                env('PRODUCTION_URL') . 'api/monitoring-turun-blending/' . $blending->id,
+                [
+                    'disposition' => $updateData['disposition'] ?? null,
+                    'disposition_remark' => $remarkText,
+                    'revisi' => $updateData['revisi'],
+                    'is_adjustment' => $statusDisposition === 'Adjustment',
+                    'not_standard' => $updateData['not_standard'] ?? false,
+                    'status' => $statusDisposition,
+                ]
+            );
+
+            if (!$apiResponse->successful()) {
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal memperbarui data Monitoring Turun Blending ke Production.',
+                ], 500);
+            }
+
+            MonitoringTurunBlendingDraft::where(
+                'monitoring_turun_blending_id',
+                $blending->id
+            )->delete();
 
             DB::commit();
 
             $shouldSendNotification = false;
-            $notificationTitle = "Monitoring Turun Blending - Batch " . $blending->batch_range;
+            $notificationTitle = 'Monitoring Turun Blending - Batch ' . $blending->batch_range;
 
             if ($userRole === 'Analis Kimia') {
                 $shouldSendNotification = true;
-                $notificationTitle .= " - Menunggu Review Foreman";
+                $notificationTitle .= ' - Menunggu Review Foreman';
             }
 
             if ($shouldSendNotification) {
@@ -363,13 +489,15 @@ class MonitoringTurunBlendingController extends Controller
                     $notificationTitle,
                     $blending->production_batch_id,
                     'Monitoring Turun Blending',
-                    $status_disposition,
+                    $statusDisposition,
                     $remarkText,
-                    route('analisa.monitoring-turun-blending.show', $blending->production_batch_id)
+                    route(
+                        'analisa.monitoring-turun-blending.show',
+                        $blending->production_batch_id
+                    )
                 ));
             }
 
-            // Pesan response berdasarkan role
             if ($userRole === 'Analis Kimia') {
                 $message = $isUpdate
                     ? 'Data berhasil diperbarui.'
@@ -381,15 +509,16 @@ class MonitoringTurunBlendingController extends Controller
             }
 
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => $message,
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan, silakan coba lagi.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

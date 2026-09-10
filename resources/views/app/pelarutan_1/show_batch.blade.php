@@ -186,9 +186,7 @@
                                                             </p>
 
                                                             <h5 class="mb-0">
-                                                                {{ !empty($pelarutan_1->suhu)
-                                                                    ? $pelarutan_1->suhu . ' °C'
-                                                                    : '-' }}
+                                                                {{ !empty($pelarutan_1->suhu) ? $pelarutan_1->suhu . ' °C' : '-' }}
                                                             </h5>
                                                         </div>
 
@@ -214,9 +212,7 @@
                                                             </p>
 
                                                             <h5 class="mb-0">
-                                                                {{ !empty($pelarutan_1->jam_mulai)
-                                                                    ? \Carbon\Carbon::parse($pelarutan_1->jam_mulai)->format('d/m/Y H:i')
-                                                                    : '-' }}
+                                                                {{ !empty($pelarutan_1->jam_mulai) ? \Carbon\Carbon::parse($pelarutan_1->jam_mulai)->format('d/m/Y H:i') : '-' }}
                                                             </h5>
                                                         </div>
 
@@ -261,9 +257,7 @@
 
                                             <small>
                                                 Data terakhir disimpan sementara
-                                                {{ $draft->updated_at
-                                                    ? $draft->updated_at->format('d/m/Y H:i:s')
-                                                    : '' }}.
+                                                {{ $draft->updated_at ? $draft->updated_at->format('d/m/Y H:i:s') : '' }}.
                                                 Lengkapi seluruh field wajib untuk
                                                 mengaktifkan Simpan Final.
                                             </small>
@@ -279,12 +273,7 @@
                                 <div class="row g-3">
 
                                     {{-- ID --}}
-                                    <input
-                                        type="hidden"
-                                        name="id"
-                                        id="id"
-                                        value="{{ $pelarutan_1->id }}"
-                                    >
+                                    <input type="hidden" name="id" id="id" value="{{ $pelarutan_1->id }}">
 
                                     {{-- BRIX --}}
                                     <div class="col-lg-6">
@@ -293,18 +282,9 @@
                                             <span style="color:red">*</span>
                                         </label>
 
-                                        <input
-                                            type="text"
-                                            name="brix"
-                                            id="brix"
-                                            class="form-control comma-input required-final"
-                                            placeholder="Contoh: 0,00"
-                                            value="{{ str_replace(
-                                                '.',
-                                                ',',
-                                                $draft->brix ?? $pelarutan_1->brix ?? ''
-                                            ) }}"
-                                        >
+                                        <input type="text" name="brix" id="brix"
+                                            class="form-control comma-input required-final" placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $draft->brix ?? ($pelarutan_1->brix ?? '')) }}">
 
                                         <small class="text-danger errorBrix"></small>
                                     </div>
@@ -316,18 +296,9 @@
                                             <span style="color:red">*</span>
                                         </label>
 
-                                        <input
-                                            type="text"
-                                            name="nacl"
-                                            id="nacl"
-                                            class="form-control comma-input required-final"
-                                            placeholder="Contoh: 0,00"
-                                            value="{{ str_replace(
-                                                '.',
-                                                ',',
-                                                $draft->nacl ?? $pelarutan_1->nacl ?? ''
-                                            ) }}"
-                                        >
+                                        <input type="text" name="nacl" id="nacl"
+                                            class="form-control comma-input required-final" placeholder="Contoh: 0,00"
+                                            value="{{ str_replace('.', ',', $draft->nacl ?? ($pelarutan_1->nacl ?? '')) }}">
 
                                         <small class="text-danger errorNacl"></small>
                                     </div>
@@ -339,14 +310,10 @@
                                             <span style="color:red">*</span>
                                         </label>
 
-                                        <input
-                                            type="text"
-                                            name="organo"
-                                            id="organo"
+                                        <input type="text" name="organo" id="organo"
                                             class="form-control required-final"
                                             oninput="this.value = this.value.toUpperCase();"
-                                            value="{{ $draft->organo ?? $pelarutan_1->organo ?? '' }}"
-                                        >
+                                            value="{{ $draft->organo ?? ($pelarutan_1->organo ?? '') }}">
 
                                         <small class="text-danger errorOrgano"></small>
                                     </div>
@@ -360,39 +327,25 @@
                                         </label>
 
                                         @php
-                                            $currentStatus =
-                                                $draft->status_disposition
-                                                ?? $pelarutan_1->status
-                                                ?? '';
+                                            $currentStatus = $draft->status_disposition ?? ($pelarutan_1->status ?? '');
                                         @endphp
 
-                                        <select
-                                            name="status_disposition"
-                                            id="status_disposition"
-                                            class="form-control disposition-select required-final"
-                                        >
+                                        <select name="status_disposition" id="status_disposition"
+                                            class="form-control disposition-select required-final">
                                             <option value="">
                                                 -- Pilih Status --
                                             </option>
 
-                                            <option
-                                                value="OK"
-                                                {{ $currentStatus === 'OK' ? 'selected' : '' }}
-                                            >
+                                            <option value="OK" {{ $currentStatus === 'OK' ? 'selected' : '' }}>
                                                 OK
                                             </option>
 
-                                            <option
-                                                value="NOT OK"
-                                                {{ $currentStatus === 'NOT OK' ? 'selected' : '' }}
-                                            >
+                                            <option value="NOT OK" {{ $currentStatus === 'NOT OK' ? 'selected' : '' }}>
                                                 NOT OK
                                             </option>
 
-                                            <option
-                                                value="Adjustment"
-                                                {{ $currentStatus === 'Adjustment' ? 'selected' : '' }}
-                                            >
+                                            <option value="Adjustment"
+                                                {{ $currentStatus === 'Adjustment' ? 'selected' : '' }}>
                                                 Adjustment
                                             </option>
                                         </select>
@@ -408,54 +361,39 @@
                                                 Disposisi
                                             </label>
 
-                                            <select
-                                                name="disposition"
-                                                id="disposition"
-                                                class="form-control disposition-select"
-                                            >
+                                            <select name="disposition" id="disposition"
+                                                class="form-control disposition-select">
                                                 <option value="">
                                                     -- Pilih Disposisi --
                                                 </option>
 
-                                                <option
-                                                    value="Release"
-                                                    {{ $pelarutan_1->disposition === 'Release' ? 'selected' : '' }}
-                                                >
+                                                <option value="Release"
+                                                    {{ $pelarutan_1->disposition === 'Release' ? 'selected' : '' }}>
                                                     Release
                                                 </option>
 
-                                                <option
-                                                    value="Release Bersyarat"
-                                                    {{ $pelarutan_1->disposition === 'Release Bersyarat' ? 'selected' : '' }}
-                                                >
+                                                <option value="Release Bersyarat"
+                                                    {{ $pelarutan_1->disposition === 'Release Bersyarat' ? 'selected' : '' }}>
                                                     Release Bersyarat
                                                 </option>
 
-                                                <option
-                                                    value="Resampling"
-                                                    {{ $pelarutan_1->disposition === 'Resampling' ? 'selected' : '' }}
-                                                >
+                                                <option value="Resampling"
+                                                    {{ $pelarutan_1->disposition === 'Resampling' ? 'selected' : '' }}>
                                                     Resampling
                                                 </option>
 
-                                                <option
-                                                    value="Reject"
-                                                    {{ $pelarutan_1->disposition === 'Reject' ? 'selected' : '' }}
-                                                >
+                                                <option value="Reject"
+                                                    {{ $pelarutan_1->disposition === 'Reject' ? 'selected' : '' }}>
                                                     Reject
                                                 </option>
 
-                                                <option
-                                                    value="Repro"
-                                                    {{ $pelarutan_1->disposition === 'Repro' ? 'selected' : '' }}
-                                                >
+                                                <option value="Repro"
+                                                    {{ $pelarutan_1->disposition === 'Repro' ? 'selected' : '' }}>
                                                     Repro
                                                 </option>
 
-                                                <option
-                                                    value="Adjustment"
-                                                    {{ $pelarutan_1->disposition === 'Adjustment' ? 'selected' : '' }}
-                                                >
+                                                <option value="Adjustment"
+                                                    {{ $pelarutan_1->disposition === 'Adjustment' ? 'selected' : '' }}>
                                                     Adjustment
                                                 </option>
 
@@ -472,34 +410,25 @@
                                             Catatan
                                         </label>
 
-                                        <textarea
-                                            name="disposition_remark"
-                                            id="disposition_remark"
-                                            class="form-control"
-                                            rows="2"
-                                            placeholder="Isi catatan jika diperlukan..."
-                                            oninput="this.value = this.value.toUpperCase();"
-                                        >{{ $draft->disposition_remark ?? $pelarutan_1->disposition_remark ?? '' }}</textarea>
+                                        <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
+                                            placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $draft->disposition_remark ?? ($pelarutan_1->disposition_remark ?? '') }}</textarea>
 
                                     </div>
 
                                     {{-- ADJUSTMENT --}}
                                     @php
                                         $adjustmentTebu =
-                                            $draft->adjustment_qty_gula_tebu
-                                            ?? $pelarutan_1->adjustment_qty_gula_tebu
-                                            ?? '';
+                                            $draft->adjustment_qty_gula_tebu ??
+                                            ($pelarutan_1->adjustment_qty_gula_tebu ?? '');
 
                                         $adjustmentKelapa =
-                                            $draft->adjustment_qty_gula_kelapa
-                                            ?? $pelarutan_1->adjustment_qty_gula_kelapa
-                                            ?? '';
+                                            $draft->adjustment_qty_gula_kelapa ??
+                                            ($pelarutan_1->adjustment_qty_gula_kelapa ?? '');
                                     @endphp
 
                                     <div
                                         class="col-lg-12 adjustment-qty-wrapper
-                                        {{ $currentStatus === 'Adjustment' ? '' : 'd-none' }}"
-                                    >
+                                        {{ $currentStatus === 'Adjustment' ? '' : 'd-none' }}">
 
                                         <h6 class="form-label fw-bold">
                                             Adjustment Qty
@@ -513,15 +442,10 @@
                                                     Gula Tebu (Kg)
                                                 </label>
 
-                                                <input
-                                                    type="text"
-                                                    name="adjustment_qty_gula_tebu"
+                                                <input type="text" name="adjustment_qty_gula_tebu"
                                                     class="form-control adjustment-qty comma-input"
                                                     placeholder="Contoh: 0,00"
-                                                    value="{{ $adjustmentTebu !== ''
-                                                        ? str_replace('.', ',', $adjustmentTebu)
-                                                        : '0' }}"
-                                                >
+                                                    value="{{ $adjustmentTebu !== '' ? str_replace('.', ',', $adjustmentTebu) : '0' }}">
 
                                             </div>
 
@@ -531,15 +455,10 @@
                                                     Gula Kelapa (Kg)
                                                 </label>
 
-                                                <input
-                                                    type="text"
-                                                    name="adjustment_qty_gula_kelapa"
+                                                <input type="text" name="adjustment_qty_gula_kelapa"
                                                     class="form-control adjustment-qty comma-input"
                                                     placeholder="Contoh: 0,00"
-                                                    value="{{ $adjustmentKelapa !== ''
-                                                        ? str_replace('.', ',', $adjustmentKelapa)
-                                                        : '0' }}"
-                                                >
+                                                    value="{{ $adjustmentKelapa !== '' ? str_replace('.', ',', $adjustmentKelapa) : '0' }}">
 
                                             </div>
 
@@ -551,37 +470,23 @@
 
                                         <hr class="my-2">
 
-                                        <div
-                                            class="d-flex justify-content-end align-items-center gap-2 flex-wrap"
-                                        >
+                                        <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
 
                                             @if (auth()->user()->role === 'Analis Kimia')
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-warning"
-                                                    id="saveDraft"
-                                                >
+                                                <button type="button" class="btn btn-warning" id="saveDraft">
                                                     <i class="ri-save-3-line me-1"></i>
                                                     Simpan Sementara
                                                 </button>
                                             @endif
 
-                                            <button
-                                                type="submit"
-                                                class="btn btn-primary"
-                                                id="saveFinal"
-                                                disabled
-                                            >
+                                            <button type="submit" class="btn btn-primary" id="saveFinal" disabled>
                                                 <i class="ri-checkbox-circle-line me-1"></i>
                                                 Simpan Final
                                             </button>
 
                                         </div>
 
-                                        <div
-                                            id="finalHelper"
-                                            class="text-end text-muted small mt-2"
-                                        >
+                                        <div id="finalHelper" class="text-end text-muted small mt-2">
                                             Lengkapi BRIX, NACL, Organo, dan Status
                                             untuk mengaktifkan Simpan Final.
                                         </div>
@@ -1092,8 +997,7 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Kesalahan',
-                            text:
-                                response.error ||
+                            text: response.error ||
                                 response.message ||
                                 'Terjadi kesalahan, silakan coba lagi.',
                         });

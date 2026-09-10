@@ -344,7 +344,16 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+
+                        <button type="button" class="btn btn-warning" id="saveDraft">
+                            <i class="mdi mdi-content-save-outline me-1"></i>
+                            Simpan Sementara
+                        </button>
+
+                        <button type="submit" class="btn btn-primary" id="save">
+                            <i class="mdi mdi-check-circle-outline me-1"></i>
+                            Simpan Final
+                        </button>
                     </div>
                 </div>
             </form>
@@ -548,7 +557,8 @@
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
                 }
             });
 
@@ -629,38 +639,76 @@
                     },
                     success: function(response) {
                         const userRole = "{{ auth()->user()->role }}";
+                        const draft = response.draft || null;
 
                         $('#id').val(response.id);
-                        $('#brix').val(formatDecimal(response.brix));
-                        $('#nacl').val(formatDecimal(response.nacl));
-                        $('#bj').val(formatDecimal(response.bj));
-                        $('#visco').val(formatDecimal(response.visco));
-                        $('#aw').val(formatDecimal(response.aw));
-                        $('#ph').val(formatDecimal(response.ph));
-                        $('#buih').val(formatDecimal(response.buih));
-                        $('#organo').val(response.organo);
-                        $('#endapan').val(response.endapan);
-                        $('#aroma').val(response.aroma);
-                        $('#disposition_remark').val(response.disposition_remark || '');
 
-                        $('#status_disposition').val(response.status);
+                        $('#brix').val(formatDecimal(draft?.brix ?? response.brix));
+                        $('#nacl').val(formatDecimal(draft?.nacl ?? response.nacl));
+                        $('#bj').val(formatDecimal(draft?.bj ?? response.bj));
+                        $('#visco').val(formatDecimal(draft?.visco ?? response.visco));
+                        $('#aw').val(formatDecimal(draft?.aw ?? response.aw));
+                        $('#ph').val(formatDecimal(draft?.ph ?? response.ph));
+                        $('#buih').val(formatDecimal(draft?.buih ?? response.buih));
+                        $('#organo').val(draft?.organo ?? response.organo ?? '');
+                        $('#endapan').val(formatDecimal(draft?.endapan ?? response.endapan));
+                        $('#aroma').val(draft?.aroma ?? response.aroma ?? '');
+                        $('#disposition_remark').val(
+                            draft?.disposition_remark ??
+                            response.disposition_remark ??
+                            ''
+                        );
+
+                        const statusValue =
+                            draft?.status_disposition ??
+                            response.status ??
+                            '';
+
+                        const dispositionValue =
+                            draft?.disposition ??
+                            response.disposition ??
+                            '';
+
+                        $('#status_disposition').val(statusValue);
+
                         if (userRole === 'Foreman') {
-                            $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', true);
                         } else {
-                            $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', false);
                         }
-                        $('#disposition').val(response.disposition);
 
-                        if (response.status === 'Adjustment') {
+                        $('#disposition').val(dispositionValue);
+
+                        const adjustmentActive =
+                            statusValue === 'Adjustment' ||
+                            dispositionValue === 'Adjustment';
+
+                        if (adjustmentActive) {
                             $('.adjustment-qty-wrapper').removeClass('d-none');
-                            $('input[name="adjustment_qty_air"]').val(response
-                                .adjustment_qty_air || '');
-                            $('input[name="adjustment_qty_gula"]').val(response
-                                .adjustment_qty_gula || '');
-                            $('input[name="adjustment_qty_garam"]').val(response
-                                .adjustment_qty_garam || '');
+
+                            $('input[name="adjustment_qty_air"]').val(
+                                formatDecimal(
+                                    draft?.adjustment_qty_air ??
+                                    response.adjustment_qty_air ??
+                                    ''
+                                )
+                            );
+
+                            $('input[name="adjustment_qty_gula"]').val(
+                                formatDecimal(
+                                    draft?.adjustment_qty_gula ??
+                                    response.adjustment_qty_gula ??
+                                    ''
+                                )
+                            );
+
+                            $('input[name="adjustment_qty_garam"]').val(
+                                formatDecimal(
+                                    draft?.adjustment_qty_garam ??
+                                    response.adjustment_qty_garam ??
+                                    ''
+                                )
+                            );
 
                             $('.adjustment-qty').prop('required', true);
                         } else {
@@ -786,6 +834,133 @@
             }
 
 
+            function getJsonErrorMessage(xhr) {
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    return xhr.responseJSON.message;
+                }
+
+                const contentType = xhr.getResponseHeader('content-type') || '';
+
+                if (!contentType.includes('application/json')) {
+                    return 'Server tidak mengembalikan response JSON. HTTP Status: ' +
+                        xhr.status +
+                        '. Silakan cek storage/logs/laravel.log.';
+                }
+
+                return 'Terjadi kesalahan pada server.';
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Simpan Sementara / Draft
+            |--------------------------------------------------------------------------
+            */
+            $('#saveDraft').on('click', function() {
+                const button = $(this);
+
+                // Foreman melihat status Analis dalam keadaan disabled.
+                // Enable sementara agar status tetap ikut di serialize.
+                const wasDisabled = $('#status_disposition').prop('disabled');
+
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', false);
+                }
+
+                const formData = $('#form').serialize();
+
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', true);
+                }
+
+                $.ajax({
+                    url: "{{ route('analisa.monitoring-pasteurisasi.draft.store') }}",
+                    type: "POST",
+                    data: formData,
+                    dataType: "json",
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+
+                    beforeSend: function() {
+                        button.prop('disabled', true).html(
+                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Menyimpan...'
+                        );
+
+                        $('#save').prop('disabled', true);
+                        $('.form-control').removeClass('is-invalid');
+                        $('.text-danger').html('');
+                    },
+
+                    complete: function() {
+                        button.prop('disabled', false).html(
+                            '<i class="mdi mdi-content-save-outline me-1"></i> Simpan Sementara'
+                        );
+
+                        $('#save').prop('disabled', false);
+                    },
+
+                    success: function(response) {
+                        if (!response || response.status !== 'success') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Menyimpan Draft',
+                                text: response?.message || 'Response server tidak sesuai.'
+                            });
+
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Draft Tersimpan',
+                            text: response.message
+                        });
+                    },
+
+                    error: function(xhr) {
+                        if (
+                            xhr.status === 422 &&
+                            xhr.responseJSON &&
+                            xhr.responseJSON.errors
+                        ) {
+                            const errors = xhr.responseJSON.errors;
+                            const firstError = Object.values(errors)[0];
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Draft Tidak Valid',
+                                text: Array.isArray(firstError)
+                                    ? firstError[0]
+                                    : getJsonErrorMessage(xhr)
+                            });
+
+                            return;
+                        }
+
+                        if (xhr.status === 403) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Akses Ditolak',
+                                text: getJsonErrorMessage(xhr)
+                            });
+
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menyimpan Draft',
+                            text: getJsonErrorMessage(xhr)
+                        });
+                    }
+                });
+            });
+
+            /*
+            |--------------------------------------------------------------------------
+            | Simpan Final
+            |--------------------------------------------------------------------------
+            */
             $('#form').submit(function(e) {
                 e.preventDefault();
 
@@ -799,16 +974,29 @@
                     url: "{{ route('analisa.monitoring-pasteurisasi.update') }}",
                     type: "POST",
                     dataType: 'json',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     beforeSend: function() {
                         $('#save').prop('disabled', true).html(
                             '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
                         );
 
+                        $('#saveDraft').prop('disabled', true);
+
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
                     },
                     complete: function() {
-                        $('#save').prop('disabled', false).text('Simpan');
+                        $('#save').prop('disabled', false).html(
+                            '<i class="mdi mdi-check-circle-outline me-1"></i> Simpan Final'
+                        );
+
+                        $('#saveDraft').prop('disabled', false);
+
+                        if (wasDisabled) {
+                            $('#status_disposition').prop('disabled', true);
+                        }
                     },
                     success: function(response) {
                         $('#modal').modal('hide');
