@@ -1,4 +1,4 @@
-﻿@extends('layouts.component.main')
+@extends('layouts.component.main')
 
 @section('title')
     Display Karton
@@ -127,7 +127,7 @@
 
                     <a
                         href="{{ route(
-                            'rmpm.pm.karton.sampling',
+                            'rmpm.pm.karton.berat',
                             $packagingIncoming
                         ) }}"
                         class="btn btn-primary w-100"
@@ -157,13 +157,16 @@
                         </p>
                     </div>
 
-                    <button
-                        type="button"
+                    <a
+                        href="{{ route(
+                            'rmpm.pm.karton.kondisi-fisik',
+                            $packagingIncoming
+                        ) }}"
                         class="btn btn-primary w-100"
-                        disabled
                     >
+                        <i class="mdi mdi-arrow-right-circle-outline me-1"></i>
                         Buka Kondisi Fisik
-                    </button>
+                    </a>
                 </div>
             </div>
 

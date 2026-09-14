@@ -173,7 +173,28 @@ class MonitoringTurunBlendingController extends Controller
             ], 403);
         }
 
-        $data = $request->all();
+        /*
+        |--------------------------------------------------------------------------
+        | DATA RAW
+        |--------------------------------------------------------------------------
+        |
+        | Nilai draft disimpan persis seperti input user.
+        | Contoh: 0,7 tetap disimpan sebagai "0,7".
+        |
+        */
+        $rawData = $request->all();
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATA KHUSUS VALIDASI
+        |--------------------------------------------------------------------------
+        |
+        | Laravel numeric membutuhkan format titik.
+        | Karena itu normalisasi hanya dilakukan pada salinan data validasi.
+        | Data asli ($rawData) tidak diubah.
+        |
+        */
+        $validationData = $rawData;
 
         foreach ([
             'brix',
@@ -184,19 +205,19 @@ class MonitoringTurunBlendingController extends Controller
             'adjustment_qty_garam',
         ] as $field) {
             if (
-                isset($data[$field]) &&
-                is_string($data[$field]) &&
-                $data[$field] !== ''
+                isset($validationData[$field]) &&
+                is_string($validationData[$field]) &&
+                $validationData[$field] !== ''
             ) {
-                $data[$field] = str_replace(
+                $validationData[$field] = str_replace(
                     ',',
                     '.',
-                    str_replace(' ', '', $data[$field])
+                    str_replace(' ', '', $validationData[$field])
                 );
             }
         }
 
-        $validator = Validator::make($data, [
+        $validator = Validator::make($validationData, [
             'id' => [
                 'required',
                 'integer',
@@ -243,7 +264,7 @@ class MonitoringTurunBlendingController extends Controller
             ], 422);
         }
 
-        $blending = MonitoringTurunBlending::findOrFail($data['id']);
+        $blending = MonitoringTurunBlending::findOrFail($rawData['id']);
 
         if ($userRole === 'Analis Kimia' && !is_null($blending->status)) {
             return response()->json([
@@ -264,15 +285,15 @@ class MonitoringTurunBlendingController extends Controller
                 'monitoring_turun_blending_id' => $blending->id,
             ],
             [
-                'brix' => $data['brix'] ?? null,
-                'visco' => $data['visco'] ?? null,
-                'aw' => $data['aw'] ?? null,
-                'status_disposition' => $data['status_disposition'] ?? null,
-                'disposition' => $data['disposition'] ?? null,
-                'disposition_remark' => $data['disposition_remark'] ?? null,
-                'adjustment_qty_air' => $data['adjustment_qty_air'] ?? null,
-                'adjustment_qty_gula' => $data['adjustment_qty_gula'] ?? null,
-                'adjustment_qty_garam' => $data['adjustment_qty_garam'] ?? null,
+                'brix' => $rawData['brix'] ?? null,
+                'visco' => $rawData['visco'] ?? null,
+                'aw' => $rawData['aw'] ?? null,
+                'status_disposition' => $rawData['status_disposition'] ?? null,
+                'disposition' => $rawData['disposition'] ?? null,
+                'disposition_remark' => $rawData['disposition_remark'] ?? null,
+                'adjustment_qty_air' => $rawData['adjustment_qty_air'] ?? null,
+                'adjustment_qty_gula' => $rawData['adjustment_qty_gula'] ?? null,
+                'adjustment_qty_garam' => $rawData['adjustment_qty_garam'] ?? null,
                 'created_by' => auth()->id(),
             ]
         );

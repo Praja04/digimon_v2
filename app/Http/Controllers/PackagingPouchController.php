@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PackagingIncoming;
 use App\Models\PackagingPouchSampling;
+use App\Models\PackagingPouchSamplingDraft;
 use App\Models\SamplingStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -142,6 +143,7 @@ class PackagingPouchController extends Controller
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
@@ -170,6 +172,7 @@ class PackagingPouchController extends Controller
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
@@ -776,6 +779,13 @@ class PackagingPouchController extends Controller
                         'sampling_status_id' =>
                             $sudahSamplingId,
                     ]);
+
+                    PackagingPouchSamplingDraft::query()
+                        ->where(
+                            'packaging_incoming_id',
+                            $packagingIncoming->id
+                        )
+                        ->delete();
                 }
             }
         );

@@ -187,13 +187,28 @@ class Pelarutan1Controller extends Controller
             ], 403);
         }
 
-        $data = $request->all();
+        /*
+        |--------------------------------------------------------------------------
+        | DATA RAW UNTUK DRAFT
+        |--------------------------------------------------------------------------
+        |
+        | Data draft disimpan persis seperti input user.
+        | Contoh: input 0,8 akan tetap disimpan sebagai 0,8.
+        |
+        */
+        $rawData = $request->all();
 
         /*
         |--------------------------------------------------------------------------
-        | NORMALISASI DESIMAL
+        | DATA KHUSUS VALIDASI
         |--------------------------------------------------------------------------
+        |
+        | Laravel numeric membutuhkan format titik. Karena itu dibuat salinan
+        | khusus validasi. Data asli pada $rawData tidak diubah.
+        |
         */
+        $validationData = $rawData;
+
         foreach ([
             'brix',
             'nacl',
@@ -201,17 +216,17 @@ class Pelarutan1Controller extends Controller
             'adjustment_qty_gula_kelapa'
         ] as $field) {
             if (
-                isset($data[$field]) &&
-                is_string($data[$field]) &&
-                $data[$field] !== ''
+                isset($validationData[$field]) &&
+                is_string($validationData[$field]) &&
+                $validationData[$field] !== ''
             ) {
                 $cleanedValue = str_replace(
                     ' ',
                     '',
-                    $data[$field]
+                    $validationData[$field]
                 );
 
-                $data[$field] = str_replace(
+                $validationData[$field] = str_replace(
                     ',',
                     '.',
                     $cleanedValue
@@ -219,7 +234,7 @@ class Pelarutan1Controller extends Controller
             }
         }
 
-        $validator = Validator::make($data, [
+        $validator = Validator::make($validationData, [
             'id' => [
                 'required',
                 'integer',
@@ -280,7 +295,7 @@ class Pelarutan1Controller extends Controller
         }
 
         $pelarutan_1 = Pelarutan1::findOrFail(
-            $data['id']
+            $rawData['id']
         );
 
         /*
@@ -320,6 +335,10 @@ class Pelarutan1Controller extends Controller
         |--------------------------------------------------------------------------
         | SATU ID PELARUTAN = SATU DRAFT
         |--------------------------------------------------------------------------
+        |
+        | Nilai numeric draft diambil dari $rawData agar format input user
+        | tetap dipertahankan, misalnya 0,8 tetap menjadi 0,8.
+        |
         */
         $draft = Pelarutan1Draft::updateOrCreate(
             [
@@ -327,28 +346,28 @@ class Pelarutan1Controller extends Controller
             ],
             [
                 'brix' =>
-                    $data['brix'] ?? null,
+                    $rawData['brix'] ?? null,
 
                 'nacl' =>
-                    $data['nacl'] ?? null,
+                    $rawData['nacl'] ?? null,
 
                 'organo' =>
-                    $data['organo'] ?? null,
+                    $rawData['organo'] ?? null,
 
                 'status_disposition' =>
-                    $data['status_disposition'] ?? null,
+                    $rawData['status_disposition'] ?? null,
 
                 'disposition' =>
-                    $data['disposition'] ?? null,
+                    $rawData['disposition'] ?? null,
 
                 'disposition_remark' =>
-                    $data['disposition_remark'] ?? null,
+                    $rawData['disposition_remark'] ?? null,
 
                 'adjustment_qty_gula_tebu' =>
-                    $data['adjustment_qty_gula_tebu'] ?? null,
+                    $rawData['adjustment_qty_gula_tebu'] ?? null,
 
                 'adjustment_qty_gula_kelapa' =>
-                    $data['adjustment_qty_gula_kelapa'] ?? null,
+                    $rawData['adjustment_qty_gula_kelapa'] ?? null,
 
                 'created_by' =>
                     auth()->id(),

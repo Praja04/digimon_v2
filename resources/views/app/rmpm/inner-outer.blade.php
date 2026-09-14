@@ -222,6 +222,41 @@
                                         Draft
                                     </option>
 
+                                    <optgroup label="Disposisi / Rekomendasi">
+                                        <option
+                                            value="Diterima"
+                                            @selected(
+                                                request('status') === 'Diterima'
+                                            )
+                                        >
+                                            Diterima (Release)
+                                        </option>
+                                        <option
+                                            value="Diterima Bersyarat"
+                                            @selected(
+                                                request('status') === 'Diterima Bersyarat'
+                                            )
+                                        >
+                                            Diterima Bersyarat
+                                        </option>
+                                        <option
+                                            value="Ditolak"
+                                            @selected(
+                                                request('status') === 'Ditolak'
+                                            )
+                                        >
+                                            Ditolak (Reject)
+                                        </option>
+                                        <option
+                                            value="WIP"
+                                            @selected(
+                                                request('status') === 'WIP'
+                                            )
+                                        >
+                                            WIP
+                                        </option>
+                                    </optgroup>
+
                                     <option
                                         value="Sudah Sampling"
                                         @selected(
@@ -271,7 +306,7 @@
                                         <th>Jenis Incoming</th>
                                         <th>Jenis Material</th>
 
-                                        <th style="width: 130px;">
+                                        <th style="width: 145px;" class="text-center">
                                             Status
                                         </th>
 
@@ -304,8 +339,55 @@
                                             $isDraft =
                                                 $processStatus === 'draft';
 
+                                            $rekomendasi = trim((string) ($sampling?->rekomendasi ?? ''));
+                                            $rekomendasiLower = strtolower($rekomendasi);
+
                                             $sudahSampling =
-                                                $processStatus === 'final';
+                                                ! $isDraft
+                                                && (
+                                                    $processStatus === 'final'
+                                                    || $rekomendasi !== ''
+                                                    || str_contains(
+                                                        strtolower($incoming->samplingStatus?->nama ?? ''),
+                                                        'sudah'
+                                                    )
+                                                    || str_contains(
+                                                        strtolower($incoming->samplingStatus?->nama ?? ''),
+                                                        'selesai'
+                                                    )
+                                                );
+
+                                            if ($isDraft) {
+                                                $statusName = 'Draft';
+                                                $statusClass = 'bg-warning text-dark';
+                                                $statusIcon = 'mdi-content-save-edit-outline';
+                                            } elseif ($sudahSampling) {
+                                                if ($rekomendasiLower === 'ditolak' || $rekomendasiLower === 'reject') {
+                                                    $statusName = $rekomendasi ?: 'Ditolak';
+                                                    $statusClass = 'bg-danger';
+                                                    $statusIcon = 'mdi-close-circle-outline';
+                                                } elseif ($rekomendasiLower === 'diterima bersyarat' || $rekomendasiLower === 'release bersyarat') {
+                                                    $statusName = $rekomendasi ?: 'Diterima Bersyarat';
+                                                    $statusClass = 'bg-orange text-white';
+                                                    $statusIcon = 'mdi-alert-circle-outline';
+                                                } elseif ($rekomendasiLower === 'diterima' || $rekomendasiLower === 'release') {
+                                                    $statusName = $rekomendasi ?: 'Diterima';
+                                                    $statusClass = 'bg-success';
+                                                    $statusIcon = 'mdi-check-circle-outline';
+                                                } elseif ($rekomendasiLower === 'wip') {
+                                                    $statusName = 'WIP';
+                                                    $statusClass = 'bg-secondary';
+                                                    $statusIcon = 'mdi-progress-clock';
+                                                } else {
+                                                    $statusName = $rekomendasi ?: ($incoming->samplingStatus?->nama ?: 'Sudah Sampling');
+                                                    $statusClass = 'bg-success';
+                                                    $statusIcon = 'mdi-check-circle-outline';
+                                                }
+                                            } else {
+                                                $statusName = $incoming->samplingStatus?->nama ?: 'Belum Sampling';
+                                                $statusClass = 'bg-info';
+                                                $statusIcon = 'mdi-clock-outline';
+                                            }
                                         @endphp
 
                                         <tr>
@@ -327,20 +409,11 @@
                                                 {{ $incoming->jenisMaterial?->nama ?? '-' }}
                                             </td>
 
-                                            <td>
-                                                @if ($sudahSampling)
-                                                    <span class="badge bg-success">
-                                                        Sudah Sampling
-                                                    </span>
-                                                @elseif ($isDraft)
-                                                    <span class="badge bg-warning text-dark">
-                                                        Draft
-                                                    </span>
-                                                @else
-                                                    <span class="badge bg-info">
-                                                        Belum Sampling
-                                                    </span>
-                                                @endif
+                                            <td class="text-center">
+                                                <span class="badge {{ $statusClass }}">
+                                                    <i class="mdi {{ $statusIcon }} me-1"></i>
+                                                    {{ $statusName }}
+                                                </span>
                                             </td>
 
                                             <td>

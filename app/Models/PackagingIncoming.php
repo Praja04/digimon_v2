@@ -56,11 +56,51 @@ class PackagingIncoming extends Model
         );
     }
 
+    public function uom()
+    {
+        return $this->belongsTo(
+            Uom::class,
+            'uom_id'
+        );
+    }
+
     public function samplingStatus()
     {
         return $this->belongsTo(
             SamplingStatus::class,
             'sampling_status_id'
+        );
+    }
+
+    public function packagingInnerOuterSampling()
+    {
+        return $this->hasOne(
+            PackagingInnerOuterSampling::class,
+            'packaging_incoming_id'
+        );
+    }
+
+    public function packagingPouchSampling()
+    {
+        return $this->hasOne(
+            PackagingPouchSampling::class,
+            'packaging_incoming_id'
+        );
+    }
+
+    public function packagingKartonSampling()
+    {
+        return $this->hasOne(
+            PackagingKartonSampling::class,
+            'packaging_incoming_id'
+        );
+    }
+
+    public function packagingKartonSamplingDraft()
+    {
+        return $this->hasOne(
+            PackagingKartonSamplingDraft::class,
+            'packaging_incoming_id'
         );
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PackagingIncoming;
 use App\Models\PackagingInnerOuterSampling;
+use App\Models\PackagingInnerOuterSamplingDraft;
 use App\Models\SamplingStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -140,9 +141,54 @@ class PackagingInnerOuterController extends Controller
                             );
                     }
                 );
-            }
+            } elseif ($status === 'Draft') {
+                $query->whereHas(
+                    'packagingInnerOuterSampling',
+                    function ($samplingQuery) {
+                        $samplingQuery->where(
+                            'status_proses',
+                            'draft'
+                        );
+                    }
+                );
+            } elseif (
+                in_array(
+                    $status,
+                    [
+                        'Diterima',
+                        'Diterima Bersyarat',
+                        'Ditolak',
+                        'WIP',
+                        'Release',
+                        'Reject',
+                        'Release Bersyarat',
+                    ],
+                    true
+                )
+            ) {
+                $normalizedRekomendasi = match ($status) {
+                    'Release' => 'Diterima',
+                    'Release Bersyarat' => 'Diterima Bersyarat',
+                    'Reject' => 'Ditolak',
+                    default => $status,
+                };
 
-            if (
+                $query->whereHas(
+                    'packagingInnerOuterSampling',
+                    function ($samplingQuery) use ($normalizedRekomendasi) {
+                        $samplingQuery
+                            ->where(
+                                'rekomendasi',
+                                $normalizedRekomendasi
+                            )
+                            ->where(
+                                'status_proses',
+                                '!=',
+                                'draft'
+                            );
+                    }
+                );
+            } elseif (
                 $status === 'Sudah Sampling'
             ) {
                 $query->whereHas(
@@ -199,6 +245,7 @@ class PackagingInnerOuterController extends Controller
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
@@ -405,6 +452,18 @@ class PackagingInnerOuterController extends Controller
                 'nullable',
                 'string',
                 'max:100',
+            ],
+
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
+            'qr_code' => [
+                'nullable',
+                'string',
+                'max:500',
             ],
 
             'samples.*.design' => [
@@ -736,9 +795,24 @@ class PackagingInnerOuterController extends Controller
                     $fotoKetidaksesuaianPaths = [];
                 }
 
+                $barcode = $validated['barcode'] ?? null;
+                $qrCode = $validated['qr_code'] ?? null;
+
                 $hasilSampel = collect(
                     $validated['samples'] ?? []
                 )
+                    ->map(function ($sample, $index) use ($barcode, $qrCode) {
+                        if ($index === 0) {
+                            if (filled($barcode)) {
+                                $sample['barcode'] = trim($barcode);
+                            }
+                            if (filled($qrCode)) {
+                                $sample['qr_code'] = trim($qrCode);
+                            }
+                        }
+
+                        return $sample;
+                    })
                     ->values()
                     ->all();
 
@@ -844,6 +918,13 @@ class PackagingInnerOuterController extends Controller
                             $sudahSamplingId,
                     ]);
                 }
+
+                PackagingInnerOuterSamplingDraft::query()
+                    ->where(
+                        'packaging_incoming_id',
+                        $packagingIncoming->id
+                    )
+                    ->delete();
 
                 return $sampling;
             }

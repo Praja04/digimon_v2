@@ -13,6 +13,8 @@ class BlendingAfterAdjustMikroDraft extends Model
 
     protected $fillable = [
         'blending_after_adjust_mikro_id',
+        'shift',
+        'nama_analis',
         'eb',
         'tpc',
         'ym',

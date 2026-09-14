@@ -212,6 +212,22 @@
                                             </tr>
                                         </thead>
                                         <tbody class="list form-check-all">
+                                            @php
+                                                $formatDisplayDecimal = function ($value) {
+                                                    if ($value === null || $value === '') {
+                                                        return '-';
+                                                    }
+
+                                                    $formatted = str_replace(',', '.', trim((string) $value));
+
+                                                    if (str_contains($formatted, '.')) {
+                                                        $formatted = rtrim(rtrim($formatted, '0'), '.');
+                                                    }
+
+                                                    return str_replace('.', ',', $formatted);
+                                                };
+                                            @endphp
+
                                             @forelse ($productionBatch->pelarutan_1 as $pelarutan_1)
                                                 @php
                                                     // Tentukan class berdasarkan disposition
@@ -254,8 +270,8 @@
                                                             </div>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $pelarutan_1->brix ?? '-' }}</td>
-                                                    <td>{{ $pelarutan_1->nacl ?? '-' }}</td>
+                                                    <td>{{ $formatDisplayDecimal($pelarutan_1->brix) }}</td>
+                                                    <td>{{ $formatDisplayDecimal($pelarutan_1->nacl) }}</td>
                                                     <td>{{ $pelarutan_1->organo ?? '-' }}</td>
                                                     <td>{{ $pelarutan_1->user->name ?? '-' }}</td>
                                                     <td>{{ $pelarutan_1->scanned_at ? \Carbon\Carbon::parse($pelarutan_1->scanned_at)->format('d/m/Y H:i:s') : '-' }}
@@ -649,8 +665,8 @@
                 const pelarutan_1_info = data.pelarutan_1_info;
                 $('#formulasi-batch-number').text(pelarutan_1_info.batch_number || '-');
                 $('#formulasi-dissolver-number').text(pelarutan_1_info.dissolver_number || '-');
-                $('#formulasi-brix').text(pelarutan_1_info.brix || '-');
-                $('#formulasi-nacl').text(pelarutan_1_info.nacl || '-');
+                $('#formulasi-brix').text(formatDecimal(pelarutan_1_info.brix) || '-');
+                $('#formulasi-nacl').text(formatDecimal(pelarutan_1_info.nacl) || '-');
                 $('#formulasi-organo').text(pelarutan_1_info.organo || '-');
 
                 // Status dengan badge
@@ -786,13 +802,36 @@
                 return '';
             }
 
-            let stringValue = String(value);
+            let stringValue = String(value).trim();
 
             if (forDatabase) {
-                return stringValue.replace(/\./g, '').replace(',', '.');
-            } else {
-                return stringValue.replace(/\./g, ',');
+                return stringValue.replace(',', '.');
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FORMAT NILAI UNTUK TAMPILAN
+            |--------------------------------------------------------------------------
+            |
+            | Menjaga tampilan konsisten antara hasil input Analis Kimia
+            | dan data yang dibuka kembali oleh Foreman.
+            |
+            | Contoh:
+            | 0.7000  -> 0,7
+            | 0.6000  -> 0,6
+            | 1.2500  -> 1,25
+            | 10.0000 -> 10
+            | 0,8     -> 0,8
+            |
+            */
+            stringValue = stringValue.replace(',', '.');
+
+            if (stringValue.includes('.')) {
+                stringValue = stringValue.replace(/0+$/, '');
+                stringValue = stringValue.replace(/\.$/, '');
+            }
+
+            return stringValue.replace('.', ',');
         }
 
         $(document).ready(function() {

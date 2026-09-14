@@ -335,6 +335,16 @@ Route::middleware(['auth'])->group(function () {
         )->name('rmpm.pm.karton.bct');
 
         Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/berat',
+            [PackagingKartonController::class, 'berat']
+        )->name('rmpm.pm.karton.berat');
+
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/kondisi-fisik',
+            [PackagingKartonController::class, 'kondisiFisik']
+        )->name('rmpm.pm.karton.kondisi-fisik');
+
+        Route::get(
             '/rmpm/pm/karton/{packagingIncoming}/sampling',
             [PackagingKartonController::class, 'sampling']
         )->name('rmpm.pm.karton.sampling');

@@ -31,6 +31,10 @@
         $sampling?->foto_ketidaksesuaian ?? []
     )->filter()->values()->all();
 
+    $samplePertama = collect($sampling?->hasil_sampel ?? [])->first() ?? [];
+    $barcodeValue = old('barcode', $samplePertama['barcode'] ?? '');
+    $qrCodeValue = old('qr_code', $samplePertama['qr_code'] ?? '');
+
     $nonconformityOptions = [
         'Miss Print',
         'Berat Under',
@@ -228,7 +232,7 @@
                             <label class="form-label">Nomor SPB</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->no_spb }}"
                                 readonly
                             >
@@ -238,7 +242,7 @@
                             <label class="form-label">Jenis Incoming</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->jenisIncoming?->nama ?? '-' }}"
                                 readonly
                             >
@@ -248,7 +252,7 @@
                             <label class="form-label">Supplier</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{
                                     $packagingIncoming->supplier?->nama
                                     ?? $packagingIncoming->supplier?->nama_supplier
@@ -262,7 +266,7 @@
                             <label class="form-label">Nomor Mobil</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->no_mobil ?? '-' }}"
                                 readonly
                             >
@@ -272,7 +276,7 @@
                             <label class="form-label">MID</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->mid ?? '-' }}"
                                 readonly
                             >
@@ -282,7 +286,7 @@
                             <label class="form-label">Jenis Material</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}"
                                 readonly
                             >
@@ -405,7 +409,6 @@
                                     <th>Arah Vertikal</th>
                                     <th>Arah Terbalik</th>
                                     <th>Laminasi</th>
-                                    <th>Barcode</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
@@ -485,6 +488,62 @@
                                 id="foto_pengecekan_preview"
                                 class="photo-preview-grid mt-3"
                             ></div>
+                        </div>
+                    </div>
+
+                    <div class="section-title mt-4">
+                        <i class="mdi mdi-barcode-scan"></i>
+                        Pemeriksaan QR Code & Barcode
+                    </div>
+
+                    <div class="inspection-note mb-3">
+                        <small class="text-muted d-block">
+                            QR Code dan Barcode cukup diperiksa pada
+                            <strong>1 sampel</strong> untuk setiap SPB.
+                            Scanner fisik dapat langsung digunakan pada field di bawah
+                            karena terbaca sebagai input keyboard/HID.
+                        </small>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-6 col-md-6">
+                            <label
+                                for="barcode"
+                                class="form-label fw-semibold"
+                            >
+                                Barcode
+                            </label>
+
+                            <input
+                                type="text"
+                                name="barcode"
+                                id="barcode"
+                                class="form-control"
+                                maxlength="500"
+                                autocomplete="off"
+                                value="{{ $barcodeValue }}"
+                                placeholder="Scan atau ketik Barcode"
+                            >
+                        </div>
+
+                        <div class="col-xl-6 col-md-6">
+                            <label
+                                for="qr_code"
+                                class="form-label fw-semibold"
+                            >
+                                QR Code
+                            </label>
+
+                            <input
+                                type="text"
+                                name="qr_code"
+                                id="qr_code"
+                                class="form-control"
+                                maxlength="500"
+                                autocomplete="off"
+                                value="{{ $qrCodeValue }}"
+                                placeholder="Scan atau ketik QR Code"
+                            >
                         </div>
                     </div>
 
@@ -748,46 +807,45 @@
                         </div>
 
                     </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a
-                            href="{{ route('rmpm.pm.inner-outer') }}"
-                            class="btn btn-light"
-                        >
-                            <i class="mdi mdi-arrow-left me-1"></i>
-                            Kembali
-                        </a>
-
-                        @if (! $isLocked)
-                            @if (! $isFinal)
-                                <button
-                                    type="submit"
-                                    value="draft"
-                                    class="btn btn-warning px-4 save-button"
-                                    formnovalidate
-                                >
-                                    <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                                    Simpan Sementara
-                                </button>
-                            @endif
-
-                            <button
-                                type="submit"
-                                value="final"
-                                id="submitButton"
-                                class="btn btn-primary px-4 save-button"
-                            >
-                                <i class="mdi mdi-check-circle-outline me-1"></i>
-                                {{ $isFinal && $isForeman
-                                    ? 'Simpan Koreksi'
-                                    : 'Simpan Final' }}
-                            </button>
-                        @endif
-                    </div>
-
                 </div>
             </div>
             </fieldset>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a
+                    href="{{ route('rmpm.pm.inner-outer') }}"
+                    class="btn btn-light"
+                >
+                    <i class="mdi mdi-arrow-left me-1"></i>
+                    Kembali
+                </a>
+
+                @if (! $isLocked)
+                    @if (! $isFinal)
+                        <button
+                            type="submit"
+                            value="draft"
+                            class="btn btn-warning px-4 save-button"
+                            formnovalidate
+                        >
+                            <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                            Simpan Sementara
+                        </button>
+                    @endif
+
+                    <button
+                        type="submit"
+                        value="final"
+                        id="submitButton"
+                        class="btn btn-primary px-4 save-button"
+                    >
+                        <i class="mdi mdi-check-circle-outline me-1"></i>
+                        {{ $isFinal && $isForeman
+                            ? 'Simpan Koreksi'
+                            : 'Simpan Final' }}
+                    </button>
+                @endif
+            </div>
         </form>
 
     </div>
@@ -941,6 +999,57 @@
     .inspection-table input,
     .inspection-table select {
         min-width: 100px;
+    }
+
+    .option-radio-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 110px;
+    }
+
+    .option-radio {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin: 0;
+        padding: 5px 8px;
+        border: 1px solid #dbe3ec;
+        border-radius: 8px;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s ease;
+        white-space: nowrap;
+    }
+
+    .option-radio:hover {
+        border-color: #6366f1;
+        background: #eef2ff;
+    }
+
+    .option-radio:focus-within {
+        border-color: #6366f1;
+        background: #eef2ff;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+
+    .option-radio input {
+        min-width: auto !important;
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .option-radio.is-selected {
+        border-color: #6366f1;
+        background: #eef2ff;
+        color: #4338ca;
     }
 
     .inspection-note {
@@ -1100,29 +1209,83 @@
             `;
         }
 
-        function buildStatusSelect(name, selectedValue) {
+        function buildDirectionRadio(name, value) {
+            const idBase = name
+                .replaceAll('[', '_')
+                .replaceAll(']', '');
+
+            const safeValue = value ? String(value).trim() : '';
+
             return `
-                <select
-                    name="${name}"
-                    class="form-select form-select-sm"
-                >
-                    <option value="">Pilih</option>
-                    ${buildOption('OK', 'OK', selectedValue)}
-                    ${buildOption('NG', 'NG', selectedValue)}
-                </select>
+                <div class="option-radio-group">
+                    <label
+                        class="option-radio ${safeValue === 'V' ? 'is-selected' : ''}"
+                        for="${idBase}_v"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_v"
+                            value="V"
+                            ${safeValue === 'V' ? 'checked' : ''}
+                        >
+                        <span>V</span>
+                    </label>
+
+                    <label
+                        class="option-radio ${safeValue === '-' ? 'is-selected' : ''}"
+                        for="${idBase}_strip"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_strip"
+                            value="-"
+                            ${safeValue === '-' ? 'checked' : ''}
+                        >
+                        <span>-</span>
+                    </label>
+                </div>
             `;
         }
 
-        function buildDirectionSelect(name, selectedValue) {
+        function buildStatusRadio(name, value) {
+            const idBase = name
+                .replaceAll('[', '_')
+                .replaceAll(']', '');
+
+            const safeValue = value ? String(value).trim().toUpperCase() : '';
+
             return `
-                <select
-                    name="${name}"
-                    class="form-select form-select-sm"
-                >
-                    <option value="">Pilih</option>
-                    ${buildOption('V', 'V', selectedValue)}
-                    ${buildOption('-', '-', selectedValue)}
-                </select>
+                <div class="option-radio-group">
+                    <label
+                        class="option-radio ${safeValue === 'OK' ? 'is-selected' : ''}"
+                        for="${idBase}_ok"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_ok"
+                            value="OK"
+                            ${safeValue === 'OK' ? 'checked' : ''}
+                        >
+                        <span>OK</span>
+                    </label>
+
+                    <label
+                        class="option-radio ${safeValue === 'NG' ? 'is-selected' : ''}"
+                        for="${idBase}_ng"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_ng"
+                            value="NG"
+                            ${safeValue === 'NG' ? 'checked' : ''}
+                        >
+                        <span>NG</span>
+                    </label>
+                </div>
             `;
         }
 
@@ -1227,44 +1390,35 @@
                             </td>
 
                             <td>
-                                ${buildDirectionSelect(
+                                ${buildDirectionRadio(
                                     `samples[${index}][arah_vertikal]`,
                                     sample.arah_vertikal
                                 )}
                             </td>
 
                             <td>
-                                ${buildDirectionSelect(
+                                ${buildDirectionRadio(
                                     `samples[${index}][arah_terbalik]`,
                                     sample.arah_terbalik
                                 )}
                             </td>
 
                             <td>
-                                ${buildStatusSelect(
+                                ${buildStatusRadio(
                                     `samples[${index}][laminasi]`,
                                     sample.laminasi
                                 )}
                             </td>
 
                             <td>
-                                <input
-                                    type="text"
-                                    name="samples[${index}][barcode]"
-                                    value="${escapeHtml(sample.barcode)}"
-                                    class="form-control form-control-sm"
-                                >
-                            </td>
-
-                            <td>
-                                ${buildStatusSelect(
+                                ${buildStatusRadio(
                                     `samples[${index}][design]`,
                                     sample.design
                                 )}
                             </td>
 
                             <td>
-                                ${buildStatusSelect(
+                                ${buildStatusRadio(
                                     `samples[${index}][warna]`,
                                     sample.warna
                                 )}
@@ -1284,52 +1438,206 @@
                 );
             }
 
-            const fieldOrder = [
-                'berat_gross',
-                'inside_core',
-                'lebar',
-                'pitch',
-                'thickness',
-                'arah_vertikal',
-                'arah_terbalik',
-                'laminasi',
-                'barcode',
-                'design',
-                'warna',
-                'tulisan'
-            ];
+            sampleRows
+                .querySelectorAll('.option-radio input[type="radio"]')
+                .forEach(function (radio) {
+                    radio.addEventListener('change', function () {
+                        const group =
+                            radio.closest('.option-radio-group');
 
-            fieldOrder.forEach(
-                function (field, fieldIndex) {
-                    sampleRows
-                        .querySelectorAll(
-                            `[name$="[${field}]"]`
-                        )
-                        .forEach(
-                            function (
-                                element,
-                                rowIndex
-                            ) {
-                                if (
-                                    element.readOnly
-                                ) {
-                                    element.tabIndex =
-                                        -1;
+                        if (group) {
+                            group
+                                .querySelectorAll('.option-radio')
+                                .forEach(function (label) {
+                                    label.classList.remove('is-selected');
+                                });
+                        }
 
+                        const currentLabel =
+                            radio.closest('.option-radio');
+
+                        if (currentLabel) {
+                            currentLabel.classList.add('is-selected');
+                        }
+                    });
+                });
+        }
+
+        function setupKeyboardNavigation(formElement) {
+            if (!formElement) return;
+
+            function isVisibleAndEditable(el) {
+                if (!el) return false;
+                if (el.disabled || el.readOnly || el.type === 'hidden') return false;
+                if (el.offsetParent === null && getComputedStyle(el).display === 'none' && !el.closest('.option-radio')) return false;
+                return true;
+            }
+
+            function findFocusableInCell(cell) {
+                if (!cell) return null;
+                const checkedRadio = cell.querySelector('input[type="radio"]:checked');
+                if (checkedRadio && isVisibleAndEditable(checkedRadio)) return checkedRadio;
+
+                const firstRadio = cell.querySelector('.option-radio input[type="radio"]');
+                if (firstRadio && isVisibleAndEditable(firstRadio)) return firstRadio;
+
+                const input = cell.querySelector('input:not([type="hidden"]), select, textarea');
+                if (input && isVisibleAndEditable(input)) return input;
+
+                return null;
+            }
+
+            function focusControl(el) {
+                if (!el) return;
+                el.focus();
+                if (typeof el.select === 'function' && el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'file') {
+                    el.select();
+                }
+            }
+
+            function findNextColumnFirstInput(rows, currentColIndex) {
+                if (!rows.length) return null;
+                const maxCols = rows[0].cells.length;
+                for (let c = currentColIndex + 1; c < maxCols; c++) {
+                    for (let r = 0; r < rows.length; r++) {
+                        const cell = rows[r].cells[c];
+                        if (cell) {
+                            const ctrl = findFocusableInCell(cell);
+                            if (ctrl) return ctrl;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function findPrevColumnLastInput(rows, currentColIndex) {
+                if (!rows.length) return null;
+                for (let c = currentColIndex - 1; c >= 0; c--) {
+                    for (let r = rows.length - 1; r >= 0; r--) {
+                        const cell = rows[r].cells[c];
+                        if (cell) {
+                            const ctrl = findFocusableInCell(cell);
+                            if (ctrl) return ctrl;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function getFocusableElements(container) {
+                const selector = 'input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])';
+                const elements = Array.from(container.querySelectorAll(selector));
+                return elements.filter(el => isVisibleAndEditable(el));
+            }
+
+            formElement.addEventListener('keydown', function (event) {
+                const target = event.target;
+                if (!target) return;
+
+                if (target.tagName === 'TEXTAREA' && !event.ctrlKey) {
+                    if (event.key === 'Tab') {
+                        event.preventDefault();
+                        const focusables = getFocusableElements(formElement);
+                        const currentIndex = focusables.indexOf(target);
+                        if (currentIndex !== -1) {
+                            const nextIndex = event.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                            if (nextIndex >= 0 && nextIndex < focusables.length) {
+                                focusControl(focusables[nextIndex]);
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                if (target.tagName === 'BUTTON' || (target.tagName === 'INPUT' && target.type === 'submit')) {
+                    return;
+                }
+
+                const isEnter = event.key === 'Enter';
+                const isTab = event.key === 'Tab';
+                const isArrowDown = event.key === 'ArrowDown';
+                const isArrowUp = event.key === 'ArrowUp';
+
+                if (!isEnter && !isTab && !isArrowDown && !isArrowUp) {
+                    return;
+                }
+
+                const isInTable = target.closest('table') !== null;
+                if ((isArrowDown || isArrowUp) && !isInTable) {
+                    return;
+                }
+
+                if (target.tagName === 'SELECT' && (isArrowDown || isArrowUp)) {
+                    return;
+                }
+
+                const isBackwards = event.shiftKey || isArrowUp;
+
+                if (isEnter || isTab || isArrowDown || isArrowUp) {
+                    event.preventDefault();
+                }
+
+                const currentCell = target.closest('td, th');
+                const currentRow = target.closest('tr');
+                const currentTable = target.closest('table');
+
+                if (currentCell && currentRow && currentTable) {
+                    const tbody = currentRow.closest('tbody') || currentTable;
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const rowIndex = rows.indexOf(currentRow);
+                    const colIndex = currentCell.cellIndex;
+
+                    if (rowIndex !== -1) {
+                        const step = isBackwards ? -1 : 1;
+                        const targetRowIndex = rowIndex + step;
+
+                        if (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+                            const targetRow = rows[targetRowIndex];
+                            const targetCell = targetRow.cells[colIndex];
+                            if (targetCell) {
+                                const targetInput = findFocusableInCell(targetCell);
+                                if (targetInput) {
+                                    focusControl(targetInput);
                                     return;
                                 }
-
-                                element.tabIndex =
-                                    1
-                                    + (
-                                        fieldIndex
-                                        * safeTotal
-                                    )
-                                    + rowIndex;
                             }
-                        );
+                        } else if (!isBackwards && targetRowIndex >= rows.length) {
+                            const nextInput = findNextColumnFirstInput(rows, colIndex);
+                            if (nextInput) {
+                                focusControl(nextInput);
+                                return;
+                            }
+                        } else if (isBackwards && targetRowIndex < 0) {
+                            const prevInput = findPrevColumnLastInput(rows, colIndex);
+                            if (prevInput) {
+                                focusControl(prevInput);
+                                return;
+                            }
+                        }
+                    }
                 }
-            );
+
+                const focusables = getFocusableElements(formElement);
+                let currentIndex = -1;
+
+                for (let i = 0; i < focusables.length; i++) {
+                    if (focusables[i] === target || (target.type === 'radio' && focusables[i].name === target.name)) {
+                        currentIndex = i;
+                        break;
+                    }
+                }
+                if (currentIndex === -1) {
+                    currentIndex = focusables.indexOf(target);
+                }
+
+                if (currentIndex !== -1) {
+                    const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
+                    if (nextIndex >= 0 && nextIndex < focusables.length) {
+                        focusControl(focusables[nextIndex]);
+                        return;
+                    }
+                }
+            });
         }
 
         function showAlert(type, message) {
@@ -1775,6 +2083,8 @@
         );
 
         updateKetidaksesuaianFields();
+
+        setupKeyboardNavigation(form);
     });
 </script>
 

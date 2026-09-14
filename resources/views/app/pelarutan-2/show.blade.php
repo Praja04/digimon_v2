@@ -156,6 +156,22 @@
 
                                         <tbody class="list form-check-all">
 
+                                            @php
+                                                $formatDisplayDecimal = function ($value) {
+                                                    if ($value === null || $value === '') {
+                                                        return '-';
+                                                    }
+
+                                                    $formatted = str_replace(',', '.', trim((string) $value));
+
+                                                    if (str_contains($formatted, '.')) {
+                                                        $formatted = rtrim(rtrim($formatted, '0'), '.');
+                                                    }
+
+                                                    return str_replace('.', ',', $formatted);
+                                                };
+                                            @endphp
+
                                             @forelse ($productionBatch->pelarutan_2 as $pelarutan_2)
 
                                                 @php
@@ -212,15 +228,15 @@
                                                     </td>
 
                                                     <td>
-                                                        {{ $pelarutan_2->brix ?? '-' }}
+                                                        {{ $formatDisplayDecimal($pelarutan_2->brix) }}
                                                     </td>
 
                                                     <td>
-                                                        {{ $pelarutan_2->nacl ?? '-' }}
+                                                        {{ $formatDisplayDecimal($pelarutan_2->nacl) }}
                                                     </td>
 
                                                     <td>
-                                                        {{ $pelarutan_2->visco ?? '-' }}
+                                                        {{ $formatDisplayDecimal($pelarutan_2->visco) }}
                                                     </td>
 
                                                     <td>
@@ -1079,17 +1095,17 @@
 
                 $('#formulasi-brix')
                     .text(
-                        pelarutan_2_info.brix || '-'
+                        formatDecimal(pelarutan_2_info.brix) || '-'
                     );
 
                 $('#formulasi-nacl')
                     .text(
-                        pelarutan_2_info.nacl || '-'
+                        formatDecimal(pelarutan_2_info.nacl) || '-'
                     );
 
                 $('#formulasi-visco')
                     .text(
-                        pelarutan_2_info.visco || '-'
+                        formatDecimal(pelarutan_2_info.visco) || '-'
                     );
 
                 $('#formulasi-organo')
@@ -1450,20 +1466,46 @@
 
 
             let stringValue =
-                String(value);
+                String(value).trim();
 
 
             if (forDatabase) {
 
                 return stringValue
-                    .replace(/\./g, '')
                     .replace(',', '.');
-
-            } else {
-
-                return stringValue
-                    .replace(/\./g, ',');
             }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | FORMAT NILAI UNTUK TAMPILAN
+            |--------------------------------------------------------------------------
+            |
+            | 0.2000  -> 0,2
+            | 0.4000  -> 0,4
+            | 1.2500  -> 1,25
+            | 1.0000  -> 1
+            | 0,8     -> 0,8
+            |
+            */
+            stringValue =
+                stringValue.replace(',', '.');
+
+
+            if (
+                stringValue.includes('.')
+            ) {
+
+                stringValue =
+                    stringValue.replace(/0+$/, '');
+
+                stringValue =
+                    stringValue.replace(/\.$/, '');
+            }
+
+
+            return stringValue
+                .replace('.', ',');
         }
 
 

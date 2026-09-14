@@ -6,6 +6,8 @@ use App\Models\JenisIncoming;
 use App\Models\JenisMaterial;
 use App\Models\PackagingIncoming;
 use App\Models\PackagingInnerOuterSampling;
+use App\Models\PackagingKartonSampling;
+use App\Models\PackagingKartonSamplingDraft;
 use App\Models\PackagingPouchSampling;
 use App\Models\SamplingStatus;
 use App\Models\Supplier;
@@ -139,12 +141,84 @@ class PackagingIncomingController extends Controller
                                 'packaging_incoming_id'
                             )
                     )
+                    ->merge(
+                        PackagingKartonSamplingDraft::query()
+                            ->pluck(
+                                'packaging_incoming_id'
+                            )
+                    )
                     ->unique()
                     ->values();
 
                 $query->whereIn(
                     'id',
                     $draftIncomingIds
+                );
+            } elseif (in_array($statusFilter, ['Diterima', 'Diterima Bersyarat', 'Ditolak', 'WIP', 'Release', 'Reject', 'Release Bersyarat'], true)) {
+                $normalizedRekomendasi = match ($statusFilter) {
+                    'Release' => 'Diterima',
+                    'Release Bersyarat' => 'Diterima Bersyarat',
+                    'Reject' => 'Ditolak',
+                    default => $statusFilter,
+                };
+
+                $rekomendasiIncomingIds = collect()
+                    ->merge(
+                        PackagingPouchSampling::query()
+                            ->where(
+                                'rekomendasi',
+                                $normalizedRekomendasi
+                            )
+                            ->where(
+                                'status_proses',
+                                '!=',
+                                'draft'
+                            )
+                            ->pluck(
+                                'packaging_incoming_id'
+                            )
+                    )
+                    ->merge(
+                        PackagingInnerOuterSampling::query()
+                            ->where(
+                                'rekomendasi',
+                                $normalizedRekomendasi
+                            )
+                            ->where(
+                                'status_proses',
+                                '!=',
+                                'draft'
+                            )
+                            ->pluck(
+                                'packaging_incoming_id'
+                            )
+                    )
+                    ->merge(
+                        PackagingKartonSampling::query()
+                            ->where(
+                                'rekomendasi',
+                                $normalizedRekomendasi
+                            )
+                            ->pluck(
+                                'packaging_incoming_id'
+                            )
+                    )
+                    ->unique()
+                    ->values();
+
+                $query->whereIn(
+                    'id',
+                    $rekomendasiIncomingIds
+                );
+            } elseif ($statusFilter === 'belum_sampling') {
+                $query->whereHas(
+                    'samplingStatus',
+                    fn ($q) => $q->where('nama', 'like', '%Belum Sampling%')
+                );
+            } elseif ($statusFilter === 'sudah_sampling') {
+                $query->whereHas(
+                    'samplingStatus',
+                    fn ($q) => $q->where('nama', 'like', '%Sudah Sampling%')
                 );
             } else {
                 $query->where(
@@ -464,6 +538,12 @@ class PackagingIncomingController extends Controller
                     'status_proses',
                     'draft'
                 )
+                ->exists()
+            || PackagingKartonSamplingDraft::query()
+                ->where(
+                    'packaging_incoming_id',
+                    $packagingIncoming->id
+                )
                 ->exists();
 
         if (
@@ -517,34 +597,50 @@ class PackagingIncomingController extends Controller
             return;
         }
 
-        $pouchStatuses =
+        $pouchSamplings =
             PackagingPouchSampling::query()
                 ->whereIn(
                     'packaging_incoming_id',
                     $incomingIds
                 )
-                ->pluck(
-                    'status_proses',
-                    'packaging_incoming_id'
-                );
+                ->get()
+                ->keyBy('packaging_incoming_id');
 
-        $innerOuterStatuses =
+        $innerOuterSamplings =
             PackagingInnerOuterSampling::query()
                 ->whereIn(
                     'packaging_incoming_id',
                     $incomingIds
                 )
-                ->pluck(
-                    'status_proses',
-                    'packaging_incoming_id'
-                );
+                ->get()
+                ->keyBy('packaging_incoming_id');
+
+        $kartonSamplings =
+            PackagingKartonSampling::query()
+                ->whereIn(
+                    'packaging_incoming_id',
+                    $incomingIds
+                )
+                ->get()
+                ->keyBy('packaging_incoming_id');
+
+        $kartonDrafts =
+            PackagingKartonSamplingDraft::query()
+                ->whereIn(
+                    'packaging_incoming_id',
+                    $incomingIds
+                )
+                ->get()
+                ->keyBy('packaging_incoming_id');
 
         $incomings->each(
             function (
                 PackagingIncoming $incoming
             ) use (
-                $pouchStatuses,
-                $innerOuterStatuses
+                $pouchSamplings,
+                $innerOuterSamplings,
+                $kartonSamplings,
+                $kartonDrafts
             ): void {
                 $jenisName = strtolower(
                     trim(
@@ -556,6 +652,8 @@ class PackagingIncomingController extends Controller
                 );
 
                 $processStatus = null;
+                $rekomendasi = null;
+                $samplingRecord = null;
 
                 if (
                     str_contains(
@@ -563,10 +661,12 @@ class PackagingIncomingController extends Controller
                         'pouch'
                     )
                 ) {
+                    $samplingRecord =
+                        $pouchSamplings->get($incoming->id);
                     $processStatus =
-                        $pouchStatuses[
-                            $incoming->id
-                        ] ?? null;
+                        $samplingRecord?->status_proses;
+                    $rekomendasi =
+                        $samplingRecord?->rekomendasi;
                 } elseif (
                     str_contains(
                         $jenisName,
@@ -577,15 +677,50 @@ class PackagingIncomingController extends Controller
                         'outer'
                     )
                 ) {
+                    $samplingRecord =
+                        $innerOuterSamplings->get($incoming->id);
                     $processStatus =
-                        $innerOuterStatuses[
-                            $incoming->id
-                        ] ?? null;
+                        $samplingRecord?->status_proses;
+                    $rekomendasi =
+                        $samplingRecord?->rekomendasi;
+                } elseif (
+                    str_contains(
+                        $jenisName,
+                        'karton'
+                    )
+                    || str_contains(
+                        $jenisName,
+                        'kardus'
+                    )
+                ) {
+                    if ($kartonSamplings->has($incoming->id)) {
+                        $samplingRecord =
+                            $kartonSamplings->get($incoming->id);
+                        $processStatus = 'final';
+                        $rekomendasi =
+                            $samplingRecord?->rekomendasi;
+                    } elseif ($kartonDrafts->has($incoming->id)) {
+                        $samplingRecord =
+                            $kartonDrafts->get($incoming->id);
+                        $processStatus = 'draft';
+                        $rekomendasi =
+                            $samplingRecord?->rekomendasi;
+                    }
                 }
 
                 $incoming->setAttribute(
                     'process_status',
                     $processStatus
+                );
+
+                $incoming->setAttribute(
+                    'rekomendasi',
+                    $rekomendasi
+                );
+
+                $incoming->setAttribute(
+                    'sampling_record',
+                    $samplingRecord
                 );
             }
         );
@@ -603,37 +738,55 @@ class PackagingIncomingController extends Controller
             )
         );
 
-        if (
-            str_contains($jenisName, 'pouch')
-        ) {
-            $processStatus =
-                PackagingPouchSampling::query()
-                    ->where(
-                        'packaging_incoming_id',
-                        $packagingIncoming->id
-                    )
-                    ->value('status_proses');
+        $sampling = null;
+        $isDraft = false;
 
-            if ($processStatus === 'draft') {
-                return 'Draft';
-            }
-        }
-
-        if (
+        if (str_contains($jenisName, 'pouch')) {
+            $sampling = PackagingPouchSampling::query()
+                ->where(
+                    'packaging_incoming_id',
+                    $packagingIncoming->id
+                )
+                ->first();
+            $isDraft = $sampling?->status_proses === 'draft';
+        } elseif (
             str_contains($jenisName, 'inner')
             || str_contains($jenisName, 'outer')
         ) {
-            $processStatus =
-                PackagingInnerOuterSampling::query()
+            $sampling = PackagingInnerOuterSampling::query()
+                ->where(
+                    'packaging_incoming_id',
+                    $packagingIncoming->id
+                )
+                ->first();
+            $isDraft = $sampling?->status_proses === 'draft';
+        } elseif (
+            str_contains($jenisName, 'karton')
+            || str_contains($jenisName, 'kardus')
+        ) {
+            $sampling = PackagingKartonSampling::query()
+                ->where(
+                    'packaging_incoming_id',
+                    $packagingIncoming->id
+                )
+                ->first();
+            if (! $sampling) {
+                $sampling = PackagingKartonSamplingDraft::query()
                     ->where(
                         'packaging_incoming_id',
                         $packagingIncoming->id
                     )
-                    ->value('status_proses');
-
-            if ($processStatus === 'draft') {
-                return 'Draft';
+                    ->first();
+                $isDraft = (bool) $sampling;
             }
+        }
+
+        if ($isDraft) {
+            return 'Draft';
+        }
+
+        if ($sampling && ! empty($sampling->rekomendasi)) {
+            return $sampling->rekomendasi;
         }
 
         return $packagingIncoming
@@ -664,7 +817,7 @@ class PackagingIncomingController extends Controller
                 ],
 
                 'jam_kedatangan' => [
-                    'nullable',
+                    'required',
                     'date_format:H:i',
                 ],
 
@@ -716,7 +869,7 @@ class PackagingIncomingController extends Controller
                 ],
 
                 'no_mobil' => [
-                    'nullable',
+                    'required',
                     'string',
                     'max:100',
                 ],
@@ -737,8 +890,14 @@ class PackagingIncomingController extends Controller
                 'tanggal_kedatangan.required' =>
                     'Tanggal kedatangan wajib diisi.',
 
+                'jam_kedatangan.required' =>
+                    'Jam kedatangan wajib diisi.',
+
                 'jam_kedatangan.date_format' =>
                     'Format jam kedatangan tidak valid.',
+
+                'no_mobil.required' =>
+                    'Nomor mobil wajib diisi.',
 
                 'quantity_incoming.required' =>
                     'Quantity incoming wajib diisi.',

@@ -177,7 +177,19 @@ class Pelarutan2Controller extends Controller
             ], 403);
         }
 
-        $data = $request->all();
+        /*
+        |--------------------------------------------------------------------------
+        | DATA RAW
+        |--------------------------------------------------------------------------
+        */
+        $rawData = $request->all();
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATA KHUSUS VALIDASI
+        |--------------------------------------------------------------------------
+        */
+        $validationData = $rawData;
 
         foreach ([
             'brix',
@@ -185,17 +197,17 @@ class Pelarutan2Controller extends Controller
             'visco'
         ] as $field) {
             if (
-                isset($data[$field]) &&
-                is_string($data[$field]) &&
-                $data[$field] !== ''
+                isset($validationData[$field]) &&
+                is_string($validationData[$field]) &&
+                $validationData[$field] !== ''
             ) {
                 $cleanedValue = str_replace(
                     ' ',
                     '',
-                    $data[$field]
+                    $validationData[$field]
                 );
 
-                $data[$field] = str_replace(
+                $validationData[$field] = str_replace(
                     ',',
                     '.',
                     $cleanedValue
@@ -203,7 +215,7 @@ class Pelarutan2Controller extends Controller
             }
         }
 
-        $validator = Validator::make($data, [
+        $validator = Validator::make($validationData, [
             'id' => [
                 'required',
                 'integer',
@@ -261,21 +273,9 @@ class Pelarutan2Controller extends Controller
         }
 
         $pelarutan_2 = Pelarutan2::findOrFail(
-            $data['id']
+            $rawData['id']
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | ATURAN DRAFT BERDASARKAN ROLE
-        |--------------------------------------------------------------------------
-        |
-        | Analis Kimia:
-        | - hanya boleh draft sebelum final.
-        |
-        | Foreman:
-        | - hanya boleh draft setelah final Analis Kimia.
-        |
-        */
         if ($userRole === 'Analis Kimia') {
 
             if (!is_null($pelarutan_2->status)) {
@@ -297,11 +297,6 @@ class Pelarutan2Controller extends Controller
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | SATU PELARUTAN 2 = SATU DRAFT
-        |--------------------------------------------------------------------------
-        */
         $draft = Pelarutan2Draft::updateOrCreate(
             [
                 'pelarutan_2_id' =>
@@ -309,25 +304,25 @@ class Pelarutan2Controller extends Controller
             ],
             [
                 'brix' =>
-                    $data['brix'] ?? null,
+                    $rawData['brix'] ?? null,
 
                 'nacl' =>
-                    $data['nacl'] ?? null,
+                    $rawData['nacl'] ?? null,
 
                 'visco' =>
-                    $data['visco'] ?? null,
+                    $rawData['visco'] ?? null,
 
                 'organo' =>
-                    $data['organo'] ?? null,
+                    $rawData['organo'] ?? null,
 
                 'status_disposition' =>
-                    $data['status_disposition'] ?? null,
+                    $rawData['status_disposition'] ?? null,
 
                 'disposition' =>
-                    $data['disposition'] ?? null,
+                    $rawData['disposition'] ?? null,
 
                 'disposition_remark' =>
-                    $data['disposition_remark'] ?? null,
+                    $rawData['disposition_remark'] ?? null,
 
                 'created_by' =>
                     auth()->id(),

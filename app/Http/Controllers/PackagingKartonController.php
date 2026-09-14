@@ -95,13 +95,14 @@ class PackagingKartonController extends Controller
         );
     }
 
-    public function sampling(
+    public function berat(
         PackagingIncoming $packagingIncoming
     ): View {
         $packagingIncoming->load([
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
@@ -128,7 +129,7 @@ class PackagingKartonController extends Controller
         }
 
         return view(
-            'app.rmpm.karton-sampling',
+            'app.rmpm.karton-berat',
             compact(
                 'packagingIncoming',
                 'sampling',
@@ -136,6 +137,56 @@ class PackagingKartonController extends Controller
                 'finalSampling'
             )
         );
+    }
+
+    public function kondisiFisik(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'uom',
+            'samplingStatus',
+        ]);
+
+        $this->ensureKarton($packagingIncoming);
+
+        $finalSampling = PackagingKartonSampling::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->first();
+
+        $draft = PackagingKartonSamplingDraft::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->first();
+
+        $sampling = $draft ?? $finalSampling;
+
+        if ($draft) {
+            $draft->setAttribute('status_proses', 'draft');
+        }
+
+        return view(
+            'app.rmpm.karton-kondisi-fisik',
+            compact(
+                'packagingIncoming',
+                'sampling',
+                'draft',
+                'finalSampling'
+            )
+        );
+    }
+
+    public function sampling(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        return $this->berat($packagingIncoming);
     }
 
     public function storeSampling(
@@ -289,21 +340,34 @@ class PackagingKartonController extends Controller
                 'min:0',
             ],
 
-            'samples.*.scan_barcode' => [
+            'samples.*.panjang' => [
                 'nullable',
-                'in:Terbaca,Tidak Terbaca',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.lebar' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.tinggi' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.bct' => [
+                'nullable',
+                'numeric',
+                'min:0',
             ],
 
             'samples.*.no_batch_lot' => [
                 'nullable',
                 'string',
                 'max:150',
-            ],
-
-            'samples.*.no_barcode' => [
-                'nullable',
-                'string',
-                'max:255',
             ],
 
             'samples.*.design' => [
@@ -321,18 +385,10 @@ class PackagingKartonController extends Controller
                 'in:OK,NOK',
             ],
 
-            'samples.*.foto' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-            ],
-
             'samples.*.berat' => [
                 'nullable',
-                'integer',
+                'numeric',
                 'min:0',
-                'max:20',
             ],
 
             'samples.*.hasil_berat' => [
@@ -344,6 +400,34 @@ class PackagingKartonController extends Controller
                 'nullable',
                 'numeric',
                 'min:0',
+            ],
+
+            'gramasi_tipe' => [
+                'nullable',
+                'string',
+                'in:Single Wall,Double Wall',
+            ],
+
+            'gramasi_layers' => [
+                'nullable',
+                'array',
+            ],
+
+            'gramasi_layers.*' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'scan_barcode' => [
+                'nullable',
+                'in:Terbaca,Tidak Terbaca',
+            ],
+
+            'no_barcode' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
 
             'coa' => [
@@ -678,7 +762,11 @@ class PackagingKartonController extends Controller
                         $request,
                         $existingSamples,
                         $submittedSamples,
-                        $validated['gramasi'] ?? null
+                        $validated['gramasi'] ?? null,
+                        $validated['gramasi_tipe'] ?? null,
+                        $validated['gramasi_layers'] ?? null,
+                        $validated['scan_barcode'] ?? null,
+                        $validated['no_barcode'] ?? null
                     );
 
                 $data = [
@@ -811,8 +899,8 @@ class PackagingKartonController extends Controller
 
             'message' =>
                 $isFinal
-                    ? 'Data pemeriksaan Berat Karton berhasil disimpan final.'
-                    : 'Data pemeriksaan Berat Karton berhasil disimpan sementara.',
+                    ? 'Data pemeriksaan Karton berhasil disimpan final.'
+                    : 'Data pemeriksaan Karton berhasil disimpan sementara.',
 
             'data' => [
                 'id' => $result['record']->id,
@@ -837,7 +925,11 @@ class PackagingKartonController extends Controller
         Request $request,
         array $existingSamples,
         array $submittedSamples,
-        mixed $gramasi
+        mixed $gramasi,
+        ?string $gramasiTipe = null,
+        ?array $gramasiLayers = null,
+        ?string $scanBarcode = null,
+        ?string $noBarcode = null
     ): array {
         $mergedSamples = [];
 
@@ -847,31 +939,6 @@ class PackagingKartonController extends Controller
         ) {
             $existingSample =
                 $existingSamples[$index] ?? [];
-
-            $sampleFoto =
-                $existingSample['foto'] ?? null;
-
-            $uploadedFoto =
-                $request->file(
-                    "samples.{$index}.foto"
-                );
-
-            if ($uploadedFoto) {
-                if (
-                    $sampleFoto
-                    && Storage::disk('public')
-                        ->exists($sampleFoto)
-                ) {
-                    Storage::disk('public')
-                        ->delete($sampleFoto);
-                }
-
-                $sampleFoto =
-                    $uploadedFoto->store(
-                        'packaging-karton/samples',
-                        'public'
-                    );
-            }
 
             $sample = array_merge(
                 $existingSample,
@@ -890,22 +957,11 @@ class PackagingKartonController extends Controller
 
                     'bct' =>
                         $submittedSample['bct']
-                        ?? null,
-
-                    'scan_barcode' =>
-                        $submittedSample[
-                            'scan_barcode'
-                        ] ?? null,
+                        ?? ($existingSample['bct'] ?? null),
 
                     'no_batch_lot' =>
-                        $submittedSample[
-                            'no_batch_lot'
-                        ] ?? null,
-
-                    'no_barcode' =>
-                        $submittedSample[
-                            'no_barcode'
-                        ] ?? null,
+                        $submittedSample['no_batch_lot']
+                        ?? ($existingSample['no_batch_lot'] ?? null),
 
                     'design' =>
                         $submittedSample['design']
@@ -919,25 +975,43 @@ class PackagingKartonController extends Controller
                         $submittedSample['tulisan']
                         ?? null,
 
-                    'foto' =>
-                        $sampleFoto,
-
                     'berat' =>
                         $submittedSample['berat']
-                        ?? null,
+                        ?? ($existingSample['berat'] ?? null),
 
                     'hasil_berat' =>
-                        $submittedSample[
-                            'hasil_berat'
-                        ] ?? null,
+                        $submittedSample['hasil_berat']
+                        ?? ($existingSample['hasil_berat'] ?? null),
                 ]
+            );
+
+            unset(
+                $sample['foto']
             );
 
             if ($index === 0) {
                 $sample['gramasi'] =
                     $gramasi;
+                if ($gramasiTipe !== null) {
+                    $sample['gramasi_tipe'] =
+                        $gramasiTipe;
+                }
+                if ($gramasiLayers !== null) {
+                    $sample['gramasi_layers'] =
+                        array_values($gramasiLayers);
+                }
+                $sample['scan_barcode'] =
+                    $scanBarcode;
+                $sample['no_barcode'] =
+                    $noBarcode;
             } else {
-                unset($sample['gramasi']);
+                unset(
+                    $sample['gramasi'],
+                    $sample['gramasi_tipe'],
+                    $sample['gramasi_layers'],
+                    $sample['scan_barcode'],
+                    $sample['no_barcode']
+                );
             }
 
             $mergedSamples[] = $sample;

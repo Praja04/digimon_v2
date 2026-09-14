@@ -32,7 +32,7 @@
             action="{{ route('rmpm.pm.incoming.create') }}"
             class="row g-3 mb-4"
         >
-            <div class="col-xl-5 col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <label class="form-label">
                     Pencarian
                 </label>
@@ -72,7 +72,7 @@
                 </select>
             </div>
 
-            <div class="col-xl-2 col-md-6">
+            <div class="col-xl-3 col-md-6">
                 <label class="form-label">
                     Status
                 </label>
@@ -82,27 +82,73 @@
                     class="form-select"
                 >
                     <option value="">
-                        Semua status
+                        Semua Status
                     </option>
 
-                    <option
-                        value="draft"
-                        @selected(request('status_filter') === 'draft')
-                    >
-                        Draft
-                    </option>
-
-                    @foreach ($samplingStatuses as $status)
+                    <optgroup label="Status Pengerjaan Sampling">
                         <option
-                            value="{{ $status->id }}"
+                            value="belum_sampling"
                             @selected(
-                                (string) request('status_filter')
-                                === (string) $status->id
+                                request('status_filter') === 'belum_sampling'
+                                || (string) request('status_filter') === '3'
                             )
                         >
-                            {{ $status->nama }}
+                            Belum Sampling
                         </option>
-                    @endforeach
+
+                        <option
+                            value="draft"
+                            @selected(request('status_filter') === 'draft')
+                        >
+                            Draft / Simpan Sementara
+                        </option>
+
+                        <option
+                            value="sudah_sampling"
+                            @selected(
+                                request('status_filter') === 'sudah_sampling'
+                                || (string) request('status_filter') === '4'
+                            )
+                        >
+                            Sudah Sampling
+                        </option>
+                    </optgroup>
+
+                    <optgroup label="Hasil Disposisi / Rekomendasi">
+                        <option
+                            value="Diterima"
+                            @selected(
+                                request('status_filter') === 'Diterima'
+                                || request('status_filter') === 'Release'
+                            )
+                        >
+                            Diterima (Release)
+                        </option>
+                        <option
+                            value="Diterima Bersyarat"
+                            @selected(
+                                request('status_filter') === 'Diterima Bersyarat'
+                                || request('status_filter') === 'Release Bersyarat'
+                            )
+                        >
+                            Diterima Bersyarat
+                        </option>
+                        <option
+                            value="Ditolak"
+                            @selected(
+                                request('status_filter') === 'Ditolak'
+                                || request('status_filter') === 'Reject'
+                            )
+                        >
+                            Ditolak (Reject)
+                        </option>
+                        <option
+                            value="WIP"
+                            @selected(request('status_filter') === 'WIP')
+                        >
+                            WIP
+                        </option>
+                    </optgroup>
                 </select>
             </div>
 
@@ -138,7 +184,22 @@
 
             <span>
                 <i class="process-dot process-dot-success"></i>
-                Sudah Sampling
+                Diterima (Release)
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-orange"></i>
+                Diterima Bersyarat
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-danger"></i>
+                Ditolak (Reject)
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-secondary"></i>
+                WIP
             </span>
         </div>
 
@@ -189,10 +250,15 @@
                             $isDraft =
                                 $processStatus === 'draft';
 
+                            $rekomendasi = trim((string) ($incoming->rekomendasi ?? ''));
+                            $rekomendasiLower = strtolower($rekomendasi);
+
                             $isFinished =
                                 ! $isDraft
                                 && (
-                                    str_contains(
+                                    $processStatus === 'final'
+                                    || $rekomendasi !== ''
+                                    || str_contains(
                                         $databaseStatusLower,
                                         'sudah'
                                     )
@@ -204,23 +270,34 @@
 
                             if ($isDraft) {
                                 $statusName = 'Draft';
-
-                                $statusClass =
-                                    'bg-warning text-dark';
-
+                                $statusClass = 'bg-warning text-dark';
+                                $statusIcon = 'mdi-content-save-edit-outline';
                             } elseif ($isFinished) {
-                                $statusName =
-                                    $databaseStatusName;
-
-                                $statusClass =
-                                    'bg-success';
-
+                                if ($rekomendasiLower === 'ditolak' || $rekomendasiLower === 'reject') {
+                                    $statusName = $rekomendasi ?: 'Ditolak';
+                                    $statusClass = 'bg-danger';
+                                    $statusIcon = 'mdi-close-circle-outline';
+                                } elseif ($rekomendasiLower === 'diterima bersyarat' || $rekomendasiLower === 'release bersyarat') {
+                                    $statusName = $rekomendasi ?: 'Diterima Bersyarat';
+                                    $statusClass = 'bg-orange text-white';
+                                    $statusIcon = 'mdi-alert-circle-outline';
+                                } elseif ($rekomendasiLower === 'diterima' || $rekomendasiLower === 'release') {
+                                    $statusName = $rekomendasi ?: 'Diterima';
+                                    $statusClass = 'bg-success';
+                                    $statusIcon = 'mdi-check-circle-outline';
+                                } elseif ($rekomendasiLower === 'wip') {
+                                    $statusName = 'WIP';
+                                    $statusClass = 'bg-secondary';
+                                    $statusIcon = 'mdi-progress-clock';
+                                } else {
+                                    $statusName = $rekomendasi ?: ($databaseStatusName ?: 'Sudah Sampling');
+                                    $statusClass = 'bg-success';
+                                    $statusIcon = 'mdi-check-circle-outline';
+                                }
                             } else {
-                                $statusName =
-                                    $databaseStatusName;
-
-                                $statusClass =
-                                    'bg-info';
+                                $statusName = $databaseStatusName ?: 'Belum Sampling';
+                                $statusClass = 'bg-info';
+                                $statusIcon = 'mdi-clock-outline';
                             }
 
                             $jenisName = strtolower(
@@ -425,14 +502,7 @@
 
                             <td class="text-center">
                                 <span class="badge {{ $statusClass }}">
-                                    @if ($isDraft)
-                                        <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                                    @elseif ($isFinished)
-                                        <i class="mdi mdi-check-circle-outline me-1"></i>
-                                    @else
-                                        <i class="mdi mdi-clock-outline me-1"></i>
-                                    @endif
-
+                                    <i class="mdi {{ $statusIcon }} me-1"></i>
                                     {{ $statusName }}
                                 </span>
                             </td>
@@ -523,9 +593,12 @@
             </table>
         </div>
 
-        <div class="mt-3 incoming-pagination">
-            {{ $incomings->links('pagination::bootstrap-5') }}
-        </div>
+        @if ($incomings->hasPages())
+            <div class="d-flex justify-content-end mt-3">
+                {{ $incomings->links() }}
+            </div>
+        @endif
+
     </div>
 </div>
 
@@ -605,7 +678,24 @@
     background: #f59e0b;
 }
 
+.process-dot-orange {
+    background: #ea580c;
+}
+
+.bg-orange {
+    background-color: #ea580c !important;
+    color: #ffffff !important;
+}
+
 .process-dot-success {
     background: #22c55e;
+}
+
+.process-dot-danger {
+    background: #ef4444;
+}
+
+.process-dot-secondary {
+    background: #64748b;
 }
 </style>
