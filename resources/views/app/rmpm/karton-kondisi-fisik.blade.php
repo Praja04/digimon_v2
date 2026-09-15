@@ -440,39 +440,8 @@
                             <span class="badge bg-primary" id="gramasiLayersBadge"></span>
                         </div>
 
-                        <div id="gramasiLayersContainer" class="d-flex flex-column gap-2 mb-3">
+                        <div id="gramasiLayersContainer" class="d-flex flex-column gap-2">
                             <!-- Dynamic Layer Inputs (K, M, K or K, M, M, M, K) -->
-                        </div>
-
-                        <div class="pt-3 border-top">
-                            <div class="row align-items-center g-2">
-                                <div class="col-sm-4">
-                                    <label
-                                        for="gramasi"
-                                        class="form-label fw-bold mb-0 text-dark"
-                                    >
-                                        Total Gramasi
-                                    </label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <div class="input-group">
-                                        <input
-                                            type="number"
-                                            name="gramasi"
-                                            id="gramasi"
-                                            class="form-control fw-bold bg-white"
-                                            step="0.01"
-                                            min="0"
-                                            value="{{ $gramasiSpb }}"
-                                            placeholder="Total gramasi"
-                                        >
-                                        <span class="input-group-text">gsm</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                Total terhitung otomatis dari penjumlahan seluruh layer di atas.
-                            </small>
                         </div>
                     </div>
 

@@ -937,6 +937,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function inputHtml(index, field, value) {
+        const isBerat = field === 'berat';
+        const placeholder = isBerat ? '0.00' : '';
+        const onInputAttr = isBerat
+            ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"`
+            : '';
+
         return `
             <input
                 type="number"
@@ -945,6 +951,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 name="samples[${index}][${field}]"
                 value="${esc(value)}"
                 class="form-control form-control-sm"
+                placeholder="${placeholder}"
+                ${onInputAttr}
             >
         `;
     }

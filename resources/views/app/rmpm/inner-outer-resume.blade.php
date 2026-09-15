@@ -244,7 +244,7 @@
                                 @forelse ($samples as $index => $sample)
                                     <tr>
                                         <td class="fw-bold">{{ $index + 1 }}</td>
-                                        <td>{{ $sample['berat_gross'] ?? '-' }}</td>
+                                        <td>{{ is_numeric($sample['berat_gross'] ?? null) ? number_format((float) $sample['berat_gross'], 1, '.', '') : ($sample['berat_gross'] ?? '-') }}</td>
                                         <td>{{ $sample['inside_core'] ?? '-' }}</td>
                                         <td>{{ $sample['lebar'] ?? '-' }}</td>
                                         <td>{{ $sample['pitch'] ?? '-' }}</td>
