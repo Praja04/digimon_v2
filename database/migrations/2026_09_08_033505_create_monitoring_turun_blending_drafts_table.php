@@ -29,7 +29,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('monitoring_turun_blending_id')
+            $table->foreign('monitoring_turun_blending_id', 'fk_mtb_draft_blending')
                 ->references('id')
                 ->on('monitoring_turun_blendings')
                 ->cascadeOnDelete();
