@@ -1293,16 +1293,26 @@
             index,
             field,
             value,
-            step = '0.01'
+            step = '0.01',
+            placeholder = ''
         ) {
+            const isGross = field === 'berat_gross';
+            const actualStep = isGross ? '0.1' : step;
+            const actualPlaceholder = placeholder || (isGross ? '0.0' : '');
+            const onInputAttr = isGross
+                ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 1){ this.value = parts[0] + '.' + parts[1].slice(0, 1); } }"`
+                : '';
+
             return `
                 <input
                     type="number"
                     min="0"
-                    step="${step}"
+                    step="${actualStep}"
                     name="samples[${index}][${field}]"
                     value="${escapeHtml(value)}"
                     class="form-control form-control-sm"
+                    placeholder="${actualPlaceholder}"
+                    ${onInputAttr}
                 >
             `;
         }

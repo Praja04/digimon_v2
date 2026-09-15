@@ -220,7 +220,7 @@
                                         <td>{{ $sample['lebar'] ?? '-' }}</td>
                                         <td>{{ $sample['thickness_1'] ?? $sample['thickness'] ?? '-' }}</td>
                                         <td>{{ $sample['thickness_2'] ?? '-' }}</td>
-                                        <td>{{ $sample['berat'] ?? '-' }}</td>
+                                        <td>{{ is_numeric($sample['berat'] ?? null) ? number_format((float) $sample['berat'], 2, '.', '') : ($sample['berat'] ?? '-') }}</td>
                                         <td>{{ $sample['side_seal_1'] ?? '-' }}</td>
                                         <td>{{ $sample['side_seal_2'] ?? '-' }}</td>
                                         <td>{{ $sample['bottom_seal'] ?? '-' }}</td>

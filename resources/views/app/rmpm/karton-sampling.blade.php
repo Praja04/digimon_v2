@@ -379,7 +379,6 @@
                                     <th>Lebar (mm)</th>
                                     <th>Tinggi (mm)</th>
                                     <th>BCT (kgf)</th>
-                                    <th>No Batch/Lot</th>
                                     <th class="text-center" style="min-width: 130px;">Design</th>
                                     <th class="text-center" style="min-width: 130px;">Warna</th>
                                     <th class="text-center" style="min-width: 130px;">Tulisan</th>
@@ -444,39 +443,8 @@
                             <span class="badge bg-primary" id="gramasiLayersBadge"></span>
                         </div>
 
-                        <div id="gramasiLayersContainer" class="d-flex flex-column gap-2 mb-3">
+                        <div id="gramasiLayersContainer" class="d-flex flex-column gap-2">
                             <!-- Dynamic Layer Inputs (K, M, K or K, M, M, M, K) -->
-                        </div>
-
-                        <div class="pt-3 border-top">
-                            <div class="row align-items-center g-2">
-                                <div class="col-sm-4">
-                                    <label
-                                        for="gramasi"
-                                        class="form-label fw-bold mb-0 text-dark"
-                                    >
-                                        Total Gramasi
-                                    </label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <div class="input-group">
-                                        <input
-                                            type="number"
-                                            name="gramasi"
-                                            id="gramasi"
-                                            class="form-control fw-bold bg-white"
-                                            step="0.01"
-                                            min="0"
-                                            value="{{ $gramasiSpb }}"
-                                            placeholder="Total gramasi"
-                                        >
-                                        <span class="input-group-text">gsm</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                Total terhitung otomatis dari penjumlahan seluruh layer di atas.
-                            </small>
                         </div>
                     </div>
 
@@ -1544,18 +1512,6 @@ document.addEventListener(
                                 >
                             </td>
 
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="numeric"
-                                    name="samples[${index}][no_batch_lot]"
-                                    value="${escapeHtml(sample.no_batch_lot)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="No batch/lot"
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                >
-                            </td>
-
                             <td class="text-center">
                                 ${radioHtml(`samples[${index}][design]`, sample.design)}
                             </td>
@@ -1576,7 +1532,7 @@ document.addEventListener(
                                     value="${escapeHtml(sample.berat)}"
                                     class="form-control form-control-sm"
                                     placeholder="0.00"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
+                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1'); if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"
                                 >
                             </td>
 

@@ -990,8 +990,18 @@ class PackagingKartonController extends Controller
             );
 
             if ($index === 0) {
+                $numericLayers = is_array($gramasiLayers)
+                    ? array_filter($gramasiLayers, fn ($val) => $val !== null && $val !== '' && is_numeric($val))
+                    : [];
+
+                $calculatedGramasi = count($numericLayers) > 0
+                    ? array_sum(array_map('floatval', $numericLayers))
+                    : null;
+
                 $sample['gramasi'] =
-                    $gramasi;
+                    $gramasi
+                    ?? $calculatedGramasi
+                    ?? ($existingSample['gramasi'] ?? null);
                 if ($gramasiTipe !== null) {
                     $sample['gramasi_tipe'] =
                         $gramasiTipe;
