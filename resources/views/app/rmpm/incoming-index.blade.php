@@ -224,20 +224,36 @@
                                     <div class="col-xl-3 col-md-6">
                                         <label for="jam_kedatangan" class="form-label">
                                             Jam Kedatangan
+                                            <span class="text-danger">*</span>
                                         </label>
 
-                                        <input type="time" name="jam_kedatangan" id="jam_kedatangan" class="form-control"
-                                            value="{{ old('jam_kedatangan', now()->format('H:i')) }}">
+                                        <input type="time" name="jam_kedatangan" id="jam_kedatangan"
+                                            class="form-control @error('jam_kedatangan') is-invalid @enderror"
+                                            value="{{ old('jam_kedatangan', now()->format('H:i')) }}" required>
+
+                                        @error('jam_kedatangan')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
                                     </div>
 
                                     <div class="col-xl-3 col-md-6">
                                         <label for="no_mobil" class="form-label">
                                             Nomor Mobil
+                                            <span class="text-danger">*</span>
                                         </label>
 
-                                        <input type="text" name="no_mobil" id="no_mobil" class="form-control"
+                                        <input type="text" name="no_mobil" id="no_mobil"
+                                            class="form-control @error('no_mobil') is-invalid @enderror"
                                             value="{{ old('no_mobil') }}" placeholder="Contoh: B 9697 FCI"
-                                            maxlength="100">
+                                            maxlength="100" required>
+
+                                        @error('no_mobil')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
                                     </div>
 
                                     <div class="col-12 mt-2">

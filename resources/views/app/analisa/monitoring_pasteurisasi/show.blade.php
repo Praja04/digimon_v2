@@ -578,13 +578,29 @@
                     return '';
                 }
 
-                let stringValue = String(value);
+                let stringValue = String(value).trim();
 
                 if (forDatabase) {
                     return stringValue.replace(/\./g, '').replace(',', '.');
-                } else {
-                    return stringValue.replace(/\./g, ',');
                 }
+
+                // Draft raw seperti 0,8 tetap dipertahankan.
+                // Final DB seperti 0.7000 / 1.0000 ditampilkan menjadi 0,7 / 1.
+                if (stringValue.includes(',')) {
+                    return stringValue;
+                }
+
+                if (/^-?\d+(?:\.\d+)?$/.test(stringValue)) {
+                    if (stringValue.includes('.')) {
+                        stringValue = stringValue
+                            .replace(/0+$/, '')
+                            .replace(/\.$/, '');
+                    }
+
+                    return stringValue.replace('.', ',');
+                }
+
+                return stringValue;
             }
 
             function toggleAdjustmentFields(status, showOnly = false) {
@@ -655,12 +671,21 @@
 
                         if (response.status === 'Adjustment') {
                             $('.adjustment-qty-wrapper').removeClass('d-none');
-                            $('input[name="adjustment_qty_air"]').val(response
-                                .adjustment_qty_air || '');
-                            $('input[name="adjustment_qty_gula"]').val(response
-                                .adjustment_qty_gula || '');
-                            $('input[name="adjustment_qty_garam"]').val(response
-                                .adjustment_qty_garam || '');
+                            $('input[name="adjustment_qty_air"]').val(
+                                response.adjustment_qty_air !== null && response.adjustment_qty_air !== ''
+                                    ? formatDecimal(response.adjustment_qty_air)
+                                    : ''
+                            );
+                            $('input[name="adjustment_qty_gula"]').val(
+                                response.adjustment_qty_gula !== null && response.adjustment_qty_gula !== ''
+                                    ? formatDecimal(response.adjustment_qty_gula)
+                                    : ''
+                            );
+                            $('input[name="adjustment_qty_garam"]').val(
+                                response.adjustment_qty_garam !== null && response.adjustment_qty_garam !== ''
+                                    ? formatDecimal(response.adjustment_qty_garam)
+                                    : ''
+                            );
 
                             $('.adjustment-qty').prop('required', true);
                         } else {
@@ -711,17 +736,17 @@
                         $('#detail_revisi').text(response.revisi || '-');
 
                         // Parameter Analisa
-                        $('#detail_brix').text(response.brix || '-');
-                        $('#detail_nacl').text(response.nacl || '-');
-                        $('#detail_bj').text(response.bj || '-');
-                        $('#detail_visco').text(response.visco || '-');
-                        $('#detail_aw').text(response.aw || '-');
-                        $('#detail_ph').text(response.ph || '-');
+                        $('#detail_brix').text(response.brix !== null && response.brix !== '' ? formatDecimal(response.brix) : '-');
+                        $('#detail_nacl').text(response.nacl !== null && response.nacl !== '' ? formatDecimal(response.nacl) : '-');
+                        $('#detail_bj').text(response.bj !== null && response.bj !== '' ? formatDecimal(response.bj) : '-');
+                        $('#detail_visco').text(response.visco !== null && response.visco !== '' ? formatDecimal(response.visco) : '-');
+                        $('#detail_aw').text(response.aw !== null && response.aw !== '' ? formatDecimal(response.aw) : '-');
+                        $('#detail_ph').text(response.ph !== null && response.ph !== '' ? formatDecimal(response.ph) : '-');
 
                         // Parameter Fisik
-                        $('#detail_buih').text(response.buih || '-');
+                        $('#detail_buih').text(response.buih !== null && response.buih !== '' ? formatDecimal(response.buih) : '-');
                         $('#detail_organo').text(response.organo || '-');
-                        $('#detail_endapan').text(response.endapan || '-');
+                        $('#detail_endapan').text(response.endapan !== null && response.endapan !== '' ? formatDecimal(response.endapan) : '-');
                         $('#detail_aroma').text(response.aroma || '-');
 
                         // Status & Disposisi
@@ -738,7 +763,7 @@
                             remarkText = response.disposition_remark;
                         } else if (response.disposition == 'Adjustment') {
                             remarkText =
-                                `Adjustment:\n• Air: ${response.adjustment_qty_air || 0} Liter\n• Garam: ${response.adjustment_qty_garam || 0} Kg\n• Gula: ${response.adjustment_qty_gula || 0} Kg`;
+                                `Adjustment:\n• Air: ${formatDecimal(response.adjustment_qty_air ?? 0)} Liter\n• Garam: ${formatDecimal(response.adjustment_qty_garam ?? 0)} Kg\n• Gula: ${formatDecimal(response.adjustment_qty_gula ?? 0)} Kg`;
                         } else if (response.is_adjustment == true) {
                             remarkText = 'Adjustment';
                         }

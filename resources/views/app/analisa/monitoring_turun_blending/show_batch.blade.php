@@ -140,27 +140,36 @@
                             <div class="card-body">
                                 <form id="form">
                                     <div class="row g-3">
+
+                                        @if ($draft)
+                                            <div class="col-12">
+                                                <div class="alert alert-warning mb-0">
+                                                    <i class="ri-draft-line me-1"></i>
+                                                    Data sementara ditemukan dan sudah dimuat kembali.
+                                                </div>
+                                            </div>
+                                        @endif
                                         <div class="col-lg-6">
                                             <input type="hidden" name="id" id="id"
                                                 value="{{ $blending->id }}">
                                             <label class="form-label">BRIX <span style="color: red">*</span></label>
                                             <input type="text" name="brix" id="brix"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->brix ?? '') }}">
+                                                value="{{ str_replace('.', ',', $draft->brix ?? $blending->brix ?? '') }}">
                                             <small class="text-danger errorBrix"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Visco <span style="color: red">*</span></label>
                                             <input type="text" name="visco" id="visco"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->visco ?? '') }}">
+                                                value="{{ str_replace('.', ',', $draft->visco ?? $blending->visco ?? '') }}">
                                             <small class="text-danger errorVisco"></small>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label">Aw <span style="color: red">*</span></label>
                                             <input type="text" name="aw" id="aw"
                                                 class="form-control comma-input" placeholder="Contoh: 0,00"
-                                                value="{{ str_replace('.', ',', $blending->aw ?? '') }}">
+                                                value="{{ str_replace('.', ',', $draft->aw ?? $blending->aw ?? '') }}">
                                             <small class="text-danger errorAw"></small>
                                         </div>
                                         <div class="col-lg-6">
@@ -168,14 +177,14 @@
                                             <select name="status_disposition" id="status_disposition"
                                                 class="form-control disposition-select">
                                                 <option value="">-- Pilih Status --</option>
-                                                <option value="OK" {{ $blending->status == 'OK' ? 'selected' : '' }}>
+                                                <option value="OK" {{ ($draft->status_disposition ?? $blending->status) == 'OK' ? 'selected' : '' }}>
                                                     OK
                                                 </option>
                                                 <option value="NOT OK"
-                                                    {{ $blending->status == 'NOT OK' ? 'selected' : '' }}>NOT
+                                                    {{ ($draft->status_disposition ?? $blending->status) == 'NOT OK' ? 'selected' : '' }}>NOT
                                                     OK</option>
                                                 <option value="Adjustment"
-                                                    {{ $blending->status == 'Adjustment' ? 'selected' : '' }}>
+                                                    {{ ($draft->status_disposition ?? $blending->status) == 'Adjustment' ? 'selected' : '' }}>
                                                     Adjustment</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
@@ -183,29 +192,29 @@
                                         @if (auth()->user()->role == 'Foreman')
                                             <div class="col-lg-12">
                                                 <label class="form-label">Disposition</label>
-                                                <select name="disposition" class="form-control disposition-select">
+                                                <select name="disposition" id="disposition" class="form-control disposition-select">
                                                     <option value="">-- Pilih Disposition --</option>
                                                     <option value="Release"
-                                                        {{ $blending->disposition == 'Release' ? 'selected' : '' }}>Release
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Release' ? 'selected' : '' }}>Release
                                                     </option>
                                                     <option value="Release Bersyarat"
-                                                        {{ $blending->disposition == 'Release Bersyarat' ? 'selected' : '' }}>
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Release Bersyarat' ? 'selected' : '' }}>
                                                         Release
                                                         Bersyarat</option>
                                                     <option value="Resampling"
-                                                        {{ $blending->disposition == 'Resampling' ? 'selected' : '' }}>
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Resampling' ? 'selected' : '' }}>
                                                         Resampling</option>
                                                     <option value="Reject"
-                                                        {{ $blending->disposition == 'Reject' ? 'selected' : '' }}>Reject
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Reject' ? 'selected' : '' }}>Reject
                                                     </option>
                                                     <option value="Repro"
-                                                        {{ $blending->disposition == 'Repro' ? 'selected' : '' }}>Repro
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Repro' ? 'selected' : '' }}>Repro
                                                     </option>
                                                     <option value="Jalan Bareng"
-                                                        {{ $blending->disposition == 'Jalan Bareng' ? 'selected' : '' }}>
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Jalan Bareng' ? 'selected' : '' }}>
                                                         Jalan Bareng</option>
                                                     <option value="Leveling"
-                                                        {{ $blending->disposition == 'Leveling' ? 'selected' : '' }}>
+                                                        {{ ($draft->disposition ?? $blending->disposition) == 'Leveling' ? 'selected' : '' }}>
                                                         Leveling</option>
                                                 </select>
                                             </div>
@@ -213,7 +222,7 @@
                                         <div class="col-lg-12">
                                             <label class="form-label">Catatan</label>
                                             <textarea name="disposition_remark" id="disposition_remark" class="form-control" rows="2"
-                                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $blending->disposition_remark ?? '' }}</textarea>
+                                                placeholder="Isi catatan jika diperlukan..." oninput="this.value = this.value.toUpperCase();">{{ $draft->disposition_remark ?? $blending->disposition_remark ?? '' }}</textarea>
                                         </div>
 
                                         <div class="mb-3 d-none adjustment-qty-wrapper">
@@ -223,24 +232,43 @@
                                                     <label class="form-label">Air (Liter)</label>
                                                     <input type="text" name="adjustment_qty_air"
                                                         class="form-control adjustment-qty comma-input" placeholder="0,00"
-                                                        value="{{ str_replace('.', ',', $blending->adjustment_qty_air ?? '') }}">
+                                                        value="{{ str_replace('.', ',', $draft->adjustment_qty_air ?? $blending->adjustment_qty_air ?? '') }}">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Gula (Kg)</label>
                                                     <input type="text" name="adjustment_qty_gula"
                                                         class="form-control adjustment-qty comma-input" placeholder="0,00"
-                                                        value="{{ str_replace('.', ',', $blending->adjustment_qty_gula ?? '') }}">
+                                                        value="{{ str_replace('.', ',', $draft->adjustment_qty_gula ?? $blending->adjustment_qty_gula ?? '') }}">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="form-label">Garam (Kg)</label>
                                                     <input type="text" name="adjustment_qty_garam"
                                                         class="form-control adjustment-qty comma-input" placeholder="0,00"
-                                                        value="{{ str_replace('.', ',', $blending->adjustment_qty_garam ?? '') }}">
+                                                        value="{{ str_replace('.', ',', $draft->adjustment_qty_garam ?? $blending->adjustment_qty_garam ?? '') }}">
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="d-flex justify-content-end">
-                                            <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            @if (in_array(
+                                                auth()->user()->role,
+                                                ['Analis Kimia', 'Foreman'],
+                                                true
+                                            ))
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-warning"
+                                                    id="saveDraft">
+                                                    <i class="ri-save-line me-1"></i>
+                                                    Simpan Sementara
+                                                </button>
+                                            @endif
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-primary"
+                                                id="save">
+                                                Simpan Final
+                                            </button>
                                         </div>
                                     </div>
                                 </form>
@@ -304,6 +332,96 @@
                 toggleAdjustmentFields(selected);
             });
 
+            $('#saveDraft').on('click', function() {
+                $('.form-control').removeClass('is-invalid');
+                $('.text-danger').html('');
+
+                $.ajax({
+                    data: $('#form').serialize(),
+                    url: "{{ route('analisa.monitoring-turun-blending.draft.store') }}",
+                    type: "POST",
+                    dataType: "json",
+
+                    beforeSend: function() {
+                        $('#saveDraft')
+                            .prop('disabled', true)
+                            .html(
+                                '<i class="mdi mdi-loading mdi-spin me-2"></i> Menyimpan...'
+                            );
+
+                        $('#save').prop('disabled', true);
+                    },
+
+                    complete: function() {
+                        $('#saveDraft')
+                            .prop('disabled', false)
+                            .html(
+                                '<i class="ri-save-line me-1"></i> Simpan Sementara'
+                            );
+
+                        $('#save').prop('disabled', false);
+                    },
+
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Tersimpan Sementara',
+                            text: response.message
+                        });
+                    },
+
+                    error: function(xhr) {
+                        const response = xhr.responseJSON || {};
+
+                        if (xhr.status === 422 && response.errors) {
+                            const errors = response.errors;
+
+                            if (errors.brix) {
+                                $('#brix').addClass('is-invalid');
+                                $('.errorBrix').html(errors.brix.join('<br>'));
+                            }
+
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
+                            }
+
+                            if (errors.aw) {
+                                $('#aw').addClass('is-invalid');
+                                $('.errorAw').html(errors.aw.join('<br>'));
+                            }
+
+                            if (errors.status_disposition) {
+                                $('#status_disposition').addClass('is-invalid');
+                                $('.errorStatusDisposition').html(
+                                    errors.status_disposition.join('<br>')
+                                );
+                            }
+
+                            if (errors.disposition) {
+                                $('#disposition').addClass('is-invalid');
+                                $('.errorDisposition').html(
+                                    errors.disposition.join('<br>')
+                                );
+                            }
+
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: xhr.status === 403 ? 'error' : 'warning',
+                            title:
+                                xhr.status === 403
+                                    ? 'Akses Ditolak'
+                                    : 'Tidak Dapat Disimpan',
+                            text:
+                                response.message ||
+                                'Data sementara gagal disimpan.'
+                        });
+                    }
+                });
+            });
+
             $('#form').submit(function(e) {
                 e.preventDefault();
 
@@ -321,7 +439,7 @@
                         $('.text-danger').html('');
                     },
                     complete: function() {
-                        $('#save').prop('disabled', false).text('Simpan');
+                        $('#save').prop('disabled', false).text('Simpan Final');
                     },
                     success: function(response) {
                         Swal.fire({

@@ -173,20 +173,42 @@ class Pelarutan1Controller extends Controller
     */
     public function saveDraft(Request $request)
     {
-        if (auth()->user()->role !== 'Analis Kimia') {
+        $userRole = auth()->user()->role;
+
+        if (!in_array(
+            $userRole,
+            ['Analis Kimia', 'Foreman'],
+            true
+        )) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Hanya Analis Kimia yang dapat menyimpan sementara.'
+                'message' =>
+                    'Simpan sementara hanya dapat dilakukan oleh Analis Kimia atau Foreman.'
             ], 403);
         }
 
-        $data = $request->all();
+        /*
+        |--------------------------------------------------------------------------
+        | DATA RAW UNTUK DRAFT
+        |--------------------------------------------------------------------------
+        |
+        | Data draft disimpan persis seperti input user.
+        | Contoh: input 0,8 akan tetap disimpan sebagai 0,8.
+        |
+        */
+        $rawData = $request->all();
 
         /*
         |--------------------------------------------------------------------------
-        | NORMALISASI DESIMAL
+        | DATA KHUSUS VALIDASI
         |--------------------------------------------------------------------------
+        |
+        | Laravel numeric membutuhkan format titik. Karena itu dibuat salinan
+        | khusus validasi. Data asli pada $rawData tidak diubah.
+        |
         */
+        $validationData = $rawData;
+
         foreach ([
             'brix',
             'nacl',
@@ -194,17 +216,17 @@ class Pelarutan1Controller extends Controller
             'adjustment_qty_gula_kelapa'
         ] as $field) {
             if (
-                isset($data[$field]) &&
-                is_string($data[$field]) &&
-                $data[$field] !== ''
+                isset($validationData[$field]) &&
+                is_string($validationData[$field]) &&
+                $validationData[$field] !== ''
             ) {
                 $cleanedValue = str_replace(
                     ' ',
                     '',
-                    $data[$field]
+                    $validationData[$field]
                 );
 
-                $data[$field] = str_replace(
+                $validationData[$field] = str_replace(
                     ',',
                     '.',
                     $cleanedValue
@@ -212,7 +234,7 @@ class Pelarutan1Controller extends Controller
             }
         }
 
-        $validator = Validator::make($data, [
+        $validator = Validator::make($validationData, [
             'id' => [
                 'required',
                 'integer',
@@ -242,6 +264,11 @@ class Pelarutan1Controller extends Controller
                 'nullable'
             ],
 
+            'disposition' => [
+                'nullable',
+                'in:Release,Release Bersyarat,Resampling,Reject,Adjustment,Repro'
+            ],
+
             'disposition_remark' => [
                 'nullable',
                 'string',
@@ -268,25 +295,50 @@ class Pelarutan1Controller extends Controller
         }
 
         $pelarutan_1 = Pelarutan1::findOrFail(
-            $data['id']
+            $rawData['id']
         );
 
         /*
         |--------------------------------------------------------------------------
-        | JIKA SUDAH FINAL, JANGAN BUAT DRAFT BARU
+        | ATURAN DRAFT BERDASARKAN ROLE
         |--------------------------------------------------------------------------
+        |
+        | Analis Kimia:
+        | - draft hanya sebelum final Analis.
+        |
+        | Foreman:
+        | - draft hanya setelah final Analis.
+        |
         */
-        if (!is_null($pelarutan_1->status)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data ini sudah disimpan final.'
-            ], 409);
+        if ($userRole === 'Analis Kimia') {
+
+            if (!is_null($pelarutan_1->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Analis Kimia sudah disimpan final.'
+                ], 409);
+            }
+
+        } elseif ($userRole === 'Foreman') {
+
+            if (is_null($pelarutan_1->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Analis Kimia belum final. Foreman belum dapat menyimpan sementara.'
+                ], 409);
+            }
         }
 
         /*
         |--------------------------------------------------------------------------
         | SATU ID PELARUTAN = SATU DRAFT
         |--------------------------------------------------------------------------
+        |
+        | Nilai numeric draft diambil dari $rawData agar format input user
+        | tetap dipertahankan, misalnya 0,8 tetap menjadi 0,8.
+        |
         */
         $draft = Pelarutan1Draft::updateOrCreate(
             [
@@ -294,25 +346,28 @@ class Pelarutan1Controller extends Controller
             ],
             [
                 'brix' =>
-                    $data['brix'] ?? null,
+                    $rawData['brix'] ?? null,
 
                 'nacl' =>
-                    $data['nacl'] ?? null,
+                    $rawData['nacl'] ?? null,
 
                 'organo' =>
-                    $data['organo'] ?? null,
+                    $rawData['organo'] ?? null,
 
                 'status_disposition' =>
-                    $data['status_disposition'] ?? null,
+                    $rawData['status_disposition'] ?? null,
+
+                'disposition' =>
+                    $rawData['disposition'] ?? null,
 
                 'disposition_remark' =>
-                    $data['disposition_remark'] ?? null,
+                    $rawData['disposition_remark'] ?? null,
 
                 'adjustment_qty_gula_tebu' =>
-                    $data['adjustment_qty_gula_tebu'] ?? null,
+                    $rawData['adjustment_qty_gula_tebu'] ?? null,
 
                 'adjustment_qty_gula_kelapa' =>
-                    $data['adjustment_qty_gula_kelapa'] ?? null,
+                    $rawData['adjustment_qty_gula_kelapa'] ?? null,
 
                 'created_by' =>
                     auth()->id(),
@@ -321,7 +376,10 @@ class Pelarutan1Controller extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Data berhasil disimpan sementara.',
+            'message' =>
+                $userRole === 'Foreman'
+                    ? 'Data Foreman berhasil disimpan sementara.'
+                    : 'Data berhasil disimpan sementara.',
             'data' => $draft,
         ], 200);
     }
@@ -362,6 +420,20 @@ class Pelarutan1Controller extends Controller
             } catch (\Exception $e) {
                 // Ignore
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | DRAFT SEMENTARA
+            |--------------------------------------------------------------------------
+            |
+            | Jika Foreman pernah Simpan Sementara, kirim draft bersama data final
+            | agar modal Kelola Data dapat melanjutkan nilai terakhir.
+            |
+            */
+            $data->draft = Pelarutan1Draft::where(
+                'pelarutan_1_id',
+                $data->id
+            )->first();
 
             return response()->json($data);
 
@@ -736,17 +808,14 @@ class Pelarutan1Controller extends Controller
             | Hanya setelah final + API Production berhasil.
             |
             */
-            if ($userRole === 'Analis Kimia') {
+            $draft =
+                Pelarutan1Draft::where(
+                    'pelarutan_1_id',
+                    $pelarutan_1->id
+                )->first();
 
-                $draft =
-                    Pelarutan1Draft::where(
-                        'pelarutan_1_id',
-                        $pelarutan_1->id
-                    )->first();
-
-                if ($draft) {
-                    $draft->delete();
-                }
+            if ($draft) {
+                $draft->delete();
             }
 
             /*

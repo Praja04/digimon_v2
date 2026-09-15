@@ -1,6 +1,6 @@
 @extends('layouts.component.main')
 
-@section('title', 'Pemeriksaan Berat Karton')
+@section('title', 'Pemeriksaan Kondisi Fisik Karton')
 
 @section('content')
 
@@ -144,11 +144,11 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <div>
                         <h4 class="mb-sm-0">
-                            Pemeriksaan Berat Karton
+                            Pemeriksaan Kondisi Fisik Karton
                         </h4>
 
                         <p class="text-muted mb-0 mt-1">
-                            Pemeriksaan dimensi, BCT, gramasi, barcode, visual, foto, dan berat Karton berdasarkan nomor SPB.
+                            Pemeriksaan dimensi, visual, gramasi, barcode, dan foto Karton berdasarkan nomor SPB.
                         </p>
                     </div>
 
@@ -170,7 +170,7 @@
                             </li>
 
                             <li class="breadcrumb-item active">
-                                Berat
+                                Kondisi Fisik
                             </li>
                         </ol>
                     </div>
@@ -230,16 +230,16 @@
                         </span>
 
                         <h2 class="mb-1">
-                            BERAT KARTON
+                            KONDISI FISIK KARTON
                         </h2>
 
                         <p class="mb-0">
-                            Pemeriksaan lengkap Karton sesuai standar Packaging Online.
+                            Pemeriksaan lengkap kondisi fisik Karton sesuai standar Packaging Online.
                         </p>
                     </div>
 
                     <div class="sampling-header-icon">
-                        <i class="mdi mdi-scale-balance"></i>
+                        <i class="mdi mdi-ruler-square"></i>
                     </div>
                 </div>
 
@@ -378,13 +378,9 @@
                                     <th>Panjang (mm)</th>
                                     <th>Lebar (mm)</th>
                                     <th>Tinggi (mm)</th>
-                                    <th>BCT (kgf)</th>
-                                    <th>No Batch/Lot</th>
                                     <th class="text-center" style="min-width: 130px;">Design</th>
                                     <th class="text-center" style="min-width: 130px;">Warna</th>
                                     <th class="text-center" style="min-width: 130px;">Tulisan</th>
-                                    <th>Berat (gr)</th>
-                                    <th class="text-center" style="min-width: 130px;">Hasil Berat</th>
                                 </tr>
                             </thead>
 
@@ -983,10 +979,10 @@
         align-items: center;
         justify-content: space-between;
         padding: 24px 28px;
-        border-bottom: 4px solid #eab308;
+        border-bottom: 4px solid #65a30d;
         background: linear-gradient(
             135deg,
-            #fefce8,
+            #f7fee7,
             #f8fafc
         );
     }
@@ -994,7 +990,7 @@
     .sampling-label {
         display: block;
         margin-bottom: 5px;
-        color: #a16207;
+        color: #4d7c0f;
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 1px;
@@ -1008,7 +1004,7 @@
         justify-content: center;
         border-radius: 18px;
         background: #ffffff;
-        color: #ca8a04;
+        color: #65a30d;
         font-size: 40px;
     }
 
@@ -1532,30 +1528,6 @@ document.addEventListener(
                                 >
                             </td>
 
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="decimal"
-                                    name="samples[${index}][bct]"
-                                    value="${escapeHtml(sample.bct)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="kgf"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
-                                >
-                            </td>
-
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="numeric"
-                                    name="samples[${index}][no_batch_lot]"
-                                    value="${escapeHtml(sample.no_batch_lot)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="No batch/lot"
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                >
-                            </td>
-
                             <td class="text-center">
                                 ${radioHtml(`samples[${index}][design]`, sample.design)}
                             </td>
@@ -1566,22 +1538,6 @@ document.addEventListener(
 
                             <td class="text-center">
                                 ${radioHtml(`samples[${index}][tulisan]`, sample.tulisan)}
-                            </td>
-
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="decimal"
-                                    name="samples[${index}][berat]"
-                                    value="${escapeHtml(sample.berat)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="0.00"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
-                                >
-                            </td>
-
-                            <td class="text-center">
-                                ${radioHtml(`samples[${index}][hasil_berat]`, sample.hasil_berat)}
                             </td>
                         </tr>
                     `

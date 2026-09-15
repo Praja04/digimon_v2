@@ -8,6 +8,10 @@
         ? array_values($sampling->hasil_sampel)
         : [];
 
+    $samplePertama = $samples[0] ?? [];
+    $barcode = $samplePertama['barcode'] ?? null;
+    $qrCode = $samplePertama['qr_code'] ?? null;
+
     $fotoPengecekan = is_array($sampling->foto_pengecekan)
         ? array_values(array_filter($sampling->foto_pengecekan))
         : [];
@@ -230,7 +234,6 @@
                                     <th>Arah Vertikal</th>
                                     <th>Arah Terbalik</th>
                                     <th>Laminasi</th>
-                                    <th>Barcode</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
@@ -249,7 +252,7 @@
                                         <td>{{ $sample['arah_vertikal'] ?? '-' }}</td>
                                         <td>{{ $sample['arah_terbalik'] ?? '-' }}</td>
 
-                                        @foreach (['laminasi', 'barcode', 'design', 'warna', 'tulisan'] as $field)
+                                        @foreach (['laminasi', 'design', 'warna', 'tulisan'] as $field)
                                             @php
                                                 $value = $sample[$field] ?? null;
                                             @endphp
@@ -268,7 +271,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="13" class="text-center py-4 text-muted">
+                                        <td colspan="12" class="text-center py-4 text-muted">
                                             Belum ada data sampel.
                                         </td>
                                     </tr>
@@ -276,6 +279,29 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title">
+                        <i class="mdi mdi-barcode-scan"></i>
+                        Barcode & QR Code
+                    </div>
+
+                    <div class="conclusion-grid">
+                        <div class="conclusion-item">
+                            <span>Barcode</span>
+                            <strong>{{ $barcode ?: '-' }}</strong>
+                        </div>
+
+                        <div class="conclusion-item">
+                            <span>QR Code</span>
+                            <strong>{{ $qrCode ?: '-' }}</strong>
+                        </div>
+                    </div>
+
+                    <small class="text-muted d-block mt-2">
+                        Pemeriksaan Barcode dan QR Code dilakukan pada 1 sampel.
+                    </small>
                 </div>
 
                 <div class="report-section">

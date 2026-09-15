@@ -335,6 +335,16 @@ Route::middleware(['auth'])->group(function () {
         )->name('rmpm.pm.karton.bct');
 
         Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/berat',
+            [PackagingKartonController::class, 'berat']
+        )->name('rmpm.pm.karton.berat');
+
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/kondisi-fisik',
+            [PackagingKartonController::class, 'kondisiFisik']
+        )->name('rmpm.pm.karton.kondisi-fisik');
+
+        Route::get(
             '/rmpm/pm/karton/{packagingIncoming}/sampling',
             [PackagingKartonController::class, 'sampling']
         )->name('rmpm.pm.karton.sampling');
@@ -661,13 +671,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/monitoring-turun-blending/show/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show'])->name('analisa.monitoring-turun-blending.show');
         Route::post('/analisa/monitoring-turun-blending/update', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'update'])->name('analisa.monitoring-turun-blending.update');
         Route::get('/scan/batch/monitoring-turun-blending/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show_batch'])->name('analisa.monitoring-turun-blending.show_batch');
+        Route::post('/analisa/monitoring-turun-blending/draft',[App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'saveDraft'])->name('analisa.monitoring-turun-blending.draft.store');
 
         // Analisa - Monitoring Pasteurisasi
         Route::get('/analisa/monitoring-pasteurisasi', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'index'])->name('analisa.monitoring-pasteurisasi.index');
         Route::get('/analisa/monitoring-pasteurisasi/edit/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'edit'])->name('analisa.monitoring-pasteurisasi.edit');
         Route::get('/analisa/monitoring-pasteurisasi/show/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show'])->name('analisa.monitoring-pasteurisasi.show');
         Route::post('/analisa/monitoring-pasteurisasi/update', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'update'])->name('analisa.monitoring-pasteurisasi.update');
+         Route::post('/analisa/monitoring-pasteurisasi/draft', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'saveDraft'])->name('analisa.monitoring-pasteurisasi.draft.store');
         Route::get('/scan/batch/monitoring-pasteurisasi/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show_batch'])->name('analisa.monitoring-pasteurisasi.show_batch');
+       
 
         // Analisa - Monitoring Storage Kimia
         Route::get('/analisa/monitoring-storage-kimia', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'index'])->name('analisa.monitoring-storage-kimia.index');
@@ -705,6 +718,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/blending-awal/mikro/get-blending-data', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'getBlendingData'])->name('analisa.blending-awal-mikro.getBlendingData');
         Route::get('/analisa/blending-awal/mikro/edit/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'edit'])->name('analisa.blending-awal-mikro.edit');
         Route::get('/analisa/blending-awal/mikro/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show'])->name('analisa.blending-awal-mikro.show');
+        Route::post('/analisa/blending-awal/mikro/draft',[App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'saveDraft'])->name('analisa.blending-awal-mikro.draft.store');
         Route::post('/analisa/blending-awal/mikro/update', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'update'])->name('analisa.blending-awal-mikro.update');
         Route::get('/scan/batch/blending-awal-mikro/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show_batch'])->name('analisa.blending-awal-mikro.show_batch');
 

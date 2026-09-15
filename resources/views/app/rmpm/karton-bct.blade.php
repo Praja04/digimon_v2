@@ -1,4 +1,4 @@
-﻿@extends('layouts.component.main')
+@extends('layouts.component.main')
 
 @section('title')
     Pemeriksaan BCT
@@ -594,6 +594,30 @@
             state.values[index] = event.target.value;
 
             updateSummary();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            const target = event.target;
+            if (!target || target.tagName !== 'INPUT') return;
+
+            if (event.key === 'Enter' || event.key === 'Tab') {
+                const isBackwards = event.shiftKey;
+                const allInputs = [
+                    document.getElementById('bct4gt1'),
+                    document.getElementById('bct4gt2'),
+                    ...Array.from(document.querySelectorAll('.bct-input'))
+                ].filter(Boolean);
+
+                const currentIndex = allInputs.indexOf(target);
+                if (currentIndex !== -1) {
+                    event.preventDefault();
+                    const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
+                    if (nextIndex >= 0 && nextIndex < allInputs.length) {
+                        allInputs[nextIndex].focus();
+                        allInputs[nextIndex].select();
+                    }
+                }
+            }
         });
 
         document

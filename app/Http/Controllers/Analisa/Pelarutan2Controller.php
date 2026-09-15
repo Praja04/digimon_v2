@@ -163,14 +163,33 @@ class Pelarutan2Controller extends Controller
     */
     public function saveDraft(Request $request)
     {
-        if (auth()->user()->role !== 'Analis Kimia') {
+        $userRole = auth()->user()->role;
+
+        if (!in_array(
+            $userRole,
+            ['Analis Kimia', 'Foreman'],
+            true
+        )) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Hanya Analis Kimia yang dapat menyimpan sementara.'
+                'message' =>
+                    'Simpan sementara hanya dapat dilakukan oleh Analis Kimia atau Foreman.'
             ], 403);
         }
 
-        $data = $request->all();
+        /*
+        |--------------------------------------------------------------------------
+        | DATA RAW
+        |--------------------------------------------------------------------------
+        */
+        $rawData = $request->all();
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATA KHUSUS VALIDASI
+        |--------------------------------------------------------------------------
+        */
+        $validationData = $rawData;
 
         foreach ([
             'brix',
@@ -178,17 +197,17 @@ class Pelarutan2Controller extends Controller
             'visco'
         ] as $field) {
             if (
-                isset($data[$field]) &&
-                is_string($data[$field]) &&
-                $data[$field] !== ''
+                isset($validationData[$field]) &&
+                is_string($validationData[$field]) &&
+                $validationData[$field] !== ''
             ) {
                 $cleanedValue = str_replace(
                     ' ',
                     '',
-                    $data[$field]
+                    $validationData[$field]
                 );
 
-                $data[$field] = str_replace(
+                $validationData[$field] = str_replace(
                     ',',
                     '.',
                     $cleanedValue
@@ -196,7 +215,7 @@ class Pelarutan2Controller extends Controller
             }
         }
 
-        $validator = Validator::make($data, [
+        $validator = Validator::make($validationData, [
             'id' => [
                 'required',
                 'integer',
@@ -233,6 +252,11 @@ class Pelarutan2Controller extends Controller
                 'nullable'
             ],
 
+            'disposition' => [
+                'nullable',
+                'in:Release,Release Bersyarat,Resampling,Reject,Repro'
+            ],
+
             'disposition_remark' => [
                 'nullable',
                 'string',
@@ -249,26 +273,30 @@ class Pelarutan2Controller extends Controller
         }
 
         $pelarutan_2 = Pelarutan2::findOrFail(
-            $data['id']
+            $rawData['id']
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | JANGAN BUAT DRAFT JIKA SUDAH FINAL
-        |--------------------------------------------------------------------------
-        */
-        if (!is_null($pelarutan_2->status)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Pelarutan 2 ini sudah disimpan final.'
-            ], 409);
+        if ($userRole === 'Analis Kimia') {
+
+            if (!is_null($pelarutan_2->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Pelarutan 2 sudah disimpan final oleh Analis Kimia.'
+                ], 409);
+            }
+
+        } elseif ($userRole === 'Foreman') {
+
+            if (is_null($pelarutan_2->status)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Data Analis Kimia belum final. Foreman belum dapat menyimpan sementara.'
+                ], 409);
+            }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | SATU PELARUTAN 2 = SATU DRAFT
-        |--------------------------------------------------------------------------
-        */
         $draft = Pelarutan2Draft::updateOrCreate(
             [
                 'pelarutan_2_id' =>
@@ -276,22 +304,25 @@ class Pelarutan2Controller extends Controller
             ],
             [
                 'brix' =>
-                    $data['brix'] ?? null,
+                    $rawData['brix'] ?? null,
 
                 'nacl' =>
-                    $data['nacl'] ?? null,
+                    $rawData['nacl'] ?? null,
 
                 'visco' =>
-                    $data['visco'] ?? null,
+                    $rawData['visco'] ?? null,
 
                 'organo' =>
-                    $data['organo'] ?? null,
+                    $rawData['organo'] ?? null,
 
                 'status_disposition' =>
-                    $data['status_disposition'] ?? null,
+                    $rawData['status_disposition'] ?? null,
+
+                'disposition' =>
+                    $rawData['disposition'] ?? null,
 
                 'disposition_remark' =>
-                    $data['disposition_remark'] ?? null,
+                    $rawData['disposition_remark'] ?? null,
 
                 'created_by' =>
                     auth()->id(),
@@ -300,7 +331,10 @@ class Pelarutan2Controller extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Data Pelarutan 2 berhasil disimpan sementara.',
+            'message' =>
+                $userRole === 'Foreman'
+                    ? 'Data Foreman berhasil disimpan sementara.'
+                    : 'Data Pelarutan 2 berhasil disimpan sementara.',
             'data' => $draft,
         ], 200);
     }
@@ -637,17 +671,14 @@ class Pelarutan2Controller extends Controller
             | HAPUS DRAFT SETELAH FINAL + PRODUCTION BERHASIL
             |--------------------------------------------------------------------------
             */
-            if ($userRole === 'Analis Kimia') {
+            $draft =
+                Pelarutan2Draft::where(
+                    'pelarutan_2_id',
+                    $pelarutan_2->id
+                )->first();
 
-                $draft =
-                    Pelarutan2Draft::where(
-                        'pelarutan_2_id',
-                        $pelarutan_2->id
-                    )->first();
-
-                if ($draft) {
-                    $draft->delete();
-                }
+            if ($draft) {
+                $draft->delete();
             }
 
             DB::commit();

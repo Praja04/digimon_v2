@@ -195,12 +195,13 @@
                                     <th>No.</th>
                                     <th>Panjang (mm)</th>
                                     <th>Lebar (mm)</th>
-                                    <th>Thickness (mikron)</th>
+                                    <th>Thickness 1 (mikron)</th>
+                                    <th>Thickness 2 (mikron)</th>
                                     <th>Berat (g)</th>
-                                    <th>Side Seal 1</th>
-                                    <th>Side Seal 2</th>
-                                    <th>Bottom Seal</th>
-                                    <th>Bottom High</th>
+                                    <th>Side Seal 1 (mm)</th>
+                                    <th>Side Seal 2 (mm)</th>
+                                    <th>Bottom Seal (mm)</th>
+                                    <th>Bottom High (mm)</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
@@ -217,7 +218,8 @@
                                         </td>
                                         <td>{{ $sample['panjang'] ?? '-' }}</td>
                                         <td>{{ $sample['lebar'] ?? '-' }}</td>
-                                        <td>{{ $sample['tebal'] ?? '-' }}</td>
+                                        <td>{{ $sample['thickness_1'] ?? $sample['thickness'] ?? '-' }}</td>
+                                        <td>{{ $sample['thickness_2'] ?? '-' }}</td>
                                         <td>{{ $sample['berat'] ?? '-' }}</td>
                                         <td>{{ $sample['side_seal_1'] ?? '-' }}</td>
                                         <td>{{ $sample['side_seal_2'] ?? '-' }}</td>
@@ -245,7 +247,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="14" class="text-center py-4 text-muted">
+                                        <td colspan="15" class="text-center py-4 text-muted">
                                             Belum ada data sampel.
                                         </td>
                                     </tr>
