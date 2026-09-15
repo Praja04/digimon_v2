@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Reverb\Loggers\Log;
 use Yajra\DataTables\DataTables;
 
 class MonitoringPasteurisasiController extends Controller
@@ -111,6 +112,8 @@ class MonitoringPasteurisasiController extends Controller
             'additionalBatches',
             'productionBatch',
         ])->findOrFail($id);
+
+        Log::info('ID: ' . $id);
 
         /*
         |--------------------------------------------------------------------------
@@ -375,7 +378,7 @@ class MonitoringPasteurisasiController extends Controller
                 'data' => [
                     'draft_id' => $draft->id,
                     'monitoring_pasteurisasi_id' =>
-                        $draft->monitoring_pasteurisasi_id,
+                    $draft->monitoring_pasteurisasi_id,
                     'created_by' => $draft->created_by,
                     'created_at' => $draft->created_at,
                     'updated_at' => $draft->updated_at,
