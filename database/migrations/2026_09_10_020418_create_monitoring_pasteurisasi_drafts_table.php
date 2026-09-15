@@ -11,17 +11,26 @@ return new class extends Migration
         Schema::create('monitoring_pasteurisasi_drafts', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('monitoring_pasteurisasi_id')
-                ->unique()
-                ->constrained('monitoring_pasteurisasi')
+            $table->unsignedBigInteger('monitoring_pasteurisasi_id');
+
+            $table->unique(
+                'monitoring_pasteurisasi_id',
+                'uq_mp_draft'
+            );
+
+            $table->foreign(
+                'monitoring_pasteurisasi_id',
+                'fk_mp_draft'
+            )
+                ->references('id')
+                ->on('monitoring_pasteurisasi')
                 ->cascadeOnDelete();
 
             /*
-            |--------------------------------------------------------------------------
-            | Data Analisa Draft
-            |--------------------------------------------------------------------------
-            | Nullable karena draft boleh belum lengkap.
-            */
+    |--------------------------------------------------------------------------
+    | Data Analisa Draft
+    |--------------------------------------------------------------------------
+    */
             $table->string('brix')->nullable();
             $table->string('visco')->nullable();
             $table->string('nacl')->nullable();
@@ -43,13 +52,18 @@ return new class extends Migration
             $table->string('adjustment_qty_garam')->nullable();
 
             /*
-            |--------------------------------------------------------------------------
-            | User pembuat draft
-            |--------------------------------------------------------------------------
-            */
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
+    |--------------------------------------------------------------------------
+    | User pembuat draft
+    |--------------------------------------------------------------------------
+    */
+            $table->unsignedBigInteger('created_by')->nullable();
+
+            $table->foreign(
+                'created_by',
+                'fk_mp_draft_created_by'
+            )
+                ->references('id')
+                ->on('users')
                 ->nullOnDelete();
 
             $table->timestamps();
