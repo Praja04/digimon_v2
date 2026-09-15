@@ -31,7 +31,7 @@ return new class extends Migration
 
             $table->foreign('monitoring_turun_blending_id', 'fk_mtb_draft_blending')
                 ->references('id')
-                ->on('monitoring_turun_blendings')
+                ->on('monitoring_turun_blending')
                 ->cascadeOnDelete();
 
             $table->foreign('created_by')
