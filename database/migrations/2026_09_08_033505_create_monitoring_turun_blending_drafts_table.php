@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('monitoring_turun_blending_drafts', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('monitoring_turun_blending_id')->unique();
+            $table->unsignedBigInteger('monitoring_turun_blending_id');
 
             $table->decimal('brix', 12, 4)->nullable();
             $table->decimal('visco', 12, 4)->nullable();
@@ -29,12 +29,26 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('monitoring_turun_blending_id', 'fk_mtb_draft_blending')
+            // Unique index
+            $table->unique(
+                'monitoring_turun_blending_id',
+                'uq_mtb_draft_blending'
+            );
+
+            // Foreign key
+            $table->foreign(
+                'monitoring_turun_blending_id',
+                'fk_mtb_draft_blending'
+            )
                 ->references('id')
                 ->on('monitoring_turun_blending')
                 ->cascadeOnDelete();
 
-            $table->foreign('created_by')
+            // Created by
+            $table->foreign(
+                'created_by',
+                'fk_mtb_draft_created_by'
+            )
                 ->references('id')
                 ->on('users')
                 ->nullOnDelete();
