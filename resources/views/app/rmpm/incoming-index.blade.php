@@ -1642,7 +1642,10 @@
                 }
 
                 midInput.value = item.mid;
-                setWpmDetail(item.mid);
+                namaBarangWpmInput.value = item.nama_barang ?? '';
+                uomWpmInput.value = item.uom ?? '';
+                masterBarangWpm[item.mid] = item;
+                btnClearMid.classList.remove('d-none');
                 closeWpmSuggestions();
 
                 midInput.classList.remove('is-invalid');
@@ -1656,119 +1659,194 @@
                 existingFeedback?.remove();
             }
 
+            async function fetchWpmData(query = '') {
+                const trimmedQuery = String(query ?? '').trim();
+                let result = null;
+                let activeSource = 'Direct WPM';
+
+                // Build direct and proxy URLs with ?q= param
+                let directUrlString = wpmDirectEndpoint;
+                if (trimmedQuery !== '') {
+                    const separator = directUrlString.includes('?') ? '&' : '?';
+                    directUrlString += `${separator}q=${encodeURIComponent(trimmedQuery)}`;
+                }
+
+                let proxyUrlString = wpmProxyEndpoint;
+                if (trimmedQuery !== '') {
+                    const separator = proxyUrlString.includes('?') ? '&' : '?';
+                    proxyUrlString += `${separator}q=${encodeURIComponent(trimmedQuery)}`;
+                }
+
+                try {
+                    const directController = new AbortController();
+                    const directTimeout = setTimeout(() => directController.abort(), 3500);
+
+                    try {
+                        const directResponse = await fetch(directUrlString, {
+                            signal: directController.signal
+                        });
+                        clearTimeout(directTimeout);
+
+                        if (directResponse.ok) {
+                            result = await directResponse.json();
+                        } else {
+                            throw new Error(`Direct HTTP ${directResponse.status}`);
+                        }
+                    } catch (directErr) {
+                        clearTimeout(directTimeout);
+                        activeSource = 'Proxy Backend';
+
+                        const proxyResponse = await fetch(proxyUrlString, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        result = await proxyResponse.json().catch(() => null);
+
+                        if (!proxyResponse.ok || !result || result.success === false) {
+                            const message =
+                                result?.message ||
+                                result?.error ||
+                                `HTTP ${proxyResponse.status} ${proxyResponse.statusText}`;
+
+                            throw new Error(message);
+                        }
+                    }
+
+                    if (!result) {
+                        throw new Error('Data WPM kosong atau tidak dapat diuraikan.');
+                    }
+
+                    const rawList = Array.isArray(result?.data?.data)
+                        ? result.data.data
+                        : (Array.isArray(result?.data)
+                            ? result.data
+                            : (Array.isArray(result) ? result : []));
+
+                    const items = [];
+                    rawList.forEach(function(barang) {
+                        const mid = String(barang?.mid ?? '').trim();
+                        if (mid !== '') {
+                            const itemData = {
+                                mid: mid,
+                                nama_barang: String(barang?.nama_barang ?? '-'),
+                                uom: String(barang?.uom ?? '-')
+                            };
+
+                            masterBarangWpm[mid] = itemData;
+                            items.push(itemData);
+                        }
+                    });
+
+                    return items;
+                } catch (error) {
+                    throw error;
+                }
+            }
+
+            let searchDebounceTimer = null;
+            let activeSearchKeyword = '';
+
             function renderWpmSuggestions(query) {
-                const keyword = normalizeWpmText(query);
+                const keyword = String(query ?? '').trim();
 
                 if (keyword === '') {
                     closeWpmSuggestions();
                     return;
                 }
 
-                if (isWpmLoading) {
-                    wpmSuggestionList.innerHTML = `
-                <div class="wpm-suggestion-empty">
-                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
-                    Sedang memuat data dari WPM via AJAX...
-                </div>
-            `;
-                    wpmSuggestionList.classList.remove('d-none');
-                    midInput.setAttribute('aria-expanded', 'true');
-                    return;
-                }
-
-                if (wpmLoadError) {
-                    wpmSuggestionList.innerHTML = `
-                <div class="wpm-suggestion-empty text-danger">
-                    <i class="mdi mdi-alert-circle me-1"></i>
-                    Gagal memuat data WPM: ${escapeHtml(wpmLoadError)}
-                </div>
-            `;
-                    wpmSuggestionList.classList.remove('d-none');
-                    midInput.setAttribute('aria-expanded', 'true');
-                    return;
-                }
-
-                const startsWithResults = [];
-                const containsResults = [];
-
-                masterBarangWpmList.forEach(function(item) {
-                    const mid = normalizeWpmText(item.mid);
-                    const name = normalizeWpmText(item.nama_barang);
-                    const uom = normalizeWpmText(item.uom);
-
-                    const isStartsWith =
-                        mid.startsWith(keyword) ||
-                        name.startsWith(keyword);
-
-                    const isContains =
-                        mid.includes(keyword) ||
-                        name.includes(keyword) ||
-                        uom.includes(keyword);
-
-                    if (isStartsWith) {
-                        startsWithResults.push(item);
-                    } else if (isContains) {
-                        containsResults.push(item);
-                    }
-                });
-
-                wpmCurrentResults = [
-                    ...startsWithResults,
-                    ...containsResults
-                ].slice(0, 12);
-
-                wpmActiveIndex = -1;
-
-                if (wpmCurrentResults.length === 0) {
-                    wpmSuggestionList.innerHTML = `
-                <div class="wpm-suggestion-empty">
-                    <i class="mdi mdi-magnify-close me-1"></i>
-                    MID atau nama barang tidak ditemukan.
-                </div>
-            `;
-
-                    wpmSuggestionList.classList.remove('d-none');
-                    midInput.setAttribute('aria-expanded', 'true');
-                    return;
-                }
-
-                const itemsHtml = wpmCurrentResults
-                    .map(function(item, index) {
-                        return `
-                    <button
-                        type="button"
-                        class="wpm-suggestion-item"
-                        data-index="${index}"
-                        role="option"
-                    >
-                        <span class="wpm-suggestion-main">
-                            <span class="wpm-suggestion-mid">
-                                ${escapeHtml(item.mid)}
-                            </span>
-
-                            <span class="wpm-suggestion-name">
-                                ${escapeHtml(item.nama_barang)}
-                            </span>
-                        </span>
-
-                        <span class="wpm-suggestion-uom">
-                            ${escapeHtml(item.uom)}
-                        </span>
-                    </button>
-                `;
-                    })
-                    .join('');
-
                 wpmSuggestionList.innerHTML = `
-            ${itemsHtml}
-
-            <div class="wpm-suggestion-hint">
-                Menampilkan maksimal 12 hasil. Ketik lebih spesifik untuk mempersempit pencarian.
-            </div>
-        `;
-
+                    <div class="wpm-suggestion-empty">
+                        <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+                        Mencari data WPM untuk "<strong>${escapeHtml(keyword)}</strong>"...
+                    </div>
+                `;
                 wpmSuggestionList.classList.remove('d-none');
                 midInput.setAttribute('aria-expanded', 'true');
+
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
+                }
+
+                searchDebounceTimer = setTimeout(async function() {
+                    activeSearchKeyword = keyword;
+
+                    try {
+                        const items = await fetchWpmData(keyword);
+
+                        if (activeSearchKeyword !== keyword) {
+                            return;
+                        }
+
+                        wpmCurrentResults = items.slice(0, 15);
+                        wpmActiveIndex = -1;
+
+                        if (wpmCurrentResults.length === 0) {
+                            wpmSuggestionList.innerHTML = `
+                                <div class="wpm-suggestion-empty">
+                                    <i class="mdi mdi-magnify-close me-1"></i>
+                                    MID atau nama barang "<strong>${escapeHtml(keyword)}</strong>" tidak ditemukan.
+                                </div>
+                            `;
+                            wpmSuggestionList.classList.remove('d-none');
+                            midInput.setAttribute('aria-expanded', 'true');
+                            return;
+                        }
+
+                        const itemsHtml = wpmCurrentResults
+                            .map(function(item, index) {
+                                return `
+                            <button
+                                type="button"
+                                class="wpm-suggestion-item"
+                                data-index="${index}"
+                                role="option"
+                            >
+                                <span class="wpm-suggestion-main">
+                                    <span class="wpm-suggestion-mid">
+                                        ${escapeHtml(item.mid)}
+                                    </span>
+
+                                    <span class="wpm-suggestion-name">
+                                        ${escapeHtml(item.nama_barang)}
+                                    </span>
+                                </span>
+
+                                <span class="wpm-suggestion-uom">
+                                    ${escapeHtml(item.uom)}
+                                </span>
+                            </button>
+                        `;
+                            })
+                            .join('');
+
+                        wpmSuggestionList.innerHTML = `
+                            ${itemsHtml}
+
+                            <div class="wpm-suggestion-hint">
+                                Menampilkan ${wpmCurrentResults.length} hasil. Klik atau gunakan panah keyboard untuk memilih.
+                            </div>
+                        `;
+
+                        wpmSuggestionList.classList.remove('d-none');
+                        midInput.setAttribute('aria-expanded', 'true');
+                    } catch (error) {
+                        if (activeSearchKeyword !== keyword) {
+                            return;
+                        }
+
+                        wpmSuggestionList.innerHTML = `
+                            <div class="wpm-suggestion-empty text-danger">
+                                <i class="mdi mdi-alert-circle me-1"></i>
+                                Gagal mencari data WPM: ${escapeHtml(error.message || 'Error')}
+                            </div>
+                        `;
+                        wpmSuggestionList.classList.remove('d-none');
+                        midInput.setAttribute('aria-expanded', 'true');
+                    }
+                }, 300);
             }
 
             function updateWpmActiveItem() {
@@ -1794,11 +1872,36 @@
                 }
             }
 
-            function updateWpmDetail() {
+            async function updateWpmDetail(customMid) {
                 const selectedMid =
-                    String(midInput.value ?? '').trim();
+                    String(customMid ?? midInput.value ?? '').trim();
 
-                setWpmDetail(selectedMid);
+                if (selectedMid === '') {
+                    namaBarangWpmInput.value = '';
+                    uomWpmInput.value = '';
+                    btnClearMid.classList.add('d-none');
+                    return;
+                }
+
+                btnClearMid.classList.remove('d-none');
+
+                if (masterBarangWpm[selectedMid]) {
+                    namaBarangWpmInput.value = masterBarangWpm[selectedMid].nama_barang ?? '';
+                    uomWpmInput.value = masterBarangWpm[selectedMid].uom ?? '';
+                    return;
+                }
+
+                try {
+                    const items = await fetchWpmData(selectedMid);
+                    const match = items.find(item => String(item.mid).trim() === selectedMid) || items[0];
+                    if (match && String(midInput.value ?? '').trim() === selectedMid) {
+                        masterBarangWpm[match.mid] = match;
+                        namaBarangWpmInput.value = match.nama_barang ?? '';
+                        uomWpmInput.value = match.uom ?? '';
+                    }
+                } catch (e) {
+                    console.warn('[WPM Detail Lookup Error]:', e);
+                }
             }
 
             async function loadWpmDataViaAjax() {
@@ -1807,7 +1910,7 @@
 
                 if (wpmApiBadge) {
                     wpmApiBadge.className = 'badge bg-warning-subtle text-warning fs-11';
-                    wpmApiBadge.innerHTML = '<i class="mdi mdi-loading mdi-spin me-1"></i>Memuat WPM...';
+                    wpmApiBadge.innerHTML = '<i class="mdi mdi-loading mdi-spin me-1"></i>Memeriksa WPM...';
                 }
 
                 if (wpmStatusFeedback) {
@@ -1819,103 +1922,26 @@
             `;
                 }
 
-                let result = null;
-                let activeSource = 'Direct WPM';
-
                 try {
-                    console.info('[WPM AJAX] Mencoba direct fetch ke:', wpmDirectEndpoint);
-
-                    const directController = new AbortController();
-                    const directTimeout = setTimeout(() => directController.abort(), 4000);
-
-                    try {
-                        const directResponse = await fetch(wpmDirectEndpoint, {
-                            signal: directController.signal
-                        });
-                        clearTimeout(directTimeout);
-
-                        if (directResponse.ok) {
-                            result = await directResponse.json();
-                            console.info('[WPM AJAX] Berhasil via Direct fetch!');
-                        } else {
-                            throw new Error(`Direct HTTP ${directResponse.status}`);
-                        }
-                    } catch (directErr) {
-                        clearTimeout(directTimeout);
-                        console.warn('[WPM AJAX] Direct fetch gagal (' + directErr.message +
-                            '), mencoba via backend proxy:', wpmProxyEndpoint);
-                        activeSource = 'Proxy Backend';
-
-                        const proxyResponse = await fetch(wpmProxyEndpoint, {
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-
-                        result = await proxyResponse.json().catch(() => null);
-
-                        if (!proxyResponse.ok || !result || result.success === false) {
-                            const message =
-                                result?.message ||
-                                result?.error ||
-                                `HTTP ${proxyResponse.status} ${proxyResponse.statusText}`;
-
-                            throw new Error(message);
-                        }
-                    }
-
-                    if (!result) {
-                        throw new Error('Data WPM kosong atau tidak dapat diuraikan.');
-                    }
-
-                    const rawList = Array.isArray(result.data) ?
-                        result.data :
-                        (Array.isArray(result) ? result : []);
-
-                    masterBarangWpm = {};
-                    masterBarangWpmList = [];
-
-                    rawList.forEach(function(barang) {
-                        const mid = String(barang?.mid ?? '').trim();
-                        if (mid !== '') {
-                            const itemData = {
-                                nama_barang: String(barang?.nama_barang ?? '-'),
-                                uom: String(barang?.uom ?? '-')
-                            };
-
-                            masterBarangWpm[mid] = itemData;
-                            masterBarangWpmList.push({
-                                mid: mid,
-                                nama_barang: itemData.nama_barang,
-                                uom: itemData.uom
-                            });
-                        }
-                    });
-
-                    console.info(
-                        `[WPM AJAX] Sukses memuat ${masterBarangWpmList.length} data barang WPM:`,
-                        masterBarangWpmList
-                    );
+                    await fetchWpmData('');
 
                     if (wpmApiBadge) {
                         wpmApiBadge.className = 'badge bg-success-subtle text-success fs-11';
                         wpmApiBadge.innerHTML =
-                            `<i class="mdi mdi-check-circle me-1"></i>WPM Online (${masterBarangWpmList.length})`;
+                            '<i class="mdi mdi-check-circle me-1"></i>WPM Online';
                     }
 
                     if (wpmStatusFeedback) {
                         wpmStatusFeedback.innerHTML = `
                     <small class="text-muted d-block">
-                        Ketik MID atau nama barang, lalu pilih hasil autosuggest dari WPM (${masterBarangWpmList.length} item siap).
+                        Ketik MID atau nama barang, lalu pilih hasil pencarian dari WPM.
                     </small>
                 `;
                     }
 
-                    updateWpmDetail();
-
-                    if (document.activeElement === midInput && String(midInput.value ?? '').trim() !== '') {
-                        renderWpmSuggestions(midInput.value);
+                    const initialMid = String(midInput.value ?? '').trim();
+                    if (initialMid !== '') {
+                        await updateWpmDetail(initialMid);
                     }
                 } catch (error) {
                     wpmLoadError = error.message || 'Gagal terhubung ke API WPM';
@@ -1971,7 +1997,20 @@
                 const exactMid =
                     String(typedValue).trim();
 
-                setWpmDetail(exactMid);
+                btnClearMid.classList.toggle('d-none', exactMid === '');
+
+                if (exactMid === '') {
+                    namaBarangWpmInput.value = '';
+                    uomWpmInput.value = '';
+                    closeWpmSuggestions();
+                    return;
+                }
+
+                if (masterBarangWpm[exactMid]) {
+                    namaBarangWpmInput.value = masterBarangWpm[exactMid].nama_barang ?? '';
+                    uomWpmInput.value = masterBarangWpm[exactMid].uom ?? '';
+                }
+
                 renderWpmSuggestions(typedValue);
             });
 

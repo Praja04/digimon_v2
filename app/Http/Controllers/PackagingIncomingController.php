@@ -265,10 +265,12 @@ class PackagingIncomingController extends Controller
     }
 
     public function getWpmBarang(
+        Request $request,
         WpmApiService $wpmApiService
     ): JsonResponse {
         try {
-            $data = $wpmApiService->getMasterBarang();
+            $query = $request->query('q') ?? $request->query('search') ?? null;
+            $data = $wpmApiService->getMasterBarang($query);
 
             return response()->json([
                 'success' => true,
