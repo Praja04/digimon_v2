@@ -374,16 +374,8 @@
                         <table class="table table-bordered align-middle inspection-table">
                             <thead>
                                 <tr>
-                                    <th class="text-center" style="width: 60px;">No. Sampel</th>
-                                    <th>Panjang (mm)</th>
-                                    <th>Lebar (mm)</th>
-                                    <th>Tinggi (mm)</th>
-                                    <th>BCT (kgf)</th>
-                                    <th class="text-center" style="min-width: 130px;">Design</th>
-                                    <th class="text-center" style="min-width: 130px;">Warna</th>
-                                    <th class="text-center" style="min-width: 130px;">Tulisan</th>
+                                    <th class="text-center" style="width: 80px;">No. Sampel</th>
                                     <th>Berat (gr)</th>
-                                    <th class="text-center" style="min-width: 130px;">Hasil Berat</th>
                                 </tr>
                             </thead>
 
@@ -994,10 +986,10 @@
     .inspection-table-wrapper {
         border: 1px solid #e2e8f0;
         border-radius: 12px;
+        max-width: 600px;
     }
 
     .inspection-table {
-        min-width: 1200px;
         margin-bottom: 0;
     }
 
@@ -1468,76 +1460,12 @@ document.addEventListener(
                                 <input
                                     type="text"
                                     inputmode="decimal"
-                                    name="samples[${index}][panjang]"
-                                    value="${escapeHtml(sample.panjang)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="mm"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
-                                >
-                            </td>
-
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="decimal"
-                                    name="samples[${index}][lebar]"
-                                    value="${escapeHtml(sample.lebar)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="mm"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
-                                >
-                            </td>
-
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="decimal"
-                                    name="samples[${index}][tinggi]"
-                                    value="${escapeHtml(sample.tinggi)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="mm"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
-                                >
-                            </td>
-
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="decimal"
-                                    name="samples[${index}][bct]"
-                                    value="${escapeHtml(sample.bct)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="kgf"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1')"
-                                >
-                            </td>
-
-                            <td class="text-center">
-                                ${radioHtml(`samples[${index}][design]`, sample.design)}
-                            </td>
-
-                            <td class="text-center">
-                                ${radioHtml(`samples[${index}][warna]`, sample.warna)}
-                            </td>
-
-                            <td class="text-center">
-                                ${radioHtml(`samples[${index}][tulisan]`, sample.tulisan)}
-                            </td>
-
-                            <td>
-                                <input
-                                    type="text"
-                                    inputmode="decimal"
                                     name="samples[${index}][berat]"
                                     value="${escapeHtml(sample.berat)}"
                                     class="form-control form-control-sm"
                                     placeholder="0.00"
                                     oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\\..*?)\\..*/g, '$1'); if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"
                                 >
-                            </td>
-
-                            <td class="text-center">
-                                ${radioHtml(`samples[${index}][hasil_berat]`, sample.hasil_berat)}
                             </td>
                         </tr>
                     `

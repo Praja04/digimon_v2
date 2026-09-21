@@ -478,8 +478,7 @@ class PackagingInnerOuterController extends Controller
 
             'samples.*.tulisan' => [
                 'nullable',
-                'string',
-                'max:255',
+                'in:OK,NG',
             ],
 
             'coa' => [

@@ -1435,13 +1435,10 @@
                             </td>
 
                             <td>
-                                <input
-                                    type="text"
-                                    name="samples[${index}][tulisan]"
-                                    value="${escapeHtml(sample.tulisan)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="Tulis hasil"
-                                >
+                                ${buildStatusRadio(
+                                    `samples[${index}][tulisan]`,
+                                    sample.tulisan
+                                )}
                             </td>
                         </tr>
                     `

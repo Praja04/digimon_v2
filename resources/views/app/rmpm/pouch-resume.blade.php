@@ -158,6 +158,11 @@
                     </div>
 
                     <div class="identity-item">
+                        <span>NOMOR BATCH</span>
+                        <strong>{{ $sampling->no_batch ?? '-' }}</strong>
+                    </div>
+
+                    <div class="identity-item">
                         <span>REKOMENDASI</span>
                         <span class="status-pill {{ $badgeClass }}">
                             {{ $sampling->rekomendasi ?? '-' }}
@@ -206,7 +211,7 @@
                                     <th>Warna</th>
                                     <th>Tulisan</th>
                                     <th>Drop Test</th>
-                                    <th>Pretest</th>
+                                    <th>Press Test</th>
                                 </tr>
                             </thead>
 

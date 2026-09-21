@@ -165,6 +165,17 @@
                                 Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
                             </small>
                         </div>
+                        <div class="col-xl-3 col-md-6">
+                            <label for="no_batch" class="form-label">Nomor Batch</label>
+                            <input
+                                type="text"
+                                name="no_batch"
+                                id="no_batch"
+                                class="form-control"
+                                value="{{ old('no_batch', $sampling?->no_batch) }}"
+                                placeholder="Masukkan nomor batch"
+                            >
+                        </div>
                     </div>
 
                     <div class="section-title"><i class="mdi mdi-flask-outline"></i> Hasil Pemeriksaan Sampel</div>
@@ -185,7 +196,7 @@
                                     <th rowspan="2">Warna</th>
                                     <th rowspan="2">Tulisan</th>
                                     <th rowspan="2">Drop Test</th>
-                                    <th rowspan="2">Pretest</th>
+                                    <th rowspan="2">Press Test</th>
                                 </tr>
                                 <tr>
                                     <th>1</th>
