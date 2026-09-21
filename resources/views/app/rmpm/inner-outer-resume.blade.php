@@ -258,14 +258,10 @@
                                             @endphp
 
                                             <td>
-                                                @if (in_array($field, ['laminasi', 'design', 'warna'], true))
-                                                    <span class="result-value">
-                                                        <i class="mdi {{ $resultIcon($value) }}"></i>
-                                                        {{ $value ?? '-' }}
-                                                    </span>
-                                                @else
+                                                <span class="result-value">
+                                                    <i class="mdi {{ $resultIcon($value) }}"></i>
                                                     {{ $value ?? '-' }}
-                                                @endif
+                                                </span>
                                             </td>
                                         @endforeach
                                     </tr>

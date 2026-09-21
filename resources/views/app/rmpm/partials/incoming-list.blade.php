@@ -594,7 +594,7 @@
         </div>
 
         @if ($incomings->hasPages())
-            <div class="d-flex justify-content-end mt-3">
+            <div class="mt-3">
                 {{ $incomings->links() }}
             </div>
         @endif

@@ -276,6 +276,12 @@ class PackagingPouchController extends Controller
                 'max:200',
             ],
 
+            'no_batch' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
+
             'coa' => [
                 'nullable',
                 'in:Ada,Tidak Ada',
@@ -691,6 +697,10 @@ class PackagingPouchController extends Controller
                     'jumlah_sampel' =>
                         $validated['jumlah_sampel']
                         ?? 1,
+
+                    'no_batch' =>
+                        $validated['no_batch']
+                        ?? null,
 
                     'hasil_sampel' =>
                         $this->mergeSingleBarcodeQrSample(

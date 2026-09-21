@@ -945,15 +945,15 @@ class PackagingKartonController extends Controller
                 [
                     'panjang' =>
                         $submittedSample['panjang']
-                        ?? null,
+                        ?? ($existingSample['panjang'] ?? null),
 
                     'lebar' =>
                         $submittedSample['lebar']
-                        ?? null,
+                        ?? ($existingSample['lebar'] ?? null),
 
                     'tinggi' =>
                         $submittedSample['tinggi']
-                        ?? null,
+                        ?? ($existingSample['tinggi'] ?? null),
 
                     'bct' =>
                         $submittedSample['bct']
@@ -965,15 +965,15 @@ class PackagingKartonController extends Controller
 
                     'design' =>
                         $submittedSample['design']
-                        ?? null,
+                        ?? ($existingSample['design'] ?? null),
 
                     'warna' =>
                         $submittedSample['warna']
-                        ?? null,
+                        ?? ($existingSample['warna'] ?? null),
 
                     'tulisan' =>
                         $submittedSample['tulisan']
-                        ?? null,
+                        ?? ($existingSample['tulisan'] ?? null),
 
                     'berat' =>
                         $submittedSample['berat']

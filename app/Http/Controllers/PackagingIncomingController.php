@@ -807,10 +807,6 @@ class PackagingIncomingController extends Controller
                     'required',
                     'string',
                     'max:100',
-                    Rule::unique(
-                        'packaging_incomings',
-                        'no_spb'
-                    )->ignore($ignoreId),
                 ],
 
                 'tanggal_kedatangan' => [
@@ -885,9 +881,6 @@ class PackagingIncomingController extends Controller
             [
                 'no_spb.required' =>
                     'Nomor SPB wajib diisi.',
-
-                'no_spb.unique' =>
-                    'Nomor SPB sudah terdaftar.',
 
                 'tanggal_kedatangan.required' =>
                     'Tanggal kedatangan wajib diisi.',

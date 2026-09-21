@@ -17,6 +17,7 @@ class PackagingPouchSampling extends Model
         'qty',
         'uom',
         'jumlah_sampel',
+        'no_batch',
         'hasil_sampel',
         'hasil_thickness',
         'coa',
