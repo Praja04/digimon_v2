@@ -458,7 +458,17 @@
                                             <label for="supplier" class="form-label">
                                                 Supplier / Manufactur <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="supplier" name="supplier">
+                                            <select class="form-select" id="supplier" name="supplier">
+                                                <option value="">-- Pilih Supplier / Manufactur --</option>
+                                                <option value="SUMBER SARI MANIS">SUMBER SARI MANIS</option>
+                                                <option value="SUMBER BERKAH AGUNG CV">SUMBER BERKAH AGUNG CV</option>
+                                                <option value="CAKRAWALA PASIR GANCLENG">CAKRAWALA PASIR GANCLENG</option>
+                                                <option value="SLAMET SUMBER SEJAHTERA, PT">SLAMET SUMBER SEJAHTERA, PT</option>
+                                                <option value="PT KARUNIA TIRTO MULYO">PT KARUNIA TIRTO MULYO</option>
+                                                <option value="PT CAHAYA MAKMUR SUMARDI">PT CAHAYA MAKMUR SUMARDI</option>
+                                                <option value="PERTIWI JAYA, CV">PERTIWI JAYA, CV</option>
+                                                <option value="LANGSUNG SUGIH BERKAH">LANGSUNG SUGIH BERKAH</option>
+                                            </select>
                                             <small class="text-danger errorSupplier"></small>
                                         </div>
 
@@ -466,7 +476,15 @@
                                             <label for="asal_bahan" class="form-label">
                                                 Asal Bahan <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="asal_bahan" name="asal_bahan">
+                                            <select class="form-select" id="asal_bahan" name="asal_bahan">
+                                                <option value="">-- Pilih Asal Bahan --</option>
+                                                <option value="TULUNGAGUNG">TULUNGAGUNG</option>
+                                                <option value="SUKABUMI">SUKABUMI</option>
+                                                <option value="PURWOKERTO">PURWOKERTO</option>
+                                                <option value="LAMPUNG">LAMPUNG</option>
+                                                <option value="KUDUS">KUDUS</option>
+                                                <option value="PANGANDARAN">PANGANDARAN</option>
+                                            </select>
                                             <small class="text-danger errorAsalBahan"></small>
                                         </div>
 

@@ -188,11 +188,19 @@
                                                 @php
                                                     $disposisi_short_term =
                                                         $analisa_short_term->first()->disposisi ?? null;
+                                                    $latest_long = $analisa_long_term->first();
                                                     $disposisi_long_term =
-                                                        $analisa_long_term->first()->disposisi ?? null;
+                                                        $latest_long->disposisi ?? null;
+                                                    $group_long_term =
+                                                        $latest_long->group ?? null;
                                                 @endphp
                                                 <h6>Short Term : {{ $disposisi_short_term ?? 'Belum input' }}</h6>
-                                                <h6>Long Term : {{ $disposisi_long_term ?? 'Belum input' }}</h6>
+                                                <h6>
+                                                    Long Term : {{ $disposisi_long_term ?? 'Belum input' }}
+                                                    @if (!empty($group_long_term))
+                                                        <span class="badge bg-primary fs-7 ms-1">{{ $group_long_term }}</span>
+                                                    @endif
+                                                </h6>
                                             @else
                                                 @php $disposisi_gula_garam = $analisa_garam_gula->first()->disposisi ?? null; @endphp
                                                 <h6>Disposisi : {{ $disposisi_gula_garam ?? 'Belum input' }}</h6>
@@ -522,22 +530,47 @@
                             {{-- ── TABEL ANALISA ── --}}
                             @if ($identitas->jenis == 'Gula Tebu' || $identitas->jenis == 'Gula Kelapa')
 
-                                {{-- Short Term --}}
+                                {{-- Unified Short Term Analysis: Incoming, STA, Monitoring --}}
                                 <div class="col-lg-12">
                                     <div class="card shadow-sm">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0 fw-semibold">Short Term Analisa</h5>
+                                        @php
+                                            $groupedShort = $analisa_short_term->groupBy(function($item) {
+                                                return $item->kategori ?: 'incoming';
+                                            });
+                                        @endphp
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <h5 class="mb-0 fw-semibold text-dark">
+                                                <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa (Incoming, STA & Monitoring)
+                                            </h5>
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                @if ($groupedShort->has('incoming'))
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                        <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel
+                                                    </span>
+                                                @endif
+                                                @if ($groupedShort->has('sta'))
+                                                    <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                                        <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel
+                                                    </span>
+                                                @endif
+                                                @if ($groupedShort->has('monitoring'))
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                        <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </div>
                                         <div class="card-body p-3">
                                             <div class="table-responsive">
-                                                <table class="table table-hover table-striped align-middle mb-0">
+                                                <table class="table table-hover align-middle mb-0">
                                                     <thead class="table-light text-muted text-uppercase small">
                                                         <tr>
-                                                            <th width="5%">#</th>
+                                                            <th width="4%" class="text-center">#</th>
+                                                            <th width="12%">Kategori</th>
                                                             <th>Brix</th>
                                                             <th>pH</th>
                                                             <th>Kotoran</th>
-                                                            <th>KA</th>
+                                                            <th>KA (%)</th>
                                                             <th>Organo</th>
                                                             <th>Warna</th>
                                                             <th>Aroma</th>
@@ -547,25 +580,129 @@
                                                     </thead>
                                                     <tbody>
                                                         @forelse ($analisa_short_term as $short)
+                                                            @php
+                                                                $kat = $short->kategori ?: 'incoming';
+                                                                $katBadgeClass = match($kat) {
+                                                                    'sta' => 'bg-info text-white',
+                                                                    'monitoring' => 'bg-success text-white',
+                                                                    default => 'bg-primary text-white',
+                                                                };
+                                                                $katIcon = match($kat) {
+                                                                    'sta' => 'ri-flashlight-line',
+                                                                    'monitoring' => 'ri-line-chart-line',
+                                                                    default => 'ri-inbox-archive-line',
+                                                                };
+                                                                $katLabel = match($kat) {
+                                                                    'sta' => 'STA',
+                                                                    'monitoring' => 'Monitoring',
+                                                                    default => 'Incoming',
+                                                                };
+                                                            @endphp
                                                             <tr>
-                                                                <td>{{ $loop->iteration }}</td>
-                                                                <td>{{ $short->brix ?? '-' }}</td>
-                                                                <td>{{ $short->ph ?? '-' }}</td>
-                                                                <td>{{ $short->kotoran ?? '-' }}</td>
-                                                                <td>{{ $short->ka ?? '-' }}</td>
-                                                                <td>{{ $short->organo ?? '-' }}</td>
+                                                                <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                                                                <td>
+                                                                    <span class="badge {{ $katBadgeClass }} px-2 py-1">
+                                                                        <i class="{{ $katIcon }} me-1"></i>{{ $katLabel }}
+                                                                    </span>
+                                                                </td>
+                                                                <td>{{ $short->brix !== null ? number_format($short->brix, 2) : '-' }}</td>
+                                                                <td>{{ $short->ph !== null ? number_format($short->ph, 2) : '-' }}</td>
+                                                                <td>{{ $short->kotoran !== null ? number_format($short->kotoran, 3) : '-' }}</td>
+                                                                <td>{{ $short->ka !== null ? number_format($short->ka, 2) . '%' : '-' }}</td>
+                                                                <td>
+                                                                    @if (!empty($short->organo))
+                                                                        <span class="badge {{ in_array(strtoupper($short->organo), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                                            {{ $short->organo }}
+                                                                        </span>
+                                                                    @else
+                                                                        -
+                                                                    @endif
+                                                                </td>
                                                                 <td>{{ $short->warna ?? '-' }}</td>
                                                                 <td>{{ $short->aroma ?? '-' }}</td>
-                                                                <td>{{ $short->disposisi ?? '-' }}</td>
-                                                                <td>{{ $short->keterangan ?? '-' }}</td>
+                                                                <td>
+                                                                    @if ($short->disposisi === 'Release')
+                                                                        <span class="badge bg-success">{{ $short->disposisi }}</span>
+                                                                    @elseif ($short->disposisi === 'Reject')
+                                                                        <span class="badge bg-danger">{{ $short->disposisi }}</span>
+                                                                    @else
+                                                                        <span class="badge bg-secondary">{{ $short->disposisi ?? '-' }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td><small class="text-muted">{{ $short->keterangan ?? '-' }}</small></td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="9" class="text-center text-muted py-4">
-                                                                    Belum ada data short term</td>
+                                                                <td colspan="11" class="text-center text-muted py-4">
+                                                                    <i class="ri-inbox-line fs-3 d-block mb-1 text-muted"></i>
+                                                                    Belum ada data analisa (Incoming, STA, atau Monitoring)
+                                                                </td>
                                                             </tr>
                                                         @endforelse
                                                     </tbody>
+                                                    @if ($analisa_short_term->isNotEmpty())
+                                                        <tfoot class="table-light border-top">
+                                                            @foreach ($groupedShort as $groupKey => $groupItems)
+                                                                @php
+                                                                    $gAvgBrix = $groupItems->whereNotNull('brix')->avg('brix');
+                                                                    $gAvgPh = $groupItems->whereNotNull('ph')->avg('ph');
+                                                                    $gAvgKotoran = $groupItems->whereNotNull('kotoran')->avg('kotoran');
+                                                                    $gAvgKa = $groupItems->whereNotNull('ka')->avg('ka');
+                                                                    $gTotalOrgano = $groupItems->whereNotNull('organo')->count();
+                                                                    $gOrganoCounts = [];
+                                                                    foreach ($groupItems as $gItem) {
+                                                                        $val = trim($gItem->organo ?? '');
+                                                                        if ($val !== '') {
+                                                                            $cat = $val;
+                                                                            if (stripos($val, 'Lain-lain') === 0) $cat = 'Lain-lain';
+                                                                            elseif (stripos($val, 'Campuran') === 0) $cat = 'Campuran';
+                                                                            elseif (in_array(strtoupper($val), ['OK', 'SESUAI', 'NORMAL'])) $cat = 'OK';
+                                                                            $gOrganoCounts[$cat] = ($gOrganoCounts[$cat] ?? 0) + 1;
+                                                                        }
+                                                                    }
+                                                                    $gLabel = match($groupKey) {
+                                                                        'sta' => 'AVG STA',
+                                                                        'monitoring' => 'AVG Monitoring',
+                                                                        default => 'AVG Incoming',
+                                                                    };
+                                                                    $gBadgeClass = match($groupKey) {
+                                                                        'sta' => 'bg-info',
+                                                                        'monitoring' => 'bg-success',
+                                                                        default => 'bg-primary',
+                                                                    };
+                                                                @endphp
+                                                                <tr class="fw-bold bg-light">
+                                                                    <td class="text-center">-</td>
+                                                                    <td>
+                                                                        <span class="badge {{ $gBadgeClass }} px-2 py-1">{{ $gLabel }}</span>
+                                                                    </td>
+                                                                    <td class="text-primary">{{ $gAvgBrix !== null ? number_format($gAvgBrix, 2) : '-' }}</td>
+                                                                    <td class="text-primary">{{ $gAvgPh !== null ? number_format($gAvgPh, 2) : '-' }}</td>
+                                                                    <td class="text-primary">{{ $gAvgKotoran !== null ? number_format($gAvgKotoran, 3) : '-' }}</td>
+                                                                    <td class="text-primary">{{ $gAvgKa !== null ? number_format($gAvgKa, 2) . '%' : '-' }}</td>
+                                                                    <td>
+                                                                        <div class="d-flex flex-wrap gap-1">
+                                                                            @forelse ($gOrganoCounts as $cName => $cCnt)
+                                                                                @php
+                                                                                    $pct = $gTotalOrgano > 0 ? round(($cCnt / $gTotalOrgano) * 100) : 0;
+                                                                                    $isOk = ($cName === 'OK');
+                                                                                @endphp
+                                                                                <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cCnt }}/{{ $gTotalOrgano }} sampel">
+                                                                                    {{ $cName }}: {{ $pct }}%
+                                                                                </span>
+                                                                            @empty
+                                                                                <span class="text-muted small">-</span>
+                                                                            @endforelse
+                                                                        </div>
+                                                                    </td>
+                                                                    <td class="text-muted small">-</td>
+                                                                    <td class="text-muted small">-</td>
+                                                                    <td class="text-muted small">-</td>
+                                                                    <td class="text-muted small">-</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tfoot>
+                                                    @endif
                                                 </table>
                                             </div>
                                         </div>
@@ -575,8 +712,8 @@
                                 {{-- Long Term --}}
                                 <div class="col-lg-12">
                                     <div class="card shadow-sm">
-                                        <div class="card-header bg-light">
-                                            <h5 class="mb-0 fw-semibold">Long Term Analisa</h5>
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0 fw-semibold">Hasil Analisa Long Term</h5>
                                         </div>
                                         <div class="card-body p-3">
                                             <div class="table-responsive">
@@ -586,53 +723,81 @@
                                                             <th width="5%">#</th>
                                                             <th>Uji Kristal</th>
                                                             <th>Disposisi</th>
-                                                            <th>Attachment</th>
+                                                            <th>Group ABC</th>
+                                                            <th>Lampiran Foto</th>
+                                                            <th>Status</th>
                                                             <th>Keterangan</th>
-                                                            <th width="12%"></th>
+                                                            <th width="12%" class="text-end">Aksi</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         @forelse ($analisa_long_term as $long)
+                                                            @php $photos = $long->photos; @endphp
                                                             <tr>
                                                                 <td>{{ $loop->iteration }}</td>
                                                                 <td>
                                                                     @if ($long->uji_kristal === 'positif')
-                                                                        <span
-                                                                            class="badge bg-danger-subtle text-danger">Positif</span>
+                                                                        <span class="badge bg-danger-subtle text-danger fw-semibold">Positif</span>
                                                                     @elseif ($long->uji_kristal === 'negatif')
-                                                                        <span
-                                                                            class="badge bg-success-subtle text-success">Negatif</span>
+                                                                        <span class="badge bg-success-subtle text-success fw-semibold">Negatif</span>
                                                                     @else
                                                                         -
                                                                     @endif
                                                                 </td>
-                                                                <td>{{ $long->disposisi ?? '-' }}</td>
                                                                 <td>
-                                                                    @if (!empty($long->attachment) && $long->attachment !== '-')
-                                                                        <a href="#" data-bs-toggle="modal"
-                                                                            data-bs-target="#imageModal{{ $long->id }}"
-                                                                            class="d-inline-flex align-items-center gap-1 text-primary small">
-                                                                            <i class="mdi mdi-image-outline fs-5"></i>
-                                                                            Lihat
-                                                                        </a>
+                                                                    @if ($long->disposisi === 'Release')
+                                                                        <span class="badge bg-success">{{ $long->disposisi }}</span>
+                                                                    @elseif ($long->disposisi === 'Release Bersyarat')
+                                                                        <span class="badge bg-warning text-dark">{{ $long->disposisi }}</span>
+                                                                    @elseif ($long->disposisi === 'Reject')
+                                                                        <span class="badge bg-danger">{{ $long->disposisi }}</span>
+                                                                    @else
+                                                                        -
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if (!empty($long->group))
+                                                                        <span class="badge bg-primary fs-7">{{ $long->group }}</span>
+                                                                    @else
+                                                                        <span class="text-muted">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if (!empty($photos))
+                                                                        <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#imageModal{{ $long->id }}">
+                                                                            <i class="mdi mdi-image-multiple-outline me-1"></i>
+                                                                            Lihat ({{ count($photos) }} Foto)
+                                                                        </button>
+
                                                                         <div class="modal fade"
                                                                             id="imageModal{{ $long->id }}"
                                                                             tabindex="-1" aria-hidden="true">
-                                                                            <div
-                                                                                class="modal-dialog modal-dialog-centered">
+                                                                            <div class="modal-dialog modal-dialog-centered modal-lg">
                                                                                 <div class="modal-content">
                                                                                     <div class="modal-header">
-                                                                                        <h5 class="modal-title">Lampiran
-                                                                                            Kristal — Sampel
-                                                                                            {{ $loop->iteration }}</h5>
-                                                                                        <button type="button"
-                                                                                            class="btn-close"
-                                                                                            data-bs-dismiss="modal"></button>
+                                                                                        <h5 class="modal-title">
+                                                                                            <i class="mdi mdi-image-outline me-1"></i> Lampiran Kristal — ({{ count($photos) }} Foto)
+                                                                                        </h5>
+                                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                                                     </div>
-                                                                                    <div class="modal-body text-center">
-                                                                                        <img src="{{ asset('storage/uploads/attachment_analisa/' . $long->attachment) }}"
-                                                                                            alt="Lampiran Analisa"
-                                                                                            class="img-fluid rounded">
+                                                                                    <div class="modal-body">
+                                                                                        <div class="row g-3 justify-content-center">
+                                                                                            @foreach ($photos as $pIdx => $imgName)
+                                                                                                <div class="col-md-6 text-center">
+                                                                                                    <div class="border rounded p-2 bg-light">
+                                                                                                        <a href="{{ asset('storage/uploads/attachment_analisa/' . $imgName) }}" target="_blank">
+                                                                                                            <img src="{{ asset('storage/uploads/attachment_analisa/' . $imgName) }}"
+                                                                                                                alt="Foto {{ $pIdx + 1 }}"
+                                                                                                                class="img-fluid rounded shadow-sm"
+                                                                                                                style="max-height: 250px; object-fit: cover; width: 100%;">
+                                                                                                        </a>
+                                                                                                        <div class="small text-muted mt-2 fw-semibold">Foto #{{ $pIdx + 1 }}</div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            @endforeach
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -641,24 +806,35 @@
                                                                         <span class="text-muted small">-</span>
                                                                     @endif
                                                                 </td>
+                                                                <td>
+                                                                    @if ($long->status === 'draft')
+                                                                        <span class="badge bg-warning text-dark">
+                                                                            <i class="mdi mdi-content-save-edit-outline me-1"></i> Draft
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="badge bg-success-subtle text-success">
+                                                                            <i class="ri-checkbox-circle-line me-1"></i> Final
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
                                                                 <td>{{ $long->keterangan ?? '-' }}</td>
                                                                 <td class="text-end">
-                                                                    @if (strtolower($long->uji_kristal ?? '') === 'positif' && strtolower($long->disposisi ?? '') !== 'release')
-                                                                        <button type="button"
-                                                                            class="btn btn-sm btn-warning"
-                                                                            data-id="{{ $long->id }}"
-                                                                            data-disposisi="{{ $long->disposisi }}"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#updateDisposisiModal">
-                                                                            <i class="ri-edit-line"></i> Update
-                                                                        </button>
-                                                                    @endif
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-warning"
+                                                                        data-id="{{ $long->id }}"
+                                                                        data-disposisi="{{ $long->disposisi }}"
+                                                                        data-group="{{ $long->group }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#updateDisposisiModal">
+                                                                        <i class="ri-edit-line"></i> Update Disposisi
+                                                                    </button>
                                                                 </td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="5" class="text-center text-muted py-4">
-                                                                    Belum ada data long term</td>
+                                                                <td colspan="8" class="text-center text-muted py-4">
+                                                                    Belum ada data long term
+                                                                </td>
                                                             </tr>
                                                         @endforelse
                                                     </tbody>
@@ -667,6 +843,118 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                {{-- DETAIL TRANSAKSI / HISTORY LONG TERM --}}
+                                @if (isset($analisa_long_term_histories) && $analisa_long_term_histories->isNotEmpty())
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border">
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0 fw-semibold text-dark">
+                                                <i class="ri-history-line text-primary me-1"></i> Detail Transaksi / Riwayat Analisa Long Term
+                                            </h5>
+                                            <span class="badge bg-info">{{ $analisa_long_term_histories->count() }} Transaksi</span>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover align-middle mb-0">
+                                                    <thead class="table-light text-muted small text-uppercase">
+                                                        <tr>
+                                                            <th width="4%">#</th>
+                                                            <th>Waktu</th>
+                                                            <th>User / Analis</th>
+                                                            <th>Aksi</th>
+                                                            <th>Uji Kristal</th>
+                                                            <th>Disposisi</th>
+                                                            <th>Group ABC</th>
+                                                            <th>Lampiran Foto</th>
+                                                            <th>Keterangan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($analisa_long_term_histories as $hist)
+                                                            @php $hPhotos = $hist->photos; @endphp
+                                                            <tr>
+                                                                <td>{{ $loop->iteration }}</td>
+                                                                <td>
+                                                                    <div class="fw-semibold text-dark">
+                                                                        {{ \Carbon\Carbon::parse($hist->created_at)->format('d M Y') }}
+                                                                    </div>
+                                                                    <small class="text-muted">
+                                                                        {{ \Carbon\Carbon::parse($hist->created_at)->format('H:i') }} WIB
+                                                                    </small>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="fw-medium text-dark">{{ $hist->user->name ?? 'User' }}</span>
+                                                                    <div class="small text-muted">{{ $hist->user->role ?? '-' }}</div>
+                                                                </td>
+                                                                <td>
+                                                                    @if ($hist->action === 'Simpan Sementara')
+                                                                        <span class="badge bg-warning text-dark">
+                                                                            <i class="mdi mdi-content-save-edit-outline me-1"></i> Draft
+                                                                        </span>
+                                                                    @elseif ($hist->action === 'Update Disposisi')
+                                                                        <span class="badge bg-info">
+                                                                            <i class="ri-edit-2-line me-1"></i> Update Disposisi
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="badge bg-success">
+                                                                            <i class="ri-checkbox-circle-line me-1"></i> Simpan Final
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if ($hist->uji_kristal === 'positif')
+                                                                        <span class="badge bg-danger-subtle text-danger fw-semibold">Positif</span>
+                                                                    @elseif ($hist->uji_kristal === 'negatif')
+                                                                        <span class="badge bg-success-subtle text-success fw-semibold">Negatif</span>
+                                                                    @else
+                                                                        <span class="text-muted">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if ($hist->disposisi === 'Release')
+                                                                        <span class="badge bg-success">{{ $hist->disposisi }}</span>
+                                                                    @elseif ($hist->disposisi === 'Release Bersyarat')
+                                                                        <span class="badge bg-warning text-dark">{{ $hist->disposisi }}</span>
+                                                                    @elseif ($hist->disposisi === 'Reject')
+                                                                        <span class="badge bg-danger">{{ $hist->disposisi }}</span>
+                                                                    @else
+                                                                        <span class="text-muted">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if (!empty($hist->group))
+                                                                        <span class="badge bg-primary fs-7">{{ $hist->group }}</span>
+                                                                    @else
+                                                                        <span class="text-muted">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if (!empty($hPhotos))
+                                                                        <div class="d-flex flex-wrap gap-1 align-items-center">
+                                                                            @foreach ($hPhotos as $pIdx => $photoPath)
+                                                                                <a href="{{ asset('storage/uploads/attachment_analisa/' . $photoPath) }}" target="_blank" class="d-inline-block border rounded overflow-hidden" style="width: 32px; height: 32px;">
+                                                                                    <img src="{{ asset('storage/uploads/attachment_analisa/' . $photoPath) }}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">
+                                                                                </a>
+                                                                            @endforeach
+                                                                            <span class="badge bg-light text-muted border ms-1">{{ count($hPhotos) }} Foto</span>
+                                                                        </div>
+                                                                    @else
+                                                                        <span class="text-muted">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    <span class="small text-muted">{{ $hist->keterangan ?? '-' }}</span>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                             @else
                                 {{-- Garam / Gula --}}
                                 <div class="col-lg-12">
@@ -714,6 +1002,55 @@
                                                             </tr>
                                                         @endforelse
                                                     </tbody>
+                                                    @if ($analisa_garam_gula->isNotEmpty())
+                                                        @php
+                                                            $avgKaGG = $analisa_garam_gula->whereNotNull('%ka')->avg('%ka');
+                                                            $avgKotoranGG = $analisa_garam_gula->whereNotNull('kotoran')->avg('kotoran');
+                                                            $avgNaclGG = $analisa_garam_gula->whereNotNull('%nacl')->avg('%nacl');
+                                                            $avgWeightGG = $analisa_garam_gula->whereNotNull('gross_weight')->avg('gross_weight');
+                                                            $totalOrganoGG = $analisa_garam_gula->count();
+                                                            $organoCountsGG = [];
+                                                            foreach ($analisa_garam_gula as $item) {
+                                                                $val = trim($item->organo ?? '');
+                                                                if ($val !== '') {
+                                                                    $cat = $val;
+                                                                    if (stripos($val, 'Lain-lain') === 0) $cat = 'Lain-lain';
+                                                                    elseif (stripos($val, 'Campuran') === 0) $cat = 'Campuran';
+                                                                    elseif (in_array(strtoupper($val), ['OK', 'SESUAI', 'NORMAL'])) $cat = 'OK';
+                                                                    $organoCountsGG[$cat] = ($organoCountsGG[$cat] ?? 0) + 1;
+                                                                }
+                                                            }
+                                                        @endphp
+                                                        <tfoot class="table-light">
+                                                            <tr class="fw-bold">
+                                                                <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
+                                                                <td class="text-muted small">-</td>
+                                                                <td class="text-primary">{{ $avgKaGG !== null ? number_format($avgKaGG, 2) . '%' : '-' }}</td>
+                                                                <td class="text-primary">{{ $avgKotoranGG !== null ? number_format($avgKotoranGG, 3) : '-' }}</td>
+                                                                <td>
+                                                                    <div class="d-flex flex-wrap gap-1">
+                                                                        @forelse ($organoCountsGG as $cat => $cnt)
+                                                                            @php
+                                                                                $pct = $totalOrganoGG > 0 ? round(($cnt / $totalOrganoGG) * 100) : 0;
+                                                                                $isOk = ($cat === 'OK');
+                                                                            @endphp
+                                                                            <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cnt }}/{{ $totalOrganoGG }} sampel">
+                                                                                {{ $cat }}: {{ $pct }}%
+                                                                            </span>
+                                                                        @empty
+                                                                            <span class="text-muted small">-</span>
+                                                                        @endforelse
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-muted small">-</td>
+                                                                <td class="text-muted small">-</td>
+                                                                <td class="text-primary">{{ $avgNaclGG !== null ? number_format($avgNaclGG, 2) . '%' : '-' }}</td>
+                                                                <td class="text-primary">{{ $avgWeightGG !== null ? number_format($avgWeightGG, 2) . ' kg' : '-' }}</td>
+                                                                <td class="text-muted small">-</td>
+                                                                <td class="text-muted small">-</td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    @endif
                                                 </table>
                                             </div>
                                         </div>
@@ -1339,23 +1676,47 @@
                 @csrf
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Update Disposisi Long Term</h5>
+                        <h5 class="modal-title"><i class="ri-edit-2-line me-1 text-primary"></i> Update Disposisi Long Term</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="id_analisa" id="disposisi_id">
                         <div class="mb-3">
-                            <label for="disposisi_new" class="form-label">Disposisi Baru</label>
-                            <select name="disposisi" id="disposisi_new" class="form-select">
+                            <label for="disposisi_new" class="form-label fw-semibold">Disposisi Baru <span class="text-danger">*</span></label>
+                            <select name="disposisi" id="disposisi_new" class="form-select" required>
                                 <option value="">-- Pilih Disposisi --</option>
                                 <option value="Release">Release</option>
+                                <option value="Release Bersyarat">Release Bersyarat</option>
                                 <option value="Reject">Reject</option>
                             </select>
                         </div>
+
+                        {{-- Dynamic Group ABC field in update modal --}}
+                        <div class="mb-3 p-3 border border-primary-subtle rounded bg-light" id="group_update_wrapper" style="display:none;">
+                            <label for="group_new" class="form-label fw-semibold text-primary">
+                                <i class="ri-node-tree me-1"></i> Group ABC <span class="text-danger">*</span>
+                            </label>
+                            <select name="group" id="group_new" class="form-select border-primary">
+                                <option value="">-- Pilih Group ABC --</option>
+                                <option value="Group A">Group A</option>
+                                <option value="Group B">Group B</option>
+                                <option value="Group C">Group C</option>
+                            </select>
+                            <div class="form-text text-muted small mt-1">
+                                Wajib dipilih untuk Disposisi Release / Release Bersyarat.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="keterangan_update" class="form-label fw-semibold">Catatan / Alasan Update</label>
+                            <textarea name="keterangan_update" id="keterangan_update" class="form-control" rows="3" placeholder="Masukkan alasan atau catatan perubahan disposisi..."></textarea>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary px-3">
+                            <i class="ri-save-line me-1"></i> Simpan Perubahan
+                        </button>
                     </div>
                 </div>
             </form>
@@ -1653,26 +2014,61 @@
             }
 
             // ── Update Disposisi Long Term ──
+            $('#disposisi_new').on('change', function() {
+                const val = $(this).val();
+                if (val === 'Release' || val === 'Release Bersyarat') {
+                    $('#group_update_wrapper').slideDown(150);
+                } else {
+                    $('#group_update_wrapper').slideUp(150);
+                    $('#group_new').val('');
+                }
+            });
+
             $('#updateDisposisiModal').on('show.bs.modal', function(e) {
                 const btn = $(e.relatedTarget);
+                const currentDisp = btn.data('disposisi') || '';
+                const currentGroup = btn.data('group') || '';
                 $('#disposisi_id').val(btn.data('id'));
-                $('#disposisi_new').val(btn.data('disposisi')?.toLowerCase() || '');
+                $('#disposisi_new').val(currentDisp).trigger('change');
+                $('#group_new').val(currentGroup);
+                $('#keterangan_update').val('');
             });
 
             $('#formUpdateDisposisi').on('submit', function(e) {
                 e.preventDefault();
                 const disposisiBaru = $('#disposisi_new').val();
-                if (!disposisiBaru) return Swal.fire({
-                    icon: 'warning',
-                    text: 'Silakan pilih disposisi baru.'
+                const groupBaru = $('#group_new').val();
+                const keteranganUpdate = $('#keterangan_update').val();
+
+                if (!disposisiBaru) {
+                    return Swal.fire({
+                        icon: 'warning',
+                        text: 'Silakan pilih disposisi baru.'
+                    });
+                }
+
+                if (['Release', 'Release Bersyarat'].includes(disposisiBaru) && !groupBaru) {
+                    return Swal.fire({
+                        icon: 'warning',
+                        text: 'Silakan pilih Group ABC untuk disposisi ' + disposisiBaru + '.'
+                    });
+                }
+
+                Swal.fire({
+                    title: 'Memperbarui Disposisi...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
                 });
+
                 $.ajax({
                     url: "{{ route('rmpm.update-disposisi.long-term') }}",
                     type: 'POST',
                     dataType: 'json',
                     data: {
                         id: $('#disposisi_id').val(),
-                        disposisi: disposisiBaru
+                        disposisi: disposisiBaru,
+                        group: groupBaru,
+                        keterangan_update: keteranganUpdate,
                     },
                     success: r => {
                         $('#updateDisposisiModal').modal('hide');
@@ -1685,7 +2081,7 @@
                     error: xhr => Swal.fire({
                         icon: 'error',
                         title: 'Kesalahan',
-                        text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memperbarui disposisi.'
                     }),
                 });
             });

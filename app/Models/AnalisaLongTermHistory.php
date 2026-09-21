@@ -3,19 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\AnalisaLongTerm;
 use App\Models\IdentitasRM;
 use App\Models\User;
-use App\Models\AnalisaLongTermHistory;
 
-class AnalisaLongTerm extends Model
+class AnalisaLongTermHistory extends Model
 {
-    protected $table = 'analisa_long_term';
+    protected $table = 'analisa_long_term_histories';
 
     protected $guarded = [];
 
     protected $casts = [
         'attachment' => 'array',
     ];
+
+    public function analisaLongTerm()
+    {
+        return $this->belongsTo(AnalisaLongTerm::class, 'analisa_long_term_id');
+    }
 
     public function identitas()
     {
@@ -24,12 +29,7 @@ class AnalisaLongTerm extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function histories()
-    {
-        return $this->hasMany(AnalisaLongTermHistory::class, 'analisa_long_term_id')->orderBy('created_at', 'desc');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function getPhotosAttribute(): array
@@ -51,4 +51,3 @@ class AnalisaLongTerm extends Model
         return [];
     }
 }
-
