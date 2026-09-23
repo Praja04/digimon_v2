@@ -2742,20 +2742,28 @@
                 const emptyFields = new Set();
 
                 if (currentKategori === 'incoming') {
-                    // Incoming requires complete data for main parameters
-                    $('#formAnalisa').find('.analisa-table tbody tr').each(function() {
-                        $(this).find('input, select').each(function() {
-                            const val = $(this).val();
-                            if (!val || !val.toString().trim()) {
-                                hasEmpty = true;
-                                const name = $(this).attr('name');
-                                const field = SHORT_TERM_FIELDS.find(f => f.key === name);
-                                if (field) emptyFields.add(field.label);
-                                $(this).addClass('is-invalid');
-                            } else {
-                                $(this).removeClass('is-invalid');
-                            }
-                        });
+                    // For Incoming: ensure Brix and pH are filled on all samples
+                    $('#formAnalisa').find('.analisa-table tbody tr').each(function(rowIdx) {
+                        const $row = $(this);
+                        const sampelNo = rowIdx + 1;
+
+                        const $brix = $row.find('input[name="brix[]"]');
+                        if ($brix.length && (!$brix.val() || !$brix.val().trim())) {
+                            hasEmpty = true;
+                            emptyFields.add('Brix (Sampel ' + sampelNo + ')');
+                            $brix.addClass('is-invalid');
+                        } else {
+                            $brix.removeClass('is-invalid');
+                        }
+
+                        const $ph = $row.find('input[name="ph[]"]');
+                        if ($ph.length && (!$ph.val() || !$ph.val().trim())) {
+                            hasEmpty = true;
+                            emptyFields.add('pH (Sampel ' + sampelNo + ')');
+                            $ph.addClass('is-invalid');
+                        } else {
+                            $ph.removeClass('is-invalid');
+                        }
                     });
                 } else {
                     // STA & Monitoring: Flexible! Only Disposisi is required.
@@ -2776,7 +2784,7 @@
                         icon: 'warning',
                         title: 'Data belum lengkap',
                         html: (currentKategori === 'incoming'
-                            ? 'Untuk analisa Incoming, seluruh field wajib diisi:<br><br>'
+                            ? 'Untuk analisa Incoming, parameter Brix, pH, dan Disposisi wajib diisi:<br><br>'
                             : 'Disposisi wajib dipilih:<br><br>') +
                             [...emptyFields].map(f => `<span class="badge bg-danger me-1 mb-1">${f}</span>`).join(''),
                         confirmButtonText: 'Oke',
@@ -2786,19 +2794,17 @@
                 let hasEmpty = false;
                 const emptyFields = new Set();
 
-                $('#formAnalisa').find('.analisa-table tbody tr').each(function() {
-                    $(this).find('input, select').each(function() {
-                        const val = $(this).val();
-                        if (!val || !val.toString().trim()) {
-                            hasEmpty = true;
-                            const name = $(this).attr('name');
-                            const field = GARAM_GULA_FIELDS.find(f => f.key === name);
-                            if (field) emptyFields.add(field.label);
-                            $(this).addClass('is-invalid');
-                        } else {
-                            $(this).removeClass('is-invalid');
-                        }
-                    });
+                $('#formAnalisa').find('.analisa-table tbody tr').each(function(rowIdx) {
+                    const $row = $(this);
+                    const sampelNo = rowIdx + 1;
+                    const $fisik = $row.find('input[name="fisik[]"]');
+                    if ($fisik.length && (!$fisik.val() || !$fisik.val().trim())) {
+                        hasEmpty = true;
+                        emptyFields.add('Fisik (Sampel ' + sampelNo + ')');
+                        $fisik.addClass('is-invalid');
+                    } else {
+                        $fisik.removeClass('is-invalid');
+                    }
                 });
 
                 const $disp = $('select[name="disposisi"]');
