@@ -388,6 +388,37 @@
         border-right: 2px solid #0d6efd !important;
     }
 
+    #analisaAccordion .analisa-table thead tr th.th-data-col {
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s ease;
+    }
+    #analisaAccordion .analisa-table thead tr th.th-data-col:hover {
+        background: #e9ecef;
+    }
+    #analisaAccordion .analisa-table thead tr th .btn-fill-col-down {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        color: #6c757d;
+        background: #fff;
+        border: 1px solid #ced4da;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1;
+        vertical-align: middle;
+        transition: all 0.15s ease;
+    }
+    #analisaAccordion .analisa-table thead tr th .btn-fill-col-down:hover {
+        color: #fff;
+        background: #0d6efd;
+        border-color: #0d6efd;
+        transform: scale(1.12);
+    }
+
     /* Short-term & Garam-Gula table styles */
     #analisaAccordion .short-term-table-wrapper {
         overflow-x: auto;
@@ -853,16 +884,72 @@
             }
         }, true);
 
+        // Early capture for Enter and Tab navigation (prevent default horizontal jump)
+        window.addEventListener('keydown', function(e) {
+            const isInsideTable = $(e.target).closest('#analisaAccordion table, .analisa-table').length > 0;
+            const hasSelection = (tableSelection !== null);
+            if ((isInsideTable || hasSelection) && (e.key === 'Tab' || e.key === 'Enter' || ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')))) {
+                handleTableKeydown(e);
+            }
+        }, true);
+
         // Direct Table Cell Paste Listener (jQuery backup)
         $(document).on('paste', handleDirectTablePaste);
 
-        // Excel-like Keyboard Navigation & Range Selection (Enter, Tab, Shift+Arrows, Ctrl+A, Delete)
+        // Excel-like Keyboard Navigation & Range Selection (Enter, Tab, Shift+Arrows, Ctrl+A, Delete, Ctrl+D)
         $(document).on('keydown', handleTableKeydown);
         $(document).on('mousedown', '#analisaAccordion table tbody td, #analisaAccordion table thead th', handleTableMouseDown);
         $(document).on('mouseenter', '#analisaAccordion table tbody td, #analisaAccordion table thead th', handleTableMouseEnter);
         $(document).on('mouseup', handleTableMouseUp);
         $(document).on('mousedown', handleDocMouseDown);
         $(document).on('copy', handleTableCopy);
+
+        // Quick Fill Down Column Button Handler
+        $(document).on('click', '.btn-fill-col-down', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const colIdx = parseInt($(this).data('col-idx'));
+            const fields = getFields();
+            const field = fields[colIdx];
+            if (!field || currentJumlah <= 1) return;
+
+            const $table = $('#analisaAccordion').find('table');
+            const $rows = $table.find('tbody tr');
+            const $firstRow = $rows.eq(0);
+            let firstVal = '';
+
+            if (field.type === 'organo-select') {
+                firstVal = $firstRow.find('.input-organo-final').val() || '';
+            } else {
+                firstVal = $firstRow.find(`[name="${field.key}"]`).val() || '';
+            }
+
+            if (!firstVal) {
+                Swal.fire({
+                    icon: 'info',
+                    text: `Isi nilai sampel ke-1 pada kolom "${field.label}" terlebih dahulu, lalu klik tombol ini untuk menyalin ke semua baris.`
+                });
+                return;
+            }
+
+            for (let r = 1; r < currentJumlah; r++) {
+                const $row = $rows.eq(r);
+                applyFieldValueToCell($row, field, firstVal);
+            }
+
+            calculateStatistics();
+            saveDraft();
+            setSelection(0, colIdx, currentJumlah - 1, colIdx);
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Kolom ${field.label} disalin ke semua baris`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+        });
 
         // Draft auto-save on input
         $(document).on('input change',
@@ -1401,9 +1488,10 @@
     // ─────────────────────────────────────────────
     function renderShortTermTable(jumlah) {
         let thCols = `<th class="th-sampel">Sampel</th>`;
-        SHORT_TERM_FIELDS.forEach(f => {
+        SHORT_TERM_FIELDS.forEach((f, cIdx) => {
             const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
-            thCols += `<th>${f.label}${unit}</th>`;
+            const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
+            thCols += `<th class="th-data-col" data-col-idx="${cIdx}" title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
         });
 
         let rows = '';
@@ -1418,6 +1506,7 @@
                     tds += `
                         <td>
                             <input type="text"
+                                inputmode="decimal"
                                 list="${f.list}"
                                 class="form-control form-control-sm calc-trigger numeric-clean-input"
                                 name="${f.key}"
@@ -1488,7 +1577,7 @@
         let bannerHtml = '';
         if (currentKategori === 'sta') {
             bannerHtml = `
-                <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center border-info">
+                <div class="alert alert-info py-2 px-3 mb-2 small d-flex align-items-center border-info">
                     <i class="ri-flashlight-line fs-5 text-info me-2"></i>
                     <div>
                         <strong>Mode STA (Short Term Analisa):</strong> Pengisian parameter bersifat fleksibel / parsial (misal: Brix & pH saja). Parameter yang tidak diuji dapat dikosongkan. Disposisi tetap wajib dipilih.
@@ -1496,7 +1585,7 @@
                 </div>`;
         } else if (currentKategori === 'monitoring') {
             bannerHtml = `
-                <div class="alert alert-success py-2 px-3 mb-3 small d-flex align-items-center border-success">
+                <div class="alert alert-success py-2 px-3 mb-2 small d-flex align-items-center border-success">
                     <i class="ri-line-chart-line fs-5 text-success me-2"></i>
                     <div>
                         <strong>Mode Monitoring:</strong> Digunakan untuk pemantauan berkala saat proses produksi. Pengisian parameter bersifat fleksibel sesuai kebutuhan. Disposisi tetap wajib dipilih.
@@ -1504,7 +1593,7 @@
                 </div>`;
         } else {
             bannerHtml = `
-                <div class="alert alert-primary py-2 px-3 mb-3 small d-flex align-items-center border-primary">
+                <div class="alert alert-primary py-2 px-3 mb-2 small d-flex align-items-center border-primary">
                     <i class="ri-inbox-archive-line fs-5 text-primary me-2"></i>
                     <div>
                         <strong>Mode Analisa Incoming:</strong> Seluruh parameter wajib diisi lengkap untuk verifikasi penerimaan bahan baku.
@@ -1512,8 +1601,19 @@
                 </div>`;
         }
 
+        const tipsBanner = `
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 p-2 bg-light rounded border text-muted" style="font-size: 11.5px;">
+                <div class="d-flex align-items-center flex-wrap gap-3">
+                    <span><i class="ri-keyboard-line text-primary me-1"></i><strong>Enter / Tab:</strong> Ke sampel berikutnya (bawah)</span>
+                    <span><i class="ri-file-copy-line text-primary me-1"></i><strong>Ctrl+C / Ctrl+V:</strong> Copy-Paste per sel atau blok</span>
+                    <span><i class="ri-arrow-down-line text-primary me-1"></i><strong>Ctrl+D:</strong> Fill Down (Salin ke bawah)</span>
+                    <span><i class="ri-arrow-down-double-line text-primary me-1"></i><strong>Tombol <i class="ri-arrow-down-double-line"></i>:</strong> Salin baris 1 ke semua</span>
+                </div>
+            </div>`;
+
         return `
                 ${bannerHtml}
+                ${tipsBanner}
                 <div class="short-term-table-wrapper">
                     <table class="analisa-table" id="tableAnalisaShortTerm">
                         <thead>
@@ -1531,9 +1631,10 @@
     // ─────────────────────────────────────────────
     function renderGaramGulaTable(jumlah) {
         let thCols = `<th class="th-sampel">Sampel</th>`;
-        GARAM_GULA_FIELDS.forEach(f => {
+        GARAM_GULA_FIELDS.forEach((f, cIdx) => {
             const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
-            thCols += `<th>${f.label}${unit}</th>`;
+            const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
+            thCols += `<th class="th-data-col" data-col-idx="${cIdx}" title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
         });
 
         let rows = '';
@@ -1548,6 +1649,7 @@
                     tds += `
                         <td>
                             <input type="text"
+                                inputmode="decimal"
                                 list="${f.list}"
                                 class="form-control form-control-sm calc-trigger numeric-clean-input"
                                 name="${f.key}"
@@ -2064,7 +2166,7 @@
     }
 
     // ─────────────────────────────────────────────
-    // KEYBOARD NAVIGATION (Enter/Tab Downwards, Shift+Arrows, Ctrl+A)
+    // KEYBOARD NAVIGATION (Enter/Tab Downwards, Shift+Arrows, Ctrl+D, Ctrl+A)
     // ─────────────────────────────────────────────
     function handleTableKeydown(e) {
         const isInsideTable = $(e.target).closest('#analisaAccordion table, .analisa-table').length > 0;
@@ -2086,7 +2188,7 @@
         const fields = getFields();
         const { row, col } = coords;
 
-        // 1. ENTER KEY: Navigate Downwards (Shift+Enter: Upwards) - NEVER submit form
+        // 1. ENTER KEY: Strictly Navigate Downwards (Shift+Enter: Upwards) - NEVER submit form
         if (e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();
@@ -2104,12 +2206,15 @@
                 } else if (col < fields.length - 1) {
                     // Wrap to top of next column
                     focusCell(0, col + 1);
+                } else {
+                    // Last cell in table: move focus to Disposisi
+                    $('select[name="disposisi"]').focus();
                 }
             }
             return false;
         }
 
-        // 2. TAB KEY: Navigate Downwards (Shift+Tab: Upwards)
+        // 2. TAB KEY: Strictly Navigate Downwards (Shift+Tab: Upwards)
         if (e.key === 'Tab') {
             e.preventDefault();
             e.stopPropagation();
@@ -2127,13 +2232,83 @@
                 } else if (col < fields.length - 1) {
                     // Wrap to top of next column
                     focusCell(0, col + 1);
+                } else {
+                    // Last cell in table: move focus to Disposisi
+                    $('select[name="disposisi"]').focus();
                 }
             }
             return false;
         }
 
-        // 3. ARROW KEYS (Up / Down) without shift
+        // 3. CTRL + D: Fill Down (Copy top row / above row value to all selected rows)
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            let minR, maxR, minC, maxC;
+            if (tableSelection) {
+                minR = tableSelection.minRow;
+                maxR = tableSelection.maxRow;
+                minC = tableSelection.minCol;
+                maxC = tableSelection.maxCol;
+            } else {
+                minR = row;
+                maxR = row;
+                minC = col;
+                maxC = col;
+            }
+
+            const $table = $('#analisaAccordion').find('table');
+            const $rows = $table.find('tbody tr');
+
+            if (minR === maxR) {
+                // If only 1 row is selected and row > 0, copy from row above (minR - 1)
+                if (minR > 0) {
+                    for (let c = minC; c <= maxC; c++) {
+                        const field = fields[c];
+                        if (!field) continue;
+                        const $sourceRow = $rows.eq(minR - 1);
+                        let sourceVal = '';
+                        if (field.type === 'organo-select') {
+                            sourceVal = $sourceRow.find('.input-organo-final').val() || '';
+                        } else {
+                            sourceVal = $sourceRow.find(`[name="${field.key}"]`).val() || '';
+                        }
+                        const $targetRow = $rows.eq(minR);
+                        applyFieldValueToCell($targetRow, field, sourceVal);
+                    }
+                }
+            } else {
+                // Multi-row selection: copy top row (minR) to all rows below it (minR + 1 to maxR)
+                for (let c = minC; c <= maxC; c++) {
+                    const field = fields[c];
+                    if (!field) continue;
+                    const $sourceRow = $rows.eq(minR);
+                    let sourceVal = '';
+                    if (field.type === 'organo-select') {
+                        sourceVal = $sourceRow.find('.input-organo-final').val() || '';
+                    } else {
+                        sourceVal = $sourceRow.find(`[name="${field.key}"]`).val() || '';
+                    }
+
+                    for (let r = minR + 1; r <= maxR; r++) {
+                        const $targetRow = $rows.eq(r);
+                        applyFieldValueToCell($targetRow, field, sourceVal);
+                    }
+                }
+            }
+
+            renderSelection();
+            calculateStatistics();
+            saveDraft();
+            return false;
+        }
+
+        // 4. ARROW KEYS (Up / Down) without shift
         if (e.key === 'ArrowDown' && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+            if ($(e.target).is('select')) {
+                return; // Let select change option natively
+            }
             if (row < currentJumlah - 1) {
                 e.preventDefault();
                 focusCell(row + 1, col);
@@ -2141,6 +2316,9 @@
             return;
         }
         if (e.key === 'ArrowUp' && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+            if ($(e.target).is('select')) {
+                return; // Let select change option natively
+            }
             if (row > 0) {
                 e.preventDefault();
                 focusCell(row - 1, col);
@@ -2148,7 +2326,33 @@
             return;
         }
 
-        // 4. SHIFT + ARROW KEYS: Expand / Contract Block Selection
+        // 5. ARROW KEYS (Left / Right) without shift (Horizontal cell jump at boundaries)
+        if (e.key === 'ArrowRight' && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+            const isSelect = $(e.target).is('select');
+            const isInput = $(e.target).is('input');
+            const isAtEnd = isInput && e.target.selectionStart === (e.target.value || '').length && e.target.selectionEnd === (e.target.value || '').length;
+            if (isSelect || isAtEnd) {
+                if (col < fields.length - 1) {
+                    e.preventDefault();
+                    focusCell(row, col + 1);
+                }
+            }
+            return;
+        }
+        if (e.key === 'ArrowLeft' && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+            const isSelect = $(e.target).is('select');
+            const isInput = $(e.target).is('input');
+            const isAtStart = isInput && e.target.selectionStart === 0 && e.target.selectionEnd === 0;
+            if (isSelect || isAtStart) {
+                if (col > 0) {
+                    e.preventDefault();
+                    focusCell(row, col - 1);
+                }
+            }
+            return;
+        }
+
+        // 6. SHIFT + ARROW KEYS: Expand / Contract Block Selection
         if (e.shiftKey && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
             e.preventDefault();
             if (!selectionAnchor || selectionAnchor.row === undefined) selectionAnchor = { type: 'cell', row, col };
@@ -2164,7 +2368,7 @@
             return;
         }
 
-        // 5. CTRL + A: Select All Data Cells in Table
+        // 7. CTRL + A: Select All Data Cells in Table
         if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && isInsideTable) {
             e.preventDefault();
             selectionAnchor = { type: 'cell', row: 0, col: 0 };
@@ -2172,7 +2376,7 @@
             return;
         }
 
-        // 6. DELETE / BACKSPACE: Clear Selected Block
+        // 8. DELETE / BACKSPACE: Clear Selected Block
         if ((e.key === 'Delete' || e.key === 'Backspace') && tableSelection && (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol)) {
             e.preventDefault();
             clearSelectedCellsContent();
@@ -2188,8 +2392,9 @@
         const $target = $(this);
 
         // Header click (select entire column or columns)
-        if ($target.is('th')) {
-            const colIdx = $target.index() - 1;
+        if ($target.is('th') || $target.hasClass('th-data-col') || $target.closest('th').length) {
+            const $th = $target.is('th') ? $target : $target.closest('th');
+            const colIdx = $th.index() - 1;
             if (colIdx >= 0) {
                 selectionAnchor = { type: 'col', col: colIdx };
                 isMouseDragging = true;
@@ -2199,8 +2404,9 @@
         }
 
         // Row header click (sample number: select entire row)
-        if ($target.hasClass('td-sampel')) {
-            const rowIdx = $target.closest('tr').index();
+        if ($target.hasClass('td-sampel') || $target.closest('.td-sampel').length) {
+            const $td = $target.hasClass('td-sampel') ? $target : $target.closest('.td-sampel');
+            const rowIdx = $td.closest('tr').index();
             if (rowIdx >= 0) {
                 const fields = getFields();
                 selectionAnchor = { type: 'row', row: rowIdx };
@@ -2229,8 +2435,9 @@
         const $target = $(this);
 
         if (selectionAnchor.type === 'col') {
-            if ($target.is('th')) {
-                const colIdx = $target.index() - 1;
+            const $th = $target.is('th') ? $target : $target.closest('th');
+            if ($th.length) {
+                const colIdx = $th.index() - 1;
                 if (colIdx >= 0) {
                     setSelection(0, selectionAnchor.col, currentJumlah - 1, colIdx);
                 }
@@ -2239,8 +2446,9 @@
         }
 
         if (selectionAnchor.type === 'row') {
-            if ($target.hasClass('td-sampel') || $target.is('td')) {
-                const rowIdx = $target.closest('tr').index();
+            const $td = $target.is('td') ? $target : $target.closest('td');
+            if ($td.length) {
+                const rowIdx = $td.closest('tr').index();
                 if (rowIdx >= 0) {
                     const fields = getFields();
                     setSelection(selectionAnchor.row, 0, rowIdx, fields.length - 1);
@@ -2265,14 +2473,31 @@
     }
 
     // ─────────────────────────────────────────────
-    // COPY HANDLER (Ctrl+C on selected range)
+    // COPY HANDLER (Ctrl+C on selected range / focused cell)
     // ─────────────────────────────────────────────
     function handleTableCopy(e) {
-        if (!tableSelection || (tableSelection.minRow === tableSelection.maxRow && tableSelection.minCol === tableSelection.maxCol)) {
-            return; // standard browser copy
-        }
-        const { minRow, maxRow, minCol, maxCol } = tableSelection;
         const fields = getFields();
+        if (!fields.length) return;
+
+        let targetRange = null;
+
+        if (tableSelection) {
+            targetRange = tableSelection;
+        } else {
+            const coords = getCellCoords(document.activeElement);
+            if (coords) {
+                targetRange = {
+                    minRow: coords.row,
+                    maxRow: coords.row,
+                    minCol: coords.col,
+                    maxCol: coords.col
+                };
+            }
+        }
+
+        if (!targetRange) return;
+
+        const { minRow, maxRow, minCol, maxCol } = targetRange;
         const rowsText = [];
 
         for (let r = minRow; r <= maxRow; r++) {
@@ -2298,6 +2523,14 @@
         if (clipboardData) {
             e.preventDefault();
             clipboardData.setData('text/plain', copyString);
+
+            // Highlight copied cells
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const $td = getCellTd(r, c);
+                    highlightCell($td.find('input, select'));
+                }
+            }
         }
     }
 
