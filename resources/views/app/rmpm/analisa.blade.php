@@ -328,29 +328,6 @@
     </div>
 </div>
 
-{{-- DATALIST PRESETS UNTUK KOTORAN & KA --}}
-<datalist id="kotoran_presets">
-    <option value="0"></option>
-    <option value="0.01"></option>
-    <option value="0.02"></option>
-    <option value="0.05"></option>
-    <option value="0.1"></option>
-    <option value="0.2"></option>
-    <option value="0.5"></option>
-    <option value="1.0"></option>
-</datalist>
-
-<datalist id="ka_presets">
-    <option value="0.05"></option>
-    <option value="0.10"></option>
-    <option value="0.15"></option>
-    <option value="0.20"></option>
-    <option value="0.25"></option>
-    <option value="0.30"></option>
-    <option value="0.50"></option>
-    <option value="1.00"></option>
-</datalist>
-
 <style>
     /* Direct paste animation & focus styling */
     @keyframes pasteCellPulse {
@@ -710,8 +687,8 @@
     const SHORT_TERM_FIELDS = [
         { key: 'brix[]', label: 'Brix', type: 'number', unit: '' },
         { key: 'ph[]', label: 'pH', type: 'number', unit: '' },
-        { key: 'kotoran[]', label: 'Kotoran', type: 'flexible-number', list: 'kotoran_presets', unit: '' },
-        { key: 'ka[]', label: 'KA', type: 'flexible-number', list: 'ka_presets', unit: '%' },
+        { key: 'kotoran[]', label: 'Kotoran', type: 'number', unit: '' },
+        { key: 'ka[]', label: 'KA', type: 'number', unit: '%' },
         { key: 'organo[]', label: 'Organo', type: 'organo-select', unit: '' },
         { key: 'warna[]', label: 'Warna', type: 'dropdown', masterKey: 'warna', unit: '' },
         { key: 'aroma[]', label: 'Aroma', type: 'dropdown', masterKey: 'aroma', unit: '' },
@@ -720,8 +697,8 @@
     // Garam-Gula table fields definition
     const GARAM_GULA_FIELDS = [
         { key: 'fisik[]', label: 'Fisik', type: 'text', unit: '' },
-        { key: '%ka[]', label: '%KA', type: 'flexible-number', list: 'ka_presets', unit: '%' },
-        { key: 'kotoran[]', label: 'Kotoran', type: 'flexible-number', list: 'kotoran_presets', unit: '' },
+        { key: '%ka[]', label: '%KA', type: 'number', unit: '%' },
+        { key: 'kotoran[]', label: 'Kotoran', type: 'number', unit: '' },
         { key: 'organo[]', label: 'Organo', type: 'organo-select', unit: '' },
         { key: 'warna[]', label: 'Warna', type: 'dropdown', masterKey: 'warna', unit: '' },
         { key: 'aroma[]', label: 'Aroma', type: 'dropdown', masterKey: 'aroma', unit: '' },
@@ -858,15 +835,49 @@
             calculateStatistics();
         });
 
-        // Auto-sanitize numeric fields on typing (comma to dot)
+        // Strict Numeric Restriction: ONLY digits (0-9) and at most one decimal point (. or ,)
+        $(document).on('keydown', '.numeric-clean-input', function(e) {
+            // Allow control, functional, and navigation keys
+            if ([
+                'Backspace', 'Delete', 'Tab', 'Enter', 'Escape',
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                'Home', 'End'
+            ].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+                return;
+            }
+
+            // Allow digits 0-9
+            if (/^[0-9]$/.test(e.key)) {
+                return;
+            }
+
+            // Allow decimal point (. or ,) only once
+            if (e.key === '.' || e.key === ',') {
+                const val = $(this).val();
+                if (!val.includes('.') && !val.includes(',')) {
+                    return;
+                }
+            }
+
+            // Block ALL letters, spaces, and other symbols
+            e.preventDefault();
+        });
+
+        // Auto-sanitize numeric fields on typing / pasting (comma to dot, strip all non-numeric chars)
         $(document).on('input', '.numeric-clean-input', function() {
             let val = $(this).val();
-            if (val && val.includes(',')) {
-                const pos = this.selectionStart;
-                val = val.replace(/,/g, '.');
+            if (!val) return;
+            const pos = this.selectionStart;
+            val = val.replace(/,/g, '.');
+            val = val.replace(/[^0-9.]/g, '');
+            const parts = val.split('.');
+            if (parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
+            if ($(this).val() !== val) {
                 $(this).val(val);
                 if (pos !== null) {
-                    try { this.setSelectionRange(pos, pos); } catch(e) {}
+                    try { this.setSelectionRange(pos, pos); } catch(err) {}
                 }
             }
         });
@@ -884,12 +895,14 @@
             }
         }, true);
 
-        // Early capture for Enter and Tab navigation (prevent default horizontal jump)
+        // Capture Enter and Tab in window capture phase to guarantee downwards navigation
         window.addEventListener('keydown', function(e) {
-            const isInsideTable = $(e.target).closest('#analisaAccordion table, .analisa-table').length > 0;
-            const hasSelection = (tableSelection !== null);
-            if ((isInsideTable || hasSelection) && (e.key === 'Tab' || e.key === 'Enter' || ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')))) {
-                handleTableKeydown(e);
+            const target = e.target;
+            const isInside = target && target.closest && target.closest('.analisa-table, #analisaAccordion table');
+            if (isInside && (e.key === 'Tab' || e.key === 'Enter')) {
+                e.preventDefault();
+                e.stopPropagation();
+                navigateTableVertical(target, e.shiftKey ? -1 : 1);
             }
         }, true);
 
@@ -1502,19 +1515,8 @@
                     tds += `<td>${renderOrganoCell(f.key)}</td>`;
                 } else if (f.type === 'dropdown') {
                     tds += `<td>${renderDropdownCell(f)}</td>`;
-                } else if (f.type === 'flexible-number') {
-                    tds += `
-                        <td>
-                            <input type="text"
-                                inputmode="decimal"
-                                list="${f.list}"
-                                class="form-control form-control-sm calc-trigger numeric-clean-input"
-                                name="${f.key}"
-                                placeholder="0.00 / Pilih"
-                                autocomplete="off">
-                        </td>`;
                 } else {
-                    // number input (Brix, pH)
+                    // number inputs (Brix, pH, Kotoran, KA)
                     tds += `
                         <td>
                             <input type="text"
@@ -1645,18 +1647,17 @@
                     tds += `<td>${renderOrganoCell(f.key)}</td>`;
                 } else if (f.type === 'dropdown') {
                     tds += `<td>${renderDropdownCell(f)}</td>`;
-                } else if (f.type === 'flexible-number') {
+                } else if (f.type === 'text') {
                     tds += `
                         <td>
                             <input type="text"
-                                inputmode="decimal"
-                                list="${f.list}"
-                                class="form-control form-control-sm calc-trigger numeric-clean-input"
+                                class="form-control form-control-sm upper-input"
                                 name="${f.key}"
-                                placeholder="0.00 / Pilih"
+                                placeholder="-"
                                 autocomplete="off">
                         </td>`;
-                } else if (f.type === 'number') {
+                } else {
+                    // number inputs (%KA, Kotoran, %NaCl, Gross Weight)
                     tds += `
                         <td>
                             <input type="text"
@@ -1664,15 +1665,6 @@
                                 class="form-control form-control-sm calc-trigger numeric-clean-input"
                                 name="${f.key}"
                                 placeholder="0.00"
-                                autocomplete="off">
-                        </td>`;
-                } else {
-                    tds += `
-                        <td>
-                            <input type="text"
-                                class="form-control form-control-sm upper-input"
-                                name="${f.key}"
-                                placeholder="-"
                                 autocomplete="off">
                         </td>`;
                 }
@@ -2166,6 +2158,70 @@
     }
 
     // ─────────────────────────────────────────────
+    // FOOLPROOF VERTICAL TABLE NAVIGATION (ENTER / TAB)
+    // ─────────────────────────────────────────────
+    function navigateTableVertical(currentEl, direction) {
+        const $el = $(currentEl);
+        const $td = $el.closest('td');
+        const $tr = $td.closest('tr');
+        const $tbody = $tr.closest('tbody');
+        
+        if (!$td.length || !$tr.length || !$tbody.length) return;
+
+        const colIdx = $td.index(); // 0 is td.td-sampel, 1 is Col 1, 2 is Col 2...
+        const rowIdx = $tr.index(); // 0 is Sample 1, 1 is Sample 2...
+        const totalRows = $tbody.find('tr').length;
+        const totalCols = $tr.find('td').length;
+
+        let targetRow = rowIdx + direction;
+        let targetCol = colIdx;
+
+        if (direction > 0) {
+            // Moving DOWN
+            if (targetRow >= totalRows) {
+                // Reached last sample row: wrap to top (row 0) of NEXT data column
+                targetRow = 0;
+                targetCol = colIdx + 1;
+                if (targetCol >= totalCols) {
+                    // Reached end of table: focus Disposisi dropdown
+                    $('select[name="disposisi"]').focus();
+                    return;
+                }
+            }
+        } else {
+            // Moving UP
+            if (targetRow < 0) {
+                // Reached top row: wrap to bottom of PREVIOUS data column
+                targetRow = totalRows - 1;
+                targetCol = colIdx - 1;
+                if (targetCol <= 0) {
+                    targetRow = 0;
+                    targetCol = 1;
+                }
+            }
+        }
+
+        const $targetRowEl = $tbody.find('tr').eq(targetRow);
+        const $targetTd = $targetRowEl.find('td').eq(targetCol);
+
+        if ($targetTd.length) {
+            let $targetInput = $targetTd.find('.organo-cell-container select, .organo-cell-container input:visible, select, input').filter(':visible').first();
+            if (!$targetInput.length) {
+                $targetInput = $targetTd.find('input, select').first();
+            }
+
+            if ($targetInput.length) {
+                $targetInput.focus();
+                if ($targetInput.is('input:not([type=checkbox]):not([type=radio])')) {
+                    try { $targetInput[0].select(); } catch(err) {}
+                }
+                const dataColIdx = targetCol - 1;
+                setSelection(targetRow, dataColIdx, targetRow, dataColIdx);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────
     // KEYBOARD NAVIGATION (Enter/Tab Downwards, Shift+Arrows, Ctrl+D, Ctrl+A)
     // ─────────────────────────────────────────────
     function handleTableKeydown(e) {
@@ -2174,69 +2230,11 @@
 
         if (!isInsideTable && !hasSelection) return;
 
-        // If target is outside table and no cell selection, do not intercept
-        if (!hasSelection && !$(e.target).is('#analisaAccordion table input, #analisaAccordion table select')) {
-            return;
-        }
-
-        let coords = getCellCoords(e.target);
-        if (!coords && tableSelection) {
-            coords = { row: tableSelection.minRow, col: tableSelection.minCol };
-        }
-        if (!coords) return;
-
-        const fields = getFields();
-        const { row, col } = coords;
-
-        // 1. ENTER KEY: Strictly Navigate Downwards (Shift+Enter: Upwards) - NEVER submit form
-        if (e.key === 'Enter') {
+        // 1. ENTER / TAB: Strictly Navigate Downwards (Shift: Upwards)
+        if (e.key === 'Enter' || e.key === 'Tab') {
             e.preventDefault();
             e.stopPropagation();
-            if (e.shiftKey) {
-                // Move up
-                if (row > 0) {
-                    focusCell(row - 1, col);
-                } else if (col > 0) {
-                    focusCell(currentJumlah - 1, col - 1);
-                }
-            } else {
-                // Move down
-                if (row < currentJumlah - 1) {
-                    focusCell(row + 1, col);
-                } else if (col < fields.length - 1) {
-                    // Wrap to top of next column
-                    focusCell(0, col + 1);
-                } else {
-                    // Last cell in table: move focus to Disposisi
-                    $('select[name="disposisi"]').focus();
-                }
-            }
-            return false;
-        }
-
-        // 2. TAB KEY: Strictly Navigate Downwards (Shift+Tab: Upwards)
-        if (e.key === 'Tab') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.shiftKey) {
-                // Move up
-                if (row > 0) {
-                    focusCell(row - 1, col);
-                } else if (col > 0) {
-                    focusCell(currentJumlah - 1, col - 1);
-                }
-            } else {
-                // Move down
-                if (row < currentJumlah - 1) {
-                    focusCell(row + 1, col);
-                } else if (col < fields.length - 1) {
-                    // Wrap to top of next column
-                    focusCell(0, col + 1);
-                } else {
-                    // Last cell in table: move focus to Disposisi
-                    $('select[name="disposisi"]').focus();
-                }
-            }
+            navigateTableVertical(e.target, e.shiftKey ? -1 : 1);
             return false;
         }
 
