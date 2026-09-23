@@ -586,6 +586,8 @@
     const IDENTITAS_ID = '{{ $identitas->id }}';
     const DRAFT_KEY = `rmpm_analisa_${IDENTITAS_ID}`;
     const SERVER_EXISTING = @json($existingLongTerm ?? null);
+    const SERVER_SHORT_TERM = @json($existingShortTerm ?? []);
+    const SERVER_GARAM_GULA = @json($existingGaramGula ?? []);
 
     let currentType = null;
     let currentKategori = 'incoming';
@@ -721,9 +723,21 @@
         initFormData();
 
         $('input[name="analisa_type"]').on('change', function() {
-            const isLong = $(this).val() === 'long-term';
+            const val = $(this).val();
+            const isLong = (val === 'long-term');
             $('#jumlahWrapper').toggle(!isLong);
-            if (isLong) $('#jumlahData').val('1');
+            if (isLong) {
+                $('#jumlahData').val('1');
+            } else if (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0) {
+                const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === val);
+                if (matching.length > 0) {
+                    $('#jumlahData').val(matching.length);
+                } else {
+                    $('#jumlahData').val(1);
+                }
+            } else {
+                $('#jumlahData').val(1);
+            }
         });
 
         $('#btnMulai').on('click', handleMulai);
@@ -872,35 +886,68 @@
         });
     });
 
-    function initFormData() {
-        if (SERVER_EXISTING && SERVER_EXISTING.id) {
-            // Load from server
-            currentType = 'long-term';
-            currentKategori = 'long-term';
-            currentJumlah = 1;
+    function applyOrganoValueToCell($container, val) {
+        if (!$container || !$container.length) return;
+        const $select = $container.find('.select-organo-dropdown');
+        const $customBox = $container.find('.organo-custom-input-box');
+        const $customInput = $container.find('.input-organo-custom-text');
+        const $finalInput = $container.find('.input-organo-final');
 
-            if (SERVER_EXISTING.attachment) {
-                if (Array.isArray(SERVER_EXISTING.attachment)) {
-                    existingPhotos = [...SERVER_EXISTING.attachment];
-                } else if (typeof SERVER_EXISTING.attachment === 'string' && SERVER_EXISTING.attachment !== '-') {
-                    try {
-                        const parsed = JSON.parse(SERVER_EXISTING.attachment);
-                        existingPhotos = Array.isArray(parsed) ? parsed : [SERVER_EXISTING.attachment];
-                    } catch {
-                        existingPhotos = [SERVER_EXISTING.attachment];
-                    }
+        $finalInput.val(val || '');
+
+        if (!val) {
+            $select.val('');
+            $customBox.hide();
+            $customInput.val('');
+            return;
+        }
+
+        const optMatches = $select.find(`option[value="${val}"]`);
+        if (optMatches.length > 0 && optMatches.data('custom') != '1') {
+            $select.val(val);
+            $customBox.hide();
+            $customInput.val('');
+        } else {
+            let selectTarget = 'Lain-lain';
+            if (val.toUpperCase().startsWith('CAMPURAN')) {
+                selectTarget = 'Campuran';
+            }
+            $select.val(selectTarget);
+            $customBox.show();
+            $customInput.val(val);
+        }
+    }
+
+    function populateExistingLongTerm() {
+        currentType = 'long-term';
+        currentKategori = 'long-term';
+        currentJumlah = 1;
+
+        if (SERVER_EXISTING && SERVER_EXISTING.attachment) {
+            if (Array.isArray(SERVER_EXISTING.attachment)) {
+                existingPhotos = [...SERVER_EXISTING.attachment];
+            } else if (typeof SERVER_EXISTING.attachment === 'string' && SERVER_EXISTING.attachment !== '-') {
+                try {
+                    const parsed = JSON.parse(SERVER_EXISTING.attachment);
+                    existingPhotos = Array.isArray(parsed) ? parsed : [SERVER_EXISTING.attachment];
+                } catch {
+                    existingPhotos = [SERVER_EXISTING.attachment];
                 }
             }
+        }
 
-            if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
-                $(`input[name="analisa_type"][value="long-term"]`).prop('checked', true);
-            }
-            $('#jumlahData').val(1);
-            startForm('long-term', 1, 'long-term');
+        if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+            $(`input[name="analisa_type"][value="long-term"]`).prop('checked', true);
+        }
+        $('#jumlahData').val(1);
+        startForm('long-term', 1, 'long-term');
 
-            setTimeout(() => {
-                if (SERVER_EXISTING.status === 'draft') {
+        setTimeout(() => {
+            if (SERVER_EXISTING) {
+                if (SERVER_EXISTING.status === 'draft' || !SERVER_EXISTING.disposisi) {
                     $('#draftStatusBadge').show();
+                } else {
+                    $('#draftStatusBadge').hide();
                 }
                 if (SERVER_EXISTING.uji_kristal) {
                     $('#selectUjiKristal').val(SERVER_EXISTING.uji_kristal).trigger('change');
@@ -915,11 +962,173 @@
                     $('#keteranganLong').val(SERVER_EXISTING.keterangan);
                 }
                 renderPhotoPreviews();
-            }, 100);
-        } else {
-            // Check localStorage
-            restoreFromDraft();
+            }
+        }, 100);
+        return true;
+    }
+
+    function populateExistingShortTerm(kategori) {
+        if (!SERVER_SHORT_TERM || !SERVER_SHORT_TERM.length) return false;
+        const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming'));
+        if (!matching.length) return false;
+
+        currentType = 'short-term';
+        currentKategori = kategori;
+        currentJumlah = matching.length;
+
+        if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+            $(`input[name="analisa_type"][value="${kategori}"]`).prop('checked', true);
         }
+        $('#jumlahData').val(matching.length);
+        startForm('short-term', matching.length, kategori);
+
+        setTimeout(() => {
+            if (matching[0].disposisi) {
+                $('select[name="disposisi"]').val(matching[0].disposisi).trigger('change');
+                $('#draftStatusBadge').hide();
+            } else {
+                $('select[name="disposisi"]').val('').trigger('change');
+                $('#draftStatusBadge').show();
+            }
+            if (matching[0].keterangan) {
+                $('textarea[name="keterangan"]').val(matching[0].keterangan);
+            }
+
+            matching.forEach((rec, idx) => {
+                if (rec.brix !== null && rec.brix !== undefined) {
+                    $('input[name="brix[]"]').eq(idx).val(rec.brix);
+                }
+                if (rec.ph !== null && rec.ph !== undefined) {
+                    $('input[name="ph[]"]').eq(idx).val(rec.ph);
+                }
+                if (rec.kotoran !== null && rec.kotoran !== undefined) {
+                    $('input[name="kotoran[]"]').eq(idx).val(rec.kotoran);
+                }
+                if (rec.ka !== null && rec.ka !== undefined) {
+                    $('input[name="ka[]"]').eq(idx).val(rec.ka);
+                }
+                if (rec.warna) {
+                    $('select[name="warna[]"]').eq(idx).val(rec.warna);
+                }
+                if (rec.aroma) {
+                    $('select[name="aroma[]"]').eq(idx).val(rec.aroma);
+                }
+                if (rec.organo) {
+                    const $container = $('.organo-cell-container').eq(idx);
+                    applyOrganoValueToCell($container, rec.organo);
+                }
+            });
+
+            calculateStatistics();
+        }, 100);
+        return true;
+    }
+
+    function populateExistingGaramGula() {
+        if (!SERVER_GARAM_GULA || !SERVER_GARAM_GULA.length) return false;
+
+        currentType = 'garam-gula';
+        currentKategori = 'incoming';
+        currentJumlah = SERVER_GARAM_GULA.length;
+
+        $('#jumlahData').val(SERVER_GARAM_GULA.length);
+        startForm('garam-gula', SERVER_GARAM_GULA.length, 'incoming');
+
+        setTimeout(() => {
+            if (SERVER_GARAM_GULA[0].disposisi) {
+                $('select[name="disposisi"]').val(SERVER_GARAM_GULA[0].disposisi).trigger('change');
+                $('#draftStatusBadge').hide();
+            } else {
+                $('select[name="disposisi"]').val('').trigger('change');
+                $('#draftStatusBadge').show();
+            }
+            if (SERVER_GARAM_GULA[0].keterangan) {
+                $('textarea[name="keterangan"]').val(SERVER_GARAM_GULA[0].keterangan);
+            }
+            SERVER_GARAM_GULA.forEach((rec, idx) => {
+                if (rec.fisik) $('input[name="fisik[]"]').eq(idx).val(rec.fisik);
+                if (rec.ka) $('input[name="%ka[]"]').eq(idx).val(rec.ka);
+                if (rec.kotoran) $('input[name="kotoran[]"]').eq(idx).val(rec.kotoran);
+                if (rec.nacl) $('input[name="%nacl[]"]').eq(idx).val(rec.nacl);
+                if (rec.gross_weight) $('input[name="gross_weight[]"]').eq(idx).val(rec.gross_weight);
+                if (rec.warna) $('select[name="warna[]"]').eq(idx).val(rec.warna);
+                if (rec.aroma) $('select[name="aroma[]"]').eq(idx).val(rec.aroma);
+                if (rec.organo) {
+                    const $container = $('.organo-cell-container').eq(idx);
+                    applyOrganoValueToCell($container, rec.organo);
+                }
+            });
+            calculateStatistics();
+        }, 100);
+        return true;
+    }
+
+    function initFormData() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reqKategori = urlParams.get('kategori');
+
+        // Case 1: Specific category requested in URL (?kategori=sta, ?kategori=monitoring, ?kategori=incoming, ?kategori=long-term)
+        if (reqKategori === 'long-term') {
+            if (SERVER_EXISTING && SERVER_EXISTING.id) {
+                populateExistingLongTerm();
+            } else {
+                currentType = 'long-term';
+                currentKategori = 'long-term';
+                currentJumlah = 1;
+                if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+                    $(`input[name="analisa_type"][value="long-term"]`).prop('checked', true);
+                }
+                $('#jumlahData').val(1);
+                startForm('long-term', 1, 'long-term');
+            }
+            return;
+        }
+
+        if (reqKategori && ['incoming', 'sta', 'monitoring'].includes(reqKategori)) {
+            const hasData = populateExistingShortTerm(reqKategori);
+            if (!hasData) {
+                if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+                    $(`input[name="analisa_type"][value="${reqKategori}"]`).prop('checked', true);
+                }
+                $('#jumlahData').val(1);
+                startForm('short-term', 1, reqKategori);
+            }
+            return;
+        }
+
+        // Case 2: No specific category in URL. Check database records.
+        // If Short Term has data:
+        if (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0) {
+            const incomingExists = SERVER_SHORT_TERM.some(i => !i.kategori || i.kategori === 'incoming');
+            const staExists = SERVER_SHORT_TERM.some(i => i.kategori === 'sta');
+            const monitoringExists = SERVER_SHORT_TERM.some(i => i.kategori === 'monitoring');
+
+            if (incomingExists) {
+                populateExistingShortTerm('incoming');
+                return;
+            } else if (staExists) {
+                populateExistingShortTerm('sta');
+                return;
+            } else if (monitoringExists) {
+                populateExistingShortTerm('monitoring');
+                return;
+            }
+        }
+
+        // If Long Term has data:
+        if (SERVER_EXISTING && SERVER_EXISTING.id) {
+            populateExistingLongTerm();
+            return;
+        }
+
+        // If Garam Gula has data:
+        if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
+            populateExistingGaramGula();
+            return;
+        }
+
+        // Case 3: Fallback to localStorage draft
+        restoreFromDraft();
     }
 
     function handleMulai() {
@@ -933,34 +1142,36 @@
             });
         }
 
-        let type = 'short-term';
-        let kategori = 'incoming';
-
         if (selectedVal === 'long-term') {
-            type = 'long-term';
-            kategori = 'long-term';
-        } else if (selectedVal === 'sta') {
-            type = 'short-term';
-            kategori = 'sta';
-        } else if (selectedVal === 'monitoring') {
-            type = 'short-term';
-            kategori = 'monitoring';
-        } else if (selectedVal === 'incoming') {
-            type = 'short-term';
-            kategori = 'incoming';
-        } else if (selectedVal === 'garam-gula') {
-            type = 'garam-gula';
-            kategori = 'incoming';
+            if (SERVER_EXISTING && SERVER_EXISTING.id) {
+                populateExistingLongTerm();
+            } else {
+                startForm('long-term', 1, 'long-term');
+            }
+            return;
         }
 
-        const jumlah = type === 'long-term' ? 1 : parseInt($('#jumlahData').val());
-        if (!jumlah || jumlah <= 0) {
-            return Swal.fire({
-                icon: 'warning',
-                text: 'Masukkan jumlah sampel yang valid.'
-            });
+        if (selectedVal === 'garam-gula') {
+            const jumlah = parseInt($('#jumlahData').val()) || 1;
+            if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 && SERVER_GARAM_GULA.length === jumlah) {
+                populateExistingGaramGula();
+            } else {
+                startForm('garam-gula', jumlah, 'incoming');
+                populateExistingGaramGula();
+            }
+            return;
         }
-        startForm(type, jumlah, kategori);
+
+        // Short-term: incoming, sta, monitoring
+        const matching = SERVER_SHORT_TERM ? SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === selectedVal) : [];
+        const inputJumlah = parseInt($('#jumlahData').val()) || 1;
+
+        if (matching.length > 0 && inputJumlah === matching.length) {
+            populateExistingShortTerm(selectedVal);
+        } else {
+            startForm('short-term', inputJumlah, selectedVal);
+            populateExistingShortTerm(selectedVal);
+        }
     }
 
     function handleApplyJumlah() {
@@ -1490,7 +1701,7 @@
                         <div class="row g-3">
                             <div class="col-md-5">
                                 <label class="form-label small fw-semibold">Hasil Uji Kristal <span class="text-danger">*</span></label>
-                                <select class="form-select form-select-sm" name="uji_kristal" id="selectUjiKristal" required>
+                                <select class="form-select form-select-sm" name="uji_kristal" id="selectUjiKristal">
                                     <option value="">-- Pilih Hasil --</option>
                                     <option value="negatif">Negatif</option>
                                     <option value="positif">Positif</option>
@@ -2679,9 +2890,9 @@
         }
 
         const urlMap = {
-            'short-term': '/analisa/rmpm/short-term',
-            'long-term': '/analisa/rmpm/long-term',
-            'garam-gula': '/analisa/rmpm/garam-gula',
+            'short-term': "{{ route('rmpm.store.short-term') }}",
+            'long-term': "{{ route('rmpm.store.long-term') }}",
+            'garam-gula': "{{ route('rmpm.store.garam-gula') }}",
         };
 
         Swal.fire({
@@ -2692,7 +2903,7 @@
         });
 
         $.ajax({
-            url: window.location.origin + urlMap[currentType],
+            url: urlMap[currentType],
             type: 'POST',
             data: formData,
             processData: false,

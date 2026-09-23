@@ -542,22 +542,25 @@
                                             <h5 class="mb-0 fw-semibold text-dark">
                                                 <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa (Incoming, STA & Monitoring)
                                             </h5>
-                                            <div class="d-flex gap-2 flex-wrap">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
                                                 @if ($groupedShort->has('incoming'))
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                                        <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel
-                                                    </span>
+                                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}?kategori=incoming" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none py-2 px-2" title="Klik untuk edit Incoming">
+                                                        <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel <i class="ri-edit-line ms-1"></i>
+                                                    </a>
                                                 @endif
                                                 @if ($groupedShort->has('sta'))
-                                                    <span class="badge bg-info-subtle text-info border border-info-subtle">
-                                                        <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel
-                                                    </span>
+                                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}?kategori=sta" class="badge bg-info-subtle text-info border border-info-subtle text-decoration-none py-2 px-2" title="Klik untuk edit STA">
+                                                        <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel <i class="ri-edit-line ms-1"></i>
+                                                    </a>
                                                 @endif
                                                 @if ($groupedShort->has('monitoring'))
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                                        <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel
-                                                    </span>
+                                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}?kategori=monitoring" class="badge bg-success-subtle text-success border border-success-subtle text-decoration-none py-2 px-2" title="Klik untuk edit Monitoring">
+                                                        <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel <i class="ri-edit-line ms-1"></i>
+                                                    </a>
                                                 @endif
+                                                <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary">
+                                                    <i class="ri-edit-box-line me-1"></i> Update
+                                                </a>
                                             </div>
                                         </div>
                                         <div class="card-body p-3">
@@ -599,7 +602,7 @@
                                                                 };
                                                             @endphp
                                                             <tr>
-                                                                <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                                                                <td class="text-center">{{ $loop->iteration }}</td>
                                                                 <td>
                                                                     <span class="badge {{ $katBadgeClass }} px-2 py-1">
                                                                         <i class="{{ $katIcon }} me-1"></i>{{ $katLabel }}
@@ -610,33 +613,27 @@
                                                                 <td>{{ $short->kotoran !== null ? number_format($short->kotoran, 3) : '-' }}</td>
                                                                 <td>{{ $short->ka !== null ? number_format($short->ka, 2) . '%' : '-' }}</td>
                                                                 <td>
-                                                                    @if (!empty($short->organo))
-                                                                        <span class="badge {{ in_array(strtoupper($short->organo), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
-                                                                            {{ $short->organo }}
-                                                                        </span>
-                                                                    @else
-                                                                        -
-                                                                    @endif
+                                                                    @php $org = $short->organo ?? '-'; @endphp
+                                                                    <span class="badge {{ in_array(strtoupper($org), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">{{ $org }}</span>
                                                                 </td>
-                                                                <td>{{ $short->warna ?? '-' }}</td>
-                                                                <td>{{ $short->aroma ?? '-' }}</td>
+                                                                <td class="text-uppercase small">{{ $short->warna ?? '-' }}</td>
+                                                                <td class="text-uppercase small">{{ $short->aroma ?? '-' }}</td>
                                                                 <td>
                                                                     @if ($short->disposisi === 'Release')
                                                                         <span class="badge bg-success">{{ $short->disposisi }}</span>
                                                                     @elseif ($short->disposisi === 'Reject')
                                                                         <span class="badge bg-danger">{{ $short->disposisi }}</span>
+                                                                    @elseif (!empty($short->disposisi))
+                                                                        <span class="badge bg-warning text-dark">{{ $short->disposisi }}</span>
                                                                     @else
-                                                                        <span class="badge bg-secondary">{{ $short->disposisi ?? '-' }}</span>
+                                                                        <span class="badge bg-secondary-subtle text-secondary">Draft</span>
                                                                     @endif
                                                                 </td>
-                                                                <td><small class="text-muted">{{ $short->keterangan ?? '-' }}</small></td>
+                                                                <td class="small text-muted">{{ $short->keterangan ?? '-' }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="11" class="text-center text-muted py-4">
-                                                                    <i class="ri-inbox-line fs-3 d-block mb-1 text-muted"></i>
-                                                                    Belum ada data analisa (Incoming, STA, atau Monitoring)
-                                                                </td>
+                                                                <td colspan="11" class="text-center text-muted py-3">Belum ada data analisa</td>
                                                             </tr>
                                                         @endforelse
                                                     </tbody>
@@ -712,8 +709,11 @@
                                 {{-- Long Term --}}
                                 <div class="col-lg-12">
                                     <div class="card shadow-sm">
-                                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                                             <h5 class="mb-0 fw-semibold">Hasil Analisa Long Term</h5>
+                                            <a href="{{ route('rmpm.analisa', $identitas->id) }}?kategori=long-term" class="btn btn-sm btn-primary">
+                                                <i class="ri-edit-box-line me-1"></i> Update
+                                            </a>
                                         </div>
                                         <div class="card-body p-3">
                                             <div class="table-responsive">
@@ -959,8 +959,11 @@
                                 {{-- Garam / Gula --}}
                                 <div class="col-lg-12">
                                     <div class="card shadow-sm">
-                                        <div class="card-header bg-light">
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                                             <h5 class="mb-0 fw-semibold">Hasil Analisa</h5>
+                                            <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary">
+                                                <i class="ri-edit-box-line me-1"></i> Update
+                                            </a>
                                         </div>
                                         <div class="card-body p-3">
                                             <div class="table-responsive">
