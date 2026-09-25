@@ -45,12 +45,26 @@ class PressTestDataController extends Controller
                 $shift = 3;
             }
 
+            $variantName = $request->variant_name ?: $request->variant;
+            $variantCode = $request->variant ?: $request->variant_name;
+
+            $okMax = $request->filled('ok_max') ? (float)$request->ok_max : null;
+            $bocorMin = $request->filled('bocor_min') ? (float)$request->bocor_min : null;
+            $gap = $request->filled('gap') ? (float)$request->gap : (!is_null($bocorMin) && !is_null($okMax) ? round($bocorMin - $okMax, 2) : null);
+
             $data = [
-                'nama_analis_field'  => $request->nama_analis_field,
-                'shift'  => $shift,
-                'variant'  => $request->variant,
-                'batas' => $request->batas,
-                'mesin_press_test' => $request->mesin_press_test,
+                'nama_analis_field' => $request->nama_analis_field,
+                'shift'             => $shift,
+                'variant'           => $variantCode,
+                'variant_name'      => $variantName,
+                'batas'             => $request->batas,
+                'mesin_press_test'  => $request->mesin_press_test,
+                'ok_min'            => $request->filled('ok_min') ? (float)$request->ok_min : null,
+                'ok_max'            => $okMax,
+                'bocor_min'         => $bocorMin,
+                'bocor_max'         => $request->filled('bocor_max') ? (float)$request->bocor_max : null,
+                'gap'               => $gap,
+                'note'              => $request->note,
             ];
 
             PressTestData::updateOrCreate(

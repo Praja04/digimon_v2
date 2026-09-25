@@ -297,10 +297,14 @@
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Nama Analis Field</th>
-                                            <th>Shift</th>
-                                            <th>Variant</th>
-                                            <th>Batas</th>
+                                            <th>Nama Varian</th>
+                                            <th>OK Min</th>
+                                            <th>OK Max</th>
+                                            <th>Bocor Min</th>
+                                            <th>Bocor Max</th>
+                                            <th>Gap</th>
+                                            <th>Note</th>
+                                            <th>Analis Field</th>
                                             <th>Mesin</th>
                                             <th width="1">Aksi</th>
                                         </tr>
@@ -326,75 +330,73 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
                     </div>
                     <div class="modal-body">
+                        <input type="hidden" name="id" id="id">
+                        
                         <div class="mb-3">
-                            <input type="hidden" name="id" id="id">
-                            <label for="nama_analis_field" class="form-label">Nama Analis Field <span
-                                    style="color: red">*</span></label>
-                            <input type="text" id="nama_analis_field" name="nama_analis_field" class="form-control" autofocus>
-                            <small class="text-danger errorNamaAnalisField"></small>
+                            <label for="variant_name" class="form-label">Nama Varian <span style="color: red">*</span></label>
+                            <input type="text" id="variant_name" name="variant_name" class="form-control" placeholder="Contoh: P 77gr YB/BB" autofocus required>
+                            <small class="text-danger errorVariantName"></small>
                         </div>
-                        <div class="mb-3">
-                            <label for="variant" class="form-label">Variant <span style="color: red">*</span></label>
-                            <select id="variant" name="variant" class="form-control select2">
-                                <option value="">Pilih Variant</option>
-                                <option value="P 77">P 77</option>
-                                <option value="P 250">P 250</option>
-                                <option value="P 270">P 270</option>
-                                <option value="P 550">P 550</option>
-                                <option value="P 700">P 700</option>
-                                <option value="P 725">P 725</option>
-                                <option value="P 1000">P 1000</option>
-                            </select>
-                            <small class="text-danger errorVariant"></small>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ok_min" class="form-label">OK Min</label>
+                                <input type="number" step="0.01" id="ok_min" name="ok_min" class="form-control" placeholder="10.70">
+                                <small class="text-danger errorOkMin"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ok_max" class="form-label">OK Max</label>
+                                <input type="number" step="0.01" id="ok_max" name="ok_max" class="form-control" placeholder="11.20">
+                                <small class="text-danger errorOkMax"></small>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="batas" class="form-label">Batas (Cm) <span style="color: red">*</span></label>
-                            <input type="text" inputmode="decimal" id="batas" name="batas" class="form-control">
-                            <small class="text-danger errorBatas"></small>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="bocor_min" class="form-label">Bocor Min</label>
+                                <input type="number" step="0.01" id="bocor_min" name="bocor_min" class="form-control" placeholder="11.45">
+                                <small class="text-danger errorBocorMin"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bocor_max" class="form-label">Bocor Max</label>
+                                <input type="number" step="0.01" id="bocor_max" name="bocor_max" class="form-control" placeholder="11.50">
+                                <small class="text-danger errorBocorMax"></small>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="mesin_press_test" class="form-label">Mesin Press Test <span
-                                    style="color: red">*</span></label>
-                            <select id="mesin_press_test" name="mesin_press_test" class="form-control select2">
-                                <option value="">Pilih Mesin</option>
-                                <option value="P5">P5</option>
-                                <option value="P6">P6</option>
-                                <option value="P7">P7</option>
-                                <option value="P8">P8</option>
-                                <option value="P9">P9</option>
-                            </select>
-                            <small class="text-danger errorMesinPressTest"></small>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="gap" class="form-label">Gap</label>
+                                <input type="number" step="0.01" id="gap" name="gap" class="form-control" placeholder="Otomatik: Bocor Min - OK Max">
+                                <small class="text-danger errorGap"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="note" class="form-label">Note / Catatan</label>
+                                <input type="text" id="note" name="note" class="form-control" placeholder="Gap sempit — presisi tinggi">
+                                <small class="text-danger errorNote"></small>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="mesin_retail" class="form-label">Mesin Retail (Cooming Soon)</label>
-                            <select id="mesin_retail" name="mesin_retail" class="form-control select2">
-                                <option value="">Pilih Mesin</option>
-                                <option value="D1 : D">D1 : D</option>
-                                <option value="D2 : E">D2 : E</option>
-                                <option value="D3 : F">D3 : F</option>
-                                <option value="D4 : G">D4 : G</option>
-                                <option value="D5 : H">D5 : H</option>
-                                <option value="D6 : I">D6 : I</option>
-                                <option value="D7 : J">D7 : J</option>
-                                <option value="D8 : K">D8 : K</option>
-                                <option value="D9 : C">D9 : C</option>
-                                <option value="D10 : L">D10 : L</option>
-                                <option value="D11 : B">D11 : B</option>
-                                <option value="D12 : AE">D12 : AE</option>
-                                <option value="D13 : AF">D13 : AF</option>
-                                <option value="D14 : AG">D14 : AG</option>
-                                <option value="D15 : AH">D15 : AH</option>
-                                <option value="D16 : AI">D16 : AI</option>
-                                <option value="D17 : AJ">D17 : AJ</option>
-                                <option value="C1 : O">C1 : O</option>
-                                <option value="C2 : P">C2 : P</option>
-                                <option value="C3 : R">C3 : R</option>
-                                <option value="C7 : W">C7 : W</option>
-                                <option value="F1 : V">F1 : V</option>
-                                <option value="F2 : A">F2 : A</option>
-                                <option value="F3 : U">F3 : U</option>
-                            </select>
-                            <small class="text-danger errorMesinRetail"></small>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nama_analis_field" class="form-label">Nama Analis Field</label>
+                                <input type="text" id="nama_analis_field" name="nama_analis_field" class="form-control">
+                                <small class="text-danger errorNamaAnalisField"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="mesin_press_test" class="form-label">Mesin Press Test</label>
+                                <select id="mesin_press_test" name="mesin_press_test" class="form-control select2">
+                                    <option value="">Pilih Mesin</option>
+                                    <option value="P5">P5</option>
+                                    <option value="P6">P6</option>
+                                    <option value="P7">P7</option>
+                                    <option value="P8">P8</option>
+                                    <option value="P9">P9</option>
+                                </select>
+                                <small class="text-danger errorMesinPressTest"></small>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -474,6 +476,15 @@
                 }
             });
 
+            $('#ok_max, #bocor_min').on('input change', function() {
+                let okMax = parseFloat($('#ok_max').val());
+                let bocorMin = parseFloat($('#bocor_min').val());
+                if (!isNaN(okMax) && !isNaN(bocorMin)) {
+                    let gap = (bocorMin - okMax).toFixed(2);
+                    $('#gap').val(gap);
+                }
+            });
+
             $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -485,24 +496,51 @@
                         searchable: false
                     },
                     {
+                        data: 'variant_name',
+                        name: 'variant_name',
+                        render: function(data, type, row) {
+                            return data || row.variant || '-';
+                        }
+                    },
+                    {
+                        data: 'ok_min',
+                        name: 'ok_min',
+                        render: function(data) { return data !== null && data !== undefined ? parseFloat(data).toFixed(2) : '-'; }
+                    },
+                    {
+                        data: 'ok_max',
+                        name: 'ok_max',
+                        render: function(data) { return data !== null && data !== undefined ? parseFloat(data).toFixed(2) : '-'; }
+                    },
+                    {
+                        data: 'bocor_min',
+                        name: 'bocor_min',
+                        render: function(data) { return data !== null && data !== undefined ? parseFloat(data).toFixed(2) : '-'; }
+                    },
+                    {
+                        data: 'bocor_max',
+                        name: 'bocor_max',
+                        render: function(data) { return data !== null && data !== undefined ? parseFloat(data).toFixed(2) : '-'; }
+                    },
+                    {
+                        data: 'gap',
+                        name: 'gap',
+                        render: function(data) { return data !== null && data !== undefined ? parseFloat(data).toFixed(2) : '-'; }
+                    },
+                    {
+                        data: 'note',
+                        name: 'note',
+                        render: function(data) { return data || '-'; }
+                    },
+                    {
                         data: 'nama_analis_field',
-                        name: 'nama_analis_field'
-                    },
-                    {
-                        data: 'shift',
-                        name: 'shift'
-                    },
-                    {
-                        data: 'variant',
-                        name: 'variant'
-                    },
-                    {
-                        data: 'batas',
-                        name: 'batas'
+                        name: 'nama_analis_field',
+                        render: function(data) { return data || '-'; }
                     },
                     {
                         data: 'mesin_press_test',
-                        name: 'mesin_press_test'
+                        name: 'mesin_press_test',
+                        render: function(data) { return data || '-'; }
                     },
                     {
                         data: 'action',
@@ -515,11 +553,10 @@
 
             $('body').on('click', '#btnAdd', function() {
                 $('#id').val('');
-                $('#modalLabel').html("Tambah Data");
+                $('#modalLabel').html("Tambah Data Varian");
                 $('#modal').modal('show');
                 $('#form').trigger("reset");
 
-                $('#variant').val('').trigger('change');
                 $('#mesin_press_test').val('').trigger('change');
 
                 $('.form-control').removeClass('is-invalid');
@@ -533,19 +570,23 @@
                     url: "{{ route('press-test-data.edit', '') }}/" + id,
                     dataType: "json",
                     success: function(response) {
-                        $('#modalLabel').html("Edit Data");
+                        $('#modalLabel').html("Edit Data Varian");
                         $('#save').val("edit-data");
                         $('#modal').modal('show');
 
                         $('.form-control').removeClass('is-invalid');
                         $('.text-danger').html('');
 
-                        $('#variant').val(response.variant).trigger('change');
-                        $('#mesin_press_test').val(response.mesin_press_test).trigger('change');
-
                         $('#id').val(response.id);
+                        $('#variant_name').val(response.variant_name || response.variant);
+                        $('#ok_min').val(response.ok_min);
+                        $('#ok_max').val(response.ok_max);
+                        $('#bocor_min').val(response.bocor_min);
+                        $('#bocor_max').val(response.bocor_max);
+                        $('#gap').val(response.gap);
+                        $('#note').val(response.note);
                         $('#nama_analis_field').val(response.nama_analis_field);
-                        $('#batas').val(response.batas);
+                        $('#mesin_press_test').val(response.mesin_press_test).trigger('change');
                     }
                 });
             })
