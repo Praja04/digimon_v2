@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('press_test_mesin_1', function (Blueprint $table) {
             if (!Schema::hasColumn('press_test_mesin_1', 'date')) {
-                $table->string('date')->nullable()->after('id');
+                $table->string('date')->nullable();
             }
             if (!Schema::hasColumn('press_test_mesin_1', 'time')) {
                 $table->string('time')->nullable()->after('date');
