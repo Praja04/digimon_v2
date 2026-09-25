@@ -8,13 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('suppliers', function (Blueprint $table) {
+        if (Schema::hasTable('suppliers')) {
+            return;
+        }
+
+        Schema::create('suppliers', function (Blueprint $table): void {
             $table->id();
+
             $table->foreignId('jenis_incoming_id')
+                ->nullable()
                 ->constrained('jenis_incomings')
                 ->cascadeOnDelete();
-            $table->string('kode', 50)->unique();
-            $table->string('nama', 150);
+
+            $table->string('kode', 50)
+                ->nullable()
+                ->unique();
+
+            $table->string('nama', 150)->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
         });

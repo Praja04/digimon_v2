@@ -1,19 +1,30 @@
 <?php
+
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Dashboard\TimbanganRetailController;
+use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\IncomingController;
 use App\Http\Controllers\JenisIncomingController;
 use App\Http\Controllers\JenisMaterialController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\SamplingStatusController;
-use App\Http\Controllers\UomController;
-use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\NonconformityTypeController;
-use App\Http\Controllers\RMPMController;
 use App\Http\Controllers\PackagingIncomingController;
 use App\Http\Controllers\PackagingInnerOuterController;
 use App\Http\Controllers\PackagingKartonController;
 use App\Http\Controllers\PackagingPouchController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\RMPMController;
+use App\Http\Controllers\SamplingStatusController;
+use App\Http\Controllers\StorageInformationController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UomController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+
+
+
+
 
 Route::get('/', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 
@@ -215,7 +226,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/shelf-life/hasil/get-po', [App\Http\Controllers\ShelfLife\ResultController::class, 'getPoByDateAndStorage'])->name('shelf-life.result.get-po');
     });
 
-   /*
+    /*
 |--------------------------------------------------------------------------
 | RMPM
 |--------------------------------------------------------------------------
@@ -223,342 +234,349 @@ Route::middleware(['auth'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware([
-    'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
-])->group(function (): void {
+    Route::middleware([
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+    ])->group(function (): void {
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | MENU RMPM
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/rmpm',
-        [App\Http\Controllers\RMPMController::class, 'index']
-    )->name('rmpm.index');
+        Route::get(
+            '/rmpm',
+            [App\Http\Controllers\RMPMController::class, 'index']
+        )->name('rmpm.index');
 
-    Route::get(
-        '/rmpm/rm',
-        [App\Http\Controllers\RMPMController::class, 'rm']
-    )->name('rmpm.rm');
+        Route::get(
+            '/rmpm/rm',
+            [App\Http\Controllers\RMPMController::class, 'rm']
+        )->name('rmpm.rm');
 
-    Route::get(
-    '/rmpm/qrcode/{id}',
-    [App\Http\Controllers\RMPMController::class, 'getQRCode']
-    )->name('rmpm.qrcode');
+        Route::get(
+            '/rmpm/qrcode/{id}',
+            [App\Http\Controllers\RMPMController::class, 'getQRCode']
+        )->name('rmpm.qrcode');
 
-    Route::get(
-        '/rmpm/pm',
-        [App\Http\Controllers\RMPMController::class, 'pm']
-    )->name('rmpm.pm');
+        Route::get(
+            '/rmpm/pm',
+            [App\Http\Controllers\RMPMController::class, 'pm']
+        )->name('rmpm.pm');
 
-/*
+        /*
 |--------------------------------------------------------------------------
 | PACKAGING MATERIAL - INCOMING
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/rmpm/pm/incoming/create',
-    [PackagingIncomingController::class, 'index']
-)->name('rmpm.pm.incoming.create');
+        Route::get(
+            '/rmpm/pm/incoming/create',
+            [PackagingIncomingController::class, 'index']
+        )->name('rmpm.pm.incoming.create');
 
-Route::post(
-    '/rmpm/pm/incoming',
-    [PackagingIncomingController::class, 'store']
-)->name('rmpm.pm.incoming.store');
+        Route::get(
+            '/rmpm/pm/incoming/wpm-barang',
+            [PackagingIncomingController::class, 'getWpmBarang']
+        )->name('rmpm.pm.incoming.wpm-barang');
 
-Route::get(
-    '/rmpm/pm/incoming/{packagingIncoming}/edit',
-    [PackagingIncomingController::class, 'edit']
-)->name('rmpm.pm.incoming.edit');
+        Route::post(
+            '/rmpm/pm/incoming',
+            [PackagingIncomingController::class, 'store']
+        )->name('rmpm.pm.incoming.store');
 
-Route::put(
-    '/rmpm/pm/incoming/{packagingIncoming}',
-    [PackagingIncomingController::class, 'update']
-)->name('rmpm.pm.incoming.update');
+        Route::get(
+            '/rmpm/pm/incoming/{packagingIncoming}/edit',
+            [PackagingIncomingController::class, 'edit']
+        )->name('rmpm.pm.incoming.edit');
 
-Route::delete(
-    '/rmpm/pm/incoming/{packagingIncoming}',
-    [PackagingIncomingController::class, 'destroy']
-)->name('rmpm.pm.incoming.destroy');
+        Route::put(
+            '/rmpm/pm/incoming/{packagingIncoming}',
+            [PackagingIncomingController::class, 'update']
+        )->name('rmpm.pm.incoming.update');
+
+        Route::delete(
+            '/rmpm/pm/incoming/{packagingIncoming}',
+            [PackagingIncomingController::class, 'destroy']
+        )->name('rmpm.pm.incoming.destroy');
 
 
-/*
+        /*
 |--------------------------------------------------------------------------
 | PACKAGING MATERIAL - INNER / OUTER
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/rmpm/pm/inner-outer',
-    [PackagingInnerOuterController::class, 'index']
-)->name('rmpm.pm.inner-outer');
+        Route::get('/rmpm/pm/inner-outer', [PackagingInnerOuterController::class, 'index'])->name('rmpm.pm.inner-outer');
+        Route::get('/rmpm/pm/inner-outer/{packagingIncoming}/sampling', [PackagingInnerOuterController::class, 'sampling'])->name('rmpm.pm.inner-outer.sampling');
+        Route::post('/rmpm/pm/inner-outer/{packagingIncoming}/sampling', [PackagingInnerOuterController::class, 'storeSampling'])->name('rmpm.pm.inner-outer.sampling.store');
+        Route::get('/rmpm/pm/inner-outer/{packagingIncoming}/resume', [PackagingInnerOuterController::class, 'resume'])->name('rmpm.pm.inner-outer.resume');
+        Route::get('/rmpm/pm/inner-outer/{packagingIncoming}/qrcode', [PackagingInnerOuterController::class, 'getQRCode'])->name('rmpm.pm.inner-outer.qrcode');
 
-Route::get(
-    '/rmpm/pm/inner-outer/{packagingIncoming}/sampling',
-    [PackagingInnerOuterController::class, 'sampling']
-)->name('rmpm.pm.inner-outer.sampling');
-
-Route::post(
-    '/rmpm/pm/inner-outer/{packagingIncoming}/sampling',
-    [
-        PackagingInnerOuterController::class,
-        'storeSampling',
-    ]
-)->name('rmpm.pm.inner-outer.sampling.store');
-
-/*
+        /*
 |--------------------------------------------------------------------------
 | PACKAGING MATERIAL - KARTON
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/rmpm/pm/karton',
-    [PackagingKartonController::class, 'index']
-)->name('rmpm.pm.karton');
+        Route::get(
+            '/rmpm/pm/karton',
+            [PackagingKartonController::class, 'index']
+        )->name('rmpm.pm.karton');
 
-Route::get(
-    '/rmpm/pm/karton/{packagingIncoming}/display',
-    [RMPMController::class, 'pmKartonDisplay']
-)->name('rmpm.pm.karton.display');
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display',
+            [RMPMController::class, 'pmKartonDisplay']
+        )->name('rmpm.pm.karton.display');
 
-Route::get(
-    '/rmpm/pm/karton/{packagingIncoming}/display/bct',
-    [RMPMController::class, 'pmKartonBct']
-)->name('rmpm.pm.karton.bct');
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/bct',
+            [RMPMController::class, 'pmKartonBct']
+        )->name('rmpm.pm.karton.bct');
 
-Route::get(
-    '/rmpm/pm/karton/{packagingIncoming}/sampling',
-    [PackagingKartonController::class, 'sampling']
-)->name('rmpm.pm.karton.sampling');
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/berat',
+            [PackagingKartonController::class, 'berat']
+        )->name('rmpm.pm.karton.berat');
 
-Route::post(
-    '/rmpm/pm/karton/{packagingIncoming}/sampling',
-    [PackagingKartonController::class, 'storeSampling']
-)->name('rmpm.pm.karton.sampling.store');
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/display/kondisi-fisik',
+            [PackagingKartonController::class, 'kondisiFisik']
+        )->name('rmpm.pm.karton.kondisi-fisik');
 
-/*
+        Route::get(
+            '/rmpm/pm/karton/{packagingIncoming}/sampling',
+            [PackagingKartonController::class, 'sampling']
+        )->name('rmpm.pm.karton.sampling');
+
+        Route::post(
+            '/rmpm/pm/karton/{packagingIncoming}/sampling',
+            [PackagingKartonController::class, 'storeSampling']
+        )->name('rmpm.pm.karton.sampling.store');
+
+        /*
 |--------------------------------------------------------------------------
 | PACKAGING MATERIAL - POUCH
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/rmpm/pm/pouch',
-    [PackagingPouchController::class, 'index']
-)->name('rmpm.pm.pouch');
+        Route::get(
+            '/rmpm/pm/pouch',
+            [PackagingPouchController::class, 'index']
+        )->name('rmpm.pm.pouch');
 
-Route::get(
-    '/rmpm/pm/pouch/{packagingIncoming}/sampling',
-    [PackagingPouchController::class, 'sampling']
-)->name('rmpm.pm.pouch.sampling');
+        Route::get(
+            '/rmpm/pm/pouch/{packagingIncoming}/sampling',
+            [PackagingPouchController::class, 'sampling']
+        )->name('rmpm.pm.pouch.sampling');
 
-Route::post(
-    '/rmpm/pm/pouch/{packagingIncoming}/sampling',
-    [PackagingPouchController::class, 'storeSampling']
-)->name('rmpm.pm.pouch.sampling.store');
+        Route::post(
+            '/rmpm/pm/pouch/{packagingIncoming}/sampling',
+            [PackagingPouchController::class, 'storeSampling']
+        )->name('rmpm.pm.pouch.sampling.store');
 
-Route::get(
-    '/rmpm/pm/pouch/{id}/qrcode',
-    [PackagingPouchController::class, 'getQRCode']
-)->name('rmpm.pm.pouch.qrcode');
+        Route::get(
+            '/rmpm/pm/pouch/{id}/qrcode',
+            [PackagingPouchController::class, 'getQRCode']
+        )->name('rmpm.pm.pouch.qrcode');
 
-    /*
+        Route::get(
+            '/rmpm/pm/pouch/{packagingIncoming}/resume',
+            [PackagingPouchController::class, 'resume']
+        )->name('rmpm.pm.pouch.resume');
+
+        /*
     |--------------------------------------------------------------------------
     | KONFIRMASI
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/rmpm/konfirmasi/{id}',
-        [App\Http\Controllers\RMPMController::class, 'getKonfirmasi']
-    )->name('rmpm.konfirmasi');
+        Route::get(
+            '/rmpm/konfirmasi/{id}',
+            [App\Http\Controllers\RMPMController::class, 'getKonfirmasi']
+        )->name('rmpm.konfirmasi');
 
-    Route::post(
-        '/rmpm/konfirmasi/update',
-        [App\Http\Controllers\RMPMController::class, 'updateKonfirmasi']
-    )->name('rmpm.konfirmasi.update');
+        Route::post(
+            '/rmpm/konfirmasi/update',
+            [App\Http\Controllers\RMPMController::class, 'updateKonfirmasi']
+        )->name('rmpm.konfirmasi.update');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | QR CODE
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/rmpm/qrcode/{id}',
-        [App\Http\Controllers\RMPMController::class, 'getQRCode']
-    )->name('rmpm.qrcode');
+        Route::get(
+            '/rmpm/qrcode/{id}',
+            [App\Http\Controllers\RMPMController::class, 'getQRCode']
+        )->name('rmpm.qrcode');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | SIMPAN DATA RM
     |--------------------------------------------------------------------------
     */
 
-    Route::post(
-        '/rmpm',
-        [App\Http\Controllers\RMPMController::class, 'store']
-    )->name('rmpm.store');
+        Route::post(
+            '/rmpm',
+            [App\Http\Controllers\RMPMController::class, 'store']
+        )->name('rmpm.store');
 
-    Route::get(
-    '/rmpm/pm/incoming/create',
-    [PackagingIncomingController::class, 'index']
-)->name('rmpm.pm.incoming.create');
+        Route::get(
+            '/rmpm/pm/incoming/create',
+            [PackagingIncomingController::class, 'index']
+        )->name('rmpm.pm.incoming.create');
 
-Route::post(
-    '/rmpm/pm/incoming',
-    [PackagingIncomingController::class, 'store']
-)->name('rmpm.pm.incoming.store');
+        Route::post(
+            '/rmpm/pm/incoming',
+            [PackagingIncomingController::class, 'store']
+        )->name('rmpm.pm.incoming.store');
 
-    Route::get(
-        '/rmpm/pm/incoming/{packagingIncoming}/edit',
-        [PackagingIncomingController::class, 'edit']
-    )->name('rmpm.pm.incoming.edit');
+        Route::get(
+            '/rmpm/pm/incoming/{packagingIncoming}/edit',
+            [PackagingIncomingController::class, 'edit']
+        )->name('rmpm.pm.incoming.edit');
 
-    Route::put(
-        '/rmpm/pm/incoming/{packagingIncoming}',
-        [PackagingIncomingController::class, 'update']
-    )->name('rmpm.pm.incoming.update');
+        Route::put(
+            '/rmpm/pm/incoming/{packagingIncoming}',
+            [PackagingIncomingController::class, 'update']
+        )->name('rmpm.pm.incoming.update');
 
-    Route::delete(
-        '/rmpm/pm/incoming/{packagingIncoming}',
-        [PackagingIncomingController::class, 'destroy']
-    )->name('rmpm.pm.incoming.destroy');
-    /*
+        Route::delete(
+            '/rmpm/pm/incoming/{packagingIncoming}',
+            [PackagingIncomingController::class, 'destroy']
+        )->name('rmpm.pm.incoming.destroy');
+        /*
     |--------------------------------------------------------------------------
     | ANALISA
     |--------------------------------------------------------------------------
     */
 
-    Route::post(
-        '/rmpm/update-disposisi/long-term',
-        [App\Http\Controllers\RMPMController::class, 'updateDisposisiLongTerm']
-    )->name('rmpm.update-disposisi.long-term');
+        Route::post(
+            '/rmpm/update-disposisi/long-term',
+            [App\Http\Controllers\RMPMController::class, 'updateDisposisiLongTerm']
+        )->name('rmpm.update-disposisi.long-term');
 
-    Route::post(
-        '/analisa/rmpm/long-term',
-        [App\Http\Controllers\RMPMController::class, 'storeLongTerm']
-    )->name('rmpm.store.long-term');
+        Route::post(
+            '/analisa/rmpm/long-term',
+            [App\Http\Controllers\RMPMController::class, 'storeLongTerm']
+        )->name('rmpm.store.long-term');
 
-    Route::post(
-        '/analisa/rmpm/short-term',
-        [App\Http\Controllers\RMPMController::class, 'storeShortTerm']
-    )->name('rmpm.store.short-term');
+        Route::post(
+            '/analisa/rmpm/short-term',
+            [App\Http\Controllers\RMPMController::class, 'storeShortTerm']
+        )->name('rmpm.store.short-term');
 
-    Route::post(
-        '/analisa/rmpm/garam-gula',
-        [App\Http\Controllers\RMPMController::class, 'storeGaramGula']
-    )->name('rmpm.store.garam-gula');
+        Route::post(
+            '/analisa/rmpm/garam-gula',
+            [App\Http\Controllers\RMPMController::class, 'storeGaramGula']
+        )->name('rmpm.store.garam-gula');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | SAMPLING - KONDISI MOBIL
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/sampling/kondisi_mobil/{id}',
-        [App\Http\Controllers\Sampling\KondisiMobilController::class, 'show']
-    )->name('sampling-kondisi-mobil.show');
+        Route::get(
+            '/sampling/kondisi_mobil/{id}',
+            [App\Http\Controllers\Sampling\KondisiMobilController::class, 'show']
+        )->name('sampling-kondisi-mobil.show');
 
-    Route::post(
-        '/sampling/kondisi_mobil',
-        [App\Http\Controllers\Sampling\KondisiMobilController::class, 'store']
-    )->name('sampling-kondisi-mobil.store');
+        Route::post(
+            '/sampling/kondisi_mobil',
+            [App\Http\Controllers\Sampling\KondisiMobilController::class, 'store']
+        )->name('sampling-kondisi-mobil.store');
 
-    Route::post(
-        '/sampling/kondisi_mobil/update',
-        [App\Http\Controllers\Sampling\KondisiMobilController::class, 'update']
-    )->name('sampling-kondisi-mobil.update');
+        Route::post(
+            '/sampling/kondisi_mobil/update',
+            [App\Http\Controllers\Sampling\KondisiMobilController::class, 'update']
+        )->name('sampling-kondisi-mobil.update');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | SAMPLING - DOKUMEN
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/sampling/dokumen/{id}',
-        [App\Http\Controllers\Sampling\DokumenController::class, 'show']
-    )->name('sampling-dokumen.show');
+        Route::get(
+            '/sampling/dokumen/{id}',
+            [App\Http\Controllers\Sampling\DokumenController::class, 'show']
+        )->name('sampling-dokumen.show');
 
-    Route::post(
-        '/sampling/dokumen',
-        [App\Http\Controllers\Sampling\DokumenController::class, 'store']
-    )->name('sampling-dokumen.store');
+        Route::post(
+            '/sampling/dokumen',
+            [App\Http\Controllers\Sampling\DokumenController::class, 'store']
+        )->name('sampling-dokumen.store');
 
-    Route::post(
-        '/sampling/dokumen/update',
-        [App\Http\Controllers\Sampling\DokumenController::class, 'update']
-    )->name('sampling-dokumen.update');
+        Route::post(
+            '/sampling/dokumen/update',
+            [App\Http\Controllers\Sampling\DokumenController::class, 'update']
+        )->name('sampling-dokumen.update');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | SAMPLING - KEMASAN
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/sampling/kemasan/{id}',
-        [App\Http\Controllers\Sampling\KemasanController::class, 'show']
-    )->name('sampling-kemasan.show');
+        Route::get(
+            '/sampling/kemasan/{id}',
+            [App\Http\Controllers\Sampling\KemasanController::class, 'show']
+        )->name('sampling-kemasan.show');
 
-    Route::post(
-        '/sampling/kemasan',
-        [App\Http\Controllers\Sampling\KemasanController::class, 'store']
-    )->name('sampling-kemasan.store');
+        Route::post(
+            '/sampling/kemasan',
+            [App\Http\Controllers\Sampling\KemasanController::class, 'store']
+        )->name('sampling-kemasan.store');
 
-    Route::post(
-        '/sampling/kemasan/update',
-        [App\Http\Controllers\Sampling\KemasanController::class, 'update']
-    )->name('sampling-kemasan.update');
+        Route::post(
+            '/sampling/kemasan/update',
+            [App\Http\Controllers\Sampling\KemasanController::class, 'update']
+        )->name('sampling-kemasan.update');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | SAMPLING - RAW
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/sampling/raw/{id}',
-        [App\Http\Controllers\Sampling\RawController::class, 'show']
-    )->name('sampling-raw.show');
+        Route::get(
+            '/sampling/raw/{id}',
+            [App\Http\Controllers\Sampling\RawController::class, 'show']
+        )->name('sampling-raw.show');
 
-    Route::post(
-        '/sampling/raw',
-        [App\Http\Controllers\Sampling\RawController::class, 'store']
-    )->name('sampling-raw.store');
+        Route::post(
+            '/sampling/raw',
+            [App\Http\Controllers\Sampling\RawController::class, 'store']
+        )->name('sampling-raw.store');
 
-    Route::post(
-        '/sampling/raw/update',
-        [App\Http\Controllers\Sampling\RawController::class, 'update']
-    )->name('sampling-raw.update');
+        Route::post(
+            '/sampling/raw/update',
+            [App\Http\Controllers\Sampling\RawController::class, 'update']
+        )->name('sampling-raw.update');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | ROUTE DINAMIS HARUS PALING BAWAH
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/rmpm/{id}/analisa',
-        [App\Http\Controllers\RMPMController::class, 'showAnalisa']
-    )->name('rmpm.analisa');
+        Route::get(
+            '/rmpm/{id}/analisa',
+            [App\Http\Controllers\RMPMController::class, 'showAnalisa']
+        )->name('rmpm.analisa');
 
-    Route::get(
-        '/rmpm/{id}',
-        [App\Http\Controllers\RMPMController::class, 'show']
-    )->name('rmpm.show');
-
-});
+        Route::get(
+            '/rmpm/{id}',
+            [App\Http\Controllers\RMPMController::class, 'show']
+        )->name('rmpm.show');
+    });
 
     Route::middleware([
-    'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,QC',
-]   )->group(function (): void {
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,QC',
+    ])->group(function (): void {
         // Monitoring Storage Kimia
         Route::get('/monitoring-storage-kimia/getBatchData', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getBatchData'])->name('monitoring-storage-kimia.getBatchData');
         Route::get('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'index'])->name('monitoring-storage-kimia.index');
@@ -579,13 +597,53 @@ Route::post(
     --------------------------------------------*/
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman,Analis Kimia'])->group(function () {
         // Analisa - Pelarutan 1
-        Route::get('/pelarutan-1/menu', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'menu'])->name('pelarutan-1.menu');
-        Route::get('/pelarutan-1', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'index'])->name('pelarutan-1.index');
-        Route::get('/pelarutan-1/formulasi/', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'formulasi'])->name('pelarutan-1.formulasi');
-        Route::get('/pelarutan-1/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show'])->name('pelarutan-1.show');
-        Route::get('/pelarutan-1/edit/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'edit'])->name('pelarutan-1.edit');
-        Route::post('/pelarutan-1', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'update'])->name('pelarutan-1.update');
-        Route::get('/scan/batch/pelarutan-1/{id}', [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show_batch'])->name('pelarutan-1.show_batch');
+        Route::get(
+            '/pelarutan-1/menu',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'menu']
+        )
+            ->name('pelarutan-1.menu');
+
+        Route::get(
+            '/pelarutan-1',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'index']
+        )
+            ->name('pelarutan-1.index');
+
+        Route::get(
+            '/pelarutan-1/formulasi/',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'formulasi']
+        )
+            ->name('pelarutan-1.formulasi');
+
+        Route::get(
+            '/pelarutan-1/{id}',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show']
+        )
+            ->name('pelarutan-1.show');
+
+        Route::get(
+            '/pelarutan-1/edit/{id}',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'edit']
+        )
+            ->name('pelarutan-1.edit');
+
+        Route::post(
+            '/pelarutan-1',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'update']
+        )
+            ->name('pelarutan-1.update');
+
+        Route::post(
+            '/pelarutan-1/draft',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'saveDraft']
+        )
+            ->name('pelarutan-1.draft.store');
+
+        Route::get(
+            '/scan/batch/pelarutan-1/{id}',
+            [App\Http\Controllers\Analisa\Pelarutan1Controller::class, 'show_batch']
+        )
+            ->name('pelarutan-1.show_batch');
 
         // Analisa - Pelarutan 2
         Route::get('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'index'])->name('pelarutan-2.index');
@@ -595,6 +653,7 @@ Route::post(
         Route::get('/pelarutan-2/edit/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'edit'])->name('pelarutan-2.edit');
         Route::post('/pelarutan-2', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'update'])->name('pelarutan-2.update');
         Route::get('/scan/batch/pelarutan-2/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show_batch'])->name('pelarutan-2.show_batch');
+        Route::post('/pelarutan-2/draft', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'saveDraft'])->name('pelarutan-2.draft.store');
 
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
@@ -603,6 +662,8 @@ Route::post(
         Route::get('/analisa/blending-awal/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show'])->name('analisa.blending-awal.show');
         Route::post('/analisa/blending-awal/update', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'update'])->name('analisa.blending-awal.update');
         Route::get('scan/batch/blending-awal/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show_batch'])->name('analisa.blending-awal.show_batch');
+        Route::post('analisa/blending-awal/draft', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'saveDraft'])->name('analisa.blending-awal.draft.store');
+        Route::post('/analisa/blending-awal/foreman-draft', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'saveForemanDraft'])->name('analisa.blending-awal.foreman-draft.store');
 
         // Analisa - Monitoring Turun Blending
         Route::get('/analisa/monitoring-turun-blending', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'index'])->name('analisa.monitoring-turun-blending.index');
@@ -610,13 +671,16 @@ Route::post(
         Route::get('/analisa/monitoring-turun-blending/show/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show'])->name('analisa.monitoring-turun-blending.show');
         Route::post('/analisa/monitoring-turun-blending/update', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'update'])->name('analisa.monitoring-turun-blending.update');
         Route::get('/scan/batch/monitoring-turun-blending/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show_batch'])->name('analisa.monitoring-turun-blending.show_batch');
+        Route::post('/analisa/monitoring-turun-blending/draft',[App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'saveDraft'])->name('analisa.monitoring-turun-blending.draft.store');
 
         // Analisa - Monitoring Pasteurisasi
         Route::get('/analisa/monitoring-pasteurisasi', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'index'])->name('analisa.monitoring-pasteurisasi.index');
         Route::get('/analisa/monitoring-pasteurisasi/edit/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'edit'])->name('analisa.monitoring-pasteurisasi.edit');
         Route::get('/analisa/monitoring-pasteurisasi/show/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show'])->name('analisa.monitoring-pasteurisasi.show');
         Route::post('/analisa/monitoring-pasteurisasi/update', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'update'])->name('analisa.monitoring-pasteurisasi.update');
+         Route::post('/analisa/monitoring-pasteurisasi/draft', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'saveDraft'])->name('analisa.monitoring-pasteurisasi.draft.store');
         Route::get('/scan/batch/monitoring-pasteurisasi/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show_batch'])->name('analisa.monitoring-pasteurisasi.show_batch');
+       
 
         // Analisa - Monitoring Storage Kimia
         Route::get('/analisa/monitoring-storage-kimia', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'index'])->name('analisa.monitoring-storage-kimia.index');
@@ -654,6 +718,7 @@ Route::post(
         Route::get('/analisa/blending-awal/mikro/get-blending-data', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'getBlendingData'])->name('analisa.blending-awal-mikro.getBlendingData');
         Route::get('/analisa/blending-awal/mikro/edit/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'edit'])->name('analisa.blending-awal-mikro.edit');
         Route::get('/analisa/blending-awal/mikro/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show'])->name('analisa.blending-awal-mikro.show');
+        Route::post('/analisa/blending-awal/mikro/draft',[App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'saveDraft'])->name('analisa.blending-awal-mikro.draft.store');
         Route::post('/analisa/blending-awal/mikro/update', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'update'])->name('analisa.blending-awal-mikro.update');
         Route::get('/scan/batch/blending-awal-mikro/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show_batch'])->name('analisa.blending-awal-mikro.show_batch');
 
@@ -710,19 +775,19 @@ Route::post(
 
 
 
-            /*------------------------------------------
+    /*------------------------------------------
         Master Data - Warna
         Roles: Foreman Only
         --------------------------------------------*/
-        Route::middleware(['user-access:Foreman'])->group(function () {
-            Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
-            Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
-            Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');
-            Route::delete('/warna/{id}', [App\Http\Controllers\ColorController::class, 'destroy'])->name('colors.destroy');
-        });
+    Route::middleware(['user-access:Foreman'])->group(function () {
+        Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
+        Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
+        Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');
+        Route::delete('/warna/{id}', [App\Http\Controllers\ColorController::class, 'destroy'])->name('colors.destroy');
+    });
 
 
-        /*------------------------------------------
+    /*------------------------------------------
         Packaging Sampling Online
         Roles:
         - Head Of Dapartement
@@ -730,11 +795,11 @@ Route::post(
         - Foreman
         - QC
         --------------------------------------------*/
-        Route::middleware([
-            'user-access:Head Of Dapartement,Supervisor,Foreman,QC',
-        ])->group(function (): void {
+    Route::middleware([
+        'user-access:Head Of Dapartement,Supervisor,Foreman,QC',
+    ])->group(function (): void {
 
-            /*
+        /*
             * URL yang dihasilkan:
             *
             * /packaging-sampling/inner
@@ -746,15 +811,14 @@ Route::post(
             * Jika tidak diberikan, IncomingController
             * menggunakan nilai default "inner".
             */
-            Route::get(
-                '/packaging-sampling/{jenis?}',
-                [IncomingController::class, 'index']
-            )->name('incoming.index');
+        Route::get(
+            '/packaging-sampling/{jenis?}',
+            [IncomingController::class, 'index']
+        )->name('incoming.index');
+    });
 
-        });
 
-
-        /*------------------------------------------
+    /*------------------------------------------
         Master Data - Jenis Incoming
         Read-only, tanpa create/edit/delete
         Roles:
@@ -762,79 +826,78 @@ Route::post(
         - Supervisor
         - Foreman
         --------------------------------------------*/
-        Route::middleware([
-            'user-access:Head Of Dapartement,Supervisor,Foreman',
-        ])->group(function (): void {
-
-            Route::resource(
-                'jenis-incoming',
-                JenisIncomingController::class
-            )->only([
-                'index',
-                'store',
-                'edit',
-                'destroy',
-            ]);
-
-        });
+    Route::middleware([
+        'user-access:Head Of Dapartement,Supervisor,Foreman',
+    ])->group(function (): void {
 
         Route::resource(
-            'jenis-material',
-            JenisMaterialController::class
+            'jenis-incoming',
+            JenisIncomingController::class
         )->only([
             'index',
             'store',
             'edit',
             'destroy',
         ]);
+    });
 
-        Route::resource(
-            'supplier',
-            SupplierController::class
-        )->only([
-            'index',
-            'store',
-            'edit',
-            'destroy',
-        ]);
+    Route::resource(
+        'jenis-material',
+        JenisMaterialController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
 
-        Route::resource(
-            'sampling-status',
-            SamplingStatusController::class
-        )->only([
-            'index',
-            'store',
-            'edit',
-            'destroy',
-        ]);
+    Route::resource(
+        'supplier',
+        SupplierController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
 
-        Route::resource(
-            'uom',
-            UomController::class
-        )->only([
-            'index',
-            'store',
-            'edit',
-            'destroy',
-        ]);
+    Route::resource(
+        'sampling-status',
+        SamplingStatusController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
 
-        Route::resource(
-            'recommendation',
-            RecommendationController::class
-        )->only([
-            'index',
-            'store',
-            'edit',
-            'destroy',
-        ]);
+    Route::resource(
+        'uom',
+        UomController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
 
-        Route::resource(
-            'nonconformity-type',
-            NonconformityTypeController::class
-        )->only([
-            'index',
-            'store',
-            'edit',
-            'destroy',
-        ]);
-        });
+    Route::resource(
+        'recommendation',
+        RecommendationController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
+
+    Route::resource(
+        'nonconformity-type',
+        NonconformityTypeController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
+});

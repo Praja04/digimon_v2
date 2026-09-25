@@ -26,24 +26,24 @@
                     <tbody>
                         @forelse($incomings as $item)
 
-                    <tr>
-                                <td>9000{{ $loop->iteration }}</td>
-                                <td>{{ $item->kategori }}</td>
-                                <td>{{ $item->nama }}</td>
-                                <td>
-                                                <span class="badge bg-success">
-                                                    Sudah Sampling
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="4" class="text-center">
-                                                Tidak ada data
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
+                        <tr>
+                            <td>9000{{ $loop->iteration }}</td>
+                            <td>{{ $item->kategori }}</td>
+                            <td>{{ $item->nama }}</td>
+                            <td>
+                                <span class="badge bg-success">
+                                    Sudah Sampling
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="text-center">
+                                Tidak ada data
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
 
                 </table>
 

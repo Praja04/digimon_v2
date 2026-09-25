@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PackagingIncoming;
 use App\Models\PackagingPouchSampling;
+use App\Models\PackagingPouchSamplingDraft;
 use App\Models\SamplingStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -142,6 +143,7 @@ class PackagingPouchController extends Controller
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
@@ -156,6 +158,41 @@ class PackagingPouchController extends Controller
 
         return view(
             'app.rmpm.pouch-sampling',
+            compact(
+                'packagingIncoming',
+                'sampling'
+            )
+        );
+    }
+
+    public function resume(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'uom',
+            'samplingStatus',
+        ]);
+
+        $this->ensurePouch($packagingIncoming);
+
+        $sampling = PackagingPouchSampling::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->firstOrFail();
+
+        abort_unless(
+            $sampling->status_proses === 'final',
+            404,
+            'Laporan hanya tersedia untuk sampling yang sudah final.'
+        );
+
+        return view(
+            'app.rmpm.pouch-resume',
             compact(
                 'packagingIncoming',
                 'sampling'
@@ -194,7 +231,25 @@ class PackagingPouchController extends Controller
             )
             ->first();
 
+        /*
+         * Setelah data sudah FINAL:
+         * - Foreman boleh melakukan koreksi.
+         * - Role selain Foreman tidak boleh mengubah data lagi,
+         *   baik melalui tombol maupun request manual.
+         */
+        $this->ensureFinalCanBeChanged(
+            $existingSampling
+        );
+
         $isFinal = $saveMode === 'final';
+
+        $request->merge([
+            'qty' =>
+                $packagingIncoming->jumlah,
+
+            'jumlah_sampel' =>
+                $packagingIncoming->jumlah_sampel,
+        ]);
 
         $rules = [
             'save_mode' => [
@@ -211,14 +266,20 @@ class PackagingPouchController extends Controller
             'uom' => [
                 'nullable',
                 'string',
-                'max:50',
+                'max:200',
             ],
 
             'jumlah_sampel' => [
                 $isFinal ? 'required' : 'nullable',
                 'integer',
                 'min:1',
-                'max:50',
+                'max:200',
+            ],
+
+            'no_batch' => [
+                'nullable',
+                'string',
+                'max:150',
             ],
 
             'coa' => [
@@ -248,11 +309,17 @@ class PackagingPouchController extends Controller
                 'in:Miss Print,Ukuran Tidak Standar,Seal Tidak Standar,Thickness Tidak Standar,Barcode Tidak Terbaca',
             ],
 
+            'jenis_ketidaksesuaian_lainnya' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'foto_pengecekan' => [
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'foto' => [
@@ -264,7 +331,7 @@ class PackagingPouchController extends Controller
             'foto.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'keterangan' => [
@@ -285,6 +352,24 @@ class PackagingPouchController extends Controller
             ],
 
             'samples.*.lebar' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.tebal' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.thickness_1' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.thickness_2' => [
                 'nullable',
                 'numeric',
                 'min:0',
@@ -335,9 +420,16 @@ class PackagingPouchController extends Controller
                 'in:OK,NOK',
             ],
 
-            'samples.*.barcode_qr' => [
+            'barcode' => [
                 'nullable',
-                'in:OK,NOK',
+                'string',
+                'max:500',
+            ],
+
+            'qr_code' => [
+                'nullable',
+                'string',
+                'max:500',
             ],
 
             'samples.*.drop_test' => [
@@ -438,12 +530,49 @@ class PackagingPouchController extends Controller
                     'Semua file ketidaksesuaian harus berupa gambar.',
 
                 'foto.*.max' =>
-                    'Ukuran setiap foto maksimal 5 MB.',
+                    'Ukuran setiap foto maksimal 2 MB.',
 
                 'jenis_ketidaksesuaian.required' =>
                     'Pilih minimal satu jenis ketidaksesuaian.',
             ]
         );
+
+        $jenisKetidaksesuaianFinal = array_values(
+            array_filter(
+                $validated['jenis_ketidaksesuaian'] ?? []
+            )
+        );
+
+        $jenisLainnya = trim(
+            (string) (
+                $validated[
+                    'jenis_ketidaksesuaian_lainnya'
+                ] ?? ''
+            )
+        );
+
+        if ($jenisLainnya !== '') {
+            $jenisKetidaksesuaianFinal[] =
+                $jenisLainnya;
+        }
+
+        $jenisKetidaksesuaianFinal = array_values(
+            array_unique(
+                $jenisKetidaksesuaianFinal
+            )
+        );
+
+        if (
+            $isFinal
+            && $adaKetidaksesuaian
+            && count($jenisKetidaksesuaianFinal) === 0
+        ) {
+            throw ValidationException::withMessages([
+                'jenis_ketidaksesuaian' => [
+                    'Pilih jenis ketidaksesuaian atau isi field Lainnya.',
+                ],
+            ]);
+        }
 
         $existingPhotoCount = count(
             array_filter(
@@ -470,7 +599,8 @@ class PackagingPouchController extends Controller
                 $validated,
                 $packagingIncoming,
                 $existingSampling,
-                $isFinal
+                $isFinal,
+                $jenisKetidaksesuaianFinal
             ): void {
                 $sampling = $existingSampling
                     ?? new PackagingPouchSampling();
@@ -568,9 +698,16 @@ class PackagingPouchController extends Controller
                         $validated['jumlah_sampel']
                         ?? 1,
 
+                    'no_batch' =>
+                        $validated['no_batch']
+                        ?? null,
+
                     'hasil_sampel' =>
-                        array_values(
-                            $validated['samples'] ?? []
+                        $this->mergeSingleBarcodeQrSample(
+                            $validated['samples'] ?? [],
+                            $sampling->hasil_sampel ?? [],
+                            $validated['barcode'] ?? null,
+                            $validated['qr_code'] ?? null
                         ),
 
                     'hasil_thickness' =>
@@ -596,11 +733,7 @@ class PackagingPouchController extends Controller
                         ] ?? null,
 
                     'jenis_ketidaksesuaian' =>
-                        array_values(
-                            $validated[
-                                'jenis_ketidaksesuaian'
-                            ] ?? []
-                        ),
+                        $jenisKetidaksesuaianFinal,
 
                     'foto_pengecekan' =>
                         $fotoPengecekanPath,
@@ -656,6 +789,13 @@ class PackagingPouchController extends Controller
                         'sampling_status_id' =>
                             $sudahSamplingId,
                     ]);
+
+                    PackagingPouchSamplingDraft::query()
+                        ->where(
+                            'packaging_incoming_id',
+                            $packagingIncoming->id
+                        )
+                        ->delete();
                 }
             }
         );
@@ -669,8 +809,55 @@ class PackagingPouchController extends Controller
                     : 'Data sampling Pouch berhasil disimpan sementara.',
 
             'redirect_url' =>
-                route('rmpm.pm.pouch'),
+                $isFinal
+                    ? route(
+                        'rmpm.pm.pouch.resume',
+                        $packagingIncoming
+                    )
+                    : route(
+                        'rmpm.pm.pouch.sampling',
+                        $packagingIncoming
+                    ),
         ]);
+    }
+
+    private function mergeSingleBarcodeQrSample(
+        array $submittedSamples,
+        array $existingSamples,
+        ?string $barcode,
+        ?string $qrCode
+    ): array {
+        $samples = array_values(
+            $submittedSamples
+        );
+
+        if (count($samples) === 0) {
+            $samples[] = [];
+        }
+
+        foreach ($samples as $index => &$sample) {
+            unset(
+                $sample['barcode_qr'],
+                $sample['barcode'],
+                $sample['qr_code']
+            );
+
+            if ($index === 0) {
+                $sample['barcode'] =
+                    filled($barcode)
+                        ? trim($barcode)
+                        : null;
+
+                $sample['qr_code'] =
+                    filled($qrCode)
+                        ? trim($qrCode)
+                        : null;
+            }
+        }
+
+        unset($sample);
+
+        return $samples;
     }
 
     public function getQRCode(
@@ -693,10 +880,16 @@ class PackagingPouchController extends Controller
             )
             ->first();
 
-        $qrText = route(
-            'rmpm.pm.pouch.sampling',
-            $packagingIncoming
-        );
+        $qrText =
+            $sampling?->status_proses === 'final'
+                ? route(
+                    'rmpm.pm.pouch.resume',
+                    $packagingIncoming
+                )
+                : route(
+                    'rmpm.pm.pouch.sampling',
+                    $packagingIncoming
+                );
 
         $qrCode = DNS2DFacade::getBarcodePNG(
             $qrText,
@@ -723,6 +916,27 @@ class PackagingPouchController extends Controller
             'label' => $label,
             'url' => $qrText,
         ]);
+    }
+
+
+    private function isForeman(): bool
+    {
+        return auth()->check()
+            && auth()->user()?->role === 'Foreman';
+    }
+
+    private function ensureFinalCanBeChanged(
+        ?PackagingPouchSampling $sampling
+    ): void {
+        if (
+            $sampling?->status_proses === 'final'
+            && ! $this->isForeman()
+        ) {
+            abort(
+                403,
+                'Data sampling yang sudah final hanya dapat dikoreksi oleh Foreman.'
+            );
+        }
     }
 
     private function ensurePouch(

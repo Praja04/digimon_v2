@@ -5,6 +5,33 @@
 @endsection
 
 @section('content')
+@php
+    $samplePertama = is_array($sampling?->hasil_sampel)
+        ? ($sampling->hasil_sampel[0] ?? [])
+        : [];
+
+    $barcodeValue = old(
+        'barcode',
+        $samplePertama['barcode'] ?? ''
+    );
+
+    $qrCodeValue = old(
+        'qr_code',
+        $samplePertama['qr_code'] ?? ''
+    );
+
+    $isForeman =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+
+    $isFinal =
+        $sampling?->status_proses === 'final';
+
+    // Jika sudah Final, hanya Foreman yang boleh koreksi.
+    $isLocked =
+        $isFinal
+        && ! $isForeman;
+@endphp
 <div class="page-content">
     <div class="container-fluid">
         <div class="row">
@@ -35,6 +62,21 @@
             </div>
         @endif
 
+        @if ($isLocked)
+            <div class="alert alert-info">
+                <i class="mdi mdi-lock-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Data hanya dapat dilihat. Koreksi data final hanya dapat dilakukan oleh
+                <strong>Foreman</strong>.
+            </div>
+        @elseif ($isFinal && $isForeman)
+            <div class="alert alert-warning">
+                <i class="mdi mdi-account-edit-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+            </div>
+        @endif
+
         <form
             id="pouchSamplingForm"
             method="POST"
@@ -46,6 +88,10 @@
         >
             @csrf
 
+            <fieldset
+                id="samplingFieldset"
+                @disabled($isLocked)
+            >
             <div class="card border-0 shadow-sm sampling-card">
                 <div class="sampling-header">
                     <div>
@@ -62,31 +108,73 @@
                     <div class="row g-3 mb-4">
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label">Nomor SPB</label>
-                            <input type="text" class="form-control" value="{{ $packagingIncoming->no_spb ?? '-' }}" readonly>
+                            <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->no_spb ?? '-' }}" readonly>
                         </div>
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label">Nama Supplier</label>
-                            <input type="text" class="form-control" value="{{ $packagingIncoming->supplier?->nama ?? $packagingIncoming->supplier?->nama_supplier ?? '-' }}" readonly>
+                            <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->supplier?->nama ?? $packagingIncoming->supplier?->nama_supplier ?? '-' }}" readonly>
                         </div>
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label">Nomor Mobil</label>
-                            <input type="text" class="form-control" value="{{ $packagingIncoming->no_mobil ?? '-' }}" readonly>
+                            <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->no_mobil ?? '-' }}" readonly>
                         </div>
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label">Nama Item</label>
-                            <input type="text" class="form-control" value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}" readonly>
+                            <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}" readonly>
                         </div>
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label">Qty</label>
-                            <input type="number" id="qty" name="qty" class="form-control" min="0" placeholder="Masukkan qty" value="{{ old('qty', $sampling?->qty) }}">
+                            <input
+                                type="number"
+                                id="qty"
+                                name="qty"
+                                class="form-control bg-light"
+                                min="0"
+                                value="{{ $packagingIncoming->jumlah }}"
+                                readonly
+                            >
+                            <small class="text-muted d-block mt-1">
+                                Qty mengikuti Quantity Incoming dari Incoming PM dan tidak perlu diisi ulang.
+                            </small>
                         </div>
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label">UOM</label>
-                            <input type="text" id="uom" name="uom" class="form-control" value="{{ old('uom', $sampling?->uom ?? 'Pcs') }}">
+                            <input
+                                type="text"
+                                id="uom"
+                                name="uom"
+                                class="form-control bg-light"
+                                value="{{ $packagingIncoming->uom?->nama ?? $packagingIncoming->uom?->nama_uom ?? $packagingIncoming->uom?->kode ?? old('uom', $sampling?->uom ?? 'Pcs') }}"
+                                readonly
+                            >
                         </div>
                         <div class="col-xl-3 col-md-6">
                             <label for="jumlah_sampel" class="form-label">Jumlah Sampel</label>
-                            <input type="number" id="jumlah_sampel" name="jumlah_sampel" class="form-control" min="1" max="50" value="{{ old('jumlah_sampel', $sampling?->jumlah_sampel ?? 4) }}" required>
+                            <input
+                                type="number"
+                                id="jumlah_sampel"
+                                name="jumlah_sampel"
+                                class="form-control bg-light"
+                                min="1"
+                                max="200"
+                                value="{{ $packagingIncoming->jumlah_sampel }}"
+                                readonly
+                                required
+                            >
+                            <small class="text-muted d-block mt-1">
+                                Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
+                            </small>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <label for="no_batch" class="form-label">Nomor Batch</label>
+                            <input
+                                type="text"
+                                name="no_batch"
+                                id="no_batch"
+                                class="form-control"
+                                value="{{ old('no_batch', $sampling?->no_batch) }}"
+                                placeholder="Masukkan nomor batch"
+                            >
                         </div>
                     </div>
 
@@ -95,20 +183,24 @@
                         <table class="table table-bordered align-middle inspection-table">
                             <thead>
                                 <tr>
-                                    <th>No. Sampel</th>
-                                    <th>Panjang (mm)</th>
-                                    <th>Lebar (mm)</th>
-                                    <th>Berat (g)</th>
-                                    <th>Side Seal 1 (mm)</th>
-                                    <th>Side Seal 2 (mm)</th>
-                                    <th>Bottom Seal (mm)</th>
-                                    <th>Bottom High (mm)</th>
-                                    <th>Design</th>
-                                    <th>Warna</th>
-                                    <th>Tulisan</th>
-                                    <th>Barcode & QR Code</th>
-                                    <th>Drop Test</th>
-                                    <th>Pretest</th>
+                                    <th rowspan="2">No. Sampel</th>
+                                    <th rowspan="2">Panjang (mm)</th>
+                                    <th rowspan="2">Lebar (mm)</th>
+                                    <th colspan="2">Thickness</th>
+                                    <th rowspan="2">Berat (g)</th>
+                                    <th rowspan="2">Side Seal 1 (mm)</th>
+                                    <th rowspan="2">Side Seal 2 (mm)</th>
+                                    <th rowspan="2">Bottom Seal (mm)</th>
+                                    <th rowspan="2">Bottom High (mm)</th>
+                                    <th rowspan="2">Design</th>
+                                    <th rowspan="2">Warna</th>
+                                    <th rowspan="2">Tulisan</th>
+                                    <th rowspan="2">Drop Test</th>
+                                    <th rowspan="2">Press Test</th>
+                                </tr>
+                                <tr>
+                                    <th>1</th>
+                                    <th>2</th>
                                 </tr>
                             </thead>
                             <tbody id="sampleRows"></tbody>
@@ -117,13 +209,14 @@
 
                     <div class="section-title mt-4">
                         <i class="mdi mdi-ruler"></i>
-                        Pemeriksaan Thickness
+                        Pemeriksaan Thickness Bottom
                     </div>
 
                     <div class="inspection-note mb-3">
                         <small class="text-muted d-block">
-                            Tabel Thickness memiliki 3 baris tetap dan 2 kolom input.
-                            Jumlah baris tidak mengikuti Jumlah Sampel.
+                            Field <strong>Thickness</strong> diisi per sampel dengan <strong>2 titik pengukuran</strong>.
+                            Thickness Bottom diperiksa terpisah pada 3 baris tetap dengan 2 titik pengukuran.
+                            Jumlah baris Thickness Bottom tidak mengikuti Jumlah Sampel.
                         </small>
                     </div>
 
@@ -132,8 +225,8 @@
                             <thead>
                                 <tr>
                                     <th style="width: 100px;">No.</th>
-                                    <th>Thickness 1 (mikron)</th>
-                                    <th>Thickness 2 (mikron)</th>
+                                    <th>Thickness Bottom 1 (mikron)</th>
+                                    <th>Thickness Bottom 2 (mikron)</th>
                                 </tr>
                             </thead>
 
@@ -239,6 +332,62 @@
                         </small>
                     </div>
 
+                    <div class="section-title mt-4">
+                        <i class="mdi mdi-barcode-scan"></i>
+                        Pemeriksaan QR Code & Barcode
+                    </div>
+
+                    <div class="inspection-note mb-3">
+                        <small class="text-muted d-block">
+                            QR Code dan Barcode cukup diperiksa pada
+                            <strong>1 sampel</strong> untuk setiap SPB.
+                            Scanner fisik dapat langsung digunakan pada field di bawah
+                            karena terbaca sebagai input keyboard/HID.
+                        </small>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-6 col-md-6">
+                            <label
+                                for="barcode"
+                                class="form-label fw-semibold"
+                            >
+                                Barcode
+                            </label>
+
+                            <input
+                                type="text"
+                                name="barcode"
+                                id="barcode"
+                                class="form-control"
+                                maxlength="500"
+                                autocomplete="off"
+                                value="{{ $barcodeValue }}"
+                                placeholder="Scan atau ketik Barcode"
+                            >
+                        </div>
+
+                        <div class="col-xl-6 col-md-6">
+                            <label
+                                for="qr_code"
+                                class="form-label fw-semibold"
+                            >
+                                QR Code
+                            </label>
+
+                            <input
+                                type="text"
+                                name="qr_code"
+                                id="qr_code"
+                                class="form-control"
+                                maxlength="500"
+                                autocomplete="off"
+                                value="{{ $qrCodeValue }}"
+                                placeholder="Scan atau ketik QR Code"
+                            >
+                        </div>
+                    </div>
+
                     <div class="section-title mt-4"><i class="mdi mdi-clipboard-check-outline"></i> Kesimpulan Pemeriksaan</div>
                     <div class="row g-3">
                         <div class="col-xl-3 col-md-6">
@@ -291,6 +440,18 @@
                                     'Thickness Tidak Standar',
                                     'Barcode Tidak Terbaca',
                                 ];
+
+                                $customNonconformities = array_values(
+                                    array_diff(
+                                        $selectedNonconformities,
+                                        $nonconformityOptions
+                                    )
+                                );
+
+                                $customNonconformityValue = old(
+                                    'jenis_ketidaksesuaian_lainnya',
+                                    implode(', ', $customNonconformities)
+                                );
                             @endphp
 
                             <div
@@ -310,10 +471,43 @@
                                         <span>{{ $option }}</span>
                                     </label>
                                 @endforeach
+
+                                <label class="nonconformity-option">
+                                    <input
+                                        type="checkbox"
+                                        id="jenis_ketidaksesuaian_lainnya_toggle"
+                                        class="form-check-input"
+                                        @checked($customNonconformityValue !== '')
+                                    >
+
+                                    <span>Lainnya</span>
+                                </label>
+                            </div>
+
+                            <div
+                                id="jenisKetidaksesuaianLainnyaWrapper"
+                                class="mt-3 {{ $customNonconformityValue !== '' ? '' : 'd-none' }}"
+                            >
+                                <label
+                                    for="jenis_ketidaksesuaian_lainnya"
+                                    class="form-label"
+                                >
+                                    Jenis Ketidaksesuaian Lainnya
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="jenis_ketidaksesuaian_lainnya"
+                                    id="jenis_ketidaksesuaian_lainnya"
+                                    class="form-control"
+                                    value="{{ $customNonconformityValue }}"
+                                    maxlength="255"
+                                    placeholder="Tulis jenis ketidaksesuaian lainnya"
+                                >
                             </div>
 
                             <small class="text-muted d-block mt-1">
-                                Bisa memilih lebih dari satu.
+                                Bisa memilih lebih dari satu. Pilih Lainnya untuk menambahkan jenis ketidaksesuaian baru.
                             </small>
                         </div>
                         <div class="col-xl-6 col-md-12">
@@ -400,7 +594,7 @@
 
                             <small id="fotoHelp" class="text-muted d-block mt-1">
                                 Tidak wajib apabila tidak terdapat ketidaksesuaian.
-                                Maksimal 10 foto, masing-masing maksimal 5 MB.
+                                Maksimal 10 foto, masing-masing maksimal 2 MB.
                             </small>
 
                             @php
@@ -460,35 +654,42 @@
                         <div class="col-xl-6 col-md-12">
                             <label class="form-label">Keterangan</label>
                             <textarea id="keterangan" name="keterangan" class="form-control" rows="4" placeholder="Masukkan keterangan">{{ old('keterangan', $sampling?->keterangan) }}</textarea>
-                        </div>
                     </div>
+                </div>
+            </div>
+            </fieldset>
 
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="{{ route('rmpm.pm.pouch') }}" class="btn btn-light">
-                            <i class="mdi mdi-arrow-left me-1"></i>
-                            Batal
-                        </a>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{{ route('rmpm.pm.pouch') }}" class="btn btn-light">
+                    <i class="mdi mdi-arrow-left me-1"></i>
+                    Kembali
+                </a>
 
+                @if (! $isLocked)
+                    @if (! $isFinal)
                         <button
                             type="submit"
                             value="draft"
                             class="btn btn-warning px-4 save-button"
+                            formnovalidate
                         >
                             <i class="mdi mdi-content-save-edit-outline me-1"></i>
                             Simpan Sementara
                         </button>
+                    @endif
 
-                        <button
-                            type="submit"
-                            value="final"
-                            id="submitButton"
-                            class="btn btn-primary px-4 save-button"
-                        >
-                            <i class="mdi mdi-check-circle-outline me-1"></i>
-                            Simpan Final
-                        </button>
-                    </div>
-                </div>
+                    <button
+                        type="submit"
+                        value="final"
+                        id="submitButton"
+                        class="btn btn-primary px-4 save-button"
+                    >
+                        <i class="mdi mdi-check-circle-outline me-1"></i>
+                        {{ $isFinal && $isForeman
+                            ? 'Simpan Koreksi'
+                            : 'Simpan Final' }}
+                    </button>
+                @endif
             </div>
         </form>
     </div>
@@ -498,7 +699,7 @@
 
 @section('styles')
 <style>
-.sampling-card{overflow:hidden;border-radius:18px}.sampling-header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:4px solid #ef4444;background:linear-gradient(135deg,#ecfeff,#f8fafc)}.sampling-label{display:block;margin-bottom:5px;color:#0f766e;font-size:12px;font-weight:700;letter-spacing:1px}.sampling-header-icon{width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:#fff;color:#14b8a6;font-size:42px;box-shadow:0 8px 20px rgba(15,23,42,.08)}.section-title{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:700}.inspection-table thead th{min-width:135px;background:#f1f5f9;text-align:center;vertical-align:middle;white-space:nowrap}.inspection-table tbody td{vertical-align:middle}.inspection-table input,.inspection-table select{min-width:110px}.sample-number{min-width:80px!important;text-align:center;font-weight:700}
+.sampling-card{overflow:hidden;border-radius:18px}.sampling-header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:4px solid #ef4444;background:linear-gradient(135deg,#ecfeff,#f8fafc)}.sampling-label{display:block;margin-bottom:5px;color:#0f766e;font-size:12px;font-weight:700;letter-spacing:1px}.sampling-header-icon{width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:#fff;color:#14b8a6;font-size:42px;box-shadow:0 8px 20px rgba(15,23,42,.08)}.section-title{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:700}.inspection-table thead th{min-width:135px;background:#f1f5f9;text-align:center;vertical-align:middle;white-space:nowrap}.inspection-table thead th[rowspan]{vertical-align:middle}.inspection-table tbody td{vertical-align:middle}.inspection-table input,.inspection-table select{min-width:110px}.sample-number{min-width:80px!important;text-align:center;font-weight:700}
 
 .inspection-note{
     padding:12px 14px;
@@ -601,6 +802,58 @@
     font-weight:700;
 }
 
+
+.option-radio-group{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-width:145px;
+}
+
+.option-radio{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    margin:0;
+    padding:6px 9px;
+    border:1px solid #dbe3ec;
+    border-radius:8px;
+    background:#fff;
+    color:#475569;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.15s ease;
+    white-space:nowrap;
+}
+
+.option-radio:hover{
+    border-color:#6366f1;
+    background:#eef2ff;
+}
+
+.option-radio:focus-within{
+    border-color:#6366f1;
+    background:#eef2ff;
+    box-shadow:0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.option-radio input{
+    min-width:auto!important;
+    width:14px;
+    height:14px;
+    margin:0;
+    cursor:pointer;
+}
+
+.option-radio.is-selected{
+    border-color:#6366f1;
+    background:#eef2ff;
+    color:#4338ca;
+}
+
 @media (max-width:575.98px){
     .nonconformity-options{
         grid-template-columns:1fr;
@@ -617,6 +870,7 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const isSamplingLocked = @json($isLocked);
     const form = document.getElementById('pouchSamplingForm');
     const jumlahInput = document.getElementById('jumlah_sampel');
     const rowsContainer = document.getElementById('sampleRows');
@@ -625,11 +879,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const jenisCheckboxes = Array.from(
         document.querySelectorAll('.nonconformity-checkbox')
     );
+    const lainnyaToggle = document.getElementById(
+        'jenis_ketidaksesuaian_lainnya_toggle'
+    );
+    const lainnyaWrapper = document.getElementById(
+        'jenisKetidaksesuaianLainnyaWrapper'
+    );
+    const lainnyaInput = document.getElementById(
+        'jenis_ketidaksesuaian_lainnya'
+    );
     const fotoInput = document.getElementById('foto');
     const fotoRequiredMark = document.getElementById('fotoRequiredMark');
     const fotoHelp = document.getElementById('fotoHelp');
     const existingPhotoInfo = document.getElementById('existingPhotoInfo');
     const selectedPhotoInfo = document.getElementById('selectedPhotoInfo');
+
+    const barcodeInput = document.getElementById('barcode');
+    const qrCodeInput = document.getElementById('qr_code');
 
     let samples = @json($sampling?->hasil_sampel ?? []);
     samples = Array.isArray(samples) ? samples : [];
@@ -643,17 +909,51 @@ document.addEventListener('DOMContentLoaded', function () {
             .replaceAll("'", '&#039;');
     }
 
-    function selectHtml(name, value) {
+    function radioHtml(name, value) {
+        const idBase = name
+            .replaceAll('[', '_')
+            .replaceAll(']', '');
+
         return `
-            <select name="${name}" class="form-select form-select-sm">
-                <option value="">Pilih</option>
-                <option value="OK" ${value === 'OK' ? 'selected' : ''}>OK</option>
-                <option value="NOK" ${value === 'NOK' ? 'selected' : ''}>NOK</option>
-            </select>
+            <div class="option-radio-group">
+                <label
+                    class="option-radio ${value === 'OK' ? 'is-selected' : ''}"
+                    for="${idBase}_ok"
+                >
+                    <input
+                        type="radio"
+                        name="${name}"
+                        id="${idBase}_ok"
+                        value="OK"
+                        ${value === 'OK' ? 'checked' : ''}
+                    >
+                    <span>OK</span>
+                </label>
+
+                <label
+                    class="option-radio ${value === 'NOK' ? 'is-selected' : ''}"
+                    for="${idBase}_nok"
+                >
+                    <input
+                        type="radio"
+                        name="${name}"
+                        id="${idBase}_nok"
+                        value="NOK"
+                        ${value === 'NOK' ? 'checked' : ''}
+                    >
+                    <span>NOK</span>
+                </label>
+            </div>
         `;
     }
 
     function inputHtml(index, field, value) {
+        const isBerat = field === 'berat';
+        const placeholder = isBerat ? '0.00' : '';
+        const onInputAttr = isBerat
+            ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"`
+            : '';
+
         return `
             <input
                 type="number"
@@ -662,6 +962,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 name="samples[${index}][${field}]"
                 value="${esc(value)}"
                 class="form-control form-control-sm"
+                placeholder="${placeholder}"
+                ${onInputAttr}
             >
         `;
     }
@@ -669,7 +971,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderRows(total) {
         const safeTotal = Math.max(
             1,
-            Math.min(parseInt(total || 1), 50)
+            Math.min(parseInt(total || 1), 200)
         );
 
         while (samples.length < safeTotal) {
@@ -682,6 +984,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const fieldOrder = [
             'panjang',
             'lebar',
+            'thickness_1',
+            'thickness_2',
             'berat',
             'side_seal_1',
             'side_seal_2',
@@ -690,7 +994,6 @@ document.addEventListener('DOMContentLoaded', function () {
             'design',
             'warna',
             'tulisan',
-            'barcode_qr',
             'drop_test',
             'pretest'
         ];
@@ -712,49 +1015,229 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                     <td>${inputHtml(index, 'panjang', sample.panjang)}</td>
                     <td>${inputHtml(index, 'lebar', sample.lebar)}</td>
+                    <td>${inputHtml(index, 'thickness_1', sample.thickness_1 ?? sample.thickness)}</td>
+                    <td>${inputHtml(index, 'thickness_2', sample.thickness_2)}</td>
                     <td>${inputHtml(index, 'berat', sample.berat)}</td>
                     <td>${inputHtml(index, 'side_seal_1', sample.side_seal_1)}</td>
                     <td>${inputHtml(index, 'side_seal_2', sample.side_seal_2)}</td>
                     <td>${inputHtml(index, 'bottom_seal', sample.bottom_seal)}</td>
                     <td>${inputHtml(index, 'bottom_high', sample.bottom_high)}</td>
-                    <td>${selectHtml(`samples[${index}][design]`, sample.design)}</td>
-                    <td>${selectHtml(`samples[${index}][warna]`, sample.warna)}</td>
-                    <td>${selectHtml(`samples[${index}][tulisan]`, sample.tulisan)}</td>
-                    <td>${selectHtml(`samples[${index}][barcode_qr]`, sample.barcode_qr)}</td>
-                    <td>${selectHtml(`samples[${index}][drop_test]`, sample.drop_test)}</td>
-                    <td>${selectHtml(`samples[${index}][pretest]`, sample.pretest)}</td>
+                    <td>${radioHtml(`samples[${index}][design]`, sample.design)}</td>
+                    <td>${radioHtml(`samples[${index}][warna]`, sample.warna)}</td>
+                    <td>${radioHtml(`samples[${index}][tulisan]`, sample.tulisan)}</td>
+                    <td>${radioHtml(`samples[${index}][drop_test]`, sample.drop_test)}</td>
+                    <td>${radioHtml(`samples[${index}][pretest]`, sample.pretest)}</td>
                 </tr>`
             );
         }
 
-        fieldOrder.forEach(function (field, fieldIndex) {
-            rowsContainer
-                .querySelectorAll(`[name$="[${field}]"]`)
-                .forEach(function (element, rowIndex) {
-                    element.tabIndex =
-                        1 + (fieldIndex * safeTotal) + rowIndex;
-                });
-        });
+        rowsContainer
+            .querySelectorAll('.option-radio input[type="radio"]')
+            .forEach(function (radio) {
+                radio.addEventListener(
+                    'change',
+                    function () {
+                        const group =
+                            radio.closest(
+                                '.option-radio-group'
+                            );
 
-        const sampleTabCount =
-            fieldOrder.length * safeTotal;
+                        group
+                            ?.querySelectorAll(
+                                '.option-radio'
+                            )
+                            .forEach(function (label) {
+                                label.classList.remove(
+                                    'is-selected'
+                                );
+                            });
 
-        for (let columnIndex = 0; columnIndex < 2; columnIndex++) {
-            for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
-                const element = document.querySelector(
-                    `[name="thickness[${rowIndex}][nilai_${columnIndex + 1}]"]`
+                        radio.closest(
+                            '.option-radio'
+                        )?.classList.add(
+                            'is-selected'
+                        );
+                    }
                 );
+            });
 
-                if (element) {
-                    element.tabIndex =
-                        sampleTabCount
-                        + 1
-                        + (columnIndex * 3)
-                        + rowIndex;
-                }
+    }
+
+    function setupKeyboardNavigation(formElement) {
+        if (!formElement) return;
+
+        function isVisibleAndEditable(el) {
+            if (!el) return false;
+            if (el.disabled || el.readOnly || el.type === 'hidden') return false;
+            if (el.offsetParent === null && getComputedStyle(el).display === 'none' && !el.closest('.option-radio')) return false;
+            return true;
+        }
+
+        function findFocusableInCell(cell) {
+            if (!cell) return null;
+            const checkedRadio = cell.querySelector('input[type="radio"]:checked');
+            if (checkedRadio && isVisibleAndEditable(checkedRadio)) return checkedRadio;
+
+            const firstRadio = cell.querySelector('.option-radio input[type="radio"]');
+            if (firstRadio && isVisibleAndEditable(firstRadio)) return firstRadio;
+
+            const input = cell.querySelector('input:not([type="hidden"]), select, textarea');
+            if (input && isVisibleAndEditable(input)) return input;
+
+            return null;
+        }
+
+        function focusControl(el) {
+            if (!el) return;
+            el.focus();
+            if (typeof el.select === 'function' && el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'file') {
+                el.select();
             }
         }
 
+        function findNextColumnFirstInput(rows, currentColIndex) {
+            if (!rows.length) return null;
+            const maxCols = rows[0].cells.length;
+            for (let c = currentColIndex + 1; c < maxCols; c++) {
+                for (let r = 0; r < rows.length; r++) {
+                    const cell = rows[r].cells[c];
+                    if (cell) {
+                        const ctrl = findFocusableInCell(cell);
+                        if (ctrl) return ctrl;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findPrevColumnLastInput(rows, currentColIndex) {
+            if (!rows.length) return null;
+            for (let c = currentColIndex - 1; c >= 0; c--) {
+                for (let r = rows.length - 1; r >= 0; r--) {
+                    const cell = rows[r].cells[c];
+                    if (cell) {
+                        const ctrl = findFocusableInCell(cell);
+                        if (ctrl) return ctrl;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function getFocusableElements(container) {
+            const selector = 'input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])';
+            const elements = Array.from(container.querySelectorAll(selector));
+            return elements.filter(el => isVisibleAndEditable(el));
+        }
+
+        formElement.addEventListener('keydown', function (event) {
+            const target = event.target;
+            if (!target) return;
+
+            if (target.tagName === 'TEXTAREA' && !event.ctrlKey) {
+                if (event.key === 'Tab') {
+                    event.preventDefault();
+                    const focusables = getFocusableElements(formElement);
+                    const currentIndex = focusables.indexOf(target);
+                    if (currentIndex !== -1) {
+                        const nextIndex = event.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                        if (nextIndex >= 0 && nextIndex < focusables.length) {
+                            focusControl(focusables[nextIndex]);
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (target.tagName === 'BUTTON' || (target.tagName === 'INPUT' && target.type === 'submit')) {
+                return;
+            }
+
+            const isEnter = event.key === 'Enter';
+            const isTab = event.key === 'Tab';
+            const isArrowDown = event.key === 'ArrowDown';
+            const isArrowUp = event.key === 'ArrowUp';
+
+            if (!isEnter && !isTab && !isArrowDown && !isArrowUp) {
+                return;
+            }
+
+            const isInTable = target.closest('table') !== null;
+            if ((isArrowDown || isArrowUp) && !isInTable) {
+                return;
+            }
+
+            if (target.tagName === 'SELECT' && (isArrowDown || isArrowUp)) {
+                return;
+            }
+
+            const isBackwards = event.shiftKey || isArrowUp;
+
+            if (isEnter || isTab || isArrowDown || isArrowUp) {
+                event.preventDefault();
+            }
+
+            const currentCell = target.closest('td, th');
+            const currentRow = target.closest('tr');
+            const currentTable = target.closest('table');
+
+            if (currentCell && currentRow && currentTable) {
+                const tbody = currentRow.closest('tbody') || currentTable;
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const rowIndex = rows.indexOf(currentRow);
+                const colIndex = currentCell.cellIndex;
+
+                if (rowIndex !== -1) {
+                    const step = isBackwards ? -1 : 1;
+                    const targetRowIndex = rowIndex + step;
+
+                    if (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+                        const targetRow = rows[targetRowIndex];
+                        const targetCell = targetRow.cells[colIndex];
+                        if (targetCell) {
+                            const targetInput = findFocusableInCell(targetCell);
+                            if (targetInput) {
+                                focusControl(targetInput);
+                                return;
+                            }
+                        }
+                    } else if (!isBackwards && targetRowIndex >= rows.length) {
+                        const nextInput = findNextColumnFirstInput(rows, colIndex);
+                        if (nextInput) {
+                            focusControl(nextInput);
+                            return;
+                        }
+                    } else if (isBackwards && targetRowIndex < 0) {
+                        const prevInput = findPrevColumnLastInput(rows, colIndex);
+                        if (prevInput) {
+                            focusControl(prevInput);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            const focusables = getFocusableElements(formElement);
+            let currentIndex = -1;
+
+            for (let i = 0; i < focusables.length; i++) {
+                if (focusables[i] === target || (target.type === 'radio' && focusables[i].name === target.name)) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            if (currentIndex === -1) {
+                currentIndex = focusables.indexOf(target);
+            }
+
+            if (currentIndex !== -1) {
+                const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
+                if (nextIndex >= 0 && nextIndex < focusables.length) {
+                    focusControl(focusables[nextIndex]);
+                    return;
+                }
+            }
+        });
     }
 
     function showAlert(type, message) {
@@ -840,12 +1323,30 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         );
 
+        lainnyaToggle.disabled = tidakAda;
+
+        if (tidakAda) {
+            lainnyaToggle.checked = false;
+            lainnyaInput.value = '';
+        }
+
+        const tampilkanLainnya =
+            ada && lainnyaToggle.checked;
+
+        lainnyaWrapper.classList.toggle(
+            'd-none',
+            !tampilkanLainnya
+        );
+
+        lainnyaInput.disabled = !tampilkanLainnya;
+        lainnyaInput.required = tampilkanLainnya;
+
         if (ada) {
             fotoInput.required =
                 getExistingPhotoCount() === 0;
 
             fotoHelp.textContent =
-                'Pilih maksimal 10 foto termasuk foto yang sudah tersimpan. Maksimal 5 MB per foto.';
+                'Pilih maksimal 10 foto termasuk foto yang sudah tersimpan. Maksimal 2 MB per foto.';
 
             return;
         }
@@ -1039,10 +1540,57 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    lainnyaToggle.addEventListener(
+        'change',
+        function () {
+            if (
+                this.checked
+                && konfirmasiSelect.value !== 'Ada'
+            ) {
+                konfirmasiSelect.value = 'Ada';
+            }
+
+            if (!this.checked) {
+                lainnyaInput.value = '';
+            }
+
+            updateKetidaksesuaianFields();
+
+            if (this.checked) {
+                lainnyaInput.focus();
+            }
+        }
+    );
+
+    lainnyaInput.addEventListener(
+        'input',
+        function () {
+            if (this.value.trim() !== '') {
+                lainnyaToggle.checked = true;
+
+                if (
+                    konfirmasiSelect.value !== 'Ada'
+                ) {
+                    konfirmasiSelect.value = 'Ada';
+                }
+
+                updateKetidaksesuaianFields();
+            }
+        }
+    );
+
     form.addEventListener(
         'submit',
         async function (event) {
             event.preventDefault();
+
+            if (isSamplingLocked) {
+                showAlert(
+                    'warning',
+                    'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                );
+                return;
+            }
 
             const saveMode =
                 event.submitter?.value ?? 'final';
@@ -1050,16 +1598,23 @@ document.addEventListener('DOMContentLoaded', function () {
             const isFinal =
                 saveMode === 'final';
 
+            const hasSelectedNonconformity =
+                jenisCheckboxes.some(
+                    checkbox => checkbox.checked
+                )
+                || (
+                    lainnyaToggle.checked
+                    && lainnyaInput.value.trim() !== ''
+                );
+
             if (
                 isFinal
                 && konfirmasiSelect.value === 'Ada'
-                && !jenisCheckboxes.some(
-                    checkbox => checkbox.checked
-                )
+                && !hasSelectedNonconformity
             ) {
                 showAlert(
                     'danger',
-                    'Pilih minimal satu jenis ketidaksesuaian.'
+                    'Pilih jenis ketidaksesuaian atau isi field Lainnya.'
                 );
 
                 document
@@ -1113,6 +1668,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         body: formData
                     }
                 );
+
+                const contentType =
+                    response.headers.get('content-type') ?? '';
+
+                if (!contentType.includes('application/json')) {
+                    const body = await response.text();
+
+                    throw new Error(
+                        'Server tidak mengembalikan JSON. ' +
+                        body.slice(0, 150)
+                    );
+                }
 
                 const result =
                     await response.json();
@@ -1184,6 +1751,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     renderRows(jumlahInput.value);
     updateKetidaksesuaianFields();
+    setupKeyboardNavigation(form);
 });
 </script>
 @endsection

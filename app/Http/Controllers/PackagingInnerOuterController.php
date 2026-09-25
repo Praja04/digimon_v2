@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PackagingIncoming;
 use App\Models\PackagingInnerOuterSampling;
+use App\Models\PackagingInnerOuterSamplingDraft;
 use App\Models\SamplingStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
+use Milon\Barcode\Facades\DNS2DFacade;
 
 class PackagingInnerOuterController extends Controller
 {
@@ -139,9 +141,54 @@ class PackagingInnerOuterController extends Controller
                             );
                     }
                 );
-            }
+            } elseif ($status === 'Draft') {
+                $query->whereHas(
+                    'packagingInnerOuterSampling',
+                    function ($samplingQuery) {
+                        $samplingQuery->where(
+                            'status_proses',
+                            'draft'
+                        );
+                    }
+                );
+            } elseif (
+                in_array(
+                    $status,
+                    [
+                        'Diterima',
+                        'Diterima Bersyarat',
+                        'Ditolak',
+                        'WIP',
+                        'Release',
+                        'Reject',
+                        'Release Bersyarat',
+                    ],
+                    true
+                )
+            ) {
+                $normalizedRekomendasi = match ($status) {
+                    'Release' => 'Diterima',
+                    'Release Bersyarat' => 'Diterima Bersyarat',
+                    'Reject' => 'Ditolak',
+                    default => $status,
+                };
 
-            if (
+                $query->whereHas(
+                    'packagingInnerOuterSampling',
+                    function ($samplingQuery) use ($normalizedRekomendasi) {
+                        $samplingQuery
+                            ->where(
+                                'rekomendasi',
+                                $normalizedRekomendasi
+                            )
+                            ->where(
+                                'status_proses',
+                                '!=',
+                                'draft'
+                            );
+                    }
+                );
+            } elseif (
                 $status === 'Sudah Sampling'
             ) {
                 $query->whereHas(
@@ -198,6 +245,7 @@ class PackagingInnerOuterController extends Controller
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
@@ -313,6 +361,11 @@ class PackagingInnerOuterController extends Controller
         $isFinal =
             $saveMode === 'final';
 
+        $request->merge([
+            'jumlah_sampel' =>
+                $packagingIncoming->jumlah_sampel,
+        ]);
+
         $rules = [
             'save_mode' => [
                 'required',
@@ -368,16 +421,11 @@ class PackagingInnerOuterController extends Controller
                 'min:0',
             ],
 
-            'samples.*.pitch' =>
-                $isOuter
-                    ? [
-                        'nullable',
-                        'numeric',
-                        'min:0',
-                    ]
-                    : [
-                        'nullable',
-                    ],
+            'samples.*.pitch' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
 
             'samples.*.thickness' => [
                 'nullable',
@@ -406,6 +454,18 @@ class PackagingInnerOuterController extends Controller
                 'max:100',
             ],
 
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
+            'qr_code' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
             'samples.*.design' => [
                 'nullable',
                 'in:OK,NG',
@@ -418,8 +478,7 @@ class PackagingInnerOuterController extends Controller
 
             'samples.*.tulisan' => [
                 'nullable',
-                'string',
-                'max:255',
+                'in:OK,NG',
             ],
 
             'coa' => [
@@ -445,7 +504,14 @@ class PackagingInnerOuterController extends Controller
 
             'jenis_ketidaksesuaian.*' => [
                 'string',
-                'in:Miss Print,Berat Under,Dimensi Tidak Standar,Pitch Under,Delaminasi,Salah Design,Barcode Tidak Terbaca',
+                'distinct',
+                'max:255',
+            ],
+
+            'jenis_ketidaksesuaian_lainnya' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
 
             'foto_pengecekan' => [
@@ -457,7 +523,7 @@ class PackagingInnerOuterController extends Controller
             'foto_pengecekan.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'foto_ketidaksesuaian' => [
@@ -469,7 +535,7 @@ class PackagingInnerOuterController extends Controller
             'foto_ketidaksesuaian.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'keterangan' => [
@@ -482,6 +548,14 @@ class PackagingInnerOuterController extends Controller
         $existingSampling = PackagingInnerOuterSampling::query()
             ->where('packaging_incoming_id', $packagingIncoming->id)
             ->first();
+
+        /*
+         * Data FINAL hanya boleh dikoreksi oleh Foreman.
+         * Role lain tetap boleh membuat Draft/Final selama datanya belum Final.
+         */
+        $this->ensureFinalCanBeChanged(
+            $existingSampling
+        );
 
         $existingFotoPengecekan = collect(
             $existingSampling?->foto_pengecekan ?? []
@@ -498,6 +572,7 @@ class PackagingInnerOuterController extends Controller
             $request->merge([
                 'konfirmasi_ketidaksesuaian' => 'Tidak Ada',
                 'jenis_ketidaksesuaian' => [],
+                'jenis_ketidaksesuaian_lainnya' => null,
             ]);
         }
 
@@ -579,13 +654,40 @@ class PackagingInnerOuterController extends Controller
                     return;
                 }
 
+                $selectedJenis =
+                    $request->input(
+                        'jenis_ketidaksesuaian',
+                        []
+                    );
+
+                $customJenis = trim(
+                    (string) $request->input(
+                        'jenis_ketidaksesuaian_lainnya',
+                        ''
+                    )
+                );
+
                 if (
-                    count($request->input('jenis_ketidaksesuaian', []))
-                    < 1
+                    count($selectedJenis) < 1
+                    && $customJenis === ''
                 ) {
                     $validator->errors()->add(
                         'jenis_ketidaksesuaian',
-                        'Pilih minimal satu jenis ketidaksesuaian.'
+                        'Pilih minimal satu jenis ketidaksesuaian atau isi jenis lainnya.'
+                    );
+                }
+
+                if (
+                    in_array(
+                        'Lainnya',
+                        $selectedJenis,
+                        true
+                    )
+                    && $customJenis === ''
+                ) {
+                    $validator->errors()->add(
+                        'jenis_ketidaksesuaian_lainnya',
+                        'Jenis ketidaksesuaian lainnya wajib diisi.'
                     );
                 }
 
@@ -604,13 +706,45 @@ class PackagingInnerOuterController extends Controller
 
         $validated = $validator->validate();
 
+        $jenisKetidaksesuaian =
+            array_values(
+                array_filter(
+                    $validated[
+                        'jenis_ketidaksesuaian'
+                    ] ?? [],
+                    fn ($value) =>
+                        $value !== 'Lainnya'
+                )
+            );
+
+        $jenisKetidaksesuaianLainnya =
+            trim(
+                (string) (
+                    $validated[
+                        'jenis_ketidaksesuaian_lainnya'
+                    ] ?? ''
+                )
+            );
+
+        if (
+            $jenisKetidaksesuaianLainnya !== ''
+            && ! in_array(
+                $jenisKetidaksesuaianLainnya,
+                $jenisKetidaksesuaian,
+                true
+            )
+        ) {
+            $jenisKetidaksesuaian[] =
+                $jenisKetidaksesuaianLainnya;
+        }
+
         $sampling = DB::transaction(
             function () use (
                 $request,
                 $validated,
                 $packagingIncoming,
-                $isOuter,
-                $isFinal
+                $isFinal,
+                $jenisKetidaksesuaian
             ) {
                 $sampling =
                     PackagingInnerOuterSampling::query()
@@ -660,21 +794,25 @@ class PackagingInnerOuterController extends Controller
                     $fotoKetidaksesuaianPaths = [];
                 }
 
+                $barcode = $validated['barcode'] ?? null;
+                $qrCode = $validated['qr_code'] ?? null;
+
                 $hasilSampel = collect(
                     $validated['samples'] ?? []
                 )
-                    ->values()
-                    ->map(
-                        function ($sample) use (
-                            $isOuter
-                        ) {
-                            if (! $isOuter) {
-                                $sample['pitch'] = '-';
+                    ->map(function ($sample, $index) use ($barcode, $qrCode) {
+                        if ($index === 0) {
+                            if (filled($barcode)) {
+                                $sample['barcode'] = trim($barcode);
                             }
-
-                            return $sample;
+                            if (filled($qrCode)) {
+                                $sample['qr_code'] = trim($qrCode);
+                            }
                         }
-                    )
+
+                        return $sample;
+                    })
+                    ->values()
                     ->all();
 
                 $sampling->fill([
@@ -725,8 +863,7 @@ class PackagingInnerOuterController extends Controller
                         ?? null,
 
                     'jenis_ketidaksesuaian' =>
-                        $validated['jenis_ketidaksesuaian']
-                        ?? [],
+                        $jenisKetidaksesuaian,
 
                     'foto_pengecekan' =>
                         $fotoPengecekanPaths,
@@ -781,6 +918,13 @@ class PackagingInnerOuterController extends Controller
                     ]);
                 }
 
+                PackagingInnerOuterSamplingDraft::query()
+                    ->where(
+                        'packaging_incoming_id',
+                        $packagingIncoming->id
+                    )
+                    ->delete();
+
                 return $sampling;
             }
         );
@@ -803,9 +947,166 @@ class PackagingInnerOuterController extends Controller
             ],
 
             'redirect_url' =>
-                route(
-                    'rmpm.pm.inner-outer'
-                ),
+                $isFinal
+                    ? route(
+                        'rmpm.pm.inner-outer.resume',
+                        $packagingIncoming
+                    )
+                    : route(
+                        'rmpm.pm.inner-outer.sampling',
+                        $packagingIncoming
+                    ),
         ]);
     }
+
+
+    public function resume(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'samplingStatus',
+        ]);
+
+        $allowedJenis = [
+            'Inner',
+            'Outer',
+            'Inner / Outer',
+            'Outers',
+        ];
+
+        abort_unless(
+            in_array(
+                $packagingIncoming->jenisIncoming?->nama,
+                $allowedJenis,
+                true
+            ),
+            404,
+            'Data incoming bukan kategori Inner atau Outer.'
+        );
+
+        $sampling = PackagingInnerOuterSampling::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->where(
+                'status_proses',
+                'final'
+            )
+            ->firstOrFail();
+
+        return view(
+            'app.rmpm.inner-outer-resume',
+            compact(
+                'packagingIncoming',
+                'sampling'
+            )
+        );
+    }
+
+    public function getQRCode(
+        int $id
+    ): JsonResponse {
+        $packagingIncoming = PackagingIncoming::query()
+            ->with([
+                'jenisIncoming',
+                'jenisMaterial',
+                'supplier',
+                'samplingStatus',
+            ])
+            ->findOrFail($id);
+
+        $allowedJenis = [
+            'Inner',
+            'Outer',
+            'Inner / Outer',
+            'Outers',
+        ];
+
+        abort_unless(
+            in_array(
+                $packagingIncoming->jenisIncoming?->nama,
+                $allowedJenis,
+                true
+            ),
+            404,
+            'Data incoming bukan kategori Inner atau Outer.'
+        );
+
+        $sampling = PackagingInnerOuterSampling::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->where(
+                'status_proses',
+                'final'
+            )
+            ->first();
+
+        $qrText = $sampling
+            ? route(
+                'rmpm.pm.inner-outer.resume',
+                $packagingIncoming
+            )
+            : route(
+                'rmpm.pm.inner-outer.sampling',
+                $packagingIncoming
+            );
+
+        $qrCode = DNS2DFacade::getBarcodePNG(
+            $qrText,
+            'QRCODE'
+        );
+
+        $tanggal = optional(
+            $sampling?->updated_at
+                ?? $sampling?->created_at
+                ?? $packagingIncoming->created_at
+        )->format('Y-m-d')
+            ?? now()->format('Y-m-d');
+
+        $label =
+            strtoupper(
+                $packagingIncoming->jenisIncoming?->nama
+                ?? 'INNER-OUTER'
+            )
+            . '/'
+            . ($packagingIncoming->no_spb ?? '-')
+            . '/'
+            . $tanggal
+            . '/'
+            . $packagingIncoming->id;
+
+        return response()->json([
+            'status' => 'success',
+            'qrCode' => $qrCode,
+            'label' => $label,
+            'url' => $qrText,
+        ]);
+    }
+
+    private function isForeman(): bool
+    {
+        return auth()->check()
+            && auth()->user()?->role === 'Foreman';
+    }
+
+    private function ensureFinalCanBeChanged(
+        ?PackagingInnerOuterSampling $sampling
+    ): void {
+        if (
+            $sampling?->status_proses === 'final'
+            && ! $this->isForeman()
+        ) {
+            abort(
+                403,
+                'Data sampling yang sudah final hanya dapat dikoreksi oleh Foreman.'
+            );
+        }
+    }
+
 }

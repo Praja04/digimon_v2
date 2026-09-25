@@ -226,6 +226,13 @@
                     </div>
                     <div class="modal-body row g-3">
                         <div class="alert alert-danger d-none error-alert"></div>
+
+                        <div class="col-12 d-none" id="draftInfo">
+                            <div class="alert alert-warning mb-0">
+                                <i class="ri-draft-line me-1"></i>
+                                Data sementara ditemukan dan sudah dimuat kembali.
+                            </div>
+                        </div>
                         <input type="hidden" name="id" id="id">
                         <div class="col-lg-6">
                             <label class="form-label">BRIX <span style="color: red">*</span></label>
@@ -300,8 +307,33 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                        <button
+                            type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+                            Tutup
+                        </button>
+
+                        @if (in_array(
+                            auth()->user()->role,
+                            ['Analis Kimia', 'Foreman'],
+                            true
+                        ))
+                            <button
+                                type="button"
+                                class="btn btn-warning"
+                                id="saveDraft">
+                                <i class="ri-save-line me-1"></i>
+                                Simpan Sementara
+                            </button>
+                        @endif
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="save">
+                            Simpan Final
+                        </button>
                     </div>
                 </div>
             </form>
@@ -556,37 +588,79 @@
                     },
                     success: function(response) {
                         const userRole = "{{ auth()->user()->role }}";
+                        const draft = response.draft || null;
+                        const source = draft || response;
 
                         $('#id').val(response.id);
-                        $('#brix').val(formatDecimal(response.brix));
-                        $('#visco').val(formatDecimal(response.visco));
-                        $('#aw').val(formatDecimal(response.aw));
-                        $('#disposition_remark').val(response.disposition_remark || '');
+                        $('#brix').val(formatDecimal(source.brix));
+                        $('#visco').val(formatDecimal(source.visco));
+                        $('#aw').val(formatDecimal(source.aw));
+                        $('#disposition_remark').val(
+                            source.disposition_remark || ''
+                        );
 
-                        $('#status_disposition').val(response.status);
+                        $('#status_disposition').val(
+                            source.status_disposition
+                            || response.status
+                            || ''
+                        );
+
                         if (userRole === 'Foreman') {
-                            $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', true);
                         } else {
-                            $('#status_disposition').val(response.status);
                             $('#status_disposition').prop('disabled', false);
                         }
 
-                        $('#disposition').val(response.disposition);
+                        $('#disposition').val(
+                            source.disposition
+                            || response.disposition
+                            || ''
+                        );
 
-                        if (response.status === 'Adjustment') {
+                        const selectedStatus =
+                            source.status_disposition
+                            || response.status
+                            || '';
+
+                        const selectedDisposition =
+                            source.disposition
+                            || response.disposition
+                            || '';
+
+                        if (
+                            selectedStatus === 'Adjustment'
+                            || selectedDisposition === 'Adjustment'
+                        ) {
                             $('.adjustment-qty-wrapper').removeClass('d-none');
-                            $('input[name="adjustment_qty_air"]').val(response
-                                .adjustment_qty_air || '');
-                            $('input[name="adjustment_qty_gula"]').val(response
-                                .adjustment_qty_gula || '');
-                            $('input[name="adjustment_qty_garam"]').val(response
-                                .adjustment_qty_garam || '');
+
+                            $('input[name="adjustment_qty_air"]').val(
+                                formatDecimal(
+                                    source.adjustment_qty_air || ''
+                                )
+                            );
+
+                            $('input[name="adjustment_qty_gula"]').val(
+                                formatDecimal(
+                                    source.adjustment_qty_gula || ''
+                                )
+                            );
+
+                            $('input[name="adjustment_qty_garam"]').val(
+                                formatDecimal(
+                                    source.adjustment_qty_garam || ''
+                                )
+                            );
 
                             $('.adjustment-qty').prop('required', true);
                         } else {
                             $('.adjustment-qty-wrapper').addClass('d-none');
                             $('.adjustment-qty').prop('required', false).val('');
+                        }
+
+                        if (draft) {
+                            $('#draftInfo').removeClass('d-none');
+                        } else {
+                            $('#draftInfo').addClass('d-none');
                         }
 
                         $('#modal').modal('show');
@@ -695,6 +769,109 @@
                 return date.toLocaleDateString('id-ID', options);
             }
 
+            $('#saveDraft').on('click', function() {
+                const wasDisabled =
+                    $('#status_disposition').prop('disabled');
+
+                if (wasDisabled) {
+                    $('#status_disposition').prop('disabled', false);
+                }
+
+                $('.form-control').removeClass('is-invalid');
+                $('.text-danger').html('');
+
+                $.ajax({
+                    data: $('#form').serialize(),
+                    url: "{{ route('analisa.monitoring-turun-blending.draft.store') }}",
+                    type: "POST",
+                    dataType: "json",
+
+                    beforeSend: function() {
+                        $('#saveDraft')
+                            .prop('disabled', true)
+                            .html(
+                                '<i class="mdi mdi-loading mdi-spin me-2"></i> Menyimpan...'
+                            );
+
+                        $('#save').prop('disabled', true);
+                    },
+
+                    complete: function() {
+                        $('#saveDraft')
+                            .prop('disabled', false)
+                            .html(
+                                '<i class="ri-save-line me-1"></i> Simpan Sementara'
+                            );
+
+                        $('#save').prop('disabled', false);
+
+                        if (wasDisabled) {
+                            $('#status_disposition').prop('disabled', true);
+                        }
+                    },
+
+                    success: function(response) {
+                        $('#draftInfo').removeClass('d-none');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Tersimpan Sementara',
+                            text: response.message
+                        });
+                    },
+
+                    error: function(xhr) {
+                        const response = xhr.responseJSON || {};
+
+                        if (xhr.status === 422 && response.errors) {
+                            const errors = response.errors;
+
+                            if (errors.brix) {
+                                $('#brix').addClass('is-invalid');
+                                $('.errorBrix').html(errors.brix.join('<br>'));
+                            }
+
+                            if (errors.visco) {
+                                $('#visco').addClass('is-invalid');
+                                $('.errorVisco').html(errors.visco.join('<br>'));
+                            }
+
+                            if (errors.aw) {
+                                $('#aw').addClass('is-invalid');
+                                $('.errorAw').html(errors.aw.join('<br>'));
+                            }
+
+                            if (errors.status_disposition) {
+                                $('#status_disposition').addClass('is-invalid');
+                                $('.errorStatusDisposition').html(
+                                    errors.status_disposition.join('<br>')
+                                );
+                            }
+
+                            if (errors.disposition) {
+                                $('#disposition').addClass('is-invalid');
+                                $('.errorDisposition').html(
+                                    errors.disposition.join('<br>')
+                                );
+                            }
+
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: xhr.status === 403 ? 'error' : 'warning',
+                            title:
+                                xhr.status === 403
+                                    ? 'Akses Ditolak'
+                                    : 'Tidak Dapat Disimpan',
+                            text:
+                                response.message ||
+                                'Data sementara gagal disimpan.'
+                        });
+                    }
+                });
+            });
+
             $('#form').submit(function(e) {
                 e.preventDefault();
 
@@ -717,7 +894,7 @@
                         $('.text-danger').html('');
                     },
                     complete: function() {
-                        $('#save').prop('disabled', false).text('Simpan');
+                        $('#save').prop('disabled', false).text('Simpan Final');
                     },
                     success: function(response) {
                         $('#modal').modal('hide');

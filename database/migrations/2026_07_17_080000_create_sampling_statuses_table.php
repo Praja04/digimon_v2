@@ -8,7 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('sampling_statuses', function (Blueprint $table) {
+        if (Schema::hasTable('sampling_statuses')) {
+            return;
+        }
+
+        Schema::create('sampling_statuses', function (Blueprint $table): void {
             $table->id();
             $table->string('kode', 50)->unique();
             $table->string('nama', 100)->unique();

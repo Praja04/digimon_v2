@@ -31,12 +31,65 @@
         $sampling?->foto_ketidaksesuaian ?? []
     )->filter()->values()->all();
 
+    $samplePertama = collect($sampling?->hasil_sampel ?? [])->first() ?? [];
+    $barcodeValue = old('barcode', $samplePertama['barcode'] ?? '');
+    $qrCodeValue = old('qr_code', $samplePertama['qr_code'] ?? '');
+
+    $nonconformityOptions = [
+        'Miss Print',
+        'Berat Under',
+        'Dimensi Tidak Standar',
+        'Pitch Under',
+        'Delaminasi',
+        'Salah Design',
+        'Barcode Tidak Terbaca',
+    ];
+
+    $savedJenisKetidaksesuaian = collect(
+        $sampling?->jenis_ketidaksesuaian ?? []
+    )->filter()->values()->all();
+
+    $customJenisTersimpan = collect(
+        $savedJenisKetidaksesuaian
+    )->first(
+        fn ($value) =>
+            ! in_array(
+                $value,
+                $nonconformityOptions,
+                true
+            )
+    );
+
     $selectedJenisKetidaksesuaian = collect(
         old(
             'jenis_ketidaksesuaian',
-            $sampling?->jenis_ketidaksesuaian ?? []
+            $savedJenisKetidaksesuaian
         )
     )->filter()->values()->all();
+
+    $jenisLainnyaValue = old(
+        'jenis_ketidaksesuaian_lainnya',
+        $customJenisTersimpan
+    );
+
+    $lainnyaSelected =
+        in_array(
+            'Lainnya',
+            $selectedJenisKetidaksesuaian,
+            true
+        )
+        || filled($jenisLainnyaValue);
+
+    $isForeman =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+
+    $isFinal =
+        $sampling?->status_proses === 'final';
+
+    $isLocked =
+        $isFinal
+        && ! $isForeman;
 @endphp
 
 <div class="page-content">
@@ -89,6 +142,21 @@
             </div>
         @endif
 
+        @if ($isLocked)
+            <div class="alert alert-info">
+                <i class="mdi mdi-lock-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Data hanya dapat dilihat. Koreksi data final hanya dapat dilakukan oleh
+                <strong>Foreman</strong>.
+            </div>
+        @elseif ($isFinal && $isForeman)
+            <div class="alert alert-warning">
+                <i class="mdi mdi-account-edit-outline me-1"></i>
+                Data sampling ini sudah <strong>Final</strong>.
+                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+            </div>
+        @endif
+
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-end">
@@ -125,6 +193,10 @@
         >
             @csrf
 
+            <fieldset
+                id="innerOuterSamplingFieldset"
+                @disabled($isLocked)
+            >
             <div class="card border-0 shadow-sm sampling-card mb-4">
 
                 <div class="sampling-header">
@@ -160,7 +232,7 @@
                             <label class="form-label">Nomor SPB</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->no_spb }}"
                                 readonly
                             >
@@ -170,7 +242,7 @@
                             <label class="form-label">Jenis Incoming</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->jenisIncoming?->nama ?? '-' }}"
                                 readonly
                             >
@@ -180,7 +252,7 @@
                             <label class="form-label">Supplier</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{
                                     $packagingIncoming->supplier?->nama
                                     ?? $packagingIncoming->supplier?->nama_supplier
@@ -194,7 +266,7 @@
                             <label class="form-label">Nomor Mobil</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->no_mobil ?? '-' }}"
                                 readonly
                             >
@@ -204,7 +276,7 @@
                             <label class="form-label">MID</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->mid ?? '-' }}"
                                 readonly
                             >
@@ -214,7 +286,7 @@
                             <label class="form-label">Jenis Material</label>
                             <input
                                 type="text"
-                                class="form-control"
+                                class="form-control bg-light"
                                 value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}"
                                 readonly
                             >
@@ -241,15 +313,17 @@
                                 type="number"
                                 name="jumlah_sampel"
                                 id="jumlah_sampel"
-                                class="form-control"
+                                class="form-control bg-light"
                                 min="1"
                                 max="50"
-                                value="{{ old(
-                                    'jumlah_sampel',
-                                    $sampling?->jumlah_sampel ?? 5
-                                ) }}"
+                                value="{{ $packagingIncoming->jumlah_sampel }}"
+                                readonly
                                 required
                             >
+
+                            <small class="text-muted d-block mt-1">
+                                Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
+                            </small>
                         </div>
 
                         <div class="col-xl-3 col-md-6">
@@ -335,7 +409,6 @@
                                     <th>Arah Vertikal</th>
                                     <th>Arah Terbalik</th>
                                     <th>Laminasi</th>
-                                    <th>Barcode</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
@@ -418,6 +491,62 @@
                         </div>
                     </div>
 
+                    <div class="section-title mt-4">
+                        <i class="mdi mdi-barcode-scan"></i>
+                        Pemeriksaan QR Code & Barcode
+                    </div>
+
+                    <div class="inspection-note mb-3">
+                        <small class="text-muted d-block">
+                            QR Code dan Barcode cukup diperiksa pada
+                            <strong>1 sampel</strong> untuk setiap SPB.
+                            Scanner fisik dapat langsung digunakan pada field di bawah
+                            karena terbaca sebagai input keyboard/HID.
+                        </small>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-6 col-md-6">
+                            <label
+                                for="barcode"
+                                class="form-label fw-semibold"
+                            >
+                                Barcode
+                            </label>
+
+                            <input
+                                type="text"
+                                name="barcode"
+                                id="barcode"
+                                class="form-control"
+                                maxlength="500"
+                                autocomplete="off"
+                                value="{{ $barcodeValue }}"
+                                placeholder="Scan atau ketik Barcode"
+                            >
+                        </div>
+
+                        <div class="col-xl-6 col-md-6">
+                            <label
+                                for="qr_code"
+                                class="form-label fw-semibold"
+                            >
+                                QR Code
+                            </label>
+
+                            <input
+                                type="text"
+                                name="qr_code"
+                                id="qr_code"
+                                class="form-control"
+                                maxlength="500"
+                                autocomplete="off"
+                                value="{{ $qrCodeValue }}"
+                                placeholder="Scan atau ketik QR Code"
+                            >
+                        </div>
+                    </div>
+
                     <div class="inspection-note mt-3">
                         <small class="text-muted d-block">
                             Jumlah baris otomatis mengikuti field
@@ -425,7 +554,7 @@
                         </small>
 
                         <small class="text-muted d-block">
-                            Field <strong>Pitch</strong> hanya dapat diisi untuk Outer.
+                            Field <strong>Pitch</strong> dapat diisi bebas sesuai hasil pemeriksaan.
                         </small>
                     </div>
 
@@ -518,26 +647,59 @@
                                 id="jenisKetidaksesuaianGroup"
                                 class="nonconformity-grid"
                             >
-                                @foreach ([
-                                    'Miss Print',
-                                    'Berat Under',
-                                    'Dimensi Tidak Standar',
-                                    'Pitch Under',
-                                    'Delaminasi',
-                                    'Salah Design',
-                                    'Barcode Tidak Terbaca',
-                                ] as $option)
+                                @foreach ($nonconformityOptions as $option)
                                     <label class="nonconformity-option">
                                         <input
                                             type="checkbox"
                                             name="jenis_ketidaksesuaian[]"
                                             value="{{ $option }}"
+                                            class="jenis-ketidaksesuaian-checkbox"
                                             @checked(in_array($option, $selectedJenisKetidaksesuaian, true))
                                         >
 
                                         <span>{{ $option }}</span>
                                     </label>
                                 @endforeach
+
+                                <label class="nonconformity-option">
+                                    <input
+                                        type="checkbox"
+                                        name="jenis_ketidaksesuaian[]"
+                                        value="Lainnya"
+                                        id="jenisKetidaksesuaianLainnyaCheckbox"
+                                        class="jenis-ketidaksesuaian-checkbox"
+                                        @checked($lainnyaSelected)
+                                    >
+
+                                    <span>Lainnya</span>
+                                </label>
+                            </div>
+
+                            <div
+                                id="jenisKetidaksesuaianLainnyaWrap"
+                                class="mt-3 {{ $lainnyaSelected ? '' : 'd-none' }}"
+                            >
+                                <label
+                                    for="jenis_ketidaksesuaian_lainnya"
+                                    class="form-label"
+                                >
+                                    Jenis Ketidaksesuaian Lainnya
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="jenis_ketidaksesuaian_lainnya"
+                                    id="jenis_ketidaksesuaian_lainnya"
+                                    class="form-control"
+                                    value="{{ $jenisLainnyaValue }}"
+                                    maxlength="255"
+                                    placeholder="Tulis jenis ketidaksesuaian lainnya"
+                                >
+
+                                <small class="text-muted d-block mt-1">
+                                    Isi jenis ketidaksesuaian yang belum tersedia pada pilihan.
+                                </small>
                             </div>
 
                             <small
@@ -645,37 +807,44 @@
                         </div>
 
                     </div>
+                </div>
+            </div>
+            </fieldset>
 
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a
-                            href="{{ route('rmpm.pm.inner-outer') }}"
-                            class="btn btn-light"
-                        >
-                            <i class="mdi mdi-arrow-left me-1"></i>
-                            Batal
-                        </a>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a
+                    href="{{ route('rmpm.pm.inner-outer') }}"
+                    class="btn btn-light"
+                >
+                    <i class="mdi mdi-arrow-left me-1"></i>
+                    Kembali
+                </a>
 
+                @if (! $isLocked)
+                    @if (! $isFinal)
                         <button
                             type="submit"
                             value="draft"
                             class="btn btn-warning px-4 save-button"
+                            formnovalidate
                         >
                             <i class="mdi mdi-content-save-edit-outline me-1"></i>
                             Simpan Sementara
                         </button>
+                    @endif
 
-                        <button
-                            type="submit"
-                            value="final"
-                            id="submitButton"
-                            class="btn btn-primary px-4 save-button"
-                        >
-                            <i class="mdi mdi-check-circle-outline me-1"></i>
-                            Simpan Final
-                        </button>
-                    </div>
-
-                </div>
+                    <button
+                        type="submit"
+                        value="final"
+                        id="submitButton"
+                        class="btn btn-primary px-4 save-button"
+                    >
+                        <i class="mdi mdi-check-circle-outline me-1"></i>
+                        {{ $isFinal && $isForeman
+                            ? 'Simpan Koreksi'
+                            : 'Simpan Final' }}
+                    </button>
+                @endif
             </div>
         </form>
 
@@ -832,6 +1001,57 @@
         min-width: 100px;
     }
 
+    .option-radio-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 110px;
+    }
+
+    .option-radio {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin: 0;
+        padding: 5px 8px;
+        border: 1px solid #dbe3ec;
+        border-radius: 8px;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s ease;
+        white-space: nowrap;
+    }
+
+    .option-radio:hover {
+        border-color: #6366f1;
+        background: #eef2ff;
+    }
+
+    .option-radio:focus-within {
+        border-color: #6366f1;
+        background: #eef2ff;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+
+    .option-radio input {
+        min-width: auto !important;
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .option-radio.is-selected {
+        border-color: #6366f1;
+        background: #eef2ff;
+        color: #4338ca;
+    }
+
     .inspection-note {
         padding: 12px 14px;
         border: 1px solid #e2e8f0;
@@ -916,6 +1136,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const isSamplingLocked = @json($isLocked);
         const form = document.getElementById(
             'innerOuterSamplingForm'
         );
@@ -939,6 +1160,9 @@
         const konfirmasiSelect = document.getElementById('konfirmasi_ketidaksesuaian');
         const jenisKetidaksesuaianGroup = document.getElementById('jenisKetidaksesuaianGroup');
         const jenisKetidaksesuaianHelp = document.getElementById('jenisKetidaksesuaianHelp');
+        const lainnyaCheckbox = document.getElementById('jenisKetidaksesuaianLainnyaCheckbox');
+        const lainnyaWrap = document.getElementById('jenisKetidaksesuaianLainnyaWrap');
+        const lainnyaInput = document.getElementById('jenis_ketidaksesuaian_lainnya');
         const fotoPengecekanInput = document.getElementById('foto_pengecekan');
         const fotoKetidaksesuaianInput = document.getElementById('foto_ketidaksesuaian');
         const fotoKetidaksesuaianHelp = document.getElementById('fotoKetidaksesuaianHelp');
@@ -985,29 +1209,83 @@
             `;
         }
 
-        function buildStatusSelect(name, selectedValue) {
+        function buildDirectionRadio(name, value) {
+            const idBase = name
+                .replaceAll('[', '_')
+                .replaceAll(']', '');
+
+            const safeValue = value ? String(value).trim() : '';
+
             return `
-                <select
-                    name="${name}"
-                    class="form-select form-select-sm"
-                >
-                    <option value="">Pilih</option>
-                    ${buildOption('OK', 'OK', selectedValue)}
-                    ${buildOption('NG', 'NG', selectedValue)}
-                </select>
+                <div class="option-radio-group">
+                    <label
+                        class="option-radio ${safeValue === 'V' ? 'is-selected' : ''}"
+                        for="${idBase}_v"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_v"
+                            value="V"
+                            ${safeValue === 'V' ? 'checked' : ''}
+                        >
+                        <span>V</span>
+                    </label>
+
+                    <label
+                        class="option-radio ${safeValue === '-' ? 'is-selected' : ''}"
+                        for="${idBase}_strip"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_strip"
+                            value="-"
+                            ${safeValue === '-' ? 'checked' : ''}
+                        >
+                        <span>-</span>
+                    </label>
+                </div>
             `;
         }
 
-        function buildDirectionSelect(name, selectedValue) {
+        function buildStatusRadio(name, value) {
+            const idBase = name
+                .replaceAll('[', '_')
+                .replaceAll(']', '');
+
+            const safeValue = value ? String(value).trim().toUpperCase() : '';
+
             return `
-                <select
-                    name="${name}"
-                    class="form-select form-select-sm"
-                >
-                    <option value="">Pilih</option>
-                    ${buildOption('V', 'V', selectedValue)}
-                    ${buildOption('-', '-', selectedValue)}
-                </select>
+                <div class="option-radio-group">
+                    <label
+                        class="option-radio ${safeValue === 'OK' ? 'is-selected' : ''}"
+                        for="${idBase}_ok"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_ok"
+                            value="OK"
+                            ${safeValue === 'OK' ? 'checked' : ''}
+                        >
+                        <span>OK</span>
+                    </label>
+
+                    <label
+                        class="option-radio ${safeValue === 'NG' ? 'is-selected' : ''}"
+                        for="${idBase}_ng"
+                    >
+                        <input
+                            type="radio"
+                            name="${name}"
+                            id="${idBase}_ng"
+                            value="NG"
+                            ${safeValue === 'NG' ? 'checked' : ''}
+                        >
+                        <span>NG</span>
+                    </label>
+                </div>
             `;
         }
 
@@ -1015,16 +1293,43 @@
             index,
             field,
             value,
-            step = '0.01'
+            step = '0.01',
+            placeholder = ''
         ) {
+            const isGross = field === 'berat_gross';
+            const actualStep = isGross ? '0.1' : step;
+            const actualPlaceholder = placeholder || (isGross ? '0.0' : '');
+            const onInputAttr = isGross
+                ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 1){ this.value = parts[0] + '.' + parts[1].slice(0, 1); } }"`
+                : '';
+
             return `
                 <input
                     type="number"
                     min="0"
-                    step="${step}"
+                    step="${actualStep}"
                     name="samples[${index}][${field}]"
                     value="${escapeHtml(value)}"
                     class="form-control form-control-sm"
+                    placeholder="${actualPlaceholder}"
+                    ${onInputAttr}
+                >
+            `;
+        }
+
+        function buildTextInput(
+            index,
+            field,
+            value,
+            placeholder = ''
+        ) {
+            return `
+                <input
+                    type="text"
+                    name="samples[${index}][${field}]"
+                    value="${escapeHtml(value)}"
+                    class="form-control form-control-sm"
+                    placeholder="${escapeHtml(placeholder)}"
                 >
             `;
         }
@@ -1078,23 +1383,12 @@
                             </td>
 
                             <td>
-                                ${
-                                    isOuter
-                                        ? buildNumberInput(
-                                            index,
-                                            'pitch',
-                                            sample.pitch
-                                        )
-                                        : `
-                                            <input
-                                                type="text"
-                                                name="samples[${index}][pitch]"
-                                                class="form-control form-control-sm text-center"
-                                                value="-"
-                                                readonly
-                                            >
-                                        `
-                                }
+                                ${buildTextInput(
+                                    index,
+                                    'pitch',
+                                    sample.pitch,
+                                    'Masukkan pitch'
+                                )}
                             </td>
 
                             <td>
@@ -1106,109 +1400,251 @@
                             </td>
 
                             <td>
-                                ${buildDirectionSelect(
+                                ${buildDirectionRadio(
                                     `samples[${index}][arah_vertikal]`,
                                     sample.arah_vertikal
                                 )}
                             </td>
 
                             <td>
-                                ${buildDirectionSelect(
+                                ${buildDirectionRadio(
                                     `samples[${index}][arah_terbalik]`,
                                     sample.arah_terbalik
                                 )}
                             </td>
 
                             <td>
-                                ${buildStatusSelect(
+                                ${buildStatusRadio(
                                     `samples[${index}][laminasi]`,
                                     sample.laminasi
                                 )}
                             </td>
 
                             <td>
-                                <input
-                                    type="text"
-                                    name="samples[${index}][barcode]"
-                                    value="${escapeHtml(sample.barcode)}"
-                                    class="form-control form-control-sm"
-                                >
-                            </td>
-
-                            <td>
-                                ${buildStatusSelect(
+                                ${buildStatusRadio(
                                     `samples[${index}][design]`,
                                     sample.design
                                 )}
                             </td>
 
                             <td>
-                                ${buildStatusSelect(
+                                ${buildStatusRadio(
                                     `samples[${index}][warna]`,
                                     sample.warna
                                 )}
                             </td>
 
                             <td>
-                                <input
-                                    type="text"
-                                    name="samples[${index}][tulisan]"
-                                    value="${escapeHtml(sample.tulisan)}"
-                                    class="form-control form-control-sm"
-                                    placeholder="Tulis hasil"
-                                >
+                                ${buildStatusRadio(
+                                    `samples[${index}][tulisan]`,
+                                    sample.tulisan
+                                )}
                             </td>
                         </tr>
                     `
                 );
             }
 
-            const fieldOrder = [
-                'berat_gross',
-                'inside_core',
-                'lebar',
-                'pitch',
-                'thickness',
-                'arah_vertikal',
-                'arah_terbalik',
-                'laminasi',
-                'barcode',
-                'design',
-                'warna',
-                'tulisan'
-            ];
+            sampleRows
+                .querySelectorAll('.option-radio input[type="radio"]')
+                .forEach(function (radio) {
+                    radio.addEventListener('change', function () {
+                        const group =
+                            radio.closest('.option-radio-group');
 
-            fieldOrder.forEach(
-                function (field, fieldIndex) {
-                    sampleRows
-                        .querySelectorAll(
-                            `[name$="[${field}]"]`
-                        )
-                        .forEach(
-                            function (
-                                element,
-                                rowIndex
-                            ) {
-                                if (
-                                    element.readOnly
-                                ) {
-                                    element.tabIndex =
-                                        -1;
+                        if (group) {
+                            group
+                                .querySelectorAll('.option-radio')
+                                .forEach(function (label) {
+                                    label.classList.remove('is-selected');
+                                });
+                        }
 
+                        const currentLabel =
+                            radio.closest('.option-radio');
+
+                        if (currentLabel) {
+                            currentLabel.classList.add('is-selected');
+                        }
+                    });
+                });
+        }
+
+        function setupKeyboardNavigation(formElement) {
+            if (!formElement) return;
+
+            function isVisibleAndEditable(el) {
+                if (!el) return false;
+                if (el.disabled || el.readOnly || el.type === 'hidden') return false;
+                if (el.offsetParent === null && getComputedStyle(el).display === 'none' && !el.closest('.option-radio')) return false;
+                return true;
+            }
+
+            function findFocusableInCell(cell) {
+                if (!cell) return null;
+                const checkedRadio = cell.querySelector('input[type="radio"]:checked');
+                if (checkedRadio && isVisibleAndEditable(checkedRadio)) return checkedRadio;
+
+                const firstRadio = cell.querySelector('.option-radio input[type="radio"]');
+                if (firstRadio && isVisibleAndEditable(firstRadio)) return firstRadio;
+
+                const input = cell.querySelector('input:not([type="hidden"]), select, textarea');
+                if (input && isVisibleAndEditable(input)) return input;
+
+                return null;
+            }
+
+            function focusControl(el) {
+                if (!el) return;
+                el.focus();
+                if (typeof el.select === 'function' && el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'file') {
+                    el.select();
+                }
+            }
+
+            function findNextColumnFirstInput(rows, currentColIndex) {
+                if (!rows.length) return null;
+                const maxCols = rows[0].cells.length;
+                for (let c = currentColIndex + 1; c < maxCols; c++) {
+                    for (let r = 0; r < rows.length; r++) {
+                        const cell = rows[r].cells[c];
+                        if (cell) {
+                            const ctrl = findFocusableInCell(cell);
+                            if (ctrl) return ctrl;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function findPrevColumnLastInput(rows, currentColIndex) {
+                if (!rows.length) return null;
+                for (let c = currentColIndex - 1; c >= 0; c--) {
+                    for (let r = rows.length - 1; r >= 0; r--) {
+                        const cell = rows[r].cells[c];
+                        if (cell) {
+                            const ctrl = findFocusableInCell(cell);
+                            if (ctrl) return ctrl;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function getFocusableElements(container) {
+                const selector = 'input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])';
+                const elements = Array.from(container.querySelectorAll(selector));
+                return elements.filter(el => isVisibleAndEditable(el));
+            }
+
+            formElement.addEventListener('keydown', function (event) {
+                const target = event.target;
+                if (!target) return;
+
+                if (target.tagName === 'TEXTAREA' && !event.ctrlKey) {
+                    if (event.key === 'Tab') {
+                        event.preventDefault();
+                        const focusables = getFocusableElements(formElement);
+                        const currentIndex = focusables.indexOf(target);
+                        if (currentIndex !== -1) {
+                            const nextIndex = event.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                            if (nextIndex >= 0 && nextIndex < focusables.length) {
+                                focusControl(focusables[nextIndex]);
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                if (target.tagName === 'BUTTON' || (target.tagName === 'INPUT' && target.type === 'submit')) {
+                    return;
+                }
+
+                const isEnter = event.key === 'Enter';
+                const isTab = event.key === 'Tab';
+                const isArrowDown = event.key === 'ArrowDown';
+                const isArrowUp = event.key === 'ArrowUp';
+
+                if (!isEnter && !isTab && !isArrowDown && !isArrowUp) {
+                    return;
+                }
+
+                const isInTable = target.closest('table') !== null;
+                if ((isArrowDown || isArrowUp) && !isInTable) {
+                    return;
+                }
+
+                if (target.tagName === 'SELECT' && (isArrowDown || isArrowUp)) {
+                    return;
+                }
+
+                const isBackwards = event.shiftKey || isArrowUp;
+
+                if (isEnter || isTab || isArrowDown || isArrowUp) {
+                    event.preventDefault();
+                }
+
+                const currentCell = target.closest('td, th');
+                const currentRow = target.closest('tr');
+                const currentTable = target.closest('table');
+
+                if (currentCell && currentRow && currentTable) {
+                    const tbody = currentRow.closest('tbody') || currentTable;
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const rowIndex = rows.indexOf(currentRow);
+                    const colIndex = currentCell.cellIndex;
+
+                    if (rowIndex !== -1) {
+                        const step = isBackwards ? -1 : 1;
+                        const targetRowIndex = rowIndex + step;
+
+                        if (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+                            const targetRow = rows[targetRowIndex];
+                            const targetCell = targetRow.cells[colIndex];
+                            if (targetCell) {
+                                const targetInput = findFocusableInCell(targetCell);
+                                if (targetInput) {
+                                    focusControl(targetInput);
                                     return;
                                 }
-
-                                element.tabIndex =
-                                    1
-                                    + (
-                                        fieldIndex
-                                        * safeTotal
-                                    )
-                                    + rowIndex;
                             }
-                        );
+                        } else if (!isBackwards && targetRowIndex >= rows.length) {
+                            const nextInput = findNextColumnFirstInput(rows, colIndex);
+                            if (nextInput) {
+                                focusControl(nextInput);
+                                return;
+                            }
+                        } else if (isBackwards && targetRowIndex < 0) {
+                            const prevInput = findPrevColumnLastInput(rows, colIndex);
+                            if (prevInput) {
+                                focusControl(prevInput);
+                                return;
+                            }
+                        }
+                    }
                 }
-            );
+
+                const focusables = getFocusableElements(formElement);
+                let currentIndex = -1;
+
+                for (let i = 0; i < focusables.length; i++) {
+                    if (focusables[i] === target || (target.type === 'radio' && focusables[i].name === target.name)) {
+                        currentIndex = i;
+                        break;
+                    }
+                }
+                if (currentIndex === -1) {
+                    currentIndex = focusables.indexOf(target);
+                }
+
+                if (currentIndex !== -1) {
+                    const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
+                    if (nextIndex >= 0 && nextIndex < focusables.length) {
+                        focusControl(focusables[nextIndex]);
+                        return;
+                    }
+                }
+            });
         }
 
         function showAlert(type, message) {
@@ -1240,6 +1676,27 @@
             ).length;
         }
 
+        function updateLainnyaField() {
+            const showLainnya =
+                konfirmasiSelect.value === 'Ada'
+                && lainnyaCheckbox.checked;
+
+            lainnyaWrap.classList.toggle(
+                'd-none',
+                !showLainnya
+            );
+
+            lainnyaInput.disabled =
+                !showLainnya;
+
+            lainnyaInput.required =
+                showLainnya;
+
+            if (!showLainnya) {
+                lainnyaInput.value = '';
+            }
+        }
+
         function updateKetidaksesuaianFields() {
             const adaKetidaksesuaian =
                 konfirmasiSelect.value === 'Ada';
@@ -1266,6 +1723,8 @@
             fotoKetidaksesuaianHelp.textContent = adaKetidaksesuaian
                 ? 'Wajib minimal 1 foto. Maksimal 10 foto.'
                 : 'Tidak wajib apabila hasil pemeriksaan sesuai.';
+
+            updateLainnyaField();
         }
 
         function mergeFiles(input, files) {
@@ -1413,19 +1872,45 @@
             stopCamera
         );
 
-        konfirmasiSelect.addEventListener('change', updateKetidaksesuaianFields);
+        konfirmasiSelect.addEventListener(
+            'change',
+            updateKetidaksesuaianFields
+        );
 
-        jumlahSampelInput.addEventListener(
-            'input',
-            function () {
-                buildSampleRows(this.value);
-            }
+        jenisKetidaksesuaianGroup
+            .querySelectorAll('input[type="checkbox"]')
+            .forEach(function (checkbox) {
+                checkbox.addEventListener(
+                    'change',
+                    function () {
+                        if (
+                            checkbox.checked
+                            && konfirmasiSelect.value !== 'Ada'
+                        ) {
+                            konfirmasiSelect.value = 'Ada';
+                        }
+
+                        updateKetidaksesuaianFields();
+                    }
+                );
+            });
+
+        lainnyaCheckbox.addEventListener(
+            'change',
+            updateLainnyaField
         );
 
         form.addEventListener(
             'submit',
             async function (event) {
                 event.preventDefault();
+
+                if (isSamplingLocked) {
+                    alert(
+                        'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                    );
+                    return;
+                }
 
                 const saveMode =
                     event.submitter?.value ?? 'final';
@@ -1454,6 +1939,15 @@
                     if (konfirmasiSelect.value === 'Ada') {
                         if (getCheckedKetidaksesuaianCount() < 1) {
                             alert('Pilih minimal satu jenis ketidaksesuaian.');
+                            return;
+                        }
+
+                        if (
+                            lainnyaCheckbox.checked
+                            && lainnyaInput.value.trim() === ''
+                        ) {
+                            alert('Jenis ketidaksesuaian lainnya wajib diisi.');
+                            lainnyaInput.focus();
                             return;
                         }
 
@@ -1490,18 +1984,38 @@
                 );
 
                 try {
+                    const csrfToken =
+                        form.querySelector(
+                            'input[name="_token"]'
+                        )?.value ?? '';
+
                     const response = await fetch(
                         form.action,
                         {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 Accept: 'application/json',
                                 'X-Requested-With':
-                                    'XMLHttpRequest'
+                                    'XMLHttpRequest',
+                                'X-CSRF-TOKEN':
+                                    csrfToken
                             },
                             body: formData
                         }
                     );
+
+                    const contentType =
+                        response.headers.get('content-type') ?? '';
+
+                    if (!contentType.includes('application/json')) {
+                        const body = await response.text();
+
+                        throw new Error(
+                            'Server tidak mengembalikan JSON. ' +
+                            body.slice(0, 150)
+                        );
+                    }
 
                     const result = await response.json();
 
@@ -1576,6 +2090,8 @@
         );
 
         updateKetidaksesuaianFields();
+
+        setupKeyboardNavigation(form);
     });
 </script>
 

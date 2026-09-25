@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\PackagingIncoming;
 use App\Models\PackagingKartonSampling;
+use App\Models\PackagingKartonSamplingDraft;
 use App\Models\SamplingStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class PackagingKartonController extends Controller
@@ -44,26 +46,42 @@ class PackagingKartonController extends Controller
         }
 
         if ($request->filled('status')) {
-            if ($request->input('status') === 'Belum Sampling') {
-                $query->where(function ($query) {
-                    $query
-                        ->whereNull('sampling_status_id')
-                        ->orWhereHas(
-                            'samplingStatus',
-                            fn ($statusQuery) =>
-                                $statusQuery->where('nama', 'like', '%Belum%')
-                        );
-                });
+            $status = $request->input('status');
+
+            if ($status === 'Belum Sampling') {
+                $query
+                    ->whereNotIn(
+                        'id',
+                        PackagingKartonSampling::query()
+                            ->select('packaging_incoming_id')
+                    )
+                    ->whereNotIn(
+                        'id',
+                        PackagingKartonSamplingDraft::query()
+                            ->select('packaging_incoming_id')
+                    );
             }
 
-            if ($request->input('status') === 'Sudah Sampling') {
-                $query->whereHas('samplingStatus', function ($query) {
-                    $query->where(function ($nameQuery) {
-                        $nameQuery
-                            ->where('nama', 'like', '%Sudah%')
-                            ->orWhere('nama', 'like', '%Selesai%');
-                    });
-                });
+            if ($status === 'Draft') {
+                $query
+                    ->whereIn(
+                        'id',
+                        PackagingKartonSamplingDraft::query()
+                            ->select('packaging_incoming_id')
+                    )
+                    ->whereNotIn(
+                        'id',
+                        PackagingKartonSampling::query()
+                            ->select('packaging_incoming_id')
+                    );
+            }
+
+            if ($status === 'Sudah Sampling') {
+                $query->whereIn(
+                    'id',
+                    PackagingKartonSampling::query()
+                        ->select('packaging_incoming_id')
+                );
             }
         }
 
@@ -77,65 +95,185 @@ class PackagingKartonController extends Controller
         );
     }
 
-    public function sampling(
+    public function berat(
         PackagingIncoming $packagingIncoming
     ): View {
         $packagingIncoming->load([
             'jenisIncoming',
             'jenisMaterial',
             'supplier',
+            'uom',
             'samplingStatus',
         ]);
 
-        abort_unless(
-            in_array(
-                $packagingIncoming->jenisIncoming?->nama,
-                ['Karton', 'Kardus'],
-                true
-            ),
-            404,
-            'Data incoming bukan kategori Karton.'
-        );
+        $this->ensureKarton($packagingIncoming);
 
-        $sampling = PackagingKartonSampling::query()
+        $finalSampling = PackagingKartonSampling::query()
             ->where(
                 'packaging_incoming_id',
                 $packagingIncoming->id
             )
             ->first();
 
+        $draft = PackagingKartonSamplingDraft::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->first();
+
+        $sampling = $draft ?? $finalSampling;
+
+        if ($draft) {
+            $draft->setAttribute('status_proses', 'draft');
+        }
+
         return view(
-            'app.rmpm.karton-sampling',
+            'app.rmpm.karton-berat',
             compact(
                 'packagingIncoming',
-                'sampling'
+                'sampling',
+                'draft',
+                'finalSampling'
             )
         );
+    }
+
+    public function kondisiFisik(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'uom',
+            'samplingStatus',
+        ]);
+
+        $this->ensureKarton($packagingIncoming);
+
+        $finalSampling = PackagingKartonSampling::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->first();
+
+        $draft = PackagingKartonSamplingDraft::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->first();
+
+        $sampling = $draft ?? $finalSampling;
+
+        if ($draft) {
+            $draft->setAttribute('status_proses', 'draft');
+        }
+
+        return view(
+            'app.rmpm.karton-kondisi-fisik',
+            compact(
+                'packagingIncoming',
+                'sampling',
+                'draft',
+                'finalSampling'
+            )
+        );
+    }
+
+    public function sampling(
+        PackagingIncoming $packagingIncoming
+    ): View {
+        return $this->berat($packagingIncoming);
     }
 
     public function storeSampling(
         Request $request,
         PackagingIncoming $packagingIncoming
     ): JsonResponse {
-        $existingSampling = PackagingKartonSampling::query()
+        $packagingIncoming->loadMissing([
+            'jenisIncoming',
+            'jenisMaterial',
+        ]);
+
+        $this->ensureKarton($packagingIncoming);
+
+        $saveMode = $request->input(
+            'save_mode',
+            'final'
+        );
+
+        if (! in_array($saveMode, ['draft', 'final'], true)) {
+            $saveMode = 'final';
+        }
+
+        $isFinal = $saveMode === 'final';
+
+        $request->merge([
+            'jumlah_sampel' =>
+                $packagingIncoming->jumlah_sampel,
+        ]);
+
+        /*
+         * Quantity Incoming tetap bersumber dari packaging_incomings.jumlah
+         * dan tidak diinput ulang pada proses sampling Karton.
+         */
+
+        $existingFinal = PackagingKartonSampling::query()
             ->where(
                 'packaging_incoming_id',
                 $packagingIncoming->id
             )
             ->first();
 
+        /*
+         * Setelah sampling sudah FINAL:
+         * - Foreman boleh melakukan koreksi.
+         * - Role selain Foreman tidak boleh mengubah data lagi.
+         */
+        $this->ensureFinalCanBeChanged(
+            $existingFinal
+        );
+
+        /*
+         * Koreksi data FINAL oleh Foreman harus langsung disimpan sebagai FINAL,
+         * bukan dibuat Draft baru di atas data Final yang sudah ada.
+         */
+        if (
+            $existingFinal
+            && $this->isForeman()
+            && $saveMode !== 'final'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Data sudah final. Koreksi oleh Foreman harus disimpan melalui Simpan Koreksi.',
+            ], 422);
+        }
+
+        $existingDraft = PackagingKartonSamplingDraft::query()
+            ->where(
+                'packaging_incoming_id',
+                $packagingIncoming->id
+            )
+            ->first();
+
+        $existingSource = $existingDraft ?? $existingFinal;
+
         $existingFoto = array_values(
             array_filter(
-                is_array($existingSampling?->foto)
-                    ? $existingSampling->foto
+                is_array($existingSource?->foto)
+                    ? $existingSource->foto
                     : []
             )
         );
 
         $existingFotoKetidaksesuaian = array_values(
             array_filter(
-                is_array($existingSampling?->foto_ketidaksesuaian)
-                    ? $existingSampling->foto_ketidaksesuaian
+                is_array($existingSource?->foto_ketidaksesuaian)
+                    ? $existingSource->foto_ketidaksesuaian
                     : []
             )
         );
@@ -145,14 +283,23 @@ class PackagingKartonController extends Controller
 
         if (! $adaKetidaksesuaian) {
             $request->merge([
-                'konfirmasi_ketidaksesuaian' => 'Tidak Ada',
+                'konfirmasi_ketidaksesuaian' =>
+                    $request->filled('konfirmasi_ketidaksesuaian')
+                        ? 'Tidak Ada'
+                        : null,
                 'jenis_ketidaksesuaian' => [],
+                'jenis_ketidaksesuaian_lainnya' => null,
             ]);
         }
 
         $rules = [
-            'jumlah_sampel' => [
+            'save_mode' => [
                 'required',
+                'in:draft,final',
+            ],
+
+            'jumlah_sampel' => [
+                $isFinal ? 'required' : 'nullable',
                 'integer',
                 'min:1',
                 'max:50',
@@ -164,22 +311,78 @@ class PackagingKartonController extends Controller
                 'max:100',
             ],
 
-            'lot_sebelum' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'lot_setelah' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
             'samples' => [
-                'required',
+                $isFinal ? 'required' : 'nullable',
                 'array',
-                'min:1',
+            ],
+
+            'samples.*.panjang' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.lebar' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.tinggi' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.bct' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.panjang' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.lebar' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.tinggi' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.bct' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'samples.*.no_batch_lot' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
+
+            'samples.*.design' => [
+                'nullable',
+                'in:OK,NOK',
+            ],
+
+            'samples.*.warna' => [
+                'nullable',
+                'in:OK,NOK',
+            ],
+
+            'samples.*.tulisan' => [
+                'nullable',
+                'in:OK,NOK',
             ],
 
             'samples.*.berat' => [
@@ -193,10 +396,38 @@ class PackagingKartonController extends Controller
                 'in:OK,NOK',
             ],
 
-            'samples.*.gramasi' => [
+            'gramasi' => [
                 'nullable',
                 'numeric',
                 'min:0',
+            ],
+
+            'gramasi_tipe' => [
+                'nullable',
+                'string',
+                'in:Single Wall,Double Wall',
+            ],
+
+            'gramasi_layers' => [
+                'nullable',
+                'array',
+            ],
+
+            'gramasi_layers.*' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'scan_barcode' => [
+                'nullable',
+                'in:Terbaca,Tidak Terbaca',
+            ],
+
+            'no_barcode' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
 
             'coa' => [
@@ -205,56 +436,68 @@ class PackagingKartonController extends Controller
             ],
 
             'rekomendasi' => [
-                'required',
+                $isFinal ? 'required' : 'nullable',
                 'in:Diterima,Diterima Bersyarat,Ditolak,WIP',
             ],
 
             'konfirmasi_ketidaksesuaian' => [
-                'required',
+                $isFinal ? 'required' : 'nullable',
                 'in:Ada,Tidak Ada',
             ],
 
             'jenis_ketidaksesuaian' => [
-                $adaKetidaksesuaian ? 'required' : 'nullable',
+                (
+                    $isFinal
+                    && $adaKetidaksesuaian
+                )
+                    ? 'required'
+                    : 'nullable',
                 'array',
                 'max:10',
             ],
 
             'jenis_ketidaksesuaian.*' => [
                 'string',
-                'in:Berat Under,Berat Over,Gramasi Tidak Standar',
+                'distinct',
+                'max:255',
+            ],
+
+            'jenis_ketidaksesuaian_lainnya' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
 
             'foto' => [
-                count($existingFoto) === 0 ? 'required' : 'nullable',
+                'nullable',
                 'array',
-                'max:' . max(0, 10 - count($existingFoto)),
+                'max:' . max(
+                    0,
+                    10 - count($existingFoto)
+                ),
             ],
 
             'foto.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'foto_ketidaksesuaian' => [
-                (
-                    $adaKetidaksesuaian
-                    && count($existingFotoKetidaksesuaian) === 0
-                )
-                    ? 'required'
-                    : 'nullable',
+                'nullable',
                 'array',
                 'max:' . max(
                     0,
-                    10 - count($existingFotoKetidaksesuaian)
+                    10 - count(
+                        $existingFotoKetidaksesuaian
+                    )
                 ),
             ],
 
             'foto_ketidaksesuaian.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:2048',
             ],
 
             'keterangan' => [
@@ -264,43 +507,186 @@ class PackagingKartonController extends Controller
             ],
         ];
 
-        $validated = $request->validate(
+        $validator = Validator::make(
+            $request->all(),
             $rules,
             [
-                'foto.required' =>
-                    'Foto pengecekan wajib diunggah.',
+                'jumlah_sampel.required' =>
+                    'Jumlah sampel wajib diisi.',
+
+                'rekomendasi.required' =>
+                    'Rekomendasi wajib dipilih.',
+
+                'konfirmasi_ketidaksesuaian.required' =>
+                    'Konfirmasi ketidaksesuaian wajib dipilih.',
+
+                'jenis_ketidaksesuaian.required' =>
+                    'Pilih minimal satu jenis ketidaksesuaian.',
 
                 'foto.max' =>
                     'Jumlah total foto pengecekan maksimal 10.',
 
-                'foto_ketidaksesuaian.required' =>
-                    'Foto ketidaksesuaian wajib diunggah.',
-
                 'foto_ketidaksesuaian.max' =>
                     'Jumlah total foto ketidaksesuaian maksimal 10.',
-
-                'jenis_ketidaksesuaian.required' =>
-                    'Pilih minimal satu jenis ketidaksesuaian.',
             ]
         );
 
-        DB::transaction(
+        $validator->after(
+            function ($validator) use (
+                $request,
+                $isFinal,
+                $adaKetidaksesuaian,
+                $existingFoto,
+                $existingFotoKetidaksesuaian
+            ) {
+                $newFotoCount = count(
+                    $request->file('foto', [])
+                );
+
+                $newFotoKetidaksesuaianCount = count(
+                    $request->file(
+                        'foto_ketidaksesuaian',
+                        []
+                    )
+                );
+
+                if (
+                    count($existingFoto)
+                    + $newFotoCount
+                    > 10
+                ) {
+                    $validator->errors()->add(
+                        'foto',
+                        'Jumlah total foto pengecekan maksimal 10.'
+                    );
+                }
+
+                if (
+                    count($existingFotoKetidaksesuaian)
+                    + $newFotoKetidaksesuaianCount
+                    > 10
+                ) {
+                    $validator->errors()->add(
+                        'foto_ketidaksesuaian',
+                        'Jumlah total foto ketidaksesuaian maksimal 10.'
+                    );
+                }
+
+                if (! $isFinal) {
+                    return;
+                }
+
+                if (
+                    count($existingFoto)
+                    + $newFotoCount
+                    < 1
+                ) {
+                    $validator->errors()->add(
+                        'foto',
+                        'Foto pengecekan wajib diunggah.'
+                    );
+                }
+
+                if (! $adaKetidaksesuaian) {
+                    return;
+                }
+
+                $selectedJenis = $request->input(
+                    'jenis_ketidaksesuaian',
+                    []
+                );
+
+                $customJenis = trim(
+                    (string) $request->input(
+                        'jenis_ketidaksesuaian_lainnya',
+                        ''
+                    )
+                );
+
+                if (
+                    count($selectedJenis) < 1
+                    && $customJenis === ''
+                ) {
+                    $validator->errors()->add(
+                        'jenis_ketidaksesuaian',
+                        'Pilih minimal satu jenis ketidaksesuaian.'
+                    );
+                }
+
+                if (
+                    in_array(
+                        'Lainnya',
+                        $selectedJenis,
+                        true
+                    )
+                    && $customJenis === ''
+                ) {
+                    $validator->errors()->add(
+                        'jenis_ketidaksesuaian_lainnya',
+                        'Jenis ketidaksesuaian lainnya wajib diisi.'
+                    );
+                }
+
+                if (
+                    count($existingFotoKetidaksesuaian)
+                    + $newFotoKetidaksesuaianCount
+                    < 1
+                ) {
+                    $validator->errors()->add(
+                        'foto_ketidaksesuaian',
+                        'Foto ketidaksesuaian wajib diunggah.'
+                    );
+                }
+            }
+        );
+
+        $validated = $validator->validate();
+
+        $jenisKetidaksesuaian =
+            array_values(
+                array_filter(
+                    $validated[
+                        'jenis_ketidaksesuaian'
+                    ] ?? [],
+                    fn ($value) =>
+                        $value !== 'Lainnya'
+                )
+            );
+
+        $jenisKetidaksesuaianLainnya =
+            trim(
+                (string) (
+                    $validated[
+                        'jenis_ketidaksesuaian_lainnya'
+                    ] ?? ''
+                )
+            );
+
+        if (
+            $jenisKetidaksesuaianLainnya !== ''
+            && ! in_array(
+                $jenisKetidaksesuaianLainnya,
+                $jenisKetidaksesuaian,
+                true
+            )
+        ) {
+            $jenisKetidaksesuaian[] =
+                $jenisKetidaksesuaianLainnya;
+        }
+
+        $result = DB::transaction(
             function () use (
                 $request,
                 $validated,
                 $packagingIncoming,
-                $existingSampling,
+                $existingDraft,
+                $existingFinal,
                 $existingFoto,
                 $existingFotoKetidaksesuaian,
-                $adaKetidaksesuaian
-            ): void {
-                $sampling =
-                    $existingSampling
-                    ?? new PackagingKartonSampling([
-                        'packaging_incoming_id' =>
-                            $packagingIncoming->id,
-                    ]);
-
+                $adaKetidaksesuaian,
+                $jenisKetidaksesuaian,
+                $isFinal
+            ) {
                 $fotoPaths = $existingFoto;
 
                 foreach (
@@ -359,43 +745,58 @@ class PackagingKartonController extends Controller
                     $fotoKetidaksesuaianPaths = [];
                 }
 
-                $sampling->fill([
+                $currentSampling =
+                    $existingDraft
+                    ?? $existingFinal;
+
+                $existingSamples =
+                    is_array($currentSampling?->hasil_sampel)
+                        ? $currentSampling->hasil_sampel
+                        : [];
+
+                $submittedSamples =
+                    $validated['samples'] ?? [];
+
+                $hasilSampel =
+                    $this->mergeKartonSamples(
+                        $request,
+                        $existingSamples,
+                        $submittedSamples,
+                        $validated['gramasi'] ?? null,
+                        $validated['gramasi_tipe'] ?? null,
+                        $validated['gramasi_layers'] ?? null,
+                        $validated['scan_barcode'] ?? null,
+                        $validated['no_barcode'] ?? null
+                    );
+
+                $data = [
                     'jumlah_sampel' =>
-                        $validated['jumlah_sampel'],
+                        $validated['jumlah_sampel']
+                        ?? null,
 
                     'no_batch' =>
-                        $validated['no_batch'] ?? null,
-
-                    'lot_sebelum' =>
-                        $validated['lot_sebelum'] ?? null,
-
-                    'lot_setelah' =>
-                        $validated['lot_setelah'] ?? null,
+                        $validated['no_batch']
+                        ?? null,
 
                     'hasil_sampel' =>
-                        $this->mergeWeightSamples(
-                            $sampling->hasil_sampel ?? [],
-                            $validated['samples']
-                        ),
+                        $hasilSampel,
 
                     'coa' =>
-                        $validated['coa'] ?? null,
+                        $validated['coa']
+                        ?? null,
 
                     'rekomendasi' =>
-                        $validated['rekomendasi'],
+                        $validated['rekomendasi']
+                        ?? null,
 
                     'konfirmasi_ketidaksesuaian' =>
                         $validated[
                             'konfirmasi_ketidaksesuaian'
-                        ],
+                        ] ?? null,
 
                     'jenis_ketidaksesuaian' =>
                         $adaKetidaksesuaian
-                            ? array_values(
-                                $validated[
-                                    'jenis_ketidaksesuaian'
-                                ] ?? []
-                            )
+                            ? $jenisKetidaksesuaian
                             : [],
 
                     'foto' =>
@@ -407,11 +808,44 @@ class PackagingKartonController extends Controller
                         ),
 
                     'keterangan' =>
-                        $validated['keterangan'] ?? null,
+                        $validated['keterangan']
+                        ?? null,
 
                     'updated_by' =>
                         auth()->id(),
-                ]);
+                ];
+
+                if (! $isFinal) {
+                    $draft =
+                        $existingDraft
+                        ?? new PackagingKartonSamplingDraft([
+                            'packaging_incoming_id' =>
+                                $packagingIncoming->id,
+                        ]);
+
+                    $draft->fill($data);
+
+                    if (! $draft->exists) {
+                        $draft->created_by =
+                            auth()->id();
+                    }
+
+                    $draft->save();
+
+                    return [
+                        'record' => $draft,
+                        'mode' => 'draft',
+                    ];
+                }
+
+                $sampling =
+                    $existingFinal
+                    ?? new PackagingKartonSampling([
+                        'packaging_incoming_id' =>
+                            $packagingIncoming->id,
+                    ]);
+
+                $sampling->fill($data);
 
                 if (! $sampling->exists) {
                     $sampling->created_by =
@@ -423,9 +857,19 @@ class PackagingKartonController extends Controller
                 $sudahSamplingId =
                     SamplingStatus::query()
                         ->where(
-                            'nama',
-                            'like',
-                            '%Sudah Sampling%'
+                            function ($query) {
+                                $query
+                                    ->where(
+                                        'nama',
+                                        'like',
+                                        '%Sudah Sampling%'
+                                    )
+                                    ->orWhere(
+                                        'nama',
+                                        'like',
+                                        '%Selesai%'
+                                    );
+                            }
                         )
                         ->value('id');
 
@@ -435,6 +879,18 @@ class PackagingKartonController extends Controller
                             $sudahSamplingId,
                     ]);
                 }
+
+                PackagingKartonSamplingDraft::query()
+                    ->where(
+                        'packaging_incoming_id',
+                        $packagingIncoming->id
+                    )
+                    ->delete();
+
+                return [
+                    'record' => $sampling,
+                    'mode' => 'final',
+                ];
             }
         );
 
@@ -442,19 +898,38 @@ class PackagingKartonController extends Controller
             'success' => true,
 
             'message' =>
-                'Data pemeriksaan Berat Karton berhasil disimpan.',
+                $isFinal
+                    ? 'Data pemeriksaan Karton berhasil disimpan final.'
+                    : 'Data pemeriksaan Karton berhasil disimpan sementara.',
+
+            'data' => [
+                'id' => $result['record']->id,
+                'packaging_incoming_id' =>
+                    $result['record']->packaging_incoming_id,
+            ],
 
             'redirect_url' =>
-                route(
-                    'rmpm.pm.karton.display',
-                    $packagingIncoming
-                ),
+                $isFinal
+                    ? route(
+                        'rmpm.pm.karton.display',
+                        $packagingIncoming
+                    )
+                    : route(
+                        'rmpm.pm.karton.sampling',
+                        $packagingIncoming
+                    ),
         ]);
     }
 
-    private function mergeWeightSamples(
+    private function mergeKartonSamples(
+        Request $request,
         array $existingSamples,
-        array $submittedSamples
+        array $submittedSamples,
+        mixed $gramasi,
+        ?string $gramasiTipe = null,
+        ?array $gramasiLayers = null,
+        ?string $scanBarcode = null,
+        ?string $noBarcode = null
     ): array {
         $mergedSamples = [];
 
@@ -462,23 +937,130 @@ class PackagingKartonController extends Controller
             array_values($submittedSamples)
             as $index => $submittedSample
         ) {
-            $mergedSamples[] = array_merge(
-                $existingSamples[$index] ?? [],
+            $existingSample =
+                $existingSamples[$index] ?? [];
+
+            $sample = array_merge(
+                $existingSample,
                 [
+                    'panjang' =>
+                        $submittedSample['panjang']
+                        ?? ($existingSample['panjang'] ?? null),
+
+                    'lebar' =>
+                        $submittedSample['lebar']
+                        ?? ($existingSample['lebar'] ?? null),
+
+                    'tinggi' =>
+                        $submittedSample['tinggi']
+                        ?? ($existingSample['tinggi'] ?? null),
+
+                    'bct' =>
+                        $submittedSample['bct']
+                        ?? ($existingSample['bct'] ?? null),
+
+                    'no_batch_lot' =>
+                        $submittedSample['no_batch_lot']
+                        ?? ($existingSample['no_batch_lot'] ?? null),
+
+                    'design' =>
+                        $submittedSample['design']
+                        ?? ($existingSample['design'] ?? null),
+
+                    'warna' =>
+                        $submittedSample['warna']
+                        ?? ($existingSample['warna'] ?? null),
+
+                    'tulisan' =>
+                        $submittedSample['tulisan']
+                        ?? ($existingSample['tulisan'] ?? null),
+
                     'berat' =>
-                        $submittedSample['berat'] ?? null,
+                        $submittedSample['berat']
+                        ?? ($existingSample['berat'] ?? null),
 
                     'hasil_berat' =>
-                        $submittedSample[
-                            'hasil_berat'
-                        ] ?? null,
-
-                    'gramasi' =>
-                        $submittedSample['gramasi'] ?? null,
+                        $submittedSample['hasil_berat']
+                        ?? ($existingSample['hasil_berat'] ?? null),
                 ]
             );
+
+            unset(
+                $sample['foto']
+            );
+
+            if ($index === 0) {
+                $numericLayers = is_array($gramasiLayers)
+                    ? array_filter($gramasiLayers, fn ($val) => $val !== null && $val !== '' && is_numeric($val))
+                    : [];
+
+                $calculatedGramasi = count($numericLayers) > 0
+                    ? array_sum(array_map('floatval', $numericLayers))
+                    : null;
+
+                $sample['gramasi'] =
+                    $gramasi
+                    ?? $calculatedGramasi
+                    ?? ($existingSample['gramasi'] ?? null);
+                if ($gramasiTipe !== null) {
+                    $sample['gramasi_tipe'] =
+                        $gramasiTipe;
+                }
+                if ($gramasiLayers !== null) {
+                    $sample['gramasi_layers'] =
+                        array_values($gramasiLayers);
+                }
+                $sample['scan_barcode'] =
+                    $scanBarcode;
+                $sample['no_barcode'] =
+                    $noBarcode;
+            } else {
+                unset(
+                    $sample['gramasi'],
+                    $sample['gramasi_tipe'],
+                    $sample['gramasi_layers'],
+                    $sample['scan_barcode'],
+                    $sample['no_barcode']
+                );
+            }
+
+            $mergedSamples[] = $sample;
         }
 
         return $mergedSamples;
+    }
+
+    private function isForeman(): bool
+    {
+        return auth()->check()
+            && auth()->user()?->role === 'Foreman';
+    }
+
+    private function ensureFinalCanBeChanged(
+        ?PackagingKartonSampling $sampling
+    ): void {
+        if (
+            $sampling
+            && ! $this->isForeman()
+        ) {
+            abort(
+                403,
+                'Data sampling yang sudah final hanya dapat dikoreksi oleh Foreman.'
+            );
+        }
+    }
+
+    private function ensureKarton(
+        PackagingIncoming $packagingIncoming
+    ): void {
+        abort_unless(
+            in_array(
+                $packagingIncoming->jenisIncoming?->nama,
+                ['Karton', 'Kardus'],
+                true
+            ),
+            404,
+            'Data incoming bukan kategori Karton.'
+        );
     }
 }

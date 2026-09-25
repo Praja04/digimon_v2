@@ -1,4 +1,4 @@
-﻿@extends('layouts.component.main')
+@extends('layouts.component.main')
 
 @section('title')
     Pemeriksaan BCT
@@ -101,15 +101,15 @@
                     <div class="col-xl-4">
                         <div class="result-panel">
                             <div class="result-panel-title">
-                                Hasil BCT 4gt
+                                Hasil BCT kgf
                             </div>
 
                             <div class="table-responsive">
                                 <table class="table table-bordered text-center align-middle mb-0">
                                     <thead>
                                         <tr>
-                                            <th>BCT 4gt 1</th>
-                                            <th>BCT 4gt 2</th>
+                                            <th>BCT kgf 1</th>
+                                            <th>BCT kgf 2</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -473,7 +473,7 @@
                     const value = state.values[globalIndex] ?? '';
 
                     headers += `
-                        <th>BCT 4gt ${number}</th>
+                        <th>BCT kgf ${number}</th>
                     `;
 
                     inputs += `
@@ -594,6 +594,30 @@
             state.values[index] = event.target.value;
 
             updateSummary();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            const target = event.target;
+            if (!target || target.tagName !== 'INPUT') return;
+
+            if (event.key === 'Enter' || event.key === 'Tab') {
+                const isBackwards = event.shiftKey;
+                const allInputs = [
+                    document.getElementById('bct4gt1'),
+                    document.getElementById('bct4gt2'),
+                    ...Array.from(document.querySelectorAll('.bct-input'))
+                ].filter(Boolean);
+
+                const currentIndex = allInputs.indexOf(target);
+                if (currentIndex !== -1) {
+                    event.preventDefault();
+                    const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
+                    if (nextIndex >= 0 && nextIndex < allInputs.length) {
+                        allInputs[nextIndex].focus();
+                        allInputs[nextIndex].select();
+                    }
+                }
+            }
         });
 
         document

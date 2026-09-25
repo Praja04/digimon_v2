@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\RMPMStoreRequest;
 use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
+use App\Models\AnalisaLongTermHistory;
 use App\Models\AnalisaShortTerm;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
@@ -132,9 +133,11 @@ class RMPMController extends Controller
                         foreach (
                             $item->analisaLongTerm as $analisa
                         ) {
-                            if (!empty($analisa->disposisi)) {
+                            if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                 $status = '✅ Selesai';
                                 break;
+                            } elseif ($analisa->status === 'draft') {
+                                $status = '⌛ Draft';
                             }
                         }
                     }
@@ -284,7 +287,17 @@ public function pmKartonBct(
 
     public function show($id)
     {
-        $identitas = IdentitasRM::findOrFail($id);
+        $identitas = IdentitasRM::with([
+            'samplingDokumen',
+            'samplingKondisiMobil',
+            'samplingFisikKemasan',
+            'samplingFisikRaw',
+            'analisaGaramGula',
+            'analisaShortTerm',
+            'analisaLongTerm.user',
+            'analisaLongTerm.histories.user',
+            'analisaLongTermHistories.user',
+        ])->findOrFail($id);
 
         $data_dokumen = $identitas->samplingDokumen;
         $data_mobil = $identitas->samplingKondisiMobil;
@@ -293,6 +306,7 @@ public function pmKartonBct(
         $analisa_garam_gula = $identitas->analisaGaramGula;
         $analisa_short_term = $identitas->analisaShortTerm;
         $analisa_long_term = $identitas->analisaLongTerm;
+        $analisa_long_term_histories = $identitas->analisaLongTermHistories;
 
         $konfirmasi = KonfirmasiKedatangan::where(
             'id_identitas',
@@ -310,6 +324,7 @@ public function pmKartonBct(
                 'analisa_garam_gula',
                 'analisa_short_term',
                 'analisa_long_term',
+                'analisa_long_term_histories',
                 'konfirmasi'
             )
         );
@@ -317,11 +332,22 @@ public function pmKartonBct(
 
     public function showAnalisa($id)
     {
-        $identitas = IdentitasRM::findOrFail($id);
+        $identitas = IdentitasRM::with([
+            'analisaLongTerm.user',
+            'analisaLongTerm.histories.user',
+            'analisaLongTermHistories.user',
+            'analisaShortTerm',
+            'analisaGaramGula',
+        ])->findOrFail($id);
+
+        $existingLongTerm = $identitas->analisaLongTerm->last();
+        $existingShortTerm = $identitas->analisaShortTerm ?? collect();
+        $existingGaramGula = $identitas->analisaGaramGula ?? collect();
+        $histories = $identitas->analisaLongTermHistories;
 
         return view(
             'app.rmpm.analisa',
-            compact('identitas')
+            compact('identitas', 'existingLongTerm', 'existingShortTerm', 'existingGaramGula', 'histories')
         );
     }
 
@@ -492,92 +518,145 @@ public function pmKartonBct(
 
     public function storeLongTerm(Request $request)
     {
-        $request->validate([
+        $saveAction = $request->input('save_action', 'final');
+        $isDraft = ($saveAction === 'draft');
+
+        $rules = [
             'id_identitas' => [
                 'required',
                 'exists:identitas_rm,id',
             ],
-
-            'uji_kristal' => [
-                'required',
-                'in:positif,negatif',
-            ],
-
             'keterangan' => [
                 'nullable',
                 'string',
             ],
-        ]);
+        ];
 
-        $ujiKristal = $request->uji_kristal;
-        $attachmentName = null;
-        $disposisi = null;
-
-        if ($ujiKristal === 'negatif') {
-            $attachmentName = '-';
-            $disposisi = 'Release';
+        if ($isDraft) {
+            $rules['uji_kristal'] = ['nullable'];
+            $rules['disposisi'] = ['nullable'];
+            $rules['group'] = ['nullable'];
         } else {
-            $request->validate([
-                'attachment' => [
-                    'required',
-                    'image',
-                    'mimes:jpg,jpeg,png,gif',
-                    'max:5000',
-                ],
-
-                'disposisi' => [
-                    'required',
-                    'in:Release,Reject',
-                ],
-            ]);
-
-            if ($request->hasFile('attachment')) {
-                $filename =
-                    'attachment_' .
-                    time() .
-                    '_' .
-                    uniqid() .
-                    '.' .
-                    $request->attachment->extension();
-
-                $request
-                    ->file('attachment')
-                    ->storeAs(
-                        'uploads/attachment_analisa',
-                        $filename,
-                        'public'
-                    );
-
-                $attachmentName = basename($filename);
+            $rules['uji_kristal'] = ['required', 'in:positif,negatif'];
+            $rules['disposisi'] = ['required', 'in:Release,Release Bersyarat,Reject'];
+            if (in_array($request->disposisi, ['Release', 'Release Bersyarat'])) {
+                $rules['group'] = ['required', 'in:Group A,Group B,Group C'];
             }
-
-            $disposisi = $request->disposisi;
         }
 
-        AnalisaLongTerm::create([
-            'id_identitas' =>
-                $request->id_identitas,
+        if ($request->hasFile('attachments')) {
+            $rules['attachments'] = ['array', 'max:5'];
+            $rules['attachments.*'] = ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'];
+        } elseif ($request->hasFile('attachment')) {
+            $rules['attachment'] = ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'];
+        }
 
-            'uji_kristal' =>
-                $ujiKristal,
+        $request->validate($rules);
 
-            'disposisi' =>
-                $disposisi,
+        $ujiKristal = $request->filled('uji_kristal') ? $request->uji_kristal : null;
+        $disposisi = $request->filled('disposisi') ? $request->disposisi : null;
 
-            'attachment' =>
-                $attachmentName,
+        if (!$isDraft && $ujiKristal === 'negatif' && empty($disposisi)) {
+            $disposisi = 'Release';
+        }
 
-            'keterangan' =>
-                $request->keterangan,
+        $group = (in_array($disposisi, ['Release', 'Release Bersyarat']) && $request->filled('group')) ? $request->group : null;
 
-            'created_by' =>
-                auth()->id(),
+        // Collect existing saved photos
+        $photoList = [];
+        if ($request->filled('existing_attachments')) {
+            $existing = $request->existing_attachments;
+            if (is_string($existing)) {
+                $decoded = json_decode($existing, true);
+                $existing = is_array($decoded) ? $decoded : [$existing];
+            }
+            if (is_array($existing)) {
+                $photoList = array_values(array_filter($existing));
+            }
+        }
+
+        // Process uploaded files (max 5 photos total)
+        $filesToUpload = [];
+        if ($request->hasFile('attachments')) {
+            $filesToUpload = $request->file('attachments');
+        } elseif ($request->hasFile('attachment')) {
+            $filesToUpload = [$request->file('attachment')];
+        }
+
+        foreach ($filesToUpload as $file) {
+            if (count($photoList) >= 5) {
+                break;
+            }
+            $filename =
+                'attachment_' .
+                time() .
+                '_' .
+                uniqid() .
+                '.' .
+                $file->extension();
+
+            $file->storeAs(
+                'uploads/attachment_analisa',
+                $filename,
+                'public'
+            );
+
+            $photoList[] = basename($filename);
+        }
+
+        if (!$isDraft && $ujiKristal === 'positif' && empty($photoList)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Lampiran gambar kristal wajib diunggah (minimal 1 foto, maksimal 5 foto) untuk uji kristal positif.',
+            ], 422);
+        }
+
+        // Find existing record or create new
+        $analisa = AnalisaLongTerm::where('id_identitas', $request->id_identitas)->latest()->first();
+
+        if ($analisa && $analisa->status === 'draft') {
+            $analisa->update([
+                'uji_kristal' => $ujiKristal,
+                'disposisi' => $disposisi,
+                'group' => $group,
+                'attachment' => $photoList,
+                'keterangan' => $request->keterangan,
+                'status' => $isDraft ? 'draft' : 'final',
+                'created_by' => auth()->id(),
+            ]);
+        } else {
+            $analisa = AnalisaLongTerm::create([
+                'id_identitas' => $request->id_identitas,
+                'uji_kristal' => $ujiKristal,
+                'disposisi' => $disposisi,
+                'group' => $group,
+                'attachment' => $photoList,
+                'keterangan' => $request->keterangan,
+                'status' => $isDraft ? 'draft' : 'final',
+                'created_by' => auth()->id(),
+            ]);
+        }
+
+        // Record history log
+        AnalisaLongTermHistory::create([
+            'analisa_long_term_id' => $analisa->id,
+            'id_identitas' => $request->id_identitas,
+            'user_id' => auth()->id(),
+            'action' => $isDraft ? 'Simpan Sementara' : 'Simpan Final',
+            'uji_kristal' => $ujiKristal,
+            'disposisi' => $disposisi,
+            'group' => $group,
+            'attachment' => $photoList,
+            'keterangan' => $request->keterangan,
         ]);
 
         return response()->json([
-            'message' =>
-                'Data analisa long term berhasil disimpan.',
-        ], 201);
+            'status' => 'success',
+            'message' => $isDraft
+                ? 'Data analisa berhasil disimpan sementara (Draft).'
+                : 'Data analisa long term berhasil disimpan.',
+            'data' => $analisa,
+        ], 200);
     }
 
     /*
@@ -588,125 +667,125 @@ public function pmKartonBct(
 
     public function storeShortTerm(Request $request)
     {
-        $request->validate([
-            'id_identitas' =>
-                'required|exists:identitas_rm,id',
+        $kategori = $request->input('kategori', 'incoming');
+        if (!in_array($kategori, ['incoming', 'sta', 'monitoring'])) {
+            $kategori = 'incoming';
+        }
 
-            'brix' =>
-                'required|array|min:1',
+        $saveAction = $request->input('save_action', 'final');
+        $isDraft = ($saveAction === 'draft');
 
-            'brix.*' =>
-                'required|string',
+        if ($isDraft) {
+            $rules = [
+                'id_identitas' => 'required|exists:identitas_rm,id',
+                'disposisi'    => 'nullable',
+                'keterangan'   => 'nullable',
+                'kategori'     => 'nullable',
+                'brix'         => 'nullable',
+                'ph'           => 'nullable',
+                'ka'           => 'nullable',
+                'kotoran'      => 'nullable',
+                'organo'       => 'nullable',
+                'warna'        => 'nullable',
+                'aroma'        => 'nullable',
+            ];
+        } else {
+            $rules = [
+                'id_identitas' => 'required|exists:identitas_rm,id',
+                'disposisi'    => 'required|in:Release,Reject',
+                'keterangan'   => 'nullable|string',
+                'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
+            ];
 
-            'ph' =>
-                'required|array|min:1',
+            // For incoming, require main parameters. For STA / Monitoring, allow flexible partial inputs.
+            if ($kategori === 'incoming') {
+                $rules['brix']   = 'required|array|min:1';
+                $rules['ph']     = 'required|array|min:1';
+                $rules['ka']     = 'required|array|min:1';
+            } else {
+                $rules['brix']   = 'nullable|array';
+                $rules['ph']     = 'nullable|array';
+                $rules['ka']     = 'nullable|array';
+            }
 
-            'ph.*' =>
-                'required|string',
+            $rules['kotoran'] = 'nullable|array';
+            $rules['organo']  = 'nullable|array';
+            $rules['warna']   = 'nullable|array';
+            $rules['aroma']   = 'nullable|array';
+        }
 
-            'kotoran' =>
-                'nullable|array',
-
-            'ka' =>
-                'required|array|min:1',
-
-            'ka.*' =>
-                'required|string',
-
-            'organo' =>
-                'nullable|array',
-
-            'warna' =>
-                'nullable|array',
-
-            'aroma' =>
-                'nullable|array',
-
-            'disposisi' =>
-                'required|in:Release,Reject',
-
-            'keterangan' =>
-                'nullable|string',
-        ]);
+        $request->validate($rules);
 
         DB::beginTransaction();
 
         try {
-            $jumlah = count($request->brix);
+            // Determine number of sample rows from whichever array is provided
+            $sampleCounts = [
+                count($request->brix ?? []),
+                count($request->ph ?? []),
+                count($request->kotoran ?? []),
+                count($request->ka ?? []),
+                count($request->organo ?? []),
+                count($request->warna ?? []),
+                count($request->aroma ?? []),
+            ];
+            $jumlah = max(1, ...$sampleCounts);
+
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
                 $dataAnalisa[] = [
-                    'id_identitas' =>
-                        $request->id_identitas,
-
-                    'brix' =>
-                        $this->nullableFloat(
-                            $request->brix[$i] ?? null
-                        ),
-
-                    'ph' =>
-                        $this->nullableFloat(
-                            $request->ph[$i] ?? null
-                        ),
-
-                    'kotoran' =>
-                        $this->nullableFloat(
-                            $request->kotoran[$i] ?? null
-                        ),
-
-                    'ka' =>
-                        $this->nullableFloat(
-                            $request->ka[$i] ?? null
-                        ),
-
-                    'organo' =>
-                        $this->nullableString(
-                            $request->organo[$i] ?? null
-                        ),
-
-                    'warna' =>
-                        $this->nullableString(
-                            $request->warna[$i] ?? null
-                        ),
-
-                    'aroma' =>
-                        $this->nullableString(
-                            $request->aroma[$i] ?? null
-                        ),
-
-                    'disposisi' =>
-                        $request->disposisi,
-
-                    'keterangan' =>
-                        $request->keterangan,
-
-                    'created_by' =>
-                        auth()->id(),
-
-                    'created_at' =>
-                        now(),
-
-                    'updated_at' =>
-                        now(),
+                    'id_identitas' => $request->id_identitas,
+                    'kategori'     => $kategori,
+                    'brix'         => $this->nullableFloat($request->brix[$i] ?? null),
+                    'ph'           => $this->nullableFloat($request->ph[$i] ?? null),
+                    'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
+                    'ka'           => $this->nullableFloat($request->ka[$i] ?? null),
+                    'organo'       => $this->nullableString($request->organo[$i] ?? null),
+                    'warna'        => $this->nullableString($request->warna[$i] ?? null),
+                    'aroma'        => $this->nullableString($request->aroma[$i] ?? null),
+                    'disposisi'    => $this->nullableString($request->disposisi),
+                    'keterangan'   => $request->keterangan ? trim($request->keterangan) : null,
+                    'created_by'   => auth()->id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ];
             }
+
+            // Remove existing records for this specific kategori so it cleanly updates
+            AnalisaShortTerm::where('id_identitas', $request->id_identitas)
+                ->where(function ($q) use ($kategori) {
+                    $q->where('kategori', $kategori)
+                      ->orWhere(function ($sub) use ($kategori) {
+                          if ($kategori === 'incoming') {
+                              $sub->whereNull('kategori');
+                          }
+                      });
+                })
+                ->delete();
 
             AnalisaShortTerm::insert($dataAnalisa);
 
             DB::commit();
 
-            return response()->json([
-                'message' =>
-                    'Berhasil menyimpan data analisa short term.',
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
+            $kategoriLabels = [
+                'incoming'   => 'Incoming',
+                'sta'        => 'STA (Short Term Analisa)',
+                'monitoring' => 'Monitoring',
+            ];
 
             return response()->json([
-                'message' =>
-                    'Gagal menyimpan data: ' .
-                    $e->getMessage(),
+                'status'  => 'success',
+                'message' => $isDraft
+                    ? 'Data analisa ' . ($kategoriLabels[$kategori] ?? $kategori) . ' berhasil disimpan sementara (Draft).'
+                    : 'Data analisa ' . ($kategoriLabels[$kategori] ?? $kategori) . ' berhasil disimpan.',
+                'data'    => $dataAnalisa,
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menyimpan data analisa: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -719,48 +798,56 @@ public function pmKartonBct(
 
     public function storeGaramGula(Request $request)
     {
-        $request->validate([
-            'id_identitas' =>
-                'required|exists:identitas_rm,id',
+        $saveAction = $request->input('save_action', 'final');
+        $isDraft = ($saveAction === 'draft');
 
-            'fisik' =>
-                'required|array|min:1',
+        if ($isDraft) {
+            $rules = [
+                'id_identitas' => 'required|exists:identitas_rm,id',
+                'fisik'        => 'nullable',
+                '%ka'          => 'nullable',
+                'kotoran'      => 'nullable',
+                'organo'       => 'nullable',
+                'warna'        => 'nullable',
+                'aroma'        => 'nullable',
+                '%nacl'        => 'nullable',
+                'gross_weight' => 'nullable',
+                'disposisi'    => 'nullable',
+                'keterangan'   => 'nullable',
+            ];
+        } else {
+            $rules = [
+                'id_identitas' => 'required|exists:identitas_rm,id',
+                'fisik'        => 'required|array|min:1',
+                'fisik.*'      => 'required|string',
+                '%ka'          => 'nullable|array',
+                'kotoran'      => 'nullable|array',
+                'organo'       => 'nullable|array',
+                'warna'        => 'nullable|array',
+                'aroma'        => 'nullable|array',
+                '%nacl'        => 'nullable|array',
+                'gross_weight' => 'nullable|array',
+                'disposisi'    => 'required|in:Release,Reject',
+                'keterangan'   => 'nullable|string',
+            ];
+        }
 
-            'fisik.*' =>
-                'required|string',
-
-            '%ka' =>
-                'nullable|array',
-
-            'kotoran' =>
-                'nullable|array',
-
-            'organo' =>
-                'nullable|array',
-
-            'warna' =>
-                'nullable|array',
-
-            'aroma' =>
-                'nullable|array',
-
-            '%nacl' =>
-                'nullable|array',
-
-            'gross_weight' =>
-                'nullable|array',
-
-            'disposisi' =>
-                'required|in:Release,Reject',
-
-            'keterangan' =>
-                'nullable|string',
-        ]);
+        $request->validate($rules);
 
         DB::beginTransaction();
 
         try {
-            $jumlah = count($request->fisik);
+            $sampleCounts = [
+                count($request->fisik ?? []),
+                count($request['%ka'] ?? []),
+                count($request->kotoran ?? []),
+                count($request->organo ?? []),
+                count($request->warna ?? []),
+                count($request->aroma ?? []),
+                count($request['%nacl'] ?? []),
+                count($request->gross_weight ?? []),
+            ];
+            $jumlah = max(1, ...$sampleCounts);
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
@@ -809,10 +896,10 @@ public function pmKartonBct(
                         ),
 
                     'disposisi' =>
-                        $request->disposisi,
+                        $this->nullableString($request->disposisi),
 
                     'keterangan' =>
-                        $request->keterangan,
+                        $request->keterangan ? trim($request->keterangan) : null,
 
                     'created_by' =>
                         auth()->id(),
@@ -825,23 +912,25 @@ public function pmKartonBct(
                 ];
             }
 
+            // Remove existing records before inserting
+            AnalisaGaramGula::where('id_identitas', $request->id_identitas)->delete();
+
             AnalisaGaramGula::insert($dataAnalisa);
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-
-                'message' =>
-                    'Data analisa berhasil disimpan.',
-            ], 201);
+                'message' => $isDraft
+                    ? 'Data analisa berhasil disimpan sementara (Draft).'
+                    : 'Data analisa berhasil disimpan.',
+            ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
-                'message' =>
-                    'Gagal menyimpan data: ' .
-                    $e->getMessage(),
+                'status' => 'error',
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -856,9 +945,21 @@ public function pmKartonBct(
         Request $request
     ) {
         $request->validate([
+            'id' => [
+                'required',
+                'exists:analisa_long_term,id',
+            ],
             'disposisi' => [
                 'required',
-                'in:Release,Reject',
+                'in:Release,Release Bersyarat,Reject',
+            ],
+            'group' => [
+                'nullable',
+                'in:Group A,Group B,Group C',
+            ],
+            'keterangan_update' => [
+                'nullable',
+                'string',
             ],
         ]);
 
@@ -866,15 +967,43 @@ public function pmKartonBct(
             $request->id
         );
 
-        $data->disposisi = $request->disposisi;
+        $oldDisposisi = $data->disposisi;
+        $oldGroup = $data->group;
+
+        $newDisposisi = $request->disposisi;
+        $newGroup = in_array($newDisposisi, ['Release', 'Release Bersyarat']) ? $request->group : null;
+
+        if (in_array($newDisposisi, ['Release', 'Release Bersyarat']) && empty($newGroup)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Group ABC wajib dipilih untuk disposisi Release atau Release Bersyarat.',
+            ], 422);
+        }
+
+        $data->disposisi = $newDisposisi;
+        $data->group = $newGroup;
+        if ($request->filled('keterangan_update')) {
+            $data->keterangan = ($data->keterangan ? $data->keterangan . "\n" : '') . '[Update Disposisi]: ' . $request->keterangan_update;
+        }
         $data->save();
 
-        return response()->json([
-            'message' =>
-                'Disposisi berhasil diperbarui.',
+        // Record history log
+        AnalisaLongTermHistory::create([
+            'analisa_long_term_id' => $data->id,
+            'id_identitas' => $data->id_identitas,
+            'user_id' => auth()->id(),
+            'action' => 'Update Disposisi',
+            'uji_kristal' => $data->uji_kristal,
+            'disposisi' => $newDisposisi,
+            'group' => $newGroup,
+            'attachment' => $data->attachment,
+            'keterangan' => $request->keterangan_update ?? "Update disposisi dari '{$oldDisposisi}' ke '{$newDisposisi}'" . ($newGroup ? " ({$newGroup})" : ''),
+        ]);
 
-            'data' =>
-                $data,
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Disposisi berhasil diperbarui.',
+            'data' => $data,
         ]);
     }
 

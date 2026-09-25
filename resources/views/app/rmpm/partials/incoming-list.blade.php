@@ -1,393 +1,701 @@
+@php
+    $canManageIncoming =
+        auth()->check()
+        && auth()->user()?->role === 'Foreman';
+@endphp
+
 <div class="card border-0 shadow-sm incoming-list-card">
 
-                    <div class="card-header bg-transparent border-bottom">
+    <div class="card-header bg-transparent border-bottom">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h4 class="card-title mb-1">
+                    Daftar Incoming Packaging Material
+                </h4>
 
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <p class="text-muted mb-0">
+                    Pantau incoming, draft, dan proses sampling dari satu daftar.
+                </p>
+            </div>
 
-                            <div>
-                                <h4 class="card-title mb-1">
-                                    Daftar Incoming Packaging Material
-                                </h4>
+            <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                {{ $incomings->total() }} Data
+            </span>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <form
+            id="incomingFilterForm"
+            method="GET"
+            action="{{ route('rmpm.pm.incoming.create') }}"
+            class="row g-3 mb-4"
+        >
+            <div class="col-xl-4 col-md-6">
+                <label class="form-label">
+                    Pencarian
+                </label>
+
+                <input
+                    type="text"
+                    name="search"
+                    class="form-control"
+                    value="{{ request('search') }}"
+                    placeholder="Cari SPB, MID, supplier, material..."
+                >
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <label class="form-label">
+                    Jenis Incoming
+                </label>
+
+                <select
+                    name="jenis_incoming_filter"
+                    class="form-select"
+                >
+                    <option value="">
+                        Semua jenis
+                    </option>
+
+                    @foreach ($jenisIncomings as $item)
+                        <option
+                            value="{{ $item->id }}"
+                            @selected(
+                                request('jenis_incoming_filter') == $item->id
+                            )
+                        >
+                            {{ $item->nama }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <label class="form-label">
+                    Status
+                </label>
+
+                <select
+                    name="status_filter"
+                    class="form-select"
+                >
+                    <option value="">
+                        Semua Status
+                    </option>
+
+                    <optgroup label="Status Pengerjaan Sampling">
+                        <option
+                            value="belum_sampling"
+                            @selected(
+                                request('status_filter') === 'belum_sampling'
+                                || (string) request('status_filter') === '3'
+                            )
+                        >
+                            Belum Sampling
+                        </option>
+
+                        <option
+                            value="draft"
+                            @selected(request('status_filter') === 'draft')
+                        >
+                            Draft / Simpan Sementara
+                        </option>
+
+                        <option
+                            value="sudah_sampling"
+                            @selected(
+                                request('status_filter') === 'sudah_sampling'
+                                || (string) request('status_filter') === '4'
+                            )
+                        >
+                            Sudah Sampling
+                        </option>
+                    </optgroup>
+
+                    <optgroup label="Hasil Disposisi / Rekomendasi">
+                        <option
+                            value="Diterima"
+                            @selected(
+                                request('status_filter') === 'Diterima'
+                                || request('status_filter') === 'Release'
+                            )
+                        >
+                            Diterima (Release)
+                        </option>
+                        <option
+                            value="Diterima Bersyarat"
+                            @selected(
+                                request('status_filter') === 'Diterima Bersyarat'
+                                || request('status_filter') === 'Release Bersyarat'
+                            )
+                        >
+                            Diterima Bersyarat
+                        </option>
+                        <option
+                            value="Ditolak"
+                            @selected(
+                                request('status_filter') === 'Ditolak'
+                                || request('status_filter') === 'Reject'
+                            )
+                        >
+                            Ditolak (Reject)
+                        </option>
+                        <option
+                            value="WIP"
+                            @selected(request('status_filter') === 'WIP')
+                        >
+                            WIP
+                        </option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="col-xl-2 col-md-6 d-flex align-items-end gap-2">
+                <button
+                    type="submit"
+                    class="btn btn-primary flex-grow-1"
+                >
+                    <i class="mdi mdi-magnify me-1"></i>
+                    Filter
+                </button>
+
+                <a
+                    href="{{ route('rmpm.pm.incoming.create') }}"
+                    class="btn btn-light incoming-filter-reset"
+                    title="Reset filter"
+                >
+                    <i class="mdi mdi-refresh"></i>
+                </a>
+            </div>
+        </form>
+
+        <div class="process-legend mb-3">
+            <span>
+                <i class="process-dot process-dot-info"></i>
+                Belum Sampling
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-warning"></i>
+                Draft / Simpan Sementara
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-success"></i>
+                Diterima (Release)
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-orange"></i>
+                Diterima Bersyarat
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-danger"></i>
+                Ditolak (Reject)
+            </span>
+
+            <span>
+                <i class="process-dot process-dot-secondary"></i>
+                WIP
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle incoming-table">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 65px;">No.</th>
+                        <th>No. SPB</th>
+                        <th class="text-end">Quantity Incoming</th>
+                        <th>Jenis Incoming</th>
+                        <th>MID</th>
+                        <th>Supplier</th>
+                        <th>Jenis Material</th>
+                        <th>Tanggal</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" style="min-width: 175px;">
+                            Proses
+                        </th>
+
+                        @if ($canManageIncoming)
+                            <th class="text-center" style="width: 105px;">
+                                Kelola Data
+                            </th>
+                        @endif
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse ($incomings as $incoming)
+                        @php
+                            $databaseStatusName =
+                                $incoming->samplingStatus?->nama
+                                ?? 'Belum Sampling';
+
+                            $databaseStatusLower =
+                                strtolower($databaseStatusName);
+
+                            $processStatus = strtolower(
+                                trim(
+                                    (string) (
+                                        $incoming->process_status
+                                        ?? ''
+                                    )
+                                )
+                            );
+
+                            $isDraft =
+                                $processStatus === 'draft';
+
+                            $rekomendasi = trim((string) ($incoming->rekomendasi ?? ''));
+                            $rekomendasiLower = strtolower($rekomendasi);
+
+                            $isFinished =
+                                ! $isDraft
+                                && (
+                                    $processStatus === 'final'
+                                    || $rekomendasi !== ''
+                                    || str_contains(
+                                        $databaseStatusLower,
+                                        'sudah'
+                                    )
+                                    || str_contains(
+                                        $databaseStatusLower,
+                                        'selesai'
+                                    )
+                                );
+
+                            if ($isDraft) {
+                                $statusName = 'Draft';
+                                $statusClass = 'bg-warning text-dark';
+                                $statusIcon = 'mdi-content-save-edit-outline';
+                            } elseif ($isFinished) {
+                                if ($rekomendasiLower === 'ditolak' || $rekomendasiLower === 'reject') {
+                                    $statusName = $rekomendasi ?: 'Ditolak';
+                                    $statusClass = 'bg-danger';
+                                    $statusIcon = 'mdi-close-circle-outline';
+                                } elseif ($rekomendasiLower === 'diterima bersyarat' || $rekomendasiLower === 'release bersyarat') {
+                                    $statusName = $rekomendasi ?: 'Diterima Bersyarat';
+                                    $statusClass = 'bg-orange text-white';
+                                    $statusIcon = 'mdi-alert-circle-outline';
+                                } elseif ($rekomendasiLower === 'diterima' || $rekomendasiLower === 'release') {
+                                    $statusName = $rekomendasi ?: 'Diterima';
+                                    $statusClass = 'bg-success';
+                                    $statusIcon = 'mdi-check-circle-outline';
+                                } elseif ($rekomendasiLower === 'wip') {
+                                    $statusName = 'WIP';
+                                    $statusClass = 'bg-secondary';
+                                    $statusIcon = 'mdi-progress-clock';
+                                } else {
+                                    $statusName = $rekomendasi ?: ($databaseStatusName ?: 'Sudah Sampling');
+                                    $statusClass = 'bg-success';
+                                    $statusIcon = 'mdi-check-circle-outline';
+                                }
+                            } else {
+                                $statusName = $databaseStatusName ?: 'Belum Sampling';
+                                $statusClass = 'bg-info';
+                                $statusIcon = 'mdi-clock-outline';
+                            }
+
+                            $jenisName = strtolower(
+                                trim(
+                                    $incoming
+                                        ->jenisIncoming
+                                        ?->nama
+                                    ?? ''
+                                )
+                            );
+
+                            $samplingUrl = null;
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | POUCH
+                            |--------------------------------------------------------------------------
+                            */
+                            if (
+                                str_contains(
+                                    $jenisName,
+                                    'pouch'
+                                )
+                            ) {
+                                $samplingUrl = $isFinished
+                                    ? route(
+                                        'rmpm.pm.pouch.resume',
+                                        $incoming
+                                    )
+                                    : route(
+                                        'rmpm.pm.pouch.sampling',
+                                        $incoming
+                                    );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | KARTON / KARDUS
+                            |--------------------------------------------------------------------------
+                            */
+                            } elseif (
+                                str_contains(
+                                    $jenisName,
+                                    'karton'
+                                )
+                                || str_contains(
+                                    $jenisName,
+                                    'kardus'
+                                )
+                            ) {
+                                $samplingUrl = route(
+                                    'rmpm.pm.karton.sampling',
+                                    $incoming
+                                );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | INNER / OUTER
+                            |--------------------------------------------------------------------------
+                            */
+                            } elseif (
+                                str_contains(
+                                    $jenisName,
+                                    'inner'
+                                )
+                                || str_contains(
+                                    $jenisName,
+                                    'outer'
+                                )
+                            ) {
+                                $samplingUrl = $isFinished
+                                    ? route(
+                                        'rmpm.pm.inner-outer.resume',
+                                        $incoming
+                                    )
+                                    : route(
+                                        'rmpm.pm.inner-outer.sampling',
+                                        $incoming
+                                    );
+                            }
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | LABEL BUTTON
+                            |--------------------------------------------------------------------------
+                            */
+                            if ($isDraft) {
+                                $samplingLabel =
+                                    'Lanjutkan';
+
+                                $samplingIcon =
+                                    'mdi-progress-clock';
+
+                                $samplingClass =
+                                    'btn-warning';
+
+                            } elseif ($isFinished) {
+                                $isResumeType =
+                                    str_contains(
+                                        $jenisName,
+                                        'pouch'
+                                    )
+                                    || str_contains(
+                                        $jenisName,
+                                        'inner'
+                                    )
+                                    || str_contains(
+                                        $jenisName,
+                                        'outer'
+                                    );
+
+                                $samplingLabel =
+                                    $isResumeType
+                                        ? 'Lihat Resume'
+                                        : 'Lihat Hasil';
+
+                                $samplingIcon =
+                                    $isResumeType
+                                        ? 'mdi-file-document-outline'
+                                        : 'mdi-eye-outline';
+
+                                $samplingClass =
+                                    'btn-success';
+
+                            } else {
+                                $samplingLabel =
+                                    'Mulai Sampling';
+
+                                $samplingIcon =
+                                    'mdi-play-circle-outline';
+
+                                $samplingClass =
+                                    'btn-primary';
+                            }
+                        @endphp
+
+                        <tr
+                            @class([
+                                'incoming-row-draft' => $isDraft,
+                            ])
+                        >
+                            <td>
+                                {{ $incomings->firstItem() + $loop->index }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ $incoming->no_spb }}
+                                </strong>
+
+                                @if ($isDraft)
+                                    <div class="small text-warning mt-1">
+                                        <i class="mdi mdi-content-save-edit-outline"></i>
+                                        Ada data sementara
+                                    </div>
+                                @endif
+                            </td>
+
+                            <td class="text-end">
+                                <strong>
+                                    {{
+                                        $incoming->jumlah !== null
+                                            ? rtrim(
+                                                rtrim(
+                                                    number_format(
+                                                        (float) $incoming->jumlah,
+                                                        2,
+                                                        ',',
+                                                        '.'
+                                                    ),
+                                                    '0'
+                                                ),
+                                                ','
+                                            )
+                                            : '-'
+                                    }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ $incoming->jenisIncoming?->nama ?? '-' }}
+                            </td>
+
+                            <td>
+                                {{ $incoming->mid ?? '-' }}
+                            </td>
+
+                            <td>
+                                {{
+                                    $incoming->supplier?->nama
+                                    ?? $incoming->supplier?->nama_supplier
+                                    ?? '-'
+                                }}
+                            </td>
+
+                            <td>
+                                {{ $incoming->jenisMaterial?->nama ?? '-' }}
+                            </td>
+
+                            <td>
+                                {{ $incoming->tanggal_kedatangan?->format('d/m/Y') }}
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge {{ $statusClass }}">
+                                    <i class="mdi {{ $statusIcon }} me-1"></i>
+                                    {{ $statusName }}
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                @if ($samplingUrl)
+                                    <a
+                                        href="{{ $samplingUrl }}"
+                                        class="btn {{ $samplingClass }} btn-sm px-3"
+                                        title="{{ $samplingLabel }}"
+                                    >
+                                        <i class="mdi {{ $samplingIcon }} me-1"></i>
+                                        {{ $samplingLabel }}
+                                    </a>
+                                @else
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        disabled
+                                    >
+                                        <i class="mdi mdi-alert-circle-outline me-1"></i>
+                                        Belum Tersedia
+                                    </button>
+                                @endif
+                            </td>
+
+                            @if ($canManageIncoming)
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-warning btn-sm btnEdit"
+                                            data-url="{{ route(
+                                                'rmpm.pm.incoming.edit',
+                                                $incoming
+                                            ) }}"
+                                            title="Edit Incoming"
+                                        >
+                                            <i class="mdi mdi-pencil"></i>
+                                        </button>
+
+                                        @if (! $isDraft && ! $isFinished)
+                                            <form
+                                                method="POST"
+                                                action="{{ route(
+                                                    'rmpm.pm.incoming.destroy',
+                                                    $incoming
+                                                ) }}"
+                                                class="deleteForm"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    title="Hapus Incoming"
+                                                >
+                                                    <i class="mdi mdi-delete"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            @endif
+                        </tr>
+                    @empty
+                        <tr>
+                            <td
+                                colspan="{{ $canManageIncoming ? 11 : 10 }}"
+                                class="text-center py-5"
+                            >
+                                <div class="empty-state-icon">
+                                    <i class="mdi mdi-package-variant"></i>
+                                </div>
+
+                                <h5 class="mt-3 mb-1">
+                                    Belum ada data incoming
+                                </h5>
 
                                 <p class="text-muted mb-0">
-                                    Pantau incoming dan status proses sampling.
+                                    Isi form di atas untuk membuat incoming pertama.
                                 </p>
-                            </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-                            <span class="badge bg-primary-subtle text-primary px-3 py-2">
-                                {{ $incomings->total() }} Data
-                            </span>
+        @if ($incomings->hasPages())
+            <div class="mt-3">
+                {{ $incomings->links() }}
+            </div>
+        @endif
 
-                        </div>
+    </div>
+</div>
 
-                    </div>
+<style>
+.incoming-list-card {
+    border-radius: 18px;
+    overflow: hidden;
+}
 
-                    <div class="card-body">
+.incoming-table thead th {
+    white-space: nowrap;
+    vertical-align: middle;
+}
 
-                        {{-- FILTER --}}
-                        <form
-                            id="incomingFilterForm"
-                            method="GET"
-                            action="{{ route('rmpm.pm.incoming.create') }}"
-                            class="row g-3 mb-4"
-                        >
+.incoming-table tbody tr {
+    transition:
+        background-color .15s ease,
+        box-shadow .15s ease;
+}
 
-                            <div class="col-xl-5 col-md-6">
+.incoming-table tbody tr:hover {
+    background: #f8fafc;
+}
 
-                                <label class="form-label">
-                                    Pencarian
-                                </label>
+.incoming-table td {
+    white-space: nowrap;
+}
 
-                                <input
-                                    type="text"
-                                    name="search"
-                                    class="form-control"
-                                    value="{{ request('search') }}"
-                                    placeholder="Cari SPB, MID, supplier, material..."
-                                >
+.incoming-table td:nth-child(6),
+.incoming-table td:nth-child(7) {
+    min-width: 130px;
+    white-space: normal;
+}
 
-                            </div>
+.incoming-table .btn {
+    min-height: 31px;
+}
 
-                            <div class="col-xl-3 col-md-6">
+.incoming-row-draft {
+    background: #fffdf5;
+}
 
-                                <label class="form-label">
-                                    Jenis Incoming
-                                </label>
+.incoming-row-draft:hover {
+    background: #fffbeb !important;
+}
 
-                                <select
-                                    name="jenis_incoming_filter"
-                                    class="form-select"
-                                >
-                                    <option value="">
-                                        Semua jenis
-                                    </option>
+.process-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+}
 
-                                    @foreach ($jenisIncomings as $item)
-                                        <option
-                                            value="{{ $item->id }}"
-                                            @selected(
-                                                request('jenis_incoming_filter') == $item->id
-                                            )
-                                        >
-                                            {{ $item->nama }}
-                                        </option>
-                                    @endforeach
-                                </select>
+.process-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
 
-                            </div>
+.process-dot {
+    width: 9px;
+    height: 9px;
+    display: inline-block;
+    border-radius: 50%;
+}
 
-                            <div class="col-xl-2 col-md-6">
+.process-dot-info {
+    background: #0ea5e9;
+}
 
-                                <label class="form-label">
-                                    Status
-                                </label>
+.process-dot-warning {
+    background: #f59e0b;
+}
 
-                                <select
-                                    name="status_filter"
-                                    class="form-select"
-                                >
-                                    <option value="">
-                                        Semua status
-                                    </option>
+.process-dot-orange {
+    background: #ea580c;
+}
 
-                                    @foreach ($samplingStatuses as $status)
-                                        <option
-                                            value="{{ $status->id }}"
-                                            @selected(
-                                                request('status_filter') == $status->id
-                                            )
-                                        >
-                                            {{ $status->nama }}
-                                        </option>
-                                    @endforeach
-                                </select>
+.bg-orange {
+    background-color: #ea580c !important;
+    color: #ffffff !important;
+}
 
-                            </div>
+.process-dot-success {
+    background: #22c55e;
+}
 
-                            <div class="col-xl-2 col-md-6 d-flex align-items-end gap-2">
+.process-dot-danger {
+    background: #ef4444;
+}
 
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary flex-grow-1"
-                                >
-                                    <i class="mdi mdi-magnify me-1"></i>
-                                    Filter
-                                </button>
-
-                                <a
-                                    href="{{ route('rmpm.pm.incoming.create') }}"
-                                    class="btn btn-light incoming-filter-reset"
-                                    title="Reset filter"
-                                >
-                                    <i class="mdi mdi-refresh"></i>
-                                </a>
-
-                            </div>
-
-                        </form>
-
-                        <div class="table-responsive">
-
-                            <table class="table table-bordered table-hover align-middle">
-
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 65px;">
-                                            No.
-                                        </th>
-
-                                        <th>No. SPB</th>
-                                        <th>Quantity Incoming</th>
-                                        <th>Jenis Incoming</th>
-                                        <th>MID</th>
-                                        <th>Supplier</th>
-                                        <th>Jenis Material</th>
-                                        <th>Tanggal</th>
-                                        <th>Status</th>
-
-                                        <th style="min-width: 155px;">
-                                            Proses
-                                        </th>
-
-                                        <th style="width: 105px;">
-                                            Kelola Data
-                                        </th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-
-                                    @forelse ($incomings as $incoming)
-
-                                        @php
-                                            $statusName =
-                                                $incoming->samplingStatus?->nama
-                                                ?? 'Belum Sampling';
-
-                                            $statusLower = strtolower($statusName);
-
-                                            $statusClass =
-                                                str_contains($statusLower, 'sudah') ||
-                                                str_contains($statusLower, 'selesai')
-                                                    ? 'bg-success'
-                                                    : (
-                                                        str_contains($statusLower, 'proses')
-                                                            ? 'bg-warning text-dark'
-                                                            : 'bg-info'
-                                                    );
-
-                                            $jenisName = strtolower(
-                                                trim(
-                                                    $incoming->jenisIncoming?->nama
-                                                    ?? ''
-                                                )
-                                            );
-
-                                            $samplingUrl = null;
-                                            $samplingLabel = 'Mulai Sampling';
-                                            $samplingIcon = 'mdi-play-circle-outline';
-                                            $samplingClass = 'btn-primary';
-
-                                            if (str_contains($jenisName, 'pouch')) {
-                                                $samplingUrl = route(
-                                                    'rmpm.pm.pouch.sampling',
-                                                    $incoming
-                                                );
-                                            } elseif (
-                                                str_contains($jenisName, 'karton')
-                                                || str_contains($jenisName, 'kardus')
-                                            ) {
-                                                $samplingUrl = route(
-                                                    'rmpm.pm.karton.sampling',
-                                                    $incoming
-                                                );
-                                            } elseif (
-                                                str_contains($jenisName, 'inner')
-                                                || str_contains($jenisName, 'outer')
-                                            ) {
-                                                $samplingUrl = route(
-                                                    'rmpm.pm.inner-outer.sampling',
-                                                    $incoming
-                                                );
-                                            }
-
-                                            if (
-                                                str_contains($statusLower, 'sudah')
-                                                || str_contains($statusLower, 'selesai')
-                                            ) {
-                                                $samplingLabel = 'Lihat Hasil';
-                                                $samplingIcon = 'mdi-eye-outline';
-                                                $samplingClass = 'btn-success';
-                                            } elseif (
-                                                str_contains($statusLower, 'proses')
-                                                || str_contains($statusLower, 'draft')
-                                            ) {
-                                                $samplingLabel = 'Lanjutkan';
-                                                $samplingIcon = 'mdi-progress-clock';
-                                                $samplingClass = 'btn-warning';
-                                            }
-                                        @endphp
-
-                                        <tr>
-                                            <td>
-                                                {{ $incomings->firstItem() + $loop->index }}
-                                            </td>
-
-                                            <td>
-                                                <strong>
-                                                    {{ $incoming->no_spb }}
-                                                </strong>
-                                            </td>
-
-                                            <td>
-                                                <strong>
-                                                    {{
-                                                        $incoming->jumlah !== null
-                                                            ? rtrim(
-                                                                rtrim(
-                                                                    number_format(
-                                                                        (float) $incoming->jumlah,
-                                                                        2,
-                                                                        ',',
-                                                                        '.'
-                                                                    ),
-                                                                    '0'
-                                                                ),
-                                                                ','
-                                                            )
-                                                            : '-'
-                                                    }}
-                                                </strong>
-                                            </td>
-
-                                            <td>
-                                                {{ $incoming->jenisIncoming?->nama ?? '-' }}
-                                            </td>
-
-                                            <td>
-                                                {{ $incoming->mid ?? '-' }}
-                                            </td>
-
-                                            <td>
-                                                {{
-                                                    $incoming->supplier?->nama
-                                                    ?? $incoming->supplier?->nama_supplier
-                                                    ?? '-'
-                                                }}
-                                            </td>
-
-                                            <td>
-                                                {{ $incoming->jenisMaterial?->nama ?? '-' }}
-                                            </td>
-
-                                            <td>
-                                                {{ $incoming->tanggal_kedatangan?->format('d/m/Y') }}
-                                            </td>
-
-                                            <td>
-                                                <span class="badge {{ $statusClass }}">
-                                                    {{ $statusName }}
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                @if ($samplingUrl)
-                                                    <a
-                                                        href="{{ $samplingUrl }}"
-                                                        class="btn {{ $samplingClass }} btn-sm"
-                                                        title="{{ $samplingLabel }}"
-                                                    >
-                                                        <i class="mdi {{ $samplingIcon }} me-1"></i>
-                                                        {{ $samplingLabel }}
-                                                    </a>
-                                                @else
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-secondary btn-sm"
-                                                        disabled
-                                                        title="Form sampling belum tersedia"
-                                                    >
-                                                        <i class="mdi mdi-alert-circle-outline me-1"></i>
-                                                        Belum Tersedia
-                                                    </button>
-                                                @endif
-                                            </td>
-
-                                            <td>
-                                                <div class="d-flex gap-1">
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-outline-warning btn-sm btnEdit"
-                                                        data-url="{{ route(
-                                                            'rmpm.pm.incoming.edit',
-                                                            $incoming
-                                                        ) }}"
-                                                        title="Edit Incoming"
-                                                    >
-                                                        <i class="mdi mdi-pencil"></i>
-                                                    </button>
-
-                                                    @if (
-                                                        ! str_contains($statusLower, 'sudah')
-                                                        && ! str_contains($statusLower, 'selesai')
-                                                    )
-                                                        <form
-                                                            method="POST"
-                                                            action="{{ route(
-                                                                'rmpm.pm.incoming.destroy',
-                                                                $incoming
-                                                            ) }}"
-                                                            class="deleteForm"
-                                                        >
-                                                            @csrf
-                                                            @method('DELETE')
-
-                                                            <button
-                                                                type="submit"
-                                                                class="btn btn-outline-danger btn-sm"
-                                                                title="Hapus Incoming"
-                                                            >
-                                                                <i class="mdi mdi-delete"></i>
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                    @empty
-
-                                        <tr>
-                                            <td
-                                                colspan="11"
-                                                class="text-center py-5"
-                                            >
-                                                <div class="empty-state-icon">
-                                                    <i class="mdi mdi-package-variant"></i>
-                                                </div>
-
-                                                <h5 class="mt-3 mb-1">
-                                                    Belum ada data incoming
-                                                </h5>
-
-                                                <p class="text-muted mb-0">
-                                                    Isi form di atas untuk membuat incoming pertama.
-                                                </p>
-                                            </td>
-                                        </tr>
-
-                                    @endforelse
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                        <div class="mt-3 incoming-pagination">
-                            {{ $incomings->links('pagination::bootstrap-5') }}
-                        </div>
-
-                    </div>
-
-                </div>
+.process-dot-secondary {
+    background: #64748b;
+}
+</style>

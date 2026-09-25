@@ -8,9 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('packaging_incomings', function (Blueprint $table) {
-            $table->id();
+        if (Schema::hasTable('packaging_incomings')) {
+            return;
+        }
 
+        Schema::create('packaging_incomings', function (Blueprint $table): void {
+            $table->id();
             $table->string('no_spb', 100)->unique();
 
             $table->foreignId('jenis_incoming_id')
@@ -37,10 +40,8 @@ return new class extends Migration
 
             $table->string('mid', 100)->nullable();
             $table->string('no_mobil', 100)->nullable();
-
             $table->date('tanggal_kedatangan');
             $table->time('jam_kedatangan')->nullable();
-
             $table->decimal('jumlah', 15, 2)->nullable();
             $table->string('no_batch', 150)->nullable();
             $table->text('keterangan')->nullable();
@@ -51,6 +52,7 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->timestamps();
+            $table->unsignedInteger('jumlah_sampel')->nullable();
         });
     }
 

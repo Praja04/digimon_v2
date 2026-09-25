@@ -8,24 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('inner_outers', function (Blueprint $table) {
+        if (Schema::hasTable('inner_outers')) {
+            return;
+        }
 
+        Schema::create('inner_outers', function (Blueprint $table): void {
             $table->id();
-
-            $table->string('kode')->unique();
-
-            $table->enum('jenis', [
-                'inner',
-                'outer'
-            ]);
-
-            $table->string('nama_material');
-
+            $table->string('kode', 255)->unique();
+            $table->enum('jenis', ['inner', 'outer']);
+            $table->string('nama_material', 255);
             $table->timestamps();
-
         });
     }
-
 
     public function down(): void
     {

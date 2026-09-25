@@ -8,7 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('uoms', function (Blueprint $table) {
+        if (Schema::hasTable('uoms')) {
+            return;
+        }
+
+        Schema::create('uoms', function (Blueprint $table): void {
             $table->id();
             $table->string('kode', 50)->unique();
             $table->string('nama', 100)->unique();

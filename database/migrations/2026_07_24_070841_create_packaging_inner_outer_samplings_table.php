@@ -8,83 +8,42 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(
-            'packaging_inner_outer_samplings',
-            function (Blueprint $table) {
-                $table->id();
+        if (Schema::hasTable('packaging_inner_outer_samplings')) {
+            return;
+        }
 
-                $table
-                    ->foreignId('packaging_incoming_id')
-                    ->constrained('packaging_incomings')
-                    ->cascadeOnDelete();
+        Schema::create('packaging_inner_outer_samplings', function (Blueprint $table): void {
+            $table->id();
 
-                $table
-                    ->unsignedInteger('jumlah_sampel')
-                    ->default(1);
+            $table->foreignId('packaging_incoming_id')
+                ->unique()
+                ->constrained('packaging_incomings')
+                ->cascadeOnDelete();
 
-                $table
-                    ->string('no_batch')
-                    ->nullable();
+            $table->string('status_proses', 20)->default('draft');
+            $table->unsignedInteger('jumlah_sampel')->default(1);
+            $table->string('no_batch')->nullable();
+            $table->string('lot_sebelum')->nullable();
+            $table->string('lot_setelah')->nullable();
 
-                $table
-                    ->string('lot_sebelum')
-                    ->nullable();
+            $table->json('hasil_sampel');
+            $table->string('coa')->nullable();
+            $table->string('rekomendasi')->nullable();
+            $table->string('konfirmasi_ketidaksesuaian')->nullable();
 
-                $table
-                    ->string('lot_setelah')
-                    ->nullable();
+            $table->text('keterangan')->nullable();
+            $table->foreignId('created_by')->nullable();
+            $table->foreignId('updated_by')->nullable();
+            $table->timestamps();
 
-                $table->json('hasil_sampel');
-
-                $table
-                    ->string('coa')
-                    ->nullable();
-
-                $table
-                    ->string('rekomendasi')
-                    ->nullable();
-
-                $table
-                    ->string('konfirmasi_ketidaksesuaian')
-                    ->nullable();
-
-                $table
-                    ->string('jenis_ketidaksesuaian')
-                    ->nullable();
-
-                $table
-                    ->string('foto_pengecekan')
-                    ->nullable();
-
-                $table
-                    ->string('foto_ketidaksesuaian')
-                    ->nullable();
-
-                $table
-                    ->text('keterangan')
-                    ->nullable();
-
-                $table
-                    ->foreignId('created_by')
-                    ->nullable();
-
-                $table
-                    ->foreignId('updated_by')
-                    ->nullable();
-
-                $table->timestamps();
-
-                $table->unique(
-                    'packaging_incoming_id'
-                );
-            }
-        );
+            $table->json('jenis_ketidaksesuaian')->nullable();
+            $table->json('foto_pengecekan')->nullable();
+            $table->json('foto_ketidaksesuaian')->nullable();
+        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists(
-            'packaging_inner_outer_samplings'
-        );
+        Schema::dropIfExists('packaging_inner_outer_samplings');
     }
 };

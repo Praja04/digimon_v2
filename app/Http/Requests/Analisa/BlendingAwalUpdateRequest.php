@@ -32,11 +32,6 @@ class BlendingAwalUpdateRequest extends FormRequest
         $this->merge($preparedData);
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -46,15 +41,28 @@ class BlendingAwalUpdateRequest extends FormRequest
             'visco' => 'required|numeric',
             'aw' => 'required|numeric',
             'ph' => 'required|numeric',
+
             'aroma' => 'required|string',
             'organo' => 'required|string',
-            'color' => 'required|string',
+
+            'color' => 'required',
+
             'status_disposition' => 'required',
-            'disposition' => 'nullable|in:Release,Release Bersyarat,Resampling,Adjustment,Reject,Repro,Jalan Bareng,Leveling',
-            'disposition_remarks' => 'nullable|string|max:255',
-            'adjustment_qty_air' => 'nullable',
-            'adjustment_qty_garam' => 'nullable',
-            'adjustment_qty_caramel' => 'nullable',
+
+            'disposition' =>
+                'nullable|in:Release,Release Bersyarat,Resampling,Adjustment,Reject,Repro,Jalan Bareng,Leveling',
+
+            'disposition_remark' =>
+                'nullable|string|max:255',
+
+            'adjustment_qty_air' =>
+                'nullable',
+
+            'adjustment_qty_garam' =>
+                'nullable',
+
+            'adjustment_qty_caramel' =>
+                'nullable',
         ];
     }
 
@@ -71,6 +79,7 @@ class BlendingAwalUpdateRequest extends FormRequest
             'organo' => 'Organo',
             'color' => 'Warna',
             'status_disposition' => 'Status',
+            'disposition_remark' => 'Catatan',
         ];
     }
 }

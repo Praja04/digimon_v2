@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ProductionBatch;
 use App\Models\MonitoringPasteurisasiRelation;
-use App\Models\Color;
+use App\Models\MonitoringPasteurisasiDraft;
 use App\Models\User;
 
 class MonitoringPasteurisasi extends Model
@@ -22,6 +22,11 @@ class MonitoringPasteurisasi extends Model
     public function additionalBatches()
     {
         return $this->hasMany(MonitoringPasteurisasiRelation::class, 'monitoring_pasteurisasi_id');
+    }
+
+    public function draft()
+    {
+        return $this->hasOne(MonitoringPasteurisasiDraft::class, 'monitoring_pasteurisasi_id');
     }
 
     public function user()

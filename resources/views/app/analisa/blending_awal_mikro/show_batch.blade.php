@@ -141,6 +141,13 @@
                                 <form id="form">
                                     <div class="row g-3">
                                         <div class="alert alert-danger d-none error-alert"></div>
+                                        <div class="col-lg-12 d-none" id="draftAlert">
+                                            <div class="alert alert-warning mb-0">
+                                                <i class="mdi mdi-content-save-outline me-1"></i>
+                                                <strong>Draft ditemukan.</strong>
+                                                Nilai sementara sebelumnya dimuat. Anda boleh lanjut menyimpan sementara atau langsung Simpan Final.
+                                            </div>
+                                        </div>
                                         <input type="hidden" name="id" id="id" value="{{ $blending->id }}">
 
                                         <!-- ✅ Loading Indicator -->
@@ -208,8 +215,16 @@
                                             <small class="text-danger errorYm"></small>
                                         </div>
                                     </div>
-                                    <div class="d-flex justify-content-end mt-3">
-                                        <button type="submit" class="btn btn-primary" id="btnSave">Simpan</button>
+                                    <div class="d-flex justify-content-end gap-2 mt-3">
+                                        <button type="button" class="btn btn-warning" id="btnDraft">
+                                            <i class="mdi mdi-content-save-outline me-1"></i>
+                                            Simpan Sementara
+                                        </button>
+
+                                        <button type="submit" class="btn btn-success" id="btnFinal">
+                                            <i class="mdi mdi-check-circle-outline me-1"></i>
+                                            Simpan Final
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -226,13 +241,15 @@
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
                 }
             });
 
             document.querySelectorAll('.comma-input').forEach(function(el) {
                 el.addEventListener('input', function() {
                     const value = this.value;
+
                     if (value.includes('.')) {
                         Swal.fire({
                             icon: 'warning',
@@ -241,48 +258,70 @@
                             confirmButtonText: 'Mengerti',
                             confirmButtonColor: '#3085d6'
                         });
+
                         this.value = value.replace(/\./g, ',');
                     }
                 });
             });
 
             let currentBlendingData = null;
-            let blendingId = $('#id').val();
 
-            // Load data blending saat halaman dibuka
-            function loadBlendingData() {
-                // Tampilkan loading
-                $('#loadingContainer').removeClass('d-none');
-                $('#statusContainer').addClass('d-none');
-                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
-                $('#btnSave').prop('disabled', true);
+            function clearErrors() {
+                $('.form-control').removeClass('is-invalid');
+                $('.errorShiftAnalis, .errorNamaAnalis, .errorEb, .errorTpc, .errorYm').html('');
+            }
 
-                $.ajax({
-                    type: "GET",
-                    url: "{{ route('analisa.blending-awal-mikro.getBlendingData') }}",
-                    data: {
-                        id: blendingId
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        currentBlendingData = response.data;
-                        // Sembunyikan loading
-                        $('#loadingContainer').addClass('d-none');
-                        $('#statusContainer').removeClass('d-none');
-                        showNextField();
-                    },
-                    error: function() {
-                        $('#loadingContainer').addClass('d-none');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Kesalahan',
-                            text: 'Gagal mengambil data blending.'
-                        });
-                    }
-                });
+            function showValidationErrors(errors) {
+                if (!errors) {
+                    return;
+                }
+
+                if (errors.shift_analis) {
+                    $('#shift_analis').addClass('is-invalid');
+                    $('.errorShiftAnalis').html(errors.shift_analis.join('<br>'));
+                }
+
+                if (errors.nama_analis) {
+                    $('#nama_analis').addClass('is-invalid');
+                    $('.errorNamaAnalis').html(errors.nama_analis.join('<br>'));
+                }
+
+                if (errors.eb) {
+                    $('#eb').addClass('is-invalid');
+                    $('.errorEb').html(errors.eb.join('<br>'));
+                }
+
+                if (errors.tpc) {
+                    $('#tpc').addClass('is-invalid');
+                    $('.errorTpc').html(errors.tpc.join('<br>'));
+                }
+
+                if (errors.ym) {
+                    $('#ym').addClass('is-invalid');
+                    $('.errorYm').html(errors.ym.join('<br>'));
+                }
+            }
+
+            function getErrorMessage(xhr, fallback) {
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    return xhr.responseJSON.message;
+                }
+
+                if (
+                    xhr.responseText &&
+                    xhr.responseText.trim().startsWith('<')
+                ) {
+                    return fallback + ' Server mengembalikan response non-JSON.';
+                }
+
+                return fallback;
             }
 
             function canInputByDay(baseTime, plusDay) {
+                if (!baseTime) {
+                    return true;
+                }
+
                 const base = new Date(baseTime);
                 const now = new Date();
 
@@ -293,6 +332,7 @@
 
             function formatDate(dateStr, plusDay) {
                 const d = new Date(dateStr);
+
                 d.setDate(d.getDate() + plusDay);
 
                 return d.toLocaleDateString('id-ID', {
@@ -302,31 +342,46 @@
                 });
             }
 
+            function showCurrentStep() {
+                const step = currentBlendingData.current_step;
+                const draft = currentBlendingData.draft || {};
+                const shift = currentBlendingData.shift;
+                const namaAnalis = currentBlendingData.nama_analis;
+                const eb = currentBlendingData.eb;
+                const tpc = currentBlendingData.tpc;
+                const ym = currentBlendingData.ym;
+                const baseTime = currentBlendingData.updated_at;
 
-            function showNextField() {
-                let shift = currentBlendingData.shift;
-                let nama_analis = currentBlendingData.nama_analis;
-                let eb = currentBlendingData.eb;
-                let tpc = currentBlendingData.tpc;
-                let ym = currentBlendingData.ym;
-                let baseTime = currentBlendingData.updated_at;
-
-                // Reset semua field
                 $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
-                $('#shift_analis, #nama_analis, #eb, #tpc, #ym').val('').prop('disabled', true);
-                $('#btnSave').prop('disabled', true);
 
-                // ===== STEP 1 : Shift & Nama Analis =====
-                if (!shift || !nama_analis) {
-                    $('#statusText').text('Langkah 1/4 - Input Shift dan Nama Analis');
+                $('#shift_analis, #nama_analis, #eb, #tpc, #ym')
+                    .val('')
+                    .prop('disabled', true);
+
+                $('#btnDraft, #btnFinal').prop('disabled', true);
+
+                if (step === 'analis') {
+                    $('#modalTitle').text('Input Data Analisa - Analis');
+                    $('#statusText').html(
+                        'Langkah 1/4 - Input <strong>Shift</strong> dan <strong>Nama Analis</strong>.'
+                    );
+
                     $('#analisContainer').removeClass('d-none');
-                    $('#shift_analis, #nama_analis').prop('disabled', false);
-                    $('#btnSave').prop('disabled', false);
+
+                    $('#shift_analis')
+                        .val(draft.shift ?? '')
+                        .prop('disabled', false);
+
+                    $('#nama_analis')
+                        .val(draft.nama_analis ?? '')
+                        .prop('disabled', false);
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
                     return;
                 }
 
-                // ===== STEP 2 : EB (H + 1) =====
-                if (eb === null || eb === undefined) {
+                if (step === 'eb') {
+
                     if (!canInputByDay(baseTime, 1)) {
                         $('#statusText').html(
                             `EB dapat diinput mulai tanggal <strong>${formatDate(baseTime, 1)}</strong>`
@@ -334,19 +389,25 @@
                         return;
                     }
 
+                    $('#modalTitle').text('Input Data Analisa - EB');
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>
-                        Langkah 2/4 - Input EB`
+                        `Shift <strong>${shift}</strong> - Analis: <strong>${namaAnalis}</strong><br>` +
+                        'Langkah 2/4 - Input EB.'
                     );
 
                     $('#ebContainer').removeClass('d-none');
-                    $('#eb').prop('disabled', false).focus();
-                    $('#btnSave').prop('disabled', false);
+
+                    $('#eb')
+                        .val(draft.eb ?? '')
+                        .prop('disabled', false)
+                        .focus();
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
                     return;
                 }
 
-                // ===== STEP 3 : TPC (H + 3) =====
-                if (tpc === null || tpc === undefined) {
+                if (step === 'tpc') {
+
                     if (!canInputByDay(baseTime, 3)) {
                         $('#statusText').html(
                             `TPC dapat diinput mulai tanggal <strong>${formatDate(baseTime, 3)}</strong>`
@@ -354,20 +415,25 @@
                         return;
                     }
 
+                    $('#modalTitle').text('Input Data Analisa - TPC');
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>
-                        EB: <strong>${eb}</strong><br>
-                        Langkah 3/4 - Input TPC`
+                        `EB final: <strong>${eb}</strong><br>` +
+                        'Langkah 3/4 - Input TPC.'
                     );
 
                     $('#tpcContainer').removeClass('d-none');
-                    $('#tpc').prop('disabled', false).focus();
-                    $('#btnSave').prop('disabled', false);
+
+                    $('#tpc')
+                        .val(draft.tpc ?? '')
+                        .prop('disabled', false)
+                        .focus();
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
                     return;
                 }
 
-                // ===== STEP 4 : YM (H + 5) =====
-                if (ym === null || ym === undefined) {
+                if (step === 'ym') {
+
                     if (!canInputByDay(baseTime, 5)) {
                         $('#statusText').html(
                             `YM dapat diinput mulai tanggal <strong>${formatDate(baseTime, 5)}</strong>`
@@ -375,106 +441,271 @@
                         return;
                     }
 
+                    $('#modalTitle').text('Input Data Analisa - YM');
                     $('#statusText').html(
-                        `Shift <strong>${shift}</strong> - Analis: <strong>${nama_analis}</strong><br>
-                        EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong><br>
-                        Langkah 4/4 - Input YM`
+                        `EB final: <strong>${eb}</strong> | TPC final: <strong>${tpc}</strong><br>` +
+                        'Langkah 4/4 - Input YM.'
                     );
 
                     $('#ymContainer').removeClass('d-none');
-                    $('#ym').prop('disabled', false).focus();
-                    $('#btnSave').prop('disabled', false);
+
+                    $('#ym')
+                        .val(draft.ym ?? '')
+                        .prop('disabled', false)
+                        .focus();
+
+                    $('#btnDraft, #btnFinal').prop('disabled', false);
                     return;
                 }
 
-                // ===== SEMUA SUDAH LENGKAP =====
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Data Lengkap',
-                    text: 'Semua parameter analisa sudah diisi.'
-                }).then(() => {
-                    window.location.href =
-                        "{{ route('analisa.blending-awal-mikro.show', '') }}/" +
-                        {{ $blending->productionBatch->id }};
+                $('#modalTitle').text('Data Analisa Lengkap');
+                $('#statusText').html(
+                    `EB: <strong>${eb}</strong> | TPC: <strong>${tpc}</strong> | YM: <strong>${ym}</strong>`
+                );
+            }
+
+            function loadBlendingData(blendingId, showModal = false) {
+                $.ajax({
+                    type: 'GET',
+                    url: "{{ route('analisa.blending-awal-mikro.getBlendingData') }}",
+                    data: {
+                        id: blendingId
+                    },
+                    dataType: 'json',
+
+                    success: function(response) {
+                        currentBlendingData = response.data;
+
+                        if (currentBlendingData.has_draft) {
+                            $('#draftAlert').removeClass('d-none');
+                        } else {
+                            $('#draftAlert').addClass('d-none');
+                        }
+
+                        showCurrentStep();
+
+                        if (showModal) {
+                            $('#modal').modal('show');
+                        }
+                    },
+
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kesalahan',
+                            text: getErrorMessage(
+                                xhr,
+                                'Gagal mengambil data blending.'
+                            )
+                        });
+                    }
                 });
             }
 
 
-            loadBlendingData();
+            const blendingId = $('#id').val();
 
-            $('#form').submit(function(e) {
-                e.preventDefault();
+            function reloadCurrentData() {
+                $('#loadingContainer').removeClass('d-none');
+                $('#statusContainer').addClass('d-none');
+
+                loadBlendingData(blendingId, false);
+
+                setTimeout(function() {
+                    $('#loadingContainer').addClass('d-none');
+                    $('#statusContainer').removeClass('d-none');
+                }, 100);
+            }
+
+            /*
+             * Override loader untuk tampilan batch:
+             * status container ditampilkan setelah data berhasil.
+             */
+            function loadBatchData() {
+                $('#loadingContainer').removeClass('d-none');
+                $('#statusContainer').addClass('d-none');
+                $('#draftAlert').addClass('d-none');
+                $('#analisContainer, #ebContainer, #tpcContainer, #ymContainer').addClass('d-none');
+                $('#btnDraft, #btnFinal').prop('disabled', true);
 
                 $.ajax({
-                    data: $(this).serialize(),
-                    url: "{{ route('analisa.blending-awal-mikro.update') }}",
-                    type: "POST",
+                    type: 'GET',
+                    url: "{{ route('analisa.blending-awal-mikro.getBlendingData') }}",
+                    data: {
+                        id: blendingId
+                    },
                     dataType: 'json',
-                    beforeSend: function() {
-                        $('#btnSave').prop('disabled', true).html(
-                            '<i class="mdi mdi-loading mdi-spin me-2"></i> Proses...'
-                        );
-                        $('.form-control').removeClass('is-invalid');
-                        $('.text-danger').html('');
-                    },
-                    complete: function() {
-                        $('#btnSave').prop('disabled', false).text('Simpan');
-                    },
+
                     success: function(response) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sukses',
-                            text: response.message,
-                        }).then(() => {
-                            loadBlendingData();
-                        });
+                        currentBlendingData = response.data;
+
+                        $('#loadingContainer').addClass('d-none');
+                        $('#statusContainer').removeClass('d-none');
+
+                        if (currentBlendingData.has_draft) {
+                            $('#draftAlert').removeClass('d-none');
+                        } else {
+                            $('#draftAlert').addClass('d-none');
+                        }
+
+                        showCurrentStep();
                     },
+
                     error: function(xhr) {
-                        let response = xhr.responseJSON;
-
-                        if (xhr.status === 409 && response && response.message) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Gagal Disimpan',
-                                text: response.message,
-                            });
-                            return;
-                        }
-
-                        if (xhr.status === 422 && response && response.errors) {
-                            let errors = response.errors;
-
-                            if (errors.shift_analis) {
-                                $('#shift_analis').addClass('is-invalid');
-                                $('.errorShiftAnalis').html(errors.shift_analis.join('<br>'));
-                            }
-                            if (errors.nama_analis) {
-                                $('#nama_analis').addClass('is-invalid');
-                                $('.errorNamaAnalis').html(errors.nama_analis.join('<br>'));
-                            }
-                            if (errors.eb) {
-                                $('#eb').addClass('is-invalid');
-                                $('.errorEb').html(errors.eb.join('<br>'));
-                            }
-                            if (errors.tpc) {
-                                $('#tpc').addClass('is-invalid');
-                                $('.errorTpc').html(errors.tpc.join('<br>'));
-                            }
-                            if (errors.ym) {
-                                $('#ym').addClass('is-invalid');
-                                $('.errorYm').html(errors.ym.join('<br>'));
-                            }
-                            return;
-                        }
+                        $('#loadingContainer').addClass('d-none');
 
                         Swal.fire({
                             icon: 'error',
                             title: 'Kesalahan',
-                            text: 'Terjadi kesalahan, silakan coba lagi.',
+                            text: getErrorMessage(
+                                xhr,
+                                'Gagal mengambil data blending.'
+                            )
+                        });
+                    }
+                });
+            }
+
+            /*
+             * SIMPAN SEMENTARA = OPSIONAL.
+             * Field pada step aktif tetap wajib.
+             * Draft tidak membuat step maju dan tidak kontak Production.
+             */
+            $('#btnDraft').on('click', function() {
+                clearErrors();
+
+                const button = $(this);
+
+                $.ajax({
+                    url: "{{ route('analisa.blending-awal-mikro.draft.store') }}",
+                    type: 'POST',
+                    data: $('#form').serialize(),
+                    dataType: 'json',
+
+                    beforeSend: function() {
+                        button
+                            .prop('disabled', true)
+                            .html('<i class="mdi mdi-loading mdi-spin me-1"></i> Menyimpan...');
+
+                        $('#btnFinal').prop('disabled', true);
+                    },
+
+                    complete: function() {
+                        button.html(
+                            '<i class="mdi mdi-content-save-outline me-1"></i> Simpan Sementara'
+                        );
+                    },
+
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Draft Tersimpan',
+                            text: response.message
+                        }).then(function() {
+                            loadBatchData();
+                        });
+                    },
+
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+
+                        $('#btnDraft, #btnFinal').prop('disabled', false);
+
+                        if (response && response.errors) {
+                            showValidationErrors(response.errors);
+                        }
+
+                        Swal.fire({
+                            icon: xhr.status === 422 || xhr.status === 409 ? 'warning' : 'error',
+                            title: 'Gagal Disimpan',
+                            text: getErrorMessage(xhr, 'Draft gagal disimpan.')
                         });
                     }
                 });
             });
+
+            /*
+             * SIMPAN FINAL boleh langsung dipakai tanpa Simpan Sementara.
+             */
+            $('#form').on('submit', function(e) {
+                e.preventDefault();
+
+                clearErrors();
+
+                const form = $(this);
+
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Simpan Final?',
+                    text: 'Data pada langkah ini akan difinalkan dan proses akan lanjut ke langkah berikutnya.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Simpan Final',
+                    cancelButtonText: 'Batal'
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: "{{ route('analisa.blending-awal-mikro.update') }}",
+                        type: 'POST',
+                        data: form.serialize(),
+                        dataType: 'json',
+
+                        beforeSend: function() {
+                            $('#btnDraft, #btnFinal').prop('disabled', true);
+
+                            $('#btnFinal').html(
+                                '<i class="mdi mdi-loading mdi-spin me-1"></i> Proses Final...'
+                            );
+                        },
+
+                        complete: function() {
+                            $('#btnFinal').html(
+                                '<i class="mdi mdi-check-circle-outline me-1"></i> Simpan Final'
+                            );
+                        },
+
+                        success: function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Simpan Final Berhasil',
+                                text: response.message
+                            }).then(function() {
+                                if (response.current_step === 'complete') {
+                                    window.location.href =
+                                        "{{ route('analisa.blending-awal-mikro.show', '') }}/" +
+                                        {{ $blending->productionBatch->id }};
+                                    return;
+                                }
+
+                                loadBatchData();
+                            });
+                        },
+
+                        error: function(xhr) {
+                            const response = xhr.responseJSON;
+
+                            $('#btnDraft, #btnFinal').prop('disabled', false);
+
+                            if (response && response.errors) {
+                                showValidationErrors(response.errors);
+                            }
+
+                            Swal.fire({
+                                icon: xhr.status === 422 || xhr.status === 409 ? 'warning' : 'error',
+                                title: 'Simpan Final Gagal',
+                                text: getErrorMessage(
+                                    xhr,
+                                    'Data final gagal disimpan. Draft tetap aman.'
+                                )
+                            });
+                        }
+                    });
+                });
+            });
+
+            loadBatchData();
         });
     </script>
 @endsection

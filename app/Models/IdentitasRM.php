@@ -12,6 +12,8 @@ use App\Models\SamplingFisikRaw;
 use App\Models\SamplingKondisiMobil;
 use App\Models\KonfirmasiKedatangan;
 
+use App\Models\AnalisaLongTermHistory;
+
 class IdentitasRM extends Model
 {
     protected $table = 'identitas_rm';
@@ -28,9 +30,16 @@ class IdentitasRM extends Model
         return $this->hasMany(AnalisaLongTerm::class, 'id_identitas');
     }
 
+    public function analisaLongTermHistories()
+    {
+        return $this->hasMany(AnalisaLongTermHistory::class, 'id_identitas')->orderBy('created_at', 'desc');
+    }
+
     public function analisaShortTerm()
     {
-        return $this->hasMany(AnalisaShortTerm::class, 'id_identitas');
+        return $this->hasMany(AnalisaShortTerm::class, 'id_identitas')
+            ->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END")
+            ->orderBy('id', 'asc');
     }
 
     public function samplingDokumen()
