@@ -79,6 +79,14 @@
                     'recommendation.*',
                     'nonconformity-type.*',
                 ]);
+
+                $masterDataRmActive = request()->routeIs([
+                    'master-jenis-bahan.*',
+                    'master-supplier-rm.*',
+                    'master-asal-bahan.*',
+                    'master-glassware.*',
+                    'master-standar-rm.*',
+                ]);
             @endphp
 
             <ul class="navbar-nav" id="navbar-nav">
@@ -659,6 +667,70 @@
                                         class="nav-link {{ request()->routeIs('nonconformity-type.*') ? 'active' : '' }}">
                                         <i class="mdi mdi-alert-circle-outline"></i>
                                         Jenis Ketidaksesuaian
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </div>
+
+                    </li>
+
+                    {{-- MASTER DATA RM --}}
+                    <li class="nav-item">
+
+                        <a href="#sidebarMasterDataRm"
+                            class="nav-link menu-link {{ $masterDataRmActive ? 'active' : '' }}"
+                            data-bs-toggle="collapse" role="button"
+                            aria-expanded="{{ $masterDataRmActive ? 'true' : 'false' }}"
+                            aria-controls="sidebarMasterDataRm">
+                            <i class="mdi mdi-beaker-outline"></i>
+
+                            <span>
+                                Master Data RM
+                            </span>
+                        </a>
+
+                        <div id="sidebarMasterDataRm"
+                            class="collapse menu-dropdown {{ $masterDataRmActive ? 'show' : '' }}">
+                            <ul class="nav nav-sm flex-column">
+
+                                <li class="nav-item">
+                                    <a href="{{ Route::has('master-jenis-bahan.index') ? route('master-jenis-bahan.index') : '#' }}"
+                                        class="nav-link {{ request()->routeIs('master-jenis-bahan.*') ? 'active' : '' }}">
+                                        <i class="mdi mdi-format-list-bulleted-type"></i>
+                                        Jenis Bahan
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ Route::has('master-supplier-rm.index') ? route('master-supplier-rm.index') : '#' }}"
+                                        class="nav-link {{ request()->routeIs('master-supplier-rm.*') ? 'active' : '' }}">
+                                        <i class="mdi mdi-factory"></i>
+                                        Supplier / Manufactur
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ Route::has('master-asal-bahan.index') ? route('master-asal-bahan.index') : '#' }}"
+                                        class="nav-link {{ request()->routeIs('master-asal-bahan.*') ? 'active' : '' }}">
+                                        <i class="mdi mdi-earth"></i>
+                                        Asal Bahan
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ Route::has('master-glassware.index') ? route('master-glassware.index') : '#' }}"
+                                        class="nav-link {{ request()->routeIs('master-glassware.*') ? 'active' : '' }}">
+                                        <i class="mdi mdi-flask-round-bottom"></i>
+                                        Glassware
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ Route::has('master-standar-rm.index') ? route('master-standar-rm.index') : '#' }}"
+                                        class="nav-link {{ request()->routeIs('master-standar-rm.*') ? 'active' : '' }}">
+                                        <i class="mdi mdi-clipboard-text-outline"></i>
+                                        Standar Mutu
                                     </a>
                                 </li>
 
