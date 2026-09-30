@@ -22,3 +22,4 @@ docker-compose copy.yml
 Dockerfile
 Dockerfile copy
 .env_production
+scratch/

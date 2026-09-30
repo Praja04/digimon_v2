@@ -301,6 +301,73 @@
             margin-bottom: 18px;
         }
 
+        /* Custom Select2 Styling for RM page */
+        .rm-page .select2-container--default .select2-selection--single {
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            height: 38px;
+            padding: 5px 12px;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        }
+
+        .rm-page .select2-container--default.select2-container--focus .select2-selection--single,
+        .rm-page .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #14b8a6;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.2);
+        }
+
+        .rm-page .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #1f2937;
+            line-height: 26px;
+            padding-left: 0;
+            font-size: 0.875rem;
+        }
+
+        .rm-page .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            right: 10px;
+        }
+
+        .rm-page .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #9ca3af;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            z-index: 1060;
+        }
+
+        .select2-container--default .select2-search--dropdown {
+            padding: 8px;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 7px 12px;
+            font-size: 0.875rem;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+            border-color: #14b8a6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+        }
+
+        .select2-container--default .select2-results__option {
+            padding: 8px 12px;
+            font-size: 0.875rem;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #14b8a6;
+            color: #fff;
+        }
+
         @media (max-width: 575.98px) {
             .rm-page .rm-hero-icon {
                 width: 64px;
@@ -430,12 +497,18 @@
                                             <label for="jenis" class="form-label">
                                                 Jenis Bahan <span class="text-danger">*</span>
                                             </label>
-                                            <select class="form-select" name="jenis" id="jenis">
-                                                <option value="">-- Pilih Jenis Bahan --</option>
-                                                <option value="Gula Tebu">Gula Tebu</option>
-                                                <option value="Gula Kelapa">Gula Kelapa</option>
-                                                <option value="Gula">Gula</option>
-                                                <option value="Garam">Garam</option>
+                                            <select class="form-select select2-jenis" name="jenis" id="jenis" style="width:100%;">
+                                                <option value="">-- Cari / Pilih Jenis Bahan --</option>
+                                                @if(isset($masterJenisBahans) && $masterJenisBahans->count() > 0)
+                                                    @foreach($masterJenisBahans as $jb)
+                                                        <option value="{{ $jb->nama }}" data-id="{{ $jb->id }}">{{ $jb->nama }}</option>
+                                                    @endforeach
+                                                @else
+                                                    <option value="Gula Tebu">Gula Tebu</option>
+                                                    <option value="Gula Kelapa">Gula Kelapa</option>
+                                                    <option value="Gula">Gula</option>
+                                                    <option value="Garam">Garam</option>
+                                                @endif
                                             </select>
                                             <small class="text-danger errorJenis"></small>
                                         </div>
@@ -458,16 +531,22 @@
                                             <label for="supplier" class="form-label">
                                                 Supplier / Manufactur <span class="text-danger">*</span>
                                             </label>
-                                            <select class="form-select" id="supplier" name="supplier">
-                                                <option value="">-- Pilih Supplier / Manufactur --</option>
-                                                <option value="SUMBER SARI MANIS">SUMBER SARI MANIS</option>
-                                                <option value="SUMBER BERKAH AGUNG CV">SUMBER BERKAH AGUNG CV</option>
-                                                <option value="CAKRAWALA PASIR GANCLENG">CAKRAWALA PASIR GANCLENG</option>
-                                                <option value="SLAMET SUMBER SEJAHTERA, PT">SLAMET SUMBER SEJAHTERA, PT</option>
-                                                <option value="PT KARUNIA TIRTO MULYO">PT KARUNIA TIRTO MULYO</option>
-                                                <option value="PT CAHAYA MAKMUR SUMARDI">PT CAHAYA MAKMUR SUMARDI</option>
-                                                <option value="PERTIWI JAYA, CV">PERTIWI JAYA, CV</option>
-                                                <option value="LANGSUNG SUGIH BERKAH">LANGSUNG SUGIH BERKAH</option>
+                                            <select class="form-select select2-supplier" id="supplier" name="supplier" style="width:100%;">
+                                                <option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>
+                                                @if(isset($masterSuppliers) && $masterSuppliers->count() > 0)
+                                                    @foreach($masterSuppliers as $sup)
+                                                        <option value="{{ $sup->nama_supplier }}" data-id="{{ $sup->id }}">{{ $sup->nama_supplier }}</option>
+                                                    @endforeach
+                                                @else
+                                                    <option value="SUMBER SARI MANIS">SUMBER SARI MANIS</option>
+                                                    <option value="SUMBER BERKAH AGUNG CV">SUMBER BERKAH AGUNG CV</option>
+                                                    <option value="CAKRAWALA PASIR GANCLENG">CAKRAWALA PASIR GANCLENG</option>
+                                                    <option value="SLAMET SUMBER SEJAHTERA, PT">SLAMET SUMBER SEJAHTERA, PT</option>
+                                                    <option value="PT KARUNIA TIRTO MULYO">PT KARUNIA TIRTO MULYO</option>
+                                                    <option value="PT CAHAYA MAKMUR SUMARDI">PT CAHAYA MAKMUR SUMARDI</option>
+                                                    <option value="PERTIWI JAYA, CV">PERTIWI JAYA, CV</option>
+                                                    <option value="LANGSUNG SUGIH BERKAH">LANGSUNG SUGIH BERKAH</option>
+                                                @endif
                                             </select>
                                             <small class="text-danger errorSupplier"></small>
                                         </div>
@@ -476,14 +555,20 @@
                                             <label for="asal_bahan" class="form-label">
                                                 Asal Bahan <span class="text-danger">*</span>
                                             </label>
-                                            <select class="form-select" id="asal_bahan" name="asal_bahan">
-                                                <option value="">-- Pilih Asal Bahan --</option>
-                                                <option value="TULUNGAGUNG">TULUNGAGUNG</option>
-                                                <option value="SUKABUMI">SUKABUMI</option>
-                                                <option value="PURWOKERTO">PURWOKERTO</option>
-                                                <option value="LAMPUNG">LAMPUNG</option>
-                                                <option value="KUDUS">KUDUS</option>
-                                                <option value="PANGANDARAN">PANGANDARAN</option>
+                                            <select class="form-select select2-asal" id="asal_bahan" name="asal_bahan" style="width:100%;">
+                                                <option value="">-- Cari / Pilih Asal Bahan --</option>
+                                                @if(isset($masterAsalBahans) && $masterAsalBahans->count() > 0)
+                                                    @foreach($masterAsalBahans as $ab)
+                                                        <option value="{{ $ab->asal_bahan }}">{{ $ab->asal_bahan }}</option>
+                                                    @endforeach
+                                                @else
+                                                    <option value="TULUNGAGUNG">TULUNGAGUNG</option>
+                                                    <option value="SUKABUMI">SUKABUMI</option>
+                                                    <option value="PURWOKERTO">PURWOKERTO</option>
+                                                    <option value="LAMPUNG">LAMPUNG</option>
+                                                    <option value="KUDUS">KUDUS</option>
+                                                    <option value="PANGANDARAN">PANGANDARAN</option>
+                                                @endif
                                             </select>
                                             <small class="text-danger errorAsalBahan"></small>
                                         </div>
@@ -789,6 +874,28 @@
                 ]
             });
 
+            // Inisialisasi Select2 pada dropdown form incoming
+            function initSelect2Fields() {
+                $('#jenis').select2({
+                    placeholder: '-- Cari / Pilih Jenis Bahan --',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                $('#supplier').select2({
+                    placeholder: '-- Cari / Pilih Supplier (Ketik Nama) --',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                $('#asal_bahan').select2({
+                    placeholder: '-- Cari / Pilih Asal Bahan --',
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+            initSelect2Fields();
+
             // INPUT INCOMING: card melebar dan form tampil di dalam card.
             function openIncomingCard() {
                 const detailElement = document.getElementById('incomingCardDetail');
@@ -797,6 +904,9 @@
                 });
 
                 $('#form').trigger('reset');
+                $('#jenis').val('').trigger('change.select2');
+                $('#supplier').val('').trigger('change.select2');
+                $('#asal_bahan').val('').trigger('change.select2');
                 $('#tanggal_kedatangan').val("{{ now()->format('Y-m-d\TH:i') }}");
                 $('.form-control, .form-select').removeClass('is-invalid');
                 $('.text-danger').html('');
@@ -813,6 +923,7 @@
                 detailCollapse.show();
 
                 setTimeout(function() {
+                    initSelect2Fields();
                     document.getElementById('incomingProcessCard').scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
@@ -933,6 +1044,84 @@
                 });
             });
 
+            $('#jenis').on('change', function() {
+                let selectedOption = $(this).find('option:selected');
+                let jenisId = selectedOption.data('id');
+                let supplierSelect = $('#supplier');
+                let asalBahanSelect = $('#asal_bahan');
+
+                supplierSelect.empty().append('<option value="">Memuat supplier...</option>').trigger('change.select2');
+                asalBahanSelect.empty().append('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
+
+                if (jenisId) {
+                    $.ajax({
+                        url: "{{ url('/master-data-rm/supplier/get-by-jenis-bahan') }}/" + jenisId,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(res) {
+                            let opts = '<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>';
+                            if (res.status && res.data.length > 0) {
+                                res.data.forEach(function(s) {
+                                    opts += `<option value="${s.nama_supplier}" data-id="${s.id}">${s.nama_supplier}</option>`;
+                                });
+                            }
+                            supplierSelect.html(opts).val('').trigger('change.select2');
+                        },
+                        error: function() {
+                            supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change.select2');
+                        }
+                    });
+                } else {
+                    $.ajax({
+                        url: "{{ url('/master-data-rm/supplier/get-all-active') }}",
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(res) {
+                            let opts = '<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>';
+                            if (res.status && res.data.length > 0) {
+                                res.data.forEach(function(s) {
+                                    opts += `<option value="${s.nama_supplier}" data-id="${s.id}">${s.nama_supplier}</option>`;
+                                });
+                            }
+                            supplierSelect.html(opts).val('').trigger('change.select2');
+                        },
+                        error: function() {
+                            supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+            $('#supplier').on('change', function() {
+                let selectedOption = $(this).find('option:selected');
+                let supplierId = selectedOption.data('id');
+                let asalBahanSelect = $('#asal_bahan');
+
+                asalBahanSelect.empty().append('<option value="">Memuat asal bahan...</option>').trigger('change.select2');
+
+                if (supplierId) {
+                    $.ajax({
+                        url: "{{ url('/master-data-rm/asal-bahan/get-by-supplier') }}/" + supplierId,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(res) {
+                            let opts = '<option value="">-- Cari / Pilih Asal Bahan --</option>';
+                            if (res.status && res.data.length > 0) {
+                                res.data.forEach(function(a) {
+                                    opts += `<option value="${a.asal_bahan}">${a.asal_bahan}</option>`;
+                                });
+                            }
+                            asalBahanSelect.html(opts).val('').trigger('change.select2');
+                        },
+                        error: function() {
+                            asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
+                        }
+                    });
+                } else {
+                    asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
+                }
+            });
+
             $('#form').submit(function(e) {
                 e.preventDefault();
                 $.ajax({
@@ -949,6 +1138,9 @@
                     success: function(response) {
                         closeIncomingCard();
                         $('#form').trigger("reset");
+                        $('#jenis').val('').trigger('change.select2');
+                        $('#supplier').val('').trigger('change.select2');
+                        $('#asal_bahan').val('').trigger('change.select2');
                         Swal.fire({ icon: 'success', title: 'Sukses', text: response.message });
                         $('#datatable').DataTable().ajax.reload();
                     },
