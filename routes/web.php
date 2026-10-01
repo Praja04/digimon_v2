@@ -668,6 +668,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pelarutan/export/trace/{id}', [App\Http\Controllers\Analisa\PelarutanExportController::class, 'trace'])->name('pelarutan.export.trace');
 
         // Form Dokumen FRM/QLB/04/104/006-01 (Hasil Analisis Pasteurisasi dan Storage Tank)
+        Route::get('/analisa/monitoring-turun-blending/export', [App\Http\Controllers\Analisa\PasteurisasiExportController::class, 'index'])->name('analisa.monitoring-turun-blending.export.index');
+        Route::get('/analisa/monitoring-turun-blending/export/download', [App\Http\Controllers\Analisa\PasteurisasiExportController::class, 'exportExcel'])->name('analisa.monitoring-turun-blending.export.download');
+        Route::get('/analisa/monitoring-turun-blending/export/download/{id}', [App\Http\Controllers\Analisa\PasteurisasiExportController::class, 'exportPoExcel'])->name('analisa.monitoring-turun-blending.export.download-po');
+        Route::get('/analisa/monitoring-turun-blending/export/trace/{id}', [App\Http\Controllers\Analisa\PasteurisasiExportController::class, 'trace'])->name('analisa.monitoring-turun-blending.export.trace');
         Route::get('/doc-pasteurisasi-storage', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'index'])->name('doc-pasteurisasi-storage.index');
         Route::get('/doc-pasteurisasi-storage/fetch', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'fetchData'])->name('doc-pasteurisasi-storage.fetch');
         Route::post('/doc-pasteurisasi-storage/store', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'store'])->name('doc-pasteurisasi-storage.store');
@@ -688,6 +692,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/doc-blending-awal/export', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'exportExcel'])->name('doc-blending-awal.export');
         Route::get('/doc-blending-awal/print/{id}', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'printView'])->name('doc-blending-awal.print');
 
+        // Form Dokumen Form Adjustment (FRM/QLB/04/104/011-00)
+        Route::get('/doc-adjustment', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'index'])->name('doc-adjustment.index');
+        Route::get('/doc-adjustment/fetch', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'fetchData'])->name('doc-adjustment.fetch');
+        Route::post('/doc-adjustment/store', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'store'])->name('doc-adjustment.store');
+        Route::get('/doc-adjustment/export', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'exportExcel'])->name('doc-adjustment.export');
+        Route::get('/doc-adjustment/print/{id}', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'printView'])->name('doc-adjustment.print');
+
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');
@@ -700,6 +711,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/blending-awal/export', [App\Http\Controllers\Analisa\BlendingExportController::class, 'index'])->name('analisa.blending-awal.export.index');
         Route::get('/analisa/blending-awal/export/download', [App\Http\Controllers\Analisa\BlendingExportController::class, 'exportExcel'])->name('analisa.blending-awal.export.download');
         Route::get('/analisa/blending-awal/export/download/{id}', [App\Http\Controllers\Analisa\BlendingExportController::class, 'exportPoExcel'])->name('analisa.blending-awal.export.download-po');
+        Route::get('/analisa/blending-awal/export/adjust', [App\Http\Controllers\Analisa\BlendingExportController::class, 'exportAdjustExcel'])->name('analisa.blending-awal.export.adjust');
+        Route::get('/analisa/blending-awal/export/adjust/{id}', [App\Http\Controllers\Analisa\BlendingExportController::class, 'exportAdjustPoExcel'])->name('analisa.blending-awal.export.adjust-po');
         Route::get('/analisa/blending-awal/export/trace/{id}', [App\Http\Controllers\Analisa\BlendingExportController::class, 'trace'])->name('analisa.blending-awal.export.trace');
 
         // Analisa - Monitoring Turun Blending
