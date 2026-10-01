@@ -499,10 +499,10 @@
                             <div id="ScanKempu" class="collapse menu-dropdown {{ $scanKempuActive ? 'show' : '' }}">
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
-                                        <a href="{{ route('scan-kempu.dashboard') }}"
-                                            class="nav-link {{ request()->routeIs('scan-kempu.dashboard') || request()->routeIs('scan-kempu.index') ? 'active' : '' }}">
-                                            <i class="mdi mdi-view-dashboard-outline"></i>
-                                            Dashboard
+                                        <a href="{{ route('scan-kempu.report') }}"
+                                            class="nav-link {{ request()->routeIs('scan-kempu.report') || request()->routeIs('scan-kempu.dashboard') || request()->routeIs('scan-kempu.index') ? 'active' : '' }}">
+                                            <i class="mdi mdi-file-chart-outline"></i>
+                                            Report
                                         </a>
                                     </li>
                                     <li class="nav-item">
