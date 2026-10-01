@@ -125,7 +125,8 @@
                     <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                         <div>
                             <h4 class="mb-1 fw-bold text-body">Dashboard Monitoring &amp; Traceability Kempu</h4>
-                            <p class="text-muted fs-12 mb-0">Ringkasan Status, Lokasi Terkini, Siklus Reused 21x &amp; Riwayat Audit Trail</p>
+                            <p class="text-muted fs-12 mb-0">Ringkasan Status, Lokasi Terkini, Siklus Reused 21x &amp;
+                                Riwayat Audit Trail</p>
                         </div>
                         <div class="page-title-right d-flex align-items-center gap-2 mt-2 mt-sm-0">
                             <button type="button" class="btn btn-sm btn-outline-primary" id="btnRefreshStats">
@@ -149,7 +150,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Total Kempu Aktif</p>
+                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Total Kempu
+                                        Aktif</p>
                                     <h4 class="fs-22 fw-bold mb-0 text-primary" id="statTotalActive">0</h4>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
@@ -167,7 +169,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Di Produksi / Proses</p>
+                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Di Produksi /
+                                        Proses</p>
                                     <h4 class="fs-22 fw-bold mb-0 text-info" id="statProduksi">0</h4>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
@@ -185,7 +188,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Di Gudang (WPM &amp; WFG)</p>
+                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Di Gudang (WPM
+                                        &amp; WFG)</p>
                                     <h4 class="fs-22 fw-bold mb-0 text-success" id="statGudang">0</h4>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
@@ -203,7 +207,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Mendekati Max (&ge;18x)</p>
+                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Mendekati Max
+                                        (&ge;18x)</p>
                                     <h4 class="fs-22 fw-bold mb-0 text-warning" id="statNearMax">0</h4>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
@@ -221,7 +226,8 @@
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Scrap / Afkir</p>
+                                    <p class="text-uppercase fw-semibold text-muted text-truncate mb-1 fs-11">Scrap / Afkir
+                                    </p>
                                     <h4 class="fs-22 fw-bold mb-0 text-danger" id="statScrap">0</h4>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
@@ -240,7 +246,8 @@
                 <!-- Chart 1: Distribusi Lokasi Kempu -->
                 <div class="col-xl-6 col-lg-6">
                     <div class="card shadow-sm border-0 h-100 mb-0">
-                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
+                        <div
+                            class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
                             <h5 class="card-title mb-0 fs-14 fw-bold">
                                 <i class="ri-pie-chart-2-line text-primary me-1"></i> Distribusi Kempu per Lokasi
                             </h5>
@@ -255,9 +262,11 @@
                 <!-- Chart 2: Siklus Reused Breakdown -->
                 <div class="col-xl-6 col-lg-6">
                     <div class="card shadow-sm border-0 h-100 mb-0">
-                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
+                        <div
+                            class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
                             <h5 class="card-title mb-0 fs-14 fw-bold">
-                                <i class="ri-bar-chart-grouped-line text-success me-1"></i> Distribusi Siklus Reused (Maks. 21x)
+                                <i class="ri-bar-chart-grouped-line text-success me-1"></i> Distribusi Siklus Reused (Maks.
+                                21x)
                             </h5>
                             <span class="badge bg-light text-muted border fs-11">Kempu Aktif</span>
                         </div>
@@ -277,7 +286,8 @@
                             <div class="position-relative" style="min-width: 220px;">
                                 <input type="text" id="searchInput" class="form-control form-control-sm ps-4"
                                     placeholder="Cari ID Barcode / Tipe...">
-                                <i class="ri-search-line position-absolute top-50 start-0 translate-middle-y ms-2 text-muted fs-14"></i>
+                                <i
+                                    class="ri-search-line position-absolute top-50 start-0 translate-middle-y ms-2 text-muted fs-14"></i>
                             </div>
 
                             <!-- Filter Lokasi -->
@@ -309,7 +319,8 @@
                         </div>
 
                         <div>
-                            <span class="badge bg-soft-info text-info border border-info-subtle px-3 py-2 fs-12" id="kempuTotalBadge">
+                            <span class="badge bg-soft-info text-info border border-info-subtle px-3 py-2 fs-12"
+                                id="kempuTotalBadge">
                                 Memuat data...
                             </span>
                         </div>
@@ -331,7 +342,6 @@
                                 <tr>
                                     <th style="width: 50px;" class="text-center">No</th>
                                     <th>ID / Barcode Kempu</th>
-                                    <th>Tipe &amp; Merk</th>
                                     <th>Lokasi Sekarang</th>
                                     <th>Status Saat Ini</th>
                                     <th style="min-width: 160px;">Siklus Reused (Max 21x)</th>
@@ -343,7 +353,8 @@
                             <tbody id="traceabilityTbody" class="fs-13">
                                 <tr>
                                     <td colspan="9" class="text-center py-4 text-muted">
-                                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                        </div>
                                         Memuat data traceability kempu...
                                     </td>
                                 </tr>
@@ -370,11 +381,13 @@
                     <div class="d-flex align-items-center gap-2">
                         <i class="ri-route-line fs-20"></i>
                         <div>
-                            <h5 class="modal-title text-white mb-0" id="modalTimelineLabel">Traceability &amp; Riwayat Kempu</h5>
+                            <h5 class="modal-title text-white mb-0" id="modalTimelineLabel">Traceability &amp; Riwayat
+                                Kempu</h5>
                             <span class="fs-12 text-white-50" id="modalSubtitle">ID Kempu: -</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <!-- Info Kempu Card -->
@@ -440,21 +453,30 @@
                 if (!stats || !stats.charts) return;
 
                 // 1. Chart Lokasi (Donut)
-                const locData = stats.charts.locations || { labels: [], series: [] };
+                const locData = stats.charts.locations || {
+                    labels: [],
+                    series: []
+                };
                 const locOptions = {
                     series: locData.series || [],
                     labels: locData.labels || [],
                     chart: {
                         type: 'donut',
                         height: 290,
-                        toolbar: { show: false }
+                        toolbar: {
+                            show: false
+                        }
                     },
-                    colors: ['#4f46e5', '#f59e0b', '#2563eb', '#84cc16', '#0d9488', '#9333ea', '#ea580c', '#dc2626'],
+                    colors: ['#4f46e5', '#f59e0b', '#2563eb', '#84cc16', '#0d9488', '#9333ea', '#ea580c',
+                        '#dc2626'
+                    ],
                     legend: {
                         position: 'bottom',
                         horizontalAlign: 'center',
                         fontSize: '12px',
-                        markers: { radius: 12 }
+                        markers: {
+                            radius: 12
+                        }
                     },
                     plotOptions: {
                         pie: {
@@ -476,8 +498,13 @@
                             }
                         }
                     },
-                    dataLabels: { enabled: false },
-                    stroke: { width: 2, colors: ['#ffffff'] },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        width: 2,
+                        colors: ['#ffffff']
+                    },
                     tooltip: {
                         y: {
                             formatter: function(val) {
@@ -497,7 +524,10 @@
                 }
 
                 // 2. Chart Siklus Reused (Bar)
-                const reusedData = stats.charts.reused || { labels: [], series: [] };
+                const reusedData = stats.charts.reused || {
+                    labels: [],
+                    series: []
+                };
                 const reusedOptions = {
                     series: [{
                         name: 'Jumlah Kempu',
@@ -506,14 +536,18 @@
                     chart: {
                         type: 'bar',
                         height: 290,
-                        toolbar: { show: false }
+                        toolbar: {
+                            show: false
+                        }
                     },
                     plotOptions: {
                         bar: {
                             distributed: true,
                             borderRadius: 6,
                             columnWidth: '50%',
-                            dataLabels: { position: 'top' }
+                            dataLabels: {
+                                position: 'top'
+                            }
                         }
                     },
                     colors: ['#10b981', '#06b6d4', '#3b82f6', '#f59e0b', '#ef4444'],
@@ -525,15 +559,21 @@
                             colors: ["#304758"]
                         }
                     },
-                    legend: { show: false },
+                    legend: {
+                        show: false
+                    },
                     xaxis: {
                         categories: reusedData.labels || [],
                         labels: {
-                            style: { fontSize: '11px' }
+                            style: {
+                                fontSize: '11px'
+                            }
                         }
                     },
                     yaxis: {
-                        title: { text: 'Jumlah Kempu' },
+                        title: {
+                            text: 'Jumlah Kempu'
+                        },
                         labels: {
                             formatter: function(val) {
                                 return Math.round(val);
@@ -598,7 +638,8 @@
                 fetchStats();
                 loadTableData();
                 setTimeout(() => {
-                    btn.prop('disabled', false).html('<i class="ri-refresh-line me-1"></i> Refresh');
+                    btn.prop('disabled', false).html(
+                        '<i class="ri-refresh-line me-1"></i> Refresh');
                 }, 800);
             });
 
@@ -672,10 +713,12 @@
                     const main = item.main || {};
                     const loc = main.current_location || item.current_location || '-';
                     const status = main.current_status || item.current_status || 'REGISTERED';
-                    const reused = parseInt(main.reused_count !== undefined ? main.reused_count : (item.reused_count || 0));
+                    const reused = parseInt(main.reused_count !== undefined ? main.reused_count : (item
+                        .reused_count || 0));
                     const cond = main.condition || item.condition || 'OK';
                     const lastAction = main.last_action || '-';
-                    const lastScanned = main.last_scanned_at ? formatDateTime(main.last_scanned_at) : (item.updated_at ? formatDateTime(item.updated_at) : '-');
+                    const lastScanned = main.last_scanned_at ? formatDateTime(main.last_scanned_at) : (item
+                        .updated_at ? formatDateTime(item.updated_at) : '-');
 
                     // Progress bar color
                     let progressColor = 'bg-success';
@@ -702,10 +745,6 @@
                             <td>
                                 <span class="fw-bold font-monospace text-primary fs-14">${item.id_kempu}</span>
                                 ${item.rfid ? `<div class="text-muted fs-11 font-monospace">RFID: ${item.rfid}</div>` : ''}
-                            </td>
-                            <td>
-                                <div class="fw-semibold text-body">${item.merk_kempu || 'Standard IBC'}</div>
-                                <span class="text-muted fs-11">${item.tipe_kempu || '1000 Liter'}</span>
                             </td>
                             <td>
                                 <span class="badge ${locClass} px-2 py-1 fs-12 border">
@@ -853,18 +892,25 @@
                                 let dotClass = 'success';
                                 let badgeColor = 'success';
 
-                                if (h.action_result === 'NOT_OK' || (h.action && h.action.toLowerCase().includes('reject'))) {
+                                if (h.action_result === 'NOT_OK' || (h.action && h
+                                        .action.toLowerCase().includes('reject'))) {
                                     dotClass = 'scrap';
                                     badgeColor = 'danger';
-                                } else if (h.action_result === 'HOLD' || (h.action && h.action.toLowerCase().includes('hold'))) {
+                                } else if (h.action_result === 'HOLD' || (h.action && h
+                                        .action.toLowerCase().includes('hold'))) {
                                     dotClass = 'warning';
                                     badgeColor = 'warning text-dark';
-                                } else if (h.action_result === 'SCRAPPED' || (h.action && h.action.toLowerCase().includes('scrap'))) {
+                                } else if (h.action_result === 'SCRAPPED' || (h
+                                        .action && h.action.toLowerCase().includes(
+                                            'scrap'))) {
                                     dotClass = 'scrap';
                                     badgeColor = 'dark';
                                 }
 
-                                const actor = h.created_by ? (h.created_by.nama_lengkap || h.created_by.username || 'System') : 'System';
+                                const actor = h.operator_display_name
+                                    || (h.created_by && (h.created_by.nama_lengkap || h.created_by.username))
+                                    || (h.metadata && (h.metadata.operator_name || h.metadata.operator_email))
+                                    || 'System';
 
                                 tHtml += `
                                     <div class="timeline-item">

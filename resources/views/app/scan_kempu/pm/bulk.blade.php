@@ -337,6 +337,7 @@
 
     <script>
         const WAREHOUSE_API = "{{ env('WAREHOUSE_API_URL', 'http://127.0.0.1:8000/api') }}";
+        const QC_API_SECRET = "{{ env('QC_API_SECRET') }}";
 
         $(document).ready(function() {
             let qrScanner = null;
@@ -824,12 +825,21 @@
                 $.ajax({
                     url: WAREHOUSE_API + "/kempu/qc/pm/bulk-decision",
                     method: "POST",
+                    headers: {
+                        "X-QC-App-Secret": QC_API_SECRET,
+                        "X-App-Source": "digimon_v2"
+                    },
                     data: {
                         no_spb: currentNoSpb,
                         all_ids: allIds,
                         checked_ids: checkedIds,
                         notes: notes,
-                        user_id: "{{ auth()->id() }}" // Mengirim ID user login dari Digimon
+                        user_id: "{{ auth()->id() }}",
+                        operator_id: "{{ auth()->id() }}",
+                        operator_name: "{{ auth()->user()->name ?? (auth()->user()->nama_lengkap ?? '') }}",
+                        operator_role: "{{ strtolower(auth()->user()->role ?? '') }}",
+                        operator_email: "{{ auth()->user()->email ?? '' }}",
+                        app_source: "digimon_v2"
                     },
                     success: function(res) {
                         Swal.close();
