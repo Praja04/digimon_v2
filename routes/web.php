@@ -6,6 +6,11 @@ use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\IncomingController;
 use App\Http\Controllers\JenisIncomingController;
 use App\Http\Controllers\JenisMaterialController;
+use App\Http\Controllers\MasterAsalBahanController;
+use App\Http\Controllers\MasterGlasswareController;
+use App\Http\Controllers\MasterJenisBahanController;
+use App\Http\Controllers\MasterStandarRmController;
+use App\Http\Controllers\MasterSupplierRmController;
 use App\Http\Controllers\NonconformityTypeController;
 use App\Http\Controllers\PackagingIncomingController;
 use App\Http\Controllers\PackagingInnerOuterController;
@@ -18,6 +23,7 @@ use App\Http\Controllers\SamplingStatusController;
 use App\Http\Controllers\StorageInformationController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UomController;
+use App\Http\Controllers\ScanKempu\ScanKempuController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -655,6 +661,33 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/scan/batch/pelarutan-2/{id}', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'show_batch'])->name('pelarutan-2.show_batch');
         Route::post('/pelarutan-2/draft', [App\Http\Controllers\Analisa\Pelarutan2Controller::class, 'saveDraft'])->name('pelarutan-2.draft.store');
 
+        // Analisa - Export & Form Dokumen Pelarutan (HASIL ANALISIS PROSES PELARUTAN)
+        Route::get('/pelarutan/export', [App\Http\Controllers\Analisa\PelarutanExportController::class, 'index'])->name('pelarutan.export.index');
+        Route::get('/pelarutan/export/download', [App\Http\Controllers\Analisa\DocPelarutanController::class, 'exportExcel'])->name('pelarutan.export.download');
+        Route::get('/pelarutan/export/download/{id}', [App\Http\Controllers\Analisa\PelarutanExportController::class, 'exportPoExcel'])->name('pelarutan.export.download-po');
+        Route::get('/pelarutan/export/trace/{id}', [App\Http\Controllers\Analisa\PelarutanExportController::class, 'trace'])->name('pelarutan.export.trace');
+
+        // Form Dokumen FRM/QLB/04/104/006-01 (Hasil Analisis Pasteurisasi dan Storage Tank)
+        Route::get('/doc-pasteurisasi-storage', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'index'])->name('doc-pasteurisasi-storage.index');
+        Route::get('/doc-pasteurisasi-storage/fetch', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'fetchData'])->name('doc-pasteurisasi-storage.fetch');
+        Route::post('/doc-pasteurisasi-storage/store', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'store'])->name('doc-pasteurisasi-storage.store');
+        Route::get('/doc-pasteurisasi-storage/export', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'exportExcel'])->name('doc-pasteurisasi-storage.export');
+        Route::get('/doc-pasteurisasi-storage/print/{id}', [App\Http\Controllers\Analisa\DocPasteurisasiStorageController::class, 'printView'])->name('doc-pasteurisasi-storage.print');
+
+        // Form Dokumen Hasil Analisis Proses Pelarutan (GGA & GGAS)
+        Route::get('/doc-pelarutan', [App\Http\Controllers\Analisa\DocPelarutanController::class, 'index'])->name('doc-pelarutan.index');
+        Route::get('/doc-pelarutan/fetch', [App\Http\Controllers\Analisa\DocPelarutanController::class, 'fetchData'])->name('doc-pelarutan.fetch');
+        Route::post('/doc-pelarutan/store', [App\Http\Controllers\Analisa\DocPelarutanController::class, 'store'])->name('doc-pelarutan.store');
+        Route::get('/doc-pelarutan/export', [App\Http\Controllers\Analisa\DocPelarutanController::class, 'exportExcel'])->name('doc-pelarutan.export');
+        Route::get('/doc-pelarutan/print/{id}', [App\Http\Controllers\Analisa\DocPelarutanController::class, 'printView'])->name('doc-pelarutan.print');
+
+        // Form Dokumen Hasil Analisis Proses Blending (FRM/QLB/04/104/005-01)
+        Route::get('/doc-blending-awal', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'index'])->name('doc-blending-awal.index');
+        Route::get('/doc-blending-awal/fetch', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'fetchData'])->name('doc-blending-awal.fetch');
+        Route::post('/doc-blending-awal/store', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'store'])->name('doc-blending-awal.store');
+        Route::get('/doc-blending-awal/export', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'exportExcel'])->name('doc-blending-awal.export');
+        Route::get('/doc-blending-awal/print/{id}', [App\Http\Controllers\Analisa\DocBlendingAwalController::class, 'printView'])->name('doc-blending-awal.print');
+
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');
@@ -664,6 +697,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('scan/batch/blending-awal/{id}', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'show_batch'])->name('analisa.blending-awal.show_batch');
         Route::post('analisa/blending-awal/draft', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'saveDraft'])->name('analisa.blending-awal.draft.store');
         Route::post('/analisa/blending-awal/foreman-draft', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'saveForemanDraft'])->name('analisa.blending-awal.foreman-draft.store');
+        Route::get('/analisa/blending-awal/export', [App\Http\Controllers\Analisa\BlendingExportController::class, 'index'])->name('analisa.blending-awal.export.index');
+        Route::get('/analisa/blending-awal/export/download', [App\Http\Controllers\Analisa\BlendingExportController::class, 'exportExcel'])->name('analisa.blending-awal.export.download');
+        Route::get('/analisa/blending-awal/export/download/{id}', [App\Http\Controllers\Analisa\BlendingExportController::class, 'exportPoExcel'])->name('analisa.blending-awal.export.download-po');
+        Route::get('/analisa/blending-awal/export/trace/{id}', [App\Http\Controllers\Analisa\BlendingExportController::class, 'trace'])->name('analisa.blending-awal.export.trace');
 
         // Analisa - Monitoring Turun Blending
         Route::get('/analisa/monitoring-turun-blending', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'index'])->name('analisa.monitoring-turun-blending.index');
@@ -671,16 +708,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/monitoring-turun-blending/show/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show'])->name('analisa.monitoring-turun-blending.show');
         Route::post('/analisa/monitoring-turun-blending/update', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'update'])->name('analisa.monitoring-turun-blending.update');
         Route::get('/scan/batch/monitoring-turun-blending/{id}', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'show_batch'])->name('analisa.monitoring-turun-blending.show_batch');
-        Route::post('/analisa/monitoring-turun-blending/draft',[App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'saveDraft'])->name('analisa.monitoring-turun-blending.draft.store');
+        Route::post('/analisa/monitoring-turun-blending/draft', [App\Http\Controllers\Analisa\MonitoringTurunBlendingController::class, 'saveDraft'])->name('analisa.monitoring-turun-blending.draft.store');
 
         // Analisa - Monitoring Pasteurisasi
         Route::get('/analisa/monitoring-pasteurisasi', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'index'])->name('analisa.monitoring-pasteurisasi.index');
         Route::get('/analisa/monitoring-pasteurisasi/edit/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'edit'])->name('analisa.monitoring-pasteurisasi.edit');
         Route::get('/analisa/monitoring-pasteurisasi/show/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show'])->name('analisa.monitoring-pasteurisasi.show');
         Route::post('/analisa/monitoring-pasteurisasi/update', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'update'])->name('analisa.monitoring-pasteurisasi.update');
-         Route::post('/analisa/monitoring-pasteurisasi/draft', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'saveDraft'])->name('analisa.monitoring-pasteurisasi.draft.store');
+        Route::post('/analisa/monitoring-pasteurisasi/draft', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'saveDraft'])->name('analisa.monitoring-pasteurisasi.draft.store');
         Route::get('/scan/batch/monitoring-pasteurisasi/{id}', [App\Http\Controllers\Analisa\MonitoringPasteurisasiController::class, 'show_batch'])->name('analisa.monitoring-pasteurisasi.show_batch');
-       
+
 
         // Analisa - Monitoring Storage Kimia
         Route::get('/analisa/monitoring-storage-kimia', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'index'])->name('analisa.monitoring-storage-kimia.index');
@@ -718,7 +755,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analisa/blending-awal/mikro/get-blending-data', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'getBlendingData'])->name('analisa.blending-awal-mikro.getBlendingData');
         Route::get('/analisa/blending-awal/mikro/edit/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'edit'])->name('analisa.blending-awal-mikro.edit');
         Route::get('/analisa/blending-awal/mikro/show/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show'])->name('analisa.blending-awal-mikro.show');
-        Route::post('/analisa/blending-awal/mikro/draft',[App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'saveDraft'])->name('analisa.blending-awal-mikro.draft.store');
+        Route::post('/analisa/blending-awal/mikro/draft', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'saveDraft'])->name('analisa.blending-awal-mikro.draft.store');
         Route::post('/analisa/blending-awal/mikro/update', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'update'])->name('analisa.blending-awal-mikro.update');
         Route::get('/scan/batch/blending-awal-mikro/{id}', [App\Http\Controllers\Analisa\BlendingAwalMikroController::class, 'show_batch'])->name('analisa.blending-awal-mikro.show_batch');
 
@@ -900,4 +937,106 @@ Route::middleware(['auth'])->group(function () {
         'edit',
         'destroy',
     ]);
+
+    // Scan Kempu
+    Route::prefix('scan-kempu')->name('scan-kempu.')->middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [ScanKempuController::class, 'dashboard'])->name('dashboard');
+        Route::get('/', [ScanKempuController::class, 'dashboard'])->name('index');
+
+        // QC PM
+        Route::prefix('pm')->name('pm.')->group(function () {
+            Route::get('/', [ScanKempuController::class, 'pmIndex'])->name('index');
+            Route::get('/bulk', [ScanKempuController::class, 'bulkView'])->name('bulk');
+        });
+        // QC Proses
+        Route::prefix('proses')->name('proses.')->group(function () {
+            Route::get('/', [ScanKempuController::class, 'prosesIndex'])->name('index');
+        });
+        // Scanner Biasa
+        Route::get('/scan/{type}', [ScanKempuController::class, 'scan'])->name('scan');
+
+        // Traceability & Stats Data
+        Route::get('/traceability/data', [ScanKempuController::class, 'traceabilityData'])->name('traceability.data');
+        Route::get('/traceability/history/{id}', [ScanKempuController::class, 'traceabilityHistory'])->name('traceability.history');
+        Route::get('/traceability/stats', [ScanKempuController::class, 'traceabilityStats'])->name('traceability.stats');
+    });
+
+    /*------------------------------------------
+    Master Data RM (Raw Material)
+    --------------------------------------------*/
+    Route::resource(
+        'master-data-rm/jenis-bahan',
+        MasterJenisBahanController::class
+    )->names('master-jenis-bahan')->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
+
+    Route::get(
+        'master-data-rm/supplier/get-all-active',
+        [MasterSupplierRmController::class, 'getAllActive']
+    )->name('master-supplier-rm.get-all-active');
+
+    Route::get(
+        'master-data-rm/supplier/get-by-jenis-bahan/{jenisBahanId}',
+        [MasterSupplierRmController::class, 'getByJenisBahan']
+    )->name('master-supplier-rm.get-by-jenis-bahan');
+
+    Route::resource(
+        'master-data-rm/supplier',
+        MasterSupplierRmController::class
+    )->names('master-supplier-rm')->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
+
+    Route::get(
+        'master-data-rm/asal-bahan/get-by-supplier/{supplierId}',
+        [MasterAsalBahanController::class, 'getBySupplier']
+    )->name('master-asal-bahan.get-by-supplier');
+
+    Route::resource(
+        'master-data-rm/asal-bahan',
+        MasterAsalBahanController::class
+    )->names('master-asal-bahan')->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
+
+    Route::get(
+        'master-data-rm/glassware/active-data',
+        [MasterGlasswareController::class, 'getActiveData']
+    )->name('master-glassware.active-data');
+
+    Route::resource(
+        'master-data-rm/glassware',
+        MasterGlasswareController::class
+    )->names('master-glassware')->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
+
+    Route::get(
+        'master-data-rm/standar/get-by-jenis',
+        [MasterStandarRmController::class, 'getActiveByJenis']
+    )->name('master-standar-rm.get-by-jenis');
+
+    Route::resource(
+        'master-data-rm/standar',
+        MasterStandarRmController::class
+    )->names('master-standar-rm')->only([
+        'index',
+        'store',
+        'edit',
+        'destroy',
+    ]);
 });
+

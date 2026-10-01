@@ -153,7 +153,11 @@ class RMPMController extends Controller
                 ->make(true);
         }
 
-        return view('app.rmpm.rm');
+        $masterJenisBahans = \App\Models\MasterJenisBahan::where('status', true)->orderBy('nama')->get();
+        $masterSuppliers = \App\Models\MasterSupplierRm::where('status', true)->orderBy('nama_supplier')->get();
+        $masterAsalBahans = \App\Models\MasterAsalBahan::where('status', true)->orderBy('asal_bahan')->get();
+
+        return view('app.rmpm.rm', compact('masterJenisBahans', 'masterSuppliers', 'masterAsalBahans'));
     }
 
     /*
@@ -533,9 +537,9 @@ public function pmKartonBct(
         ];
 
         if ($isDraft) {
-            $rules['uji_kristal'] = ['nullable'];
-            $rules['disposisi'] = ['nullable'];
-            $rules['group'] = ['nullable'];
+            $rules['uji_kristal'] = ['nullable', 'in:positif,negatif'];
+            $rules['disposisi'] = ['nullable', 'in:Release,Release Bersyarat,Reject'];
+            $rules['group'] = ['nullable', 'in:Group A,Group B,Group C'];
         } else {
             $rules['uji_kristal'] = ['required', 'in:positif,negatif'];
             $rules['disposisi'] = ['required', 'in:Release,Release Bersyarat,Reject'];
@@ -553,14 +557,14 @@ public function pmKartonBct(
 
         $request->validate($rules);
 
-        $ujiKristal = $request->filled('uji_kristal') ? $request->uji_kristal : null;
-        $disposisi = $request->filled('disposisi') ? $request->disposisi : null;
+        $ujiKristal = $request->uji_kristal;
+        $disposisi = $request->disposisi;
 
         if (!$isDraft && $ujiKristal === 'negatif' && empty($disposisi)) {
             $disposisi = 'Release';
         }
 
-        $group = (in_array($disposisi, ['Release', 'Release Bersyarat']) && $request->filled('group')) ? $request->group : null;
+        $group = in_array($disposisi, ['Release', 'Release Bersyarat']) ? $request->group : null;
 
         // Collect existing saved photos
         $photoList = [];
@@ -656,7 +660,7 @@ public function pmKartonBct(
                 ? 'Data analisa berhasil disimpan sementara (Draft).'
                 : 'Data analisa long term berhasil disimpan.',
             'data' => $analisa,
-        ], 200);
+        ], 201);
     }
 
     /*
@@ -672,47 +676,30 @@ public function pmKartonBct(
             $kategori = 'incoming';
         }
 
-        $saveAction = $request->input('save_action', 'final');
-        $isDraft = ($saveAction === 'draft');
+        $isDraft = ($request->input('save_action') === 'draft');
 
-        if ($isDraft) {
-            $rules = [
-                'id_identitas' => 'required|exists:identitas_rm,id',
-                'disposisi'    => 'nullable',
-                'keterangan'   => 'nullable',
-                'kategori'     => 'nullable',
-                'brix'         => 'nullable',
-                'ph'           => 'nullable',
-                'ka'           => 'nullable',
-                'kotoran'      => 'nullable',
-                'organo'       => 'nullable',
-                'warna'        => 'nullable',
-                'aroma'        => 'nullable',
-            ];
+        $rules = [
+            'id_identitas' => 'required|exists:identitas_rm,id',
+            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject' : 'required|in:Release,Reject',
+            'keterangan'   => 'nullable|string',
+            'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
+        ];
+
+        // For incoming, require main parameters if final. For STA / Monitoring or Draft, allow flexible partial inputs.
+        if (!$isDraft && $kategori === 'incoming') {
+            $rules['brix']   = 'required|array|min:1';
+            $rules['ph']     = 'required|array|min:1';
+            $rules['ka']     = 'required|array|min:1';
         } else {
-            $rules = [
-                'id_identitas' => 'required|exists:identitas_rm,id',
-                'disposisi'    => 'required|in:Release,Reject',
-                'keterangan'   => 'nullable|string',
-                'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
-            ];
-
-            // For incoming, require main parameters. For STA / Monitoring, allow flexible partial inputs.
-            if ($kategori === 'incoming') {
-                $rules['brix']   = 'required|array|min:1';
-                $rules['ph']     = 'required|array|min:1';
-                $rules['ka']     = 'required|array|min:1';
-            } else {
-                $rules['brix']   = 'nullable|array';
-                $rules['ph']     = 'nullable|array';
-                $rules['ka']     = 'nullable|array';
-            }
-
-            $rules['kotoran'] = 'nullable|array';
-            $rules['organo']  = 'nullable|array';
-            $rules['warna']   = 'nullable|array';
-            $rules['aroma']   = 'nullable|array';
+            $rules['brix']   = 'nullable|array';
+            $rules['ph']     = 'nullable|array';
+            $rules['ka']     = 'nullable|array';
         }
+
+        $rules['kotoran'] = 'nullable|array';
+        $rules['organo']  = 'nullable|array';
+        $rules['warna']   = 'nullable|array';
+        $rules['aroma']   = 'nullable|array';
 
         $request->validate($rules);
 
@@ -728,6 +715,9 @@ public function pmKartonBct(
                 count($request->organo ?? []),
                 count($request->warna ?? []),
                 count($request->aroma ?? []),
+                count($request->timbang_a ?? []),
+                count($request->timbang_b ?? []),
+                count($request->no_beaker ?? []),
             ];
             $jumlah = max(1, ...$sampleCounts);
 
@@ -735,20 +725,30 @@ public function pmKartonBct(
 
             for ($i = 0; $i < $jumlah; $i++) {
                 $dataAnalisa[] = [
-                    'id_identitas' => $request->id_identitas,
-                    'kategori'     => $kategori,
-                    'brix'         => $this->nullableFloat($request->brix[$i] ?? null),
-                    'ph'           => $this->nullableFloat($request->ph[$i] ?? null),
-                    'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
-                    'ka'           => $this->nullableFloat($request->ka[$i] ?? null),
-                    'organo'       => $this->nullableString($request->organo[$i] ?? null),
-                    'warna'        => $this->nullableString($request->warna[$i] ?? null),
-                    'aroma'        => $this->nullableString($request->aroma[$i] ?? null),
-                    'disposisi'    => $this->nullableString($request->disposisi),
-                    'keterangan'   => $request->keterangan ? trim($request->keterangan) : null,
-                    'created_by'   => auth()->id(),
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
+                    'id_identitas'     => $request->id_identitas,
+                    'kategori'         => $kategori,
+                    'brix'             => $this->nullableFloat($request->brix[$i] ?? null),
+                    'ph'               => $this->nullableFloat($request->ph[$i] ?? null),
+                    'no_beaker'        => $this->nullableString($request->no_beaker[$i] ?? null),
+                    'berat_beaker_500' => $this->nullableFloat($request->berat_beaker_500[$i] ?? null),
+                    'berat_beaker_250' => $this->nullableFloat($request->berat_beaker_250[$i] ?? null),
+                    'timbang_a'        => $this->nullableFloat($request->timbang_a[$i] ?? null),
+                    'timbang_b'        => $this->nullableFloat($request->timbang_b[$i] ?? null),
+                    'kotoran'          => $this->nullableFloat($request->kotoran[$i] ?? null),
+                    'rasa'             => $this->nullableString($request->rasa[$i] ?? null),
+                    'aroma_pengotor'   => $this->nullableString($request->aroma_pengotor[$i] ?? null),
+                    'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
+                    'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
+                    'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
+                    'ka'               => $this->nullableFloat($request->ka[$i] ?? null),
+                    'organo'           => $this->nullableString($request->organo[$i] ?? null),
+                    'warna'            => $this->nullableString($request->warna[$i] ?? null),
+                    'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
+                    'disposisi'        => $request->disposisi,
+                    'keterangan'       => $request->keterangan,
+                    'created_by'       => auth()->id(),
+                    'created_at'       => now(),
+                    'updated_at'       => now(),
                 ];
             }
 
@@ -773,19 +773,21 @@ public function pmKartonBct(
                 'sta'        => 'STA (Short Term Analisa)',
                 'monitoring' => 'Monitoring',
             ];
+            $label = $kategoriLabels[$kategori] ?? 'Analisa';
+
+            $message = $isDraft
+                ? "Data {$label} berhasil disimpan sementara (Draft)."
+                : "Berhasil menyimpan data {$label}.";
 
             return response()->json([
                 'status'  => 'success',
-                'message' => $isDraft
-                    ? 'Data analisa ' . ($kategoriLabels[$kategori] ?? $kategori) . ' berhasil disimpan sementara (Draft).'
-                    : 'Data analisa ' . ($kategoriLabels[$kategori] ?? $kategori) . ' berhasil disimpan.',
-                'data'    => $dataAnalisa,
-            ], 200);
+                'message' => $message,
+            ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menyimpan data analisa: ' . $e->getMessage(),
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -798,41 +800,22 @@ public function pmKartonBct(
 
     public function storeGaramGula(Request $request)
     {
-        $saveAction = $request->input('save_action', 'final');
-        $isDraft = ($saveAction === 'draft');
+        $isDraft = ($request->input('save_action') === 'draft');
 
-        if ($isDraft) {
-            $rules = [
-                'id_identitas' => 'required|exists:identitas_rm,id',
-                'fisik'        => 'nullable',
-                '%ka'          => 'nullable',
-                'kotoran'      => 'nullable',
-                'organo'       => 'nullable',
-                'warna'        => 'nullable',
-                'aroma'        => 'nullable',
-                '%nacl'        => 'nullable',
-                'gross_weight' => 'nullable',
-                'disposisi'    => 'nullable',
-                'keterangan'   => 'nullable',
-            ];
-        } else {
-            $rules = [
-                'id_identitas' => 'required|exists:identitas_rm,id',
-                'fisik'        => 'required|array|min:1',
-                'fisik.*'      => 'required|string',
-                '%ka'          => 'nullable|array',
-                'kotoran'      => 'nullable|array',
-                'organo'       => 'nullable|array',
-                'warna'        => 'nullable|array',
-                'aroma'        => 'nullable|array',
-                '%nacl'        => 'nullable|array',
-                'gross_weight' => 'nullable|array',
-                'disposisi'    => 'required|in:Release,Reject',
-                'keterangan'   => 'nullable|string',
-            ];
-        }
-
-        $request->validate($rules);
+        $request->validate([
+            'id_identitas' => 'required|exists:identitas_rm,id',
+            'fisik'        => $isDraft ? 'nullable|array' : 'required|array|min:1',
+            'fisik.*'      => 'nullable|string',
+            '%ka'          => 'nullable|array',
+            'kotoran'      => 'nullable|array',
+            'organo'       => 'nullable|array',
+            'warna'        => 'nullable|array',
+            'aroma'        => 'nullable|array',
+            '%nacl'        => 'nullable|array',
+            'gross_weight' => 'nullable|array',
+            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject' : 'required|in:Release,Reject',
+            'keterangan'   => 'nullable|string',
+        ]);
 
         DB::beginTransaction();
 
@@ -852,84 +835,38 @@ public function pmKartonBct(
 
             for ($i = 0; $i < $jumlah; $i++) {
                 $dataAnalisa[] = [
-                    'id_identitas' =>
-                        $request->id_identitas,
-
-                    'fisik' =>
-                        $this->nullableString(
-                            $request->fisik[$i] ?? null
-                        ),
-
-                    '%ka' =>
-                        $this->nullableFloat(
-                            $request['%ka'][$i] ?? null
-                        ),
-
-                    'kotoran' =>
-                        $this->nullableFloat(
-                            $request->kotoran[$i] ?? null
-                        ),
-
-                    'organo' =>
-                        $this->nullableString(
-                            $request->organo[$i] ?? null
-                        ),
-
-                    'warna' =>
-                        $this->nullableString(
-                            $request->warna[$i] ?? null
-                        ),
-
-                    'aroma' =>
-                        $this->nullableString(
-                            $request->aroma[$i] ?? null
-                        ),
-
-                    '%nacl' =>
-                        $this->nullableFloat(
-                            $request['%nacl'][$i] ?? null
-                        ),
-
-                    'gross_weight' =>
-                        $this->nullableFloat(
-                            $request->gross_weight[$i] ?? null
-                        ),
-
-                    'disposisi' =>
-                        $this->nullableString($request->disposisi),
-
-                    'keterangan' =>
-                        $request->keterangan ? trim($request->keterangan) : null,
-
-                    'created_by' =>
-                        auth()->id(),
-
-                    'created_at' =>
-                        now(),
-
-                    'updated_at' =>
-                        now(),
+                    'id_identitas' => $request->id_identitas,
+                    'fisik'        => $this->nullableString($request->fisik[$i] ?? null),
+                    '%ka'          => $this->nullableFloat($request['%ka'][$i] ?? null),
+                    'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
+                    'organo'       => $this->nullableString($request->organo[$i] ?? null),
+                    'warna'        => $this->nullableString($request->warna[$i] ?? null),
+                    'aroma'        => $this->nullableString($request->aroma[$i] ?? null),
+                    '%nacl'        => $this->nullableFloat($request['%nacl'][$i] ?? null),
+                    'gross_weight' => $this->nullableFloat($request->gross_weight[$i] ?? null),
+                    'disposisi'    => $request->disposisi,
+                    'keterangan'   => $request->keterangan,
+                    'created_by'   => auth()->id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ];
             }
 
-            // Remove existing records before inserting
             AnalisaGaramGula::where('id_identitas', $request->id_identitas)->delete();
-
             AnalisaGaramGula::insert($dataAnalisa);
 
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => $isDraft
                     ? 'Data analisa berhasil disimpan sementara (Draft).'
                     : 'Data analisa berhasil disimpan.',
-            ], 200);
+            ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
-                'status' => 'error',
                 'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
             ], 500);
         }
