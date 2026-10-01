@@ -368,6 +368,7 @@
 
     <script>
         const WAREHOUSE_API = "{{ env('WAREHOUSE_API_URL', 'http://127.0.0.1:8000/api') }}";
+        const QC_API_SECRET = "{{ env('QC_API_SECRET') }}";
 
         $(document).ready(function() {
             const QC_TYPE = "{{ $card['key'] }}";
@@ -620,11 +621,20 @@
                 $.ajax({
                     url: WAREHOUSE_API + "/kempu/qc/lookup",
                     method: "POST",
+                    headers: {
+                        "X-QC-App-Secret": QC_API_SECRET,
+                        "X-App-Source": "digimon_v2"
+                    },
                     data: {
                         _token: "{{ csrf_token() }}",
                         id_kempu: code,
                         qc_type: QC_TYPE,
                         user_id: "{{ auth()->id() }}",
+                        operator_id: "{{ auth()->id() }}",
+                        operator_name: "{{ auth()->user()->name ?? (auth()->user()->nama_lengkap ?? '') }}",
+                        operator_role: "{{ strtolower(auth()->user()->role ?? '') }}",
+                        operator_email: "{{ auth()->user()->email ?? '' }}",
+                        app_source: "digimon_v2"
                     },
                     success: function(res) {
                         Swal.close();
@@ -732,7 +742,12 @@
                     qc_type: QC_TYPE,
                     decision: (QC_TYPE === 'qc-force' ? (forceTarget || 'OK') : decision),
                     notes: $('#modalInputNotes').val().trim(),
-                    user_id: "{{ auth()->id() }}"
+                    user_id: "{{ auth()->id() }}",
+                    operator_id: "{{ auth()->id() }}",
+                    operator_name: "{{ auth()->user()->name ?? (auth()->user()->nama_lengkap ?? '') }}",
+                    operator_role: "{{ strtolower(auth()->user()->role ?? '') }}",
+                    operator_email: "{{ auth()->user()->email ?? '' }}",
+                    app_source: "digimon_v2"
                 };
 
                 if (QC_TYPE === 'qc-force' && forceTarget) {
@@ -742,6 +757,10 @@
                 $.ajax({
                     url: WAREHOUSE_API + "/kempu/qc/decision",
                     method: "POST",
+                    headers: {
+                        "X-QC-App-Secret": QC_API_SECRET,
+                        "X-App-Source": "digimon_v2"
+                    },
                     data: postData,
                     success: function(res) {
                         btnOk.prop('disabled', false).html(
