@@ -940,8 +940,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Scan Kempu
     Route::prefix('scan-kempu')->name('scan-kempu.')->middleware(['auth'])->group(function () {
-        Route::get('/dashboard', [ScanKempuController::class, 'dashboard'])->name('dashboard');
-        Route::get('/', [ScanKempuController::class, 'dashboard'])->name('index');
+        Route::get('/report', [ScanKempuController::class, 'report'])->name('report');
+        Route::get('/dashboard', fn() => redirect()->route('scan-kempu.report'))->name('dashboard');
+        Route::get('/', [ScanKempuController::class, 'report'])->name('index');
 
         // QC PM
         Route::prefix('pm')->name('pm.')->group(function () {
@@ -954,6 +955,11 @@ Route::middleware(['auth'])->group(function () {
         });
         // Scanner Biasa
         Route::get('/scan/{type}', [ScanKempuController::class, 'scan'])->name('scan');
+
+        // Report API Proxy
+        Route::get('/report/data', [ScanKempuController::class, 'reportData'])->name('report.data');
+        Route::get('/report/stats', [ScanKempuController::class, 'reportStats'])->name('report.stats');
+        Route::get('/report/export', [ScanKempuController::class, 'reportExport'])->name('report.export');
 
         // Traceability & Stats Data
         Route::get('/traceability/data', [ScanKempuController::class, 'traceabilityData'])->name('traceability.data');
@@ -1039,4 +1045,3 @@ Route::middleware(['auth'])->group(function () {
         'destroy',
     ]);
 });
-

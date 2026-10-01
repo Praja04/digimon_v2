@@ -43,29 +43,26 @@ class ScanKempuController extends Controller
     }
 
     /**
-     * Halaman Dashboard Monitoring & Traceability Kempu
+     * Halaman Report Scan Kempu QC (QC PM & QC Proses)
      */
-    public function dashboard()
+    public function report()
     {
-        $locations = [
-            'WPM'                  => 'WPM (Packaging Material)',
-            'QC_PM'                => 'QC Packaging Material',
-            'ENGINEERING_WORKSHOP' => 'Engineering Workshop',
-            'PRODUKSI'             => 'Produksi',
-            'QC_PROSES'            => 'QC Proses',
-            'WFG'                  => 'WFG (Finished Goods)',
-            'WAREHOUSE_PAS'        => 'Warehouse PT PAS',
-            'SCRAP'                => 'Scrap / Afkir',
-        ];
-
         try {
-            $response = Http::timeout(5)->get("{$this->warehouseApi}/kempu/traceability/stats");
+            $response = Http::timeout(8)->get("{$this->warehouseApi}/kempu/qc/report/stats");
             $statsData = $response->json('data') ?? [];
         } catch (\Throwable $e) {
             $statsData = [];
         }
 
-        return view('app.scan_kempu.dashboard', compact('locations', 'statsData'));
+        return view('app.scan_kempu.report', compact('statsData'));
+    }
+
+    /**
+     * Halaman Dashboard Monitoring & Traceability Kempu (Dialihkan ke Report)
+     */
+    public function dashboard()
+    {
+        return redirect()->route('scan-kempu.report');
     }
 
     /**
@@ -216,6 +213,53 @@ class ScanKempuController extends Controller
                 'status'  => false,
                 'message' => 'Gagal mengambil statistik: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * API Proxy: Mengambil statistik KPI Report QC
+     */
+    public function reportStats(Request $request)
+    {
+        try {
+            $response = Http::timeout(8)->get("{$this->warehouseApi}/kempu/qc/report/stats", $request->all());
+            return response()->json($response->json(), $response->status());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil statistik report: ' . $e->getMessage(),
+                'data'    => [],
+            ], 500);
+        }
+    }
+
+    /**
+     * API Proxy: Mengambil data report QC (Server-side Pagination & Filter)
+     */
+    public function reportData(Request $request)
+    {
+        try {
+            $response = Http::timeout(10)->get("{$this->warehouseApi}/kempu/qc/report/data", $request->all());
+            return response()->json($response->json(), $response->status());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil data report: ' . $e->getMessage(),
+                'data'    => [],
+            ], 500);
+        }
+    }
+
+    /**
+     * Export Report CSV untuk QC Kempu
+     */
+    public function reportExport(Request $request)
+    {
+        try {
+            $url = "{$this->warehouseApi}/kempu/qc/report/export?" . http_build_query($request->all());
+            return redirect($url);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Gagal mengunduh report: ' . $e->getMessage());
         }
     }
 }
