@@ -205,16 +205,15 @@
                                     </div>
 
                                     <div class="col-xl-3 col-md-6">
-                                        <label for="tanggal_kedatangan" class="form-label">
-                                            Tanggal Kedatangan
-                                            <span class="text-danger">*</span>
+                                        <label for="exp_date" class="form-label">
+                                            Expired Date
                                         </label>
 
-                                        <input type="date" name="tanggal_kedatangan" id="tanggal_kedatangan"
-                                            class="form-control @error('tanggal_kedatangan') is-invalid @enderror"
-                                            value="{{ old('tanggal_kedatangan', now()->format('Y-m-d')) }}">
+                                        <input type="date" name="exp_date" id="exp_date"
+                                            class="form-control @error('exp_date') is-invalid @enderror"
+                                            value="{{ old('exp_date') }}">
 
-                                        @error('tanggal_kedatangan')
+                                        @error('exp_date')
                                             <div class="invalid-feedback">
                                                 {{ $message }}
                                             </div>
@@ -506,6 +505,7 @@
                                             </div>
                                         @enderror
                                     </div>
+
 
                                     <div class="col-12">
                                         <label class="form-label">
@@ -1297,6 +1297,8 @@
                 }
             }
 
+
+
             function resetForm(scrollToTop = true) {
                 form.reset();
                 form.action = defaultAction;
@@ -1307,7 +1309,10 @@
                 editModeBanner.classList.add('d-none');
                 editModeSpb.textContent = '-';
 
-                document.getElementById('tanggal_kedatangan').value = defaultDate;
+                const expDateEl = document.getElementById('exp_date');
+                if (expDateEl) {
+                    expDateEl.value = '';
+                }
                 document.getElementById('jam_kedatangan').value = defaultTime;
 
                 updateStatusDisplay('Belum Sampling');
@@ -1559,8 +1564,10 @@
                     document.getElementById('no_mobil').value =
                         data.no_mobil ?? '';
 
-                    document.getElementById('tanggal_kedatangan').value =
-                        data.tanggal_kedatangan ?? '';
+                    const expDateEl = document.getElementById('exp_date');
+                    if (expDateEl) {
+                        expDateEl.value = data.exp_date ?? '';
+                    }
 
                     document.getElementById('jam_kedatangan').value =
                         data.jam_kedatangan ?

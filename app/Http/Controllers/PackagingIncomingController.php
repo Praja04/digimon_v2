@@ -316,7 +316,10 @@ class PackagingIncomingController extends Controller
                     trim($validated['no_spb']),
 
                 'tanggal_kedatangan' =>
-                    $validated['tanggal_kedatangan'],
+                    $validated['tanggal_kedatangan'] ?? now()->toDateString(),
+
+                'exp_date' =>
+                    $validated['exp_date'] ?? null,
 
                 'jam_kedatangan' =>
                     $validated['jam_kedatangan'] ?? null,
@@ -418,6 +421,12 @@ class PackagingIncomingController extends Controller
                             ->tanggal_kedatangan
                     )->format('Y-m-d'),
 
+                'exp_date' =>
+                    optional(
+                        $packagingIncoming
+                            ->exp_date
+                    )->format('Y-m-d'),
+
                 'jam_kedatangan' =>
                     $packagingIncoming
                         ->jam_kedatangan,
@@ -457,7 +466,10 @@ class PackagingIncomingController extends Controller
                 trim($validated['no_spb']),
 
             'tanggal_kedatangan' =>
-                $validated['tanggal_kedatangan'],
+                $validated['tanggal_kedatangan'] ?? $packagingIncoming->tanggal_kedatangan ?? now()->toDateString(),
+
+            'exp_date' =>
+                $validated['exp_date'] ?? null,
 
             'jam_kedatangan' =>
                 $validated['jam_kedatangan'] ?? null,
@@ -810,7 +822,12 @@ class PackagingIncomingController extends Controller
                 ],
 
                 'tanggal_kedatangan' => [
-                    'required',
+                    'nullable',
+                    'date',
+                ],
+
+                'exp_date' => [
+                    'nullable',
                     'date',
                 ],
 
@@ -881,9 +898,6 @@ class PackagingIncomingController extends Controller
             [
                 'no_spb.required' =>
                     'Nomor SPB wajib diisi.',
-
-                'tanggal_kedatangan.required' =>
-                    'Tanggal kedatangan wajib diisi.',
 
                 'jam_kedatangan.required' =>
                     'Jam kedatangan wajib diisi.',
@@ -1006,6 +1020,10 @@ class PackagingIncomingController extends Controller
                     )
                 )
                 : null;
+
+        $validated['exp_date'] = ! empty($validated['exp_date'])
+            ? $validated['exp_date']
+            : null;
 
         return $validated;
     }

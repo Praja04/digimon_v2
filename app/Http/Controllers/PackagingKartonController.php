@@ -311,6 +311,11 @@ class PackagingKartonController extends Controller
                 'max:100',
             ],
 
+            'exp_date' => [
+                'nullable',
+                'date',
+            ],
+
             'samples' => [
                 $isFinal ? 'required' : 'nullable',
                 'array',
@@ -776,6 +781,10 @@ class PackagingKartonController extends Controller
 
                     'no_batch' =>
                         $validated['no_batch']
+                        ?? null,
+
+                    'exp_date' =>
+                        $validated['exp_date']
                         ?? null,
 
                     'hasil_sampel' =>

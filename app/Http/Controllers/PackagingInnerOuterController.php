@@ -386,6 +386,11 @@ class PackagingInnerOuterController extends Controller
                 'max:100',
             ],
 
+            'exp_date' => [
+                'nullable',
+                'date',
+            ],
+
             'lot_sebelum' => [
                 'nullable',
                 'string',
@@ -433,17 +438,24 @@ class PackagingInnerOuterController extends Controller
                 'min:0',
             ],
 
-            'samples.*.arah_vertikal' => [
+            'samples.*.bonding_strength' => [
                 'nullable',
-                'in:V,-',
+                'numeric',
+                'min:0',
             ],
 
-            'samples.*.arah_terbalik' => [
+            'samples.*.sealing_strength' => [
                 'nullable',
-                'in:V,-',
+                'numeric',
+                'min:0',
             ],
 
             'samples.*.laminasi' => [
+                'nullable',
+                'in:OK,NG',
+            ],
+
+            'samples.*.stability_test' => [
                 'nullable',
                 'in:OK,NG',
             ],
@@ -829,6 +841,12 @@ class PackagingInnerOuterController extends Controller
                     'no_batch' =>
                         $validated[
                             'no_batch'
+                        ]
+                        ?? null,
+
+                    'exp_date' =>
+                        $validated[
+                            'exp_date'
                         ]
                         ?? null,
 

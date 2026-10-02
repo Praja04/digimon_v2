@@ -299,6 +299,14 @@
                         Informasi Sampel
                     </div>
 
+                    @php
+                        $defaultInnerExpDate = $sampling?->exp_date 
+                            ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
+                            : ($packagingIncoming->exp_date 
+                                ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d') 
+                                : '');
+                    @endphp
+
                     <div class="row g-3 mb-4">
 
                         <div class="col-xl-3 col-md-6">
@@ -347,7 +355,24 @@
                             >
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-2 col-md-4">
+                            <label
+                                for="exp_date"
+                                class="form-label"
+                            >
+                                Exp Date
+                            </label>
+
+                            <input
+                                type="date"
+                                name="exp_date"
+                                id="exp_date"
+                                class="form-control"
+                                value="{{ old('exp_date', $defaultInnerExpDate) }}"
+                            >
+                        </div>
+
+                        <div class="col-xl-2 col-md-4">
                             <label
                                 for="lot_sebelum"
                                 class="form-label"
@@ -368,7 +393,7 @@
                             >
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-2 col-md-4">
                             <label
                                 for="lot_setelah"
                                 class="form-label"
@@ -406,9 +431,10 @@
                                     <th>Lebar (mm)</th>
                                     <th>Pitch (mm)</th>
                                     <th>Thickness (Mikron)</th>
-                                    <th>Arah Vertikal</th>
-                                    <th>Arah Terbalik</th>
+                                    <th>Bonding Strength</th>
+                                    <th>Sealing Strength</th>
                                     <th>Laminasi</th>
+                                    <th>Stability Test</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
@@ -1209,45 +1235,6 @@
             `;
         }
 
-        function buildDirectionRadio(name, value) {
-            const idBase = name
-                .replaceAll('[', '_')
-                .replaceAll(']', '');
-
-            const safeValue = value ? String(value).trim() : '';
-
-            return `
-                <div class="option-radio-group">
-                    <label
-                        class="option-radio ${safeValue === 'V' ? 'is-selected' : ''}"
-                        for="${idBase}_v"
-                    >
-                        <input
-                            type="radio"
-                            name="${name}"
-                            id="${idBase}_v"
-                            value="V"
-                            ${safeValue === 'V' ? 'checked' : ''}
-                        >
-                        <span>V</span>
-                    </label>
-
-                    <label
-                        class="option-radio ${safeValue === '-' ? 'is-selected' : ''}"
-                        for="${idBase}_strip"
-                    >
-                        <input
-                            type="radio"
-                            name="${name}"
-                            id="${idBase}_strip"
-                            value="-"
-                            ${safeValue === '-' ? 'checked' : ''}
-                        >
-                        <span>-</span>
-                    </label>
-                </div>
-            `;
-        }
 
         function buildStatusRadio(name, value) {
             const idBase = name
@@ -1297,11 +1284,14 @@
             placeholder = ''
         ) {
             const isGross = field === 'berat_gross';
-            const actualStep = isGross ? '0.1' : step;
-            const actualPlaceholder = placeholder || (isGross ? '0.0' : '');
+            const isTwoDecimals = field === 'bonding_strength' || field === 'sealing_strength' || field === 'thickness' || field === 'inside_core' || field === 'lebar';
+            const actualStep = isGross ? '0.1' : (step || '0.01');
+            const actualPlaceholder = placeholder || (isGross ? '0.0' : (isTwoDecimals ? '0.00' : ''));
             const onInputAttr = isGross
                 ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 1){ this.value = parts[0] + '.' + parts[1].slice(0, 1); } }"`
-                : '';
+                : (isTwoDecimals
+                    ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"`
+                    : '');
 
             return `
                 <input
@@ -1400,16 +1390,22 @@
                             </td>
 
                             <td>
-                                ${buildDirectionRadio(
-                                    `samples[${index}][arah_vertikal]`,
-                                    sample.arah_vertikal
+                                ${buildNumberInput(
+                                    index,
+                                    'bonding_strength',
+                                    sample.bonding_strength,
+                                    '0.01',
+                                    '0.00'
                                 )}
                             </td>
 
                             <td>
-                                ${buildDirectionRadio(
-                                    `samples[${index}][arah_terbalik]`,
-                                    sample.arah_terbalik
+                                ${buildNumberInput(
+                                    index,
+                                    'sealing_strength',
+                                    sample.sealing_strength,
+                                    '0.01',
+                                    '0.00'
                                 )}
                             </td>
 
@@ -1417,6 +1413,13 @@
                                 ${buildStatusRadio(
                                     `samples[${index}][laminasi]`,
                                     sample.laminasi
+                                )}
+                            </td>
+
+                            <td>
+                                ${buildStatusRadio(
+                                    `samples[${index}][stability_test]`,
+                                    sample.stability_test
                                 )}
                             </td>
 

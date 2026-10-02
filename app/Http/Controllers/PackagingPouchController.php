@@ -282,6 +282,11 @@ class PackagingPouchController extends Controller
                 'max:150',
             ],
 
+            'exp_date' => [
+                'nullable',
+                'date',
+            ],
+
             'coa' => [
                 'nullable',
                 'in:Ada,Tidak Ada',
@@ -700,6 +705,10 @@ class PackagingPouchController extends Controller
 
                     'no_batch' =>
                         $validated['no_batch']
+                        ?? null,
+
+                    'exp_date' =>
+                        $validated['exp_date']
                         ?? null,
 
                     'hasil_sampel' =>
