@@ -12,12 +12,14 @@ class Pelarutan1Controller extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        Pelarutan1::create([
-            'id' => $request->id,
-            'production_batch_id' => $request->production_batch_id,
-            'batch_number' => $request->batch_number,
-            'dissolver_number' => $request->dissolver_number,
-        ]);
+        Pelarutan1::updateOrCreate(
+            ['id' => $request->id],
+            [
+                'production_batch_id' => $request->production_batch_id,
+                'batch_number' => $request->batch_number,
+                'dissolver_number' => $request->dissolver_number,
+            ]
+        );
 
         return response()->json([
             'status'  => 'success',
@@ -28,16 +30,20 @@ class Pelarutan1Controller extends Controller
     public function update_revisi(Request $request)
     {
         $data = Pelarutan1::find($request->id_old);
-        $data->not_standard = false;
-        $data->save();
+        if ($data) {
+            $data->not_standard = false;
+            $data->save();
+        }
 
-        Pelarutan1::create([
-            'id' => $request->id,
-            'production_batch_id' => $request->production_batch_id,
-            'batch_number' => $request->batch_number,
-            'dissolver_number' => $request->dissolver_number,
-            'revisi' => $request->revisi,
-        ]);
+        Pelarutan1::updateOrCreate(
+            ['id' => $request->id],
+            [
+                'production_batch_id' => $request->production_batch_id,
+                'batch_number' => $request->batch_number,
+                'dissolver_number' => $request->dissolver_number,
+                'revisi' => $request->revisi,
+            ]
+        );
 
         return response()->json([
             'status'  => 'success',
