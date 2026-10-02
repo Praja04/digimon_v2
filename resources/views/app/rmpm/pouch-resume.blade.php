@@ -163,6 +163,11 @@
                     </div>
 
                     <div class="identity-item">
+                        <span>EXPIRED DATE</span>
+                        <strong>{{ $sampling->exp_date ? \Carbon\Carbon::parse($sampling->exp_date)->format('d M Y') : '-' }}</strong>
+                    </div>
+
+                    <div class="identity-item">
                         <span>REKOMENDASI</span>
                         <span class="status-pill {{ $badgeClass }}">
                             {{ $sampling->rekomendasi ?? '-' }}

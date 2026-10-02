@@ -183,6 +183,11 @@
                     </div>
 
                     <div class="identity-item">
+                        <span>EXPIRED DATE</span>
+                        <strong>{{ $sampling->exp_date ? \Carbon\Carbon::parse($sampling->exp_date)->format('d M Y') : '-' }}</strong>
+                    </div>
+
+                    <div class="identity-item">
                         <span>LOT SEBELUM</span>
                         <strong>{{ $sampling->lot_sebelum ?? '-' }}</strong>
                     </div>
@@ -231,9 +236,10 @@
                                     <th>Lebar (mm)</th>
                                     <th>Pitch (mm)</th>
                                     <th>Thickness (Mikron)</th>
-                                    <th>Arah Vertikal</th>
-                                    <th>Arah Terbalik</th>
+                                    <th>Bonding Strength</th>
+                                    <th>Sealing Strength</th>
                                     <th>Laminasi</th>
+                                    <th>Stability Test</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
@@ -249,10 +255,10 @@
                                         <td>{{ $sample['lebar'] ?? '-' }}</td>
                                         <td>{{ $sample['pitch'] ?? '-' }}</td>
                                         <td>{{ $sample['thickness'] ?? '-' }}</td>
-                                        <td>{{ $sample['arah_vertikal'] ?? '-' }}</td>
-                                        <td>{{ $sample['arah_terbalik'] ?? '-' }}</td>
+                                        <td>{{ is_numeric($sample['bonding_strength'] ?? null) ? number_format((float) $sample['bonding_strength'], 2, '.', '') : ($sample['bonding_strength'] ?? '-') }}</td>
+                                        <td>{{ is_numeric($sample['sealing_strength'] ?? null) ? number_format((float) $sample['sealing_strength'], 2, '.', '') : ($sample['sealing_strength'] ?? '-') }}</td>
 
-                                        @foreach (['laminasi', 'design', 'warna', 'tulisan'] as $field)
+                                        @foreach (['laminasi', 'stability_test', 'design', 'warna', 'tulisan'] as $field)
                                             @php
                                                 $value = $sample[$field] ?? null;
                                             @endphp
@@ -267,7 +273,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="12" class="text-center py-4 text-muted">
+                                        <td colspan="13" class="text-center py-4 text-muted">
                                             Belum ada data sampel.
                                         </td>
                                     </tr>

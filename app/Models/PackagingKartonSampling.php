@@ -11,6 +11,7 @@ class PackagingKartonSampling extends Model
         'packaging_incoming_id',
         'jumlah_sampel',
         'no_batch',
+        'exp_date',
         'lot_sebelum',
         'lot_setelah',
         'hasil_sampel',
@@ -26,6 +27,7 @@ class PackagingKartonSampling extends Model
     ];
 
     protected $casts = [
+        'exp_date' => 'date',
         'hasil_sampel' => 'array',
         'jenis_ketidaksesuaian' => 'array',
         'foto' => 'array',

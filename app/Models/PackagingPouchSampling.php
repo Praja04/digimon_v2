@@ -18,6 +18,7 @@ class PackagingPouchSampling extends Model
         'uom',
         'jumlah_sampel',
         'no_batch',
+        'exp_date',
         'hasil_sampel',
         'hasil_thickness',
         'coa',
@@ -32,6 +33,7 @@ class PackagingPouchSampling extends Model
     ];
 
     protected $casts = [
+        'exp_date' => 'date',
         'qty' => 'decimal:2',
         'jumlah_sampel' => 'integer',
         'hasil_sampel' => 'array',
