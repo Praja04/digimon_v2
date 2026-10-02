@@ -78,7 +78,7 @@
             <div class="row g-4 mb-3">
                 @if (auth()->user()->role == 'Analis Kimia' || auth()->user()->role == 'Foreman' || auth()->user()->role == 'Supervisor' || auth()->user()->role == 'Head Of Dapartement')
                     <!-- Blending Kimia Card -->
-                    <div class="col-xl-6 col-lg-6">
+                    <div class="col-xl-4 col-lg-4 col-md-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                             <div class="card-header bg-gradient-primary text-white border-0 py-4">
                                 <div class="d-flex align-items-center justify-content-between">
@@ -114,7 +114,7 @@
                         auth()->user()->role == 'Analis Field' ||
                         auth()->user()->role == 'Foreman' || auth()->user()->role == 'Supervisor' || auth()->user()->role == 'Head Of Dapartement')
                     <!-- Blending After Adjustment Mikro Card -->
-                    <div class="col-xl-6 col-lg-6">
+                    <div class="col-xl-4 col-lg-4 col-md-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
                             <div class="card-header bg-gradient-success text-white border-0 py-4">
                                 <div class="d-flex align-items-center justify-content-between">
@@ -139,6 +139,43 @@
                                     <a href="{{ route('analisa.blending-awal-mikro.index') }}"
                                         class="btn btn-success rounded-pill px-4 d-flex align-items-center">
                                         Lihat Detail <i class="ri-arrow-right-line ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if (auth()->user()->role == 'Analis Kimia' ||
+                        auth()->user()->role == 'Analis Mikro' ||
+                        auth()->user()->role == 'Analis Field' ||
+                        auth()->user()->role == 'Foreman' || auth()->user()->role == 'Supervisor' || auth()->user()->role == 'Head Of Dapartement')
+                    <!-- Dokumen Analisis Blending & Export Card -->
+                    <div class="col-xl-4 col-lg-4 col-md-6">
+                        <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
+                            <div class="card-header bg-gradient-warning text-white border-0 py-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="avatar-xl bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center me-3">
+                                            <i class="ri-file-text-line fs-1 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-white mb-1 fw-bold">Dokumen Analisis Blending</h5>
+                                            <p class="text-white text-opacity-75 mb-0 small">Hasil Analisis Blending Awal & After Adjust</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-warning-subtle text-warning">Kimia & Mikro</span>
+                                        <span class="badge bg-warning-subtle text-warning">Export & Cetak</span>
+                                    </div>
+                                    <a href="{{ route('analisa.blending-awal.export.index') }}"
+                                        class="btn btn-warning text-white rounded-pill px-4 d-flex align-items-center">
+                                        Buka Formulir <i class="ri-arrow-right-line ms-1"></i>
                                     </a>
                                 </div>
                             </div>
