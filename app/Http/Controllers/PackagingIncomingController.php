@@ -12,6 +12,7 @@ use App\Models\PackagingPouchSampling;
 use App\Models\SamplingStatus;
 use App\Models\Supplier;
 use App\Services\WpmApiService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -310,16 +311,26 @@ class PackagingIncomingController extends Controller
                 ->value('id');
         }
 
+        $tanggalKedatangan =
+            $validated['tanggal_kedatangan'] ?? now()->toDateString();
+
+        $expDate = $this->resolveExpDate(
+            $validated['exp_date'] ?? null,
+            $tanggalKedatangan,
+            (int) $validated['jenis_incoming_id'],
+            isset($validated['jenis_material_id']) ? (int) $validated['jenis_material_id'] : null
+        );
+
         $incoming = PackagingIncoming::query()
             ->create([
                 'no_spb' =>
                     trim($validated['no_spb']),
 
                 'tanggal_kedatangan' =>
-                    $validated['tanggal_kedatangan'] ?? now()->toDateString(),
+                    $tanggalKedatangan,
 
                 'exp_date' =>
-                    $validated['exp_date'] ?? null,
+                    $expDate,
 
                 'jam_kedatangan' =>
                     $validated['jam_kedatangan'] ?? null,
@@ -461,15 +472,26 @@ class PackagingIncomingController extends Controller
             $packagingIncoming->id
         );
 
+        $tanggalKedatangan =
+            $validated['tanggal_kedatangan']
+            ?? (optional($packagingIncoming->tanggal_kedatangan)->format('Y-m-d') ?: now()->toDateString());
+
+        $expDate = $this->resolveExpDate(
+            $validated['exp_date'] ?? null,
+            $tanggalKedatangan,
+            (int) $validated['jenis_incoming_id'],
+            isset($validated['jenis_material_id']) ? (int) $validated['jenis_material_id'] : null
+        );
+
         $packagingIncoming->update([
             'no_spb' =>
                 trim($validated['no_spb']),
 
             'tanggal_kedatangan' =>
-                $validated['tanggal_kedatangan'] ?? $packagingIncoming->tanggal_kedatangan ?? now()->toDateString(),
+                $tanggalKedatangan,
 
             'exp_date' =>
-                $validated['exp_date'] ?? null,
+                $expDate,
 
             'jam_kedatangan' =>
                 $validated['jam_kedatangan'] ?? null,
@@ -1051,5 +1073,52 @@ class PackagingIncomingController extends Controller
         return strtoupper(
             trim((string) $value)
         );
+    }
+
+    private function resolveExpDate(
+        ?string $expDate,
+        ?string $tanggalKedatangan,
+        int $jenisIncomingId,
+        ?int $jenisMaterialId = null
+    ): ?string {
+        if (! empty($expDate)) {
+            return $expDate;
+        }
+
+        if (empty($tanggalKedatangan)) {
+            $tanggalKedatangan = now()->toDateString();
+        }
+
+        $jenisIncoming = JenisIncoming::query()->find($jenisIncomingId);
+        $jenisName = strtolower($jenisIncoming?->nama ?? '');
+
+        $matName = '';
+        if ($jenisMaterialId) {
+            $mat = JenisMaterial::query()->find($jenisMaterialId);
+            $matName = strtolower($mat?->nama ?? '');
+        }
+
+        $tgl = Carbon::parse($tanggalKedatangan);
+        if (
+            str_contains($jenisName, 'karton')
+            || str_contains($jenisName, 'kardus')
+            || str_contains($matName, 'karton')
+            || str_contains($matName, 'kardus')
+        ) {
+            return $tgl->addYear()->toDateString();
+        }
+
+        if (
+            str_contains($jenisName, 'pouch')
+            || str_contains($jenisName, 'inner')
+            || str_contains($jenisName, 'outer')
+            || str_contains($matName, 'pouch')
+            || str_contains($matName, 'inner')
+            || str_contains($matName, 'outer')
+        ) {
+            return $tgl->addMonths(6)->toDateString();
+        }
+
+        return null;
     }
 }

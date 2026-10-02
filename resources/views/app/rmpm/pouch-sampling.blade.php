@@ -157,7 +157,9 @@
                             ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
                             : ($packagingIncoming->exp_date 
                                 ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d') 
-                                : '');
+                                : ($packagingIncoming->tanggal_kedatangan 
+                                    ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addMonths(6)->format('Y-m-d') 
+                                    : ''));
                     @endphp
 
                     <div class="row g-3 mb-4">

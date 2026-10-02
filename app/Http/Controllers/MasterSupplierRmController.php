@@ -120,10 +120,35 @@ class MasterSupplierRmController extends Controller
 
     public function getByJenisBahan($jenisBahanId): JsonResponse
     {
+        $jenisBahan = MasterJenisBahan::find($jenisBahanId);
+
+        // 1. Coba exact match jenis_bahan_id
         $suppliers = MasterSupplierRm::where('jenis_bahan_id', $jenisBahanId)
             ->where('status', true)
             ->orderBy('nama_supplier')
             ->get(['id', 'nama_supplier']);
+
+        // 2. Jika tidak ada yang exact, cari berdasarkan kemiripan nama bahan (misal 'GULA' -> 'GULA TEBU', 'GULA KELAPA')
+        if ($suppliers->isEmpty() && $jenisBahan) {
+            $cleanName = trim(strtoupper($jenisBahan->nama));
+            $relatedJenisIds = MasterJenisBahan::where('nama', 'LIKE', "%{$cleanName}%")
+                ->orWhereRaw('? LIKE CONCAT("%", nama, "%")', [$cleanName])
+                ->pluck('id');
+
+            if ($relatedJenisIds->isNotEmpty()) {
+                $suppliers = MasterSupplierRm::whereIn('jenis_bahan_id', $relatedJenisIds)
+                    ->where('status', true)
+                    ->orderBy('nama_supplier')
+                    ->get(['id', 'nama_supplier']);
+            }
+        }
+
+        // 3. Jika masih kosong (misal jenis bahan baru), tampilkan seluruh supplier aktif agar pilihan tetap muncul
+        if ($suppliers->isEmpty()) {
+            $suppliers = MasterSupplierRm::where('status', true)
+                ->orderBy('nama_supplier')
+                ->get(['id', 'nama_supplier']);
+        }
 
         return response()->json([
             'status' => true,

@@ -180,7 +180,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-4 col-md-6">
                                         <label for="no_spb" class="form-label">
                                             Nomor SPB
                                             <span class="text-danger">*</span>
@@ -194,7 +194,7 @@
                                             <input type="text" name="no_spb" id="no_spb"
                                                 class="form-control @error('no_spb') is-invalid @enderror"
                                                 value="{{ old('no_spb') }}" placeholder="Contoh: 9000724343"
-                                                maxlength="100">
+                                                maxlength="100" required>
                                         </div>
 
                                         @error('no_spb')
@@ -204,7 +204,24 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-4 col-md-6">
+                                        <label for="tanggal_kedatangan" class="form-label">
+                                            Tanggal Kedatangan
+                                            <span class="text-danger">*</span>
+                                        </label>
+
+                                        <input type="date" name="tanggal_kedatangan" id="tanggal_kedatangan"
+                                            class="form-control @error('tanggal_kedatangan') is-invalid @enderror"
+                                            value="{{ old('tanggal_kedatangan', now()->format('Y-m-d')) }}" required>
+
+                                        @error('tanggal_kedatangan')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-xl-4 col-md-6">
                                         <label for="exp_date" class="form-label">
                                             Expired Date
                                         </label>
@@ -220,7 +237,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-6 col-md-6">
                                         <label for="jam_kedatangan" class="form-label">
                                             Jam Kedatangan
                                             <span class="text-danger">*</span>
@@ -237,7 +254,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-6 col-md-6">
                                         <label for="no_mobil" class="form-label">
                                             Nomor Mobil
                                             <span class="text-danger">*</span>
@@ -935,8 +952,17 @@
             const wpmSuggestionList = document.getElementById('wpmSuggestionList');
             const btnClearMid = document.getElementById('btnClearMid');
 
+            const tanggalKedatanganInput =
+                document.getElementById('tanggal_kedatangan');
+
+            const expDateInput =
+                document.getElementById('exp_date');
+
             const jenisIncomingSelect =
                 document.getElementById('jenis_incoming_id');
+
+            const jenisMaterialSelect =
+                document.getElementById('jenis_material_id');
 
             const jenisIncomingLainnyaWrapper =
                 document.getElementById('jenisIncomingLainnyaWrapper');
@@ -1299,6 +1325,49 @@
 
 
 
+            function updateAutoExpDate(force = false) {
+                const tglEl = document.getElementById('tanggal_kedatangan');
+                const expEl = document.getElementById('exp_date');
+                if (!tglEl || !expEl) return;
+
+                const tglVal = tglEl.value;
+                if (!tglVal) {
+                    if (force) expEl.value = '';
+                    return;
+                }
+
+                const jenisIncOpt = (jenisIncomingSelect?.options[jenisIncomingSelect.selectedIndex]?.textContent || '').trim().toLowerCase();
+                const jenisMatOpt = (jenisMaterialSelect?.options[jenisMaterialSelect.selectedIndex]?.textContent || '').trim().toLowerCase();
+
+                const isKarton = jenisIncOpt.includes('karton') || jenisIncOpt.includes('kardus') ||
+                                 jenisMatOpt.includes('karton') || jenisMatOpt.includes('kardus');
+
+                const isPouchOrInner = jenisIncOpt.includes('pouch') || jenisIncOpt.includes('inner') || jenisIncOpt.includes('outer') ||
+                                       jenisMatOpt.includes('pouch') || jenisMatOpt.includes('inner') || jenisMatOpt.includes('outer');
+
+                if (!isKarton && !isPouchOrInner) {
+                    return;
+                }
+
+                const d = new Date(tglVal + 'T00:00:00');
+                if (isNaN(d.getTime())) return;
+
+                if (isKarton) {
+                    d.setFullYear(d.getFullYear() + 1);
+                } else if (isPouchOrInner) {
+                    const expectedMonth = (d.getMonth() + 6) % 12;
+                    d.setMonth(d.getMonth() + 6);
+                    if (d.getMonth() !== expectedMonth && d.getMonth() !== (expectedMonth + 12) % 12) {
+                        d.setDate(0);
+                    }
+                }
+
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                expEl.value = `${y}-${m}-${day}`;
+            }
+
             function resetForm(scrollToTop = true) {
                 form.reset();
                 form.action = defaultAction;
@@ -1308,6 +1377,11 @@
 
                 editModeBanner.classList.add('d-none');
                 editModeSpb.textContent = '-';
+
+                const tglKedatanganEl = document.getElementById('tanggal_kedatangan');
+                if (tglKedatanganEl) {
+                    tglKedatanganEl.value = defaultDate;
+                }
 
                 const expDateEl = document.getElementById('exp_date');
                 if (expDateEl) {
@@ -1561,12 +1635,23 @@
 
                     updateWpmDetail();
 
+                    const tglKedatanganEl = document.getElementById('tanggal_kedatangan');
+                    if (tglKedatanganEl) {
+                        tglKedatanganEl.value =
+                            data.tanggal_kedatangan ?
+                            String(data.tanggal_kedatangan).slice(0, 10) :
+                            defaultDate;
+                    }
+
                     document.getElementById('no_mobil').value =
                         data.no_mobil ?? '';
 
                     const expDateEl = document.getElementById('exp_date');
                     if (expDateEl) {
-                        expDateEl.value = data.exp_date ?? '';
+                        expDateEl.value = data.exp_date ? String(data.exp_date).slice(0, 10) : '';
+                        if (!expDateEl.value) {
+                            updateAutoExpDate(false);
+                        }
                     }
 
                     document.getElementById('jam_kedatangan').value =
@@ -1987,6 +2072,28 @@
                 'change',
                 function() {
                     updateJenisIncomingLainnya();
+                    updateAutoExpDate(true);
+                }
+            );
+
+            jenisMaterialSelect?.addEventListener(
+                'change',
+                function() {
+                    updateAutoExpDate(true);
+                }
+            );
+
+            tanggalKedatanganInput?.addEventListener(
+                'change',
+                function() {
+                    updateAutoExpDate(true);
+                }
+            );
+
+            tanggalKedatanganInput?.addEventListener(
+                'input',
+                function() {
+                    updateAutoExpDate(true);
                 }
             );
 
@@ -2126,6 +2233,7 @@
             updateWpmDetail();
             updateJenisIncomingLainnya(false);
             updateSupplierLainnya(false);
+            updateAutoExpDate(false);
             loadWpmDataViaAjax();
 
             document.addEventListener('submit', function(event) {

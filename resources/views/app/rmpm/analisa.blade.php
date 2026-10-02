@@ -2,6 +2,11 @@
 @section('title', 'Form Analisa')
 
 @section('content')
+@php
+    $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
+    $isGaram = ($jenisUpper === 'GARAM');
+    $isGulaKristal = (!$isGaram && (str_contains($jenisUpper, 'GULA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'KELAPA')));
+@endphp
 <div class="page-content">
     <div class="container-fluid">
 
@@ -56,7 +61,7 @@
                             </div>
 
                             <div class="row g-3 align-items-end">
-                                @if (in_array($identitas->jenis, ['Gula Tebu', 'Gula Kelapa']))
+                                @if ($isGulaKristal)
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold">Pilih Kategori / Jenis Analisa</label>
                                     <div class="row g-2">
@@ -890,6 +895,13 @@
     const SERVER_SHORT_TERM = @json($existingShortTerm ?? []);
     const SERVER_GARAM_GULA = @json($existingGaramGula ?? []);
 
+    function isGulaKristalMaterial(jenisStr) {
+        if (!jenisStr) return false;
+        const j = jenisStr.toUpperCase().trim();
+        if (j === 'GARAM') return false;
+        return j.includes('GULA') || j.includes('TEBU') || j.includes('KELAPA');
+    }
+
     let currentType = null;
     let currentKategori = 'incoming';
     let currentJumlah = 0;
@@ -1126,7 +1138,7 @@
         return html;
     }
 
-    // Rapid Numeric Parser: Automatically divides by 100 for integer input >= 100 (e.g. 22838 -> 228.38, 500 -> 5.00)
+    // Rapid Numeric Parser: Automatically divides by 100 for rapid typing without dot if >= 1000 (e.g. 22838 -> 228.38, 3985 -> 39.85)
     function parseRapidNumericValue(rawVal) {
         if (rawVal === undefined || rawVal === null) return NaN;
         let s = rawVal.toString().trim();
@@ -1135,12 +1147,12 @@
         if (s.includes('.')) {
             return parseFloat(s);
         }
-        const intVal = parseInt(s, 10);
-        if (isNaN(intVal)) return NaN;
-        if (intVal >= 100) {
-            return intVal / 100.0;
+        const num = parseFloat(s);
+        if (isNaN(num)) return NaN;
+        if (num >= 1000) {
+            return num / 100.0;
         }
-        return intVal;
+        return num;
     }
 
     // Master Data for Organo, Warna, Aroma based on Jenis Raw Material
@@ -1233,8 +1245,14 @@
         if (fieldKey === 'aroma_pengotor') {
             return ['OK', 'Bau Asam', 'Bau Sangit', 'Bau Apek', 'Bau Kimia', 'Lain-lain'];
         }
-        const rawJenis = (JENIS || '').trim();
-        const config = MASTER_DATA[rawJenis] || MASTER_DATA['default'];
+        const rawJenis = (JENIS || '').trim().toUpperCase();
+        if (rawJenis.includes('KELAPA')) {
+            return (MASTER_DATA['Gula Kelapa'] && MASTER_DATA['Gula Kelapa'][fieldKey]) || MASTER_DATA['default'][fieldKey] || [];
+        }
+        if (rawJenis.includes('TEBU')) {
+            return (MASTER_DATA['Gula Tebu'] && MASTER_DATA['Gula Tebu'][fieldKey]) || MASTER_DATA['default'][fieldKey] || [];
+        }
+        const config = MASTER_DATA[JENIS] || MASTER_DATA['default'];
         return config[fieldKey] || MASTER_DATA['default'][fieldKey] || [];
     }
 
@@ -1316,8 +1334,8 @@
     // Tab 2: Lembar % Kotoran fields definition (6 data columns)
     const TAB_KOTORAN_FIELDS = [
         { key: 'no_beaker[]', label: 'No. Beaker', type: 'dropdown', unit: '' },
-        { key: 'timbang_a[]', label: 'Timbang A', type: 'number', unit: 'gr' },
-        { key: 'timbang_b[]', label: 'Timbang B', type: 'number', unit: 'gr' },
+        { key: 'timbang_a[]', label: 'Beaker 500g', type: 'number', unit: 'gr' },
+        { key: 'timbang_b[]', label: 'Beaker 250g', type: 'number', unit: 'gr' },
         { key: 'kotoran_calc', label: 'Hasil % Kotoran', type: 'readonly', unit: '%' },
         { key: 'rasa[]', label: 'Organo Rasa', type: 'dropdown', masterKey: 'organo', unit: '' },
         { key: 'aroma_pengotor[]', label: 'Aroma Pengotor', type: 'dropdown', masterKey: 'aroma_pengotor', unit: '' },
@@ -1480,6 +1498,27 @@
                 $tr.find('input[name="berat_beaker_250[]"]').val(tare250);
                 $tr.find('.val-tare-500').text(tare500 ? tare500 + 'g' : '-');
                 $tr.find('.val-tare-250').text(tare250 ? tare250 + 'g' : '-');
+
+                // Auto-sequence subsequent rows if row 0 was changed
+                if (rowIdx === 0 && !isBroadcastingSelection) {
+                    const startNum = parseInt(phys, 10);
+                    if (!isNaN(startNum)) {
+                        const $allBeakerRows = $('#tableLembarKotoran tbody tr');
+                        for (let k = 1; k < $allBeakerRows.length; k++) {
+                            const nextPhys = (((startNum - 1 + k) % 90) + 1).toString();
+                            const $nextTr = $allBeakerRows.eq(k);
+                            const $select = $nextTr.find('.select-no-beaker');
+                            $select.val(nextPhys);
+                            const t500 = (glasswareData.beaker_500 && glasswareData.beaker_500[nextPhys] !== undefined) ? glasswareData.beaker_500[nextPhys] : '';
+                            const t250 = (glasswareData.beaker_250 && glasswareData.beaker_250[nextPhys] !== undefined) ? glasswareData.beaker_250[nextPhys] : '';
+                            $nextTr.find('input[name="berat_beaker_500[]"]').val(t500);
+                            $nextTr.find('input[name="berat_beaker_250[]"]').val(t250);
+                            $nextTr.find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+                            $nextTr.find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
+                            calculateRowKotoran(k);
+                        }
+                    }
+                }
             } else {
                 $tr.find('input[name="berat_beaker_500[]"]').val('');
                 $tr.find('input[name="berat_beaker_250[]"]').val('');
@@ -1529,6 +1568,24 @@
                 const tareCawan = (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) ? glasswareData.cawan[phys] : '';
                 $tr.find('input[name="berat_cawan[]"]').val(tareCawan);
                 $tr.find('.val-tare-cawan').text(tareCawan ? tareCawan + 'g' : '-');
+
+                // Auto-sequence subsequent rows if row 0 was changed
+                if (rowIdx === 0 && !isBroadcastingSelection) {
+                    const startNum = parseInt(phys, 10);
+                    if (!isNaN(startNum)) {
+                        const $allCawanRows = $('#tableLembarKa tbody tr');
+                        for (let k = 1; k < $allCawanRows.length; k++) {
+                            const nextPhys = (((startNum - 1 + k) % 240) + 1).toString();
+                            const $nextTr = $allCawanRows.eq(k);
+                            const $select = $nextTr.find('.select-no-cawan');
+                            $select.val(nextPhys);
+                            const tCawan = (glasswareData.cawan && glasswareData.cawan[nextPhys] !== undefined) ? glasswareData.cawan[nextPhys] : '';
+                            $nextTr.find('input[name="berat_cawan[]"]').val(tCawan);
+                            $nextTr.find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
+                            calculateRowKa(k);
+                        }
+                    }
+                }
             } else {
                 $tr.find('input[name="berat_cawan[]"]').val('');
                 $tr.find('.val-tare-cawan').text('-');
@@ -1959,16 +2016,26 @@
             }
         }, true);
 
-        // Capture Enter and Tab in window capture phase to guarantee downwards navigation
+        // Capture Enter and Tab in window capture phase to guarantee downwards navigation on PC & Tablets
         window.addEventListener('keydown', function(e) {
             const target = e.target;
             const isInside = target && target.closest && target.closest('.analisa-table, #analisaAccordion table');
-            if (isInside && (e.key === 'Tab' || e.key === 'Enter')) {
+            const isNavKey = (e.key === 'Tab' || e.key === 'Enter' || e.keyCode === 9 || e.keyCode === 13 || e.which === 9 || e.which === 13);
+            if (isInside && isNavKey) {
                 e.preventDefault();
                 e.stopPropagation();
                 navigateTableVertical(target, e.shiftKey ? -1 : 1);
             }
         }, true);
+
+        // Tablet / Mobile virtual keyboard Action / Enter / Next key support
+        $(document).on('keypress', '.analisa-table input, .analisa-table select, #analisaAccordion table input, #analisaAccordion table select', function(e) {
+            if (e.keyCode === 13 || e.which === 13 || e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                navigateTableVertical(this, e.shiftKey ? -1 : 1);
+            }
+        });
 
         // Direct Table Cell Paste Listener (jQuery backup)
         $(document).on('paste', handleDirectTablePaste);
@@ -2070,7 +2137,7 @@
             }
         }
 
-        if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+        if (isGulaKristalMaterial(JENIS)) {
             $(`input[name="analisa_type"][value="long-term"]`).prop('checked', true);
         }
         $('#jumlahData').val(1);
@@ -2110,7 +2177,7 @@
         currentKategori = kategori;
         currentJumlah = matching.length;
 
-        if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+        if (isGulaKristalMaterial(JENIS)) {
             $(`input[name="analisa_type"][value="${kategori}"]`).prop('checked', true);
         }
         $('#jumlahData').val(matching.length);
@@ -2241,7 +2308,7 @@
         // Priority 1: If URL explicitly specifies a category (?kategori=incoming, sta, monitoring, long-term)
         if (reqKategori) {
             if (reqKategori === 'long-term') {
-                if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+                if (isGulaKristalMaterial(JENIS)) {
                     $(`input[name="analisa_type"][value="long-term"]`).prop('checked', true);
                 }
                 if (SERVER_EXISTING && SERVER_EXISTING.id) {
@@ -2253,7 +2320,7 @@
             }
 
             if (['incoming', 'sta', 'monitoring'].includes(reqKategori)) {
-                if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+                if (isGulaKristalMaterial(JENIS)) {
                     $(`input[name="analisa_type"][value="${reqKategori}"]`).prop('checked', true);
                 }
 
@@ -2310,7 +2377,7 @@
         }
 
         // Priority 4: Default start form for standard material
-        if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+        if (isGulaKristalMaterial(JENIS)) {
             $(`input[name="analisa_type"][value="incoming"]`).prop('checked', true);
             startForm('short-term', 1, 'incoming');
         } else {
@@ -2319,7 +2386,7 @@
     }
 
     function handleMulai() {
-        const isGulaKristal = ['Gula Tebu', 'Gula Kelapa'].includes(JENIS);
+        const isGulaKristal = isGulaKristalMaterial(JENIS);
         let selectedVal = isGulaKristal ? $('input[name="analisa_type"]:checked').val() : 'garam-gula';
 
         if (isGulaKristal && !selectedVal) {
@@ -2563,7 +2630,7 @@
         $('#analisaAccordion').html(html);
     }
 
-    function renderOrganoCell(fieldKey) {
+    function renderOrganoCell(fieldKey, tabIndex = null) {
         const organoOpts = getMasterOptions('organo');
         let optHtml = `<option value="">-- Pilih Organo --</option>`;
         organoOpts.forEach(opt => {
@@ -2573,14 +2640,16 @@
             optHtml += `<option value="${val}" data-custom="${isCustom ? '1' : '0'}">${label}</option>`;
         });
 
+        const tabAttr = tabIndex ? `tabindex="${tabIndex}"` : '';
+
         return `
             <div class="organo-cell-container">
-                <select class="form-select form-select-sm select-organo-dropdown calc-trigger">
+                <select class="form-select form-select-sm select-organo-dropdown calc-trigger" ${tabAttr}>
                     ${optHtml}
                 </select>
                 <div class="organo-custom-input-box mt-1" style="display:none;">
                     <div class="input-group input-group-sm">
-                        <input type="text" class="form-control form-control-sm input-organo-custom-text calc-trigger" placeholder="Tulis rincian..." />
+                        <input type="text" class="form-control form-control-sm input-organo-custom-text calc-trigger" ${tabAttr} placeholder="Tulis rincian..." />
                         <button type="button" class="btn btn-outline-secondary btn-sm btn-close-organo-custom" title="Kembali ke pilihan dropdown">
                             <i class="ri-close-line"></i>
                         </button>
@@ -2590,7 +2659,7 @@
             </div>`;
     }
 
-    function renderDropdownCell(field) {
+    function renderDropdownCell(field, tabIndex = null) {
         const labelText = field.label || (field.masterKey ? (field.masterKey.charAt(0).toUpperCase() + field.masterKey.slice(1)) : 'Opsi');
         const opts = getMasterOptions(field.masterKey);
         let optHtml = `<option value="">-- Pilih ${labelText} --</option>`;
@@ -2599,8 +2668,9 @@
             const label = typeof opt === 'object' ? opt.label : opt;
             optHtml += `<option value="${val}">${label}</option>`;
         });
+        const tabAttr = tabIndex ? `tabindex="${tabIndex}"` : '';
         return `
-            <select class="form-select form-select-sm select-${field.key.replace('[]','')} calc-trigger" name="${field.key}">
+            <select class="form-select form-select-sm select-${field.key.replace('[]','')} calc-trigger" name="${field.key}" ${tabAttr}>
                 ${optHtml}
             </select>`;
     }
@@ -2633,6 +2703,7 @@
                             inputmode="decimal"
                             class="form-control form-control-sm calc-trigger numeric-clean-input input-brix"
                             name="brix[]"
+                            tabindex="${100 + i}"
                             placeholder="0.00"
                             autocomplete="off">
                     </td>
@@ -2641,6 +2712,7 @@
                             inputmode="decimal"
                             class="form-control form-control-sm calc-trigger numeric-clean-input input-ph"
                             name="ph[]"
+                            tabindex="${200 + i}"
                             placeholder="0.00"
                             autocomplete="off">
                     </td>
@@ -2650,6 +2722,7 @@
                                 inputmode="decimal"
                                 class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
                                 name="kotoran[]"
+                                tabindex="${300 + i}"
                                 placeholder="0.00"
                                 autocomplete="off">
                             <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
@@ -2661,19 +2734,20 @@
                                 inputmode="decimal"
                                 class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
                                 name="ka[]"
+                                tabindex="${400 + i}"
                                 placeholder="0.00"
                                 autocomplete="off">
                             <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kadar Air">%</span>
                         </div>
                     </td>
                     <td style="min-width: 160px;">
-                        ${renderOrganoCell('organo[]')}
+                        ${renderOrganoCell('organo[]', 500 + i)}
                     </td>
                     <td style="min-width: 130px;">
-                        ${renderDropdownCell({ key: 'warna[]', masterKey: 'warna' })}
+                        ${renderDropdownCell({ key: 'warna[]', masterKey: 'warna' }, 600 + i)}
                     </td>
                     <td style="min-width: 130px;">
-                        ${renderDropdownCell({ key: 'aroma[]', masterKey: 'aroma' })}
+                        ${renderDropdownCell({ key: 'aroma[]', masterKey: 'aroma' }, 700 + i)}
                     </td>
                 </tr>`;
 
@@ -2690,30 +2764,30 @@
                 <tr>
                     <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
                     <td style="min-width: 170px;">
-                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]">
+                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]" tabindex="${100 + i}">
                             ${getBeakerOptions(defaultBeaker)}
                         </select>
                         <input type="hidden" name="berat_beaker_500[]" value="${tare500}">
                         <input type="hidden" name="berat_beaker_250[]" value="${tare250}">
                     </td>
                     <td style="min-width: 140px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_a[]" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_a[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B500: <span class="val-tare-500">${tare500 ? tare500 + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 140px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_b[]" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_b[]" tabindex="${300 + i}" placeholder="0.00" autocomplete="off">
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B250: <span class="val-tare-250">${tare250 ? tare250 + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 140px;" class="text-center align-middle">
                         <span class="badge badge-kotoran-calc bg-light text-muted fs-7">-%</span>
                     </td>
                     <td style="min-width: 160px;">
-                        <select class="form-select form-select-sm select-rasa-tab2" name="rasa[]">
+                        <select class="form-select form-select-sm select-rasa-tab2" name="rasa[]" tabindex="${400 + i}">
                             ${rasaOptHtml}
                         </select>
                     </td>
                     <td style="min-width: 150px;">
-                        <select class="form-select form-select-sm" name="aroma_pengotor[]">
+                        <select class="form-select form-select-sm" name="aroma_pengotor[]" tabindex="${500 + i}">
                             ${getAromaPengotorOptions('')}
                         </select>
                     </td>
@@ -2724,13 +2798,13 @@
                 <tr>
                     <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
                     <td style="min-width: 170px;">
-                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]">
+                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]" tabindex="${100 + i}">
                             ${getCawanOptions(defaultCawan)}
                         </select>
                         <input type="hidden" name="berat_cawan[]" value="${tareCawan}">
                     </td>
                     <td style="min-width: 150px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <span class="val-tare-cawan">${tareCawan ? tareCawan + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 150px;" class="text-center align-middle">
@@ -2919,14 +2993,14 @@
                                             </th>
                                             <th class="th-data-col" data-col-idx="1" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
                                                 <div class="d-flex align-items-center justify-content-between gap-1">
-                                                    <span>Timbang A (B500+Gula) <span class="unit-badge">gr</span></span>
-                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="1" title="Salin nilai baris 1 ke semua baris (Timbang A)"><i class="ri-arrow-down-double-line"></i></button>
+                                                    <span>Beaker 500g <span class="unit-badge">gr</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="1" title="Salin nilai baris 1 ke semua baris (Beaker 500g)"><i class="ri-arrow-down-double-line"></i></button>
                                                 </div>
                                             </th>
                                             <th class="th-data-col" data-col-idx="2" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
                                                 <div class="d-flex align-items-center justify-content-between gap-1">
-                                                    <span>Timbang B (B250+Gula) <span class="unit-badge">gr</span></span>
-                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="2" title="Salin nilai baris 1 ke semua baris (Timbang B)"><i class="ri-arrow-down-double-line"></i></button>
+                                                    <span>Beaker 250g <span class="unit-badge">gr</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="2" title="Salin nilai baris 1 ke semua baris (Beaker 250g)"><i class="ri-arrow-down-double-line"></i></button>
                                                 </div>
                                             </th>
                                             <th class="text-center">Hasil % Kotoran</th>
@@ -3047,17 +3121,19 @@
         let rows = '';
         for (let i = 1; i <= jumlah; i++) {
             let tds = `<td class="td-sampel"><span class="sampel-badge">${i}</span></td>`;
-            GARAM_GULA_FIELDS.forEach(f => {
+            GARAM_GULA_FIELDS.forEach((f, cIdx) => {
+                const tabIndex = (cIdx + 1) * 100 + i;
                 if (f.type === 'organo-select') {
-                    tds += `<td>${renderOrganoCell(f.key)}</td>`;
+                    tds += `<td>${renderOrganoCell(f.key, tabIndex)}</td>`;
                 } else if (f.type === 'dropdown') {
-                    tds += `<td>${renderDropdownCell(f)}</td>`;
+                    tds += `<td>${renderDropdownCell(f, tabIndex)}</td>`;
                 } else if (f.type === 'text') {
                     tds += `
                         <td>
                             <input type="text"
                                 class="form-control form-control-sm upper-input"
                                 name="${f.key}"
+                                tabindex="${tabIndex}"
                                 placeholder="-"
                                 autocomplete="off">
                         </td>`;
@@ -3069,6 +3145,7 @@
                                 inputmode="decimal"
                                 class="form-control form-control-sm calc-trigger numeric-clean-input"
                                 name="${f.key}"
+                                tabindex="${tabIndex}"
                                 placeholder="0.00"
                                 autocomplete="off">
                         </td>`;
@@ -3422,19 +3499,25 @@
         const maxKotoranLabel = (dynamicStandards && dynamicStandards.kotoran && dynamicStandards.kotoran.label) ? dynamicStandards.kotoran.label : `${maxKotoran}%`;
 
         if (!isNaN(a) && !isNaN(b) && a > 0 && b > 0) {
-            if (!isNaN(t500) && t500 > 0 && a <= t500) {
+            if (isNaN(t500) || t500 <= 0 || isNaN(t250) || t250 <= 0) {
                 $tabRingkasanInput.val('');
-                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>A (${a}g) &le; Tare B500 (${t500.toFixed(2)}g)`);
-            } else if (!isNaN(t250) && t250 > 0 && b <= t250) {
+                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html('<i class="ri-alert-line me-1"></i>Pilih No. Beaker');
+            } else if (a <= t500) {
                 $tabRingkasanInput.val('');
-                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>B (${b}g) &le; Tare B250 (${t250.toFixed(2)}g)`);
+                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Beaker 500g (${a}g) &le; Tare (${t500.toFixed(2)}g)`);
+            } else if (b <= t250) {
+                $tabRingkasanInput.val('');
+                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Beaker 250g (${b}g) &le; Tare (${t250.toFixed(2)}g)`);
             } else {
-                const netA = (!isNaN(t500) && t500 > 0) ? (a - t500) : a;
-                const netB = (!isNaN(t250) && t250 > 0) ? (b - t250) : b;
+                const netA = a - t500;
+                const netB = b - t250;
 
                 if (netA <= 0) {
                     $tabRingkasanInput.val('');
-                    $badge.removeClass().addClass('badge bg-warning text-dark fs-7').text('Bobot Net A <= 0');
+                    $badge.removeClass().addClass('badge bg-warning text-dark fs-7').text('Net Beaker 500g <= 0');
+                } else if (netB > netA) {
+                    $tabRingkasanInput.val('');
+                    $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Anomali (Net B250 ${netB.toFixed(2)}g > Net B500 ${netA.toFixed(2)}g)`);
                 } else {
                     const kotoranVal = ((netA - netB) / netA) * 100;
                     const formatted = kotoranVal.toFixed(2);
@@ -3476,22 +3559,30 @@
         const maxKaLabel = (dynamicStandards && dynamicStandards.ka && dynamicStandards.ka.label) ? dynamicStandards.ka.label : `${maxKa}%`;
 
         if (!isNaN(aa) && aa > 0) {
-            if (!isNaN(tCawan) && tCawan > 0 && aa <= tCawan) {
+            if (isNaN(tCawan) || tCawan <= 0) {
                 $tabRingkasanInput.val('');
-                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>AA (${aa}g) &le; Tare Cawan (${tCawan.toFixed(2)}g)`);
+                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html('<i class="ri-alert-line me-1"></i>Pilih No. Cawan');
+            } else if (aa <= tCawan) {
+                $tabRingkasanInput.val('');
+                $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>AA (${aa}g) &le; Tare (${tCawan.toFixed(2)}g)`);
             } else {
-                const netBobot = (!isNaN(tCawan) && tCawan > 0) ? (aa - tCawan) : aa;
-                const kaVal = ((5.00 - netBobot) / 5.00) * 100;
-                const formatted = kaVal.toFixed(2);
-
-                $tabRingkasanInput.val(formatted);
-
-                if (kaVal > maxKa) {
-                    $badge.removeClass().addClass('badge bg-danger fs-7').html(`<i class="ri-error-warning-line me-1"></i>${formatted}% (Over Limit > ${maxKaLabel})`);
-                } else if (kaVal < 0) {
-                    $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>${formatted}% (Anomali < 0%)`);
+                const netBobot = aa - tCawan;
+                if (netBobot > 5.00) {
+                    $tabRingkasanInput.val('');
+                    $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Anomali (Net ${netBobot.toFixed(2)}g > 5.00g)`);
                 } else {
-                    $badge.removeClass().addClass('badge bg-success fs-7').html(`<i class="ri-checkbox-circle-line me-1"></i>${formatted}% (OK)`);
+                    const kaVal = ((5.00 - netBobot) / 5.00) * 100;
+                    const formatted = kaVal.toFixed(2);
+
+                    $tabRingkasanInput.val(formatted);
+
+                    if (kaVal > maxKa) {
+                        $badge.removeClass().addClass('badge bg-danger fs-7').html(`<i class="ri-error-warning-line me-1"></i>${formatted}% (Over Limit > ${maxKaLabel})`);
+                    } else if (kaVal < 0) {
+                        $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>${formatted}% (Anomali < 0%)`);
+                    } else {
+                        $badge.removeClass().addClass('badge bg-success fs-7').html(`<i class="ri-checkbox-circle-line me-1"></i>${formatted}% (OK)`);
+                    }
                 }
             }
         } else {
@@ -5071,7 +5162,7 @@
         currentKategori = draft.setup.kategori || 'incoming';
         currentJumlah = draft.setup.jumlah;
 
-        if (['Gula Tebu', 'Gula Kelapa'].includes(JENIS)) {
+        if (isGulaKristalMaterial(JENIS)) {
             const radioVal = currentType === 'long-term' ? 'long-term' : currentKategori;
             $(`input[name="analisa_type"][value="${radioVal}"]`).prop('checked', true).trigger('change');
         }
