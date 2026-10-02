@@ -36,13 +36,15 @@ class BlendingAwalController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        BlendingAwal::create([
-            'id' => $request->id,
-            'production_batch_id' => $request->production_batch_id,
-            'batch_range' => $request->batch_range,
-            'nomor_blending' => $request->nomor_blending,
-            'volume' => $request->volume,
-        ]);
+        BlendingAwal::updateOrCreate(
+            ['id' => $request->id],
+            [
+                'production_batch_id' => $request->production_batch_id,
+                'batch_range' => $request->batch_range,
+                'nomor_blending' => $request->nomor_blending,
+                'volume' => $request->volume,
+            ]
+        );
 
         return response()->json([
             'status'  => 'success',
