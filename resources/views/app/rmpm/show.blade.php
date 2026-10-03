@@ -23,6 +23,11 @@
 @endsection
 
 @section('content')
+@php
+    $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
+    $isGaram = ($jenisUpper === 'GARAM');
+    $isGulaKristal = (!$isGaram && (str_contains($jenisUpper, 'GULA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'KELAPA')));
+@endphp
 <div class="page-content">
     <div class="container-fluid">
 
@@ -184,7 +189,7 @@
                                     </div>
                                     <div class="col-lg-3 col-6">
                                         <p class="text-muted mb-2 text-uppercase fw-semibold">Disposisi</p>
-                                        @if ($identitas->jenis == 'Gula Tebu' || $identitas->jenis == 'Gula Kelapa')
+                                        @if ($isGulaKristal)
                                         @php
                                         $disposisi_short_term =
                                         $analisa_short_term->first()->disposisi ?? null;
@@ -358,7 +363,7 @@
                                     @if ($data_kemasan)
                                     @php
                                     $kemasanFields =
-                                    $identitas->jenis === 'Garam'
+                                    $isGaram
                                     ? [
                                     'kotor' => ['label' => 'Kotor', 'type' => 'yes_bad'],
                                     'berair' => ['label' => 'Berair', 'type' => 'yes_bad'],
@@ -529,7 +534,7 @@
                         </div>
 
                         {{-- ── TABEL ANALISA ── --}}
-                        @if ($identitas->jenis == 'Gula Tebu' || $identitas->jenis == 'Gula Kelapa')
+                        @if ($isGulaKristal)
 
                         {{-- Unified Short Term Analysis: Incoming, STA, Monitoring --}}
                         <div class="col-lg-12">
@@ -560,18 +565,14 @@
                                         </span>
                                         @endif
                                         <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'incoming']) }}" class="btn btn-sm btn-primary shadow-sm">
-                                            <i class="ri-edit-box-line me-1"></i> Update Incoming
+                                            <i class="ri-inbox-archive-line me-1"></i> {{ $groupedShort->has('incoming') ? 'Update Incoming' : '+ Input Incoming' }}
                                         </a>
-                                        @if ($groupedShort->has('sta'))
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'sta']) }}" class="btn btn-sm btn-info shadow-sm">
-                                            <i class="ri-edit-box-line me-1"></i> Update STA
+                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'sta']) }}" class="btn btn-sm btn-info shadow-sm text-white">
+                                            <i class="ri-flashlight-line me-1"></i> {{ $groupedShort->has('sta') ? 'Update STA' : '+ Input STA' }}
                                         </a>
-                                        @endif
-                                        @if ($groupedShort->has('monitoring'))
                                         <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'monitoring']) }}" class="btn btn-sm btn-success shadow-sm">
-                                            <i class="ri-edit-box-line me-1"></i> Update Monitoring
+                                            <i class="ri-line-chart-line me-1"></i> {{ $groupedShort->has('monitoring') ? 'Update Monitoring' : '+ Input Monitoring' }}
                                         </a>
-                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -1104,7 +1105,7 @@
                 !is_null($data_mobil) &&
                 !is_null($data_dokumen) &&
                 !is_null($data_kemasan) &&
-                ($identitas->jenis === 'Garam' || !is_null($data_raw));
+                ($isGaram || !is_null($data_raw));
                 @endphp
                 @if ($samplingComplete)
                 <div class="alert alert-info text-center">Anda sudah mengisi semua sampling.</div>
@@ -1129,7 +1130,7 @@
                         <i class="ri-inbox-line me-2"></i> Sampling Kemasan
                     </button>
                     @endif
-                    @if ($identitas->jenis !== 'Garam' && is_null($data_raw))
+                    @if (!$isGaram && is_null($data_raw))
                     <button type="button" class="list-group-item list-group-item-action sampling-option"
                         data-sampling="kondisi_raw" data-bs-dismiss="modal">
                         <i class="ri-flask-line me-2"></i> Sampling Raw
@@ -1314,7 +1315,7 @@
                 <form class="form-sampling" id="form-kemasan">
                     @csrf
                     <input type="hidden" name="id_identitas" value="{{ $identitas->id }}">
-                    @if ($identitas->jenis == 'Garam')
+                    @if ($isGaram)
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <label class="form-label mb-0 fw-semibold">a. Kotor</label>
@@ -1529,7 +1530,7 @@
                     <input type="hidden" name="id_kemasan" value="{{ $data_kemasan->id ?? null }}">
                     @php
                     $modalFields =
-                    $identitas->jenis === 'Garam'
+                    $isGaram
                     ? [
                     'kotor' => 'a. Kotor',
                     'berair' => 'b. Berair',
@@ -1566,7 +1567,7 @@
                     @endforeach
                     <div class="mb-3">
                         <label
-                            class="form-label fw-semibold">{{ $identitas->jenis === 'Garam' ? 'g. Lain-lain' : 'd. Lain-lain' }}</label>
+                            class="form-label fw-semibold">{{ $isGaram ? 'g. Lain-lain' : 'd. Lain-lain' }}</label>
                         <input type="text" class="form-control" name="lain_lain"
                             value="{{ $data_kemasan->lain_lain ?? '' }}" placeholder="Tuliskan keterangan lain...">
                     </div>

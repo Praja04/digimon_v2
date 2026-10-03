@@ -14,7 +14,7 @@ class RMPMStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'jenis' => 'required|in:Gula Tebu,Gula Kelapa,Gula,Garam',
+            'jenis' => 'required|string|max:100',
             'tanggal_kedatangan' => 'required|date',
             'supplier' => 'required|string',
             'asal_bahan' => 'required|string',

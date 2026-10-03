@@ -982,79 +982,94 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Master Data RM (Raw Material)
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
     --------------------------------------------*/
-    Route::resource(
-        'master-data-rm/jenis-bahan',
-        MasterJenisBahanController::class
-    )->names('master-jenis-bahan')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+    Route::middleware([
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+    ])->group(function (): void {
+        Route::resource(
+            'master-data-rm/jenis-bahan',
+            MasterJenisBahanController::class
+        )->names('master-jenis-bahan')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-    Route::get(
-        'master-data-rm/supplier/get-all-active',
-        [MasterSupplierRmController::class, 'getAllActive']
-    )->name('master-supplier-rm.get-all-active');
+        Route::get(
+            'master-data-rm/supplier/get-all-active',
+            [MasterSupplierRmController::class, 'getAllActive']
+        )->name('master-supplier-rm.get-all-active');
 
-    Route::get(
-        'master-data-rm/supplier/get-by-jenis-bahan/{jenisBahanId}',
-        [MasterSupplierRmController::class, 'getByJenisBahan']
-    )->name('master-supplier-rm.get-by-jenis-bahan');
+        Route::get(
+            'master-data-rm/supplier/get-by-jenis-bahan/{jenisBahanId}',
+            [MasterSupplierRmController::class, 'getByJenisBahan']
+        )->name('master-supplier-rm.get-by-jenis-bahan');
 
-    Route::resource(
-        'master-data-rm/supplier',
-        MasterSupplierRmController::class
-    )->names('master-supplier-rm')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::resource(
+            'master-data-rm/supplier',
+            MasterSupplierRmController::class
+        )->names('master-supplier-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-    Route::get(
-        'master-data-rm/asal-bahan/get-by-supplier/{supplierId}',
-        [MasterAsalBahanController::class, 'getBySupplier']
-    )->name('master-asal-bahan.get-by-supplier');
+        Route::get(
+            'master-data-rm/asal-bahan/get-all-active',
+            [MasterAsalBahanController::class, 'getAllActive']
+        )->name('master-asal-bahan.get-all-active');
 
-    Route::resource(
-        'master-data-rm/asal-bahan',
-        MasterAsalBahanController::class
-    )->names('master-asal-bahan')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::get(
+            'master-data-rm/asal-bahan/get-by-jenis-bahan/{jenisBahanId}',
+            [MasterAsalBahanController::class, 'getByJenisBahan']
+        )->name('master-asal-bahan.get-by-jenis-bahan');
 
-    Route::get(
-        'master-data-rm/glassware/active-data',
-        [MasterGlasswareController::class, 'getActiveData']
-    )->name('master-glassware.active-data');
+        Route::get(
+            'master-data-rm/asal-bahan/get-by-supplier/{supplierId}',
+            [MasterAsalBahanController::class, 'getBySupplier']
+        )->name('master-asal-bahan.get-by-supplier');
 
-    Route::resource(
-        'master-data-rm/glassware',
-        MasterGlasswareController::class
-    )->names('master-glassware')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::resource(
+            'master-data-rm/asal-bahan',
+            MasterAsalBahanController::class
+        )->names('master-asal-bahan')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-    Route::get(
-        'master-data-rm/standar/get-by-jenis',
-        [MasterStandarRmController::class, 'getActiveByJenis']
-    )->name('master-standar-rm.get-by-jenis');
+        Route::get(
+            'master-data-rm/glassware/active-data',
+            [MasterGlasswareController::class, 'getActiveData']
+        )->name('master-glassware.active-data');
 
-    Route::resource(
-        'master-data-rm/standar',
-        MasterStandarRmController::class
-    )->names('master-standar-rm')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::resource(
+            'master-data-rm/glassware',
+            MasterGlasswareController::class
+        )->names('master-glassware')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::get(
+            'master-data-rm/standar/get-by-jenis',
+            [MasterStandarRmController::class, 'getActiveByJenis']
+        )->name('master-standar-rm.get-by-jenis');
+
+        Route::resource(
+            'master-data-rm/standar',
+            MasterStandarRmController::class
+        )->names('master-standar-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+    });
 });

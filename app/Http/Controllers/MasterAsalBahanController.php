@@ -129,12 +129,80 @@ class MasterAsalBahanController extends Controller
         ]);
     }
 
+    public function getAllActive(): JsonResponse
+    {
+        $asalBahans = MasterAsalBahan::where('status', true)
+            ->select('asal_bahan')
+            ->distinct()
+            ->orderBy('asal_bahan')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data'   => $asalBahans,
+        ]);
+    }
+
+    public function getByJenisBahan($jenisBahanId): JsonResponse
+    {
+        $jenisBahan = MasterJenisBahan::find($jenisBahanId);
+
+        // 1. Coba exact match jenis_bahan_id
+        $asalBahans = MasterAsalBahan::where('jenis_bahan_id', $jenisBahanId)
+            ->where('status', true)
+            ->select('asal_bahan')
+            ->distinct()
+            ->orderBy('asal_bahan')
+            ->get();
+
+        // 2. Jika kosong, cari berdasarkan nama mirip (misal 'GULA' -> 'GULA TEBU', 'GULA KELAPA')
+        if ($asalBahans->isEmpty() && $jenisBahan) {
+            $cleanName = trim(strtoupper($jenisBahan->nama));
+            $relatedJenisIds = MasterJenisBahan::where('nama', 'LIKE', "%{$cleanName}%")
+                ->orWhereRaw('? LIKE CONCAT("%", nama, "%")', [$cleanName])
+                ->pluck('id');
+
+            if ($relatedJenisIds->isNotEmpty()) {
+                $asalBahans = MasterAsalBahan::whereIn('jenis_bahan_id', $relatedJenisIds)
+                    ->where('status', true)
+                    ->select('asal_bahan')
+                    ->distinct()
+                    ->orderBy('asal_bahan')
+                    ->get();
+            }
+        }
+
+        // 3. Fallback jika masih kosong: tampilkan seluruh asal bahan aktif agar pilihan tetap muncul
+        if ($asalBahans->isEmpty()) {
+            $asalBahans = MasterAsalBahan::where('status', true)
+                ->select('asal_bahan')
+                ->distinct()
+                ->orderBy('asal_bahan')
+                ->get();
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => $asalBahans,
+        ]);
+    }
+
     public function getBySupplier($supplierId): JsonResponse
     {
         $asalBahans = MasterAsalBahan::where('supplier_rm_id', $supplierId)
             ->where('status', true)
+            ->select('asal_bahan')
+            ->distinct()
             ->orderBy('asal_bahan')
-            ->get(['id', 'asal_bahan']);
+            ->get();
+
+        if ($asalBahans->isEmpty()) {
+            $asalBahans = MasterAsalBahan::where('status', true)
+                ->select('asal_bahan')
+                ->distinct()
+                ->orderBy('asal_bahan')
+                ->get();
+        }
 
         return response()->json([
             'status' => true,

@@ -107,37 +107,31 @@ class RMPMController extends Controller
 
                 ->addColumn('status', function ($item) {
                     $status = '⌛ Proses';
+                    $jenisUpper = strtoupper(trim($item->jenis ?? ''));
 
-                    if (
-                        in_array(
-                            $item->jenis,
-                            ['Garam', 'Gula'],
-                            true
-                        )
-                    ) {
-                        foreach (
-                            $item->analisaGaramGula as $analisa
-                        ) {
+                    if ($jenisUpper === 'GARAM') {
+                        foreach ($item->analisaGaramGula as $analisa) {
                             if ($analisa->disposisi) {
                                 $status = '✅ Selesai';
                                 break;
                             }
                         }
-                    } elseif (
-                        in_array(
-                            $item->jenis,
-                            ['Gula Tebu', 'Gula Kelapa'],
-                            true
-                        )
-                    ) {
-                        foreach (
-                            $item->analisaLongTerm as $analisa
-                        ) {
+                    } else {
+                        // Gula, Gula Kelapa, Gula Tebu, etc. Check long term or short term incoming
+                        foreach ($item->analisaLongTerm as $analisa) {
                             if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                 $status = '✅ Selesai';
                                 break;
                             } elseif ($analisa->status === 'draft') {
                                 $status = '⌛ Draft';
+                            }
+                        }
+                        if ($status === '⌛ Proses') {
+                            foreach ($item->analisaShortTerm as $analisa) {
+                                if (!empty($analisa->disposisi)) {
+                                    $status = '✅ Selesai';
+                                    break;
+                                }
                             }
                         }
                     }
@@ -155,7 +149,7 @@ class RMPMController extends Controller
 
         $masterJenisBahans = \App\Models\MasterJenisBahan::where('status', true)->orderBy('nama')->get();
         $masterSuppliers = \App\Models\MasterSupplierRm::where('status', true)->orderBy('nama_supplier')->get();
-        $masterAsalBahans = \App\Models\MasterAsalBahan::where('status', true)->orderBy('asal_bahan')->get();
+        $masterAsalBahans = \App\Models\MasterAsalBahan::where('status', true)->select('asal_bahan')->distinct()->orderBy('asal_bahan')->get();
 
         return view('app.rmpm.rm', compact('masterJenisBahans', 'masterSuppliers', 'masterAsalBahans'));
     }
