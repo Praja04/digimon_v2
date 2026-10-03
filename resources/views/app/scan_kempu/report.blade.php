@@ -350,6 +350,7 @@
                                     <option value="all">Semua Hasil</option>
                                     <option value="OK">Lolos / Release (OK)</option>
                                     <option value="HOLD">Tahan / Evaluasi (HOLD)</option>
+                                    <option value="REPRO">Repro (Produk Reject ke Produksi)</option>
                                     <option value="NOT_OK">Reject / Kirim Workshop</option>
                                     <option value="SCRAPPED">Scrap</option>
                                 </select>
@@ -787,8 +788,10 @@
                     let resultBadge = '<span class="badge bg-success fs-11">OK / Release</span>';
                     if (item.action_result === 'HOLD') {
                         resultBadge = '<span class="badge bg-warning text-dark fs-11">HOLD (Tahan)</span>';
+                    } else if (item.action_result === 'REPRO') {
+                        resultBadge = '<span class="badge bg-info text-white fs-11">REPRO (Produksi)</span>';
                     } else if (item.action_result === 'NOT_OK') {
-                        resultBadge = '<span class="badge bg-danger fs-11">Reject</span>';
+                        resultBadge = '<span class="badge bg-danger fs-11">Reject / Repair</span>';
                     } else if (item.action_result === 'SCRAPPED') {
                         resultBadge = '<span class="badge bg-dark fs-11">Scrap / Afkir</span>';
                     }
@@ -1044,6 +1047,8 @@
                                 if (h.action_result === 'OK') dotClass = 'success';
                                 else if (h.action_result === 'HOLD') dotClass =
                                     'warning';
+                                else if (h.action_result === 'REPRO') dotClass =
+                                    'info';
                                 else if (h.action_result === 'NOT_OK') dotClass =
                                     'danger';
                                 else if (h.action_result === 'SCRAPPED') dotClass =
