@@ -491,7 +491,7 @@
                 if (now - lastScanTime < 2000) return; // Debounce 2 detik
                 lastScanTime = now;
 
-                playBeep('success');
+                // playBeep('success');
                 $('#scanTargetFrame').addClass('scanned');
 
                 pauseScanner();
@@ -614,7 +614,7 @@
                     },
                     error: function(xhr) {
                         Swal.close();
-                        playBeep('error');
+                        // playBeep('error');
                         let msg = 'Terjadi kesalahan saat memuat data.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             msg = xhr.responseJSON.message;
@@ -844,7 +844,7 @@
                     success: function(res) {
                         Swal.close();
                         if (res.status) {
-                            playBeep('success');
+                            // playBeep('success');
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil Diproses!',
@@ -854,7 +854,7 @@
                                 resetBulkForm();
                             });
                         } else {
-                            playBeep('error');
+                            // playBeep('error');
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal Menyimpan',
@@ -864,7 +864,7 @@
                     },
                     error: function(xhr) {
                         Swal.close();
-                        playBeep('error');
+                        // playBeep('error');
                         let msg = 'Gagal menyimpan keputusan QC Bulk.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             msg = xhr.responseJSON.message;

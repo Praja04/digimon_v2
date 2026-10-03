@@ -93,7 +93,7 @@ class ScanKempuController extends Controller
 
         if ($this->canForceScan() && isset($rawCards['qc-force'])) {
             $cards['qc-force'] = array_merge($rawCards['qc-force'], [
-                'route'       => route('scan-kempu.scan', 'qc-force'),
+                'route'       => route('scan-kempu.scan', 'qc-pm-force'),
                 'badge_color' => 'danger',
                 'icon'        => 'ri-shield-flash-line',
             ]);
@@ -137,7 +137,7 @@ class ScanKempuController extends Controller
 
         if ($this->canForceScan() && isset($rawCards['qc-force'])) {
             $cards['qc-force'] = array_merge($rawCards['qc-force'], [
-                'route'       => route('scan-kempu.scan', 'qc-force'),
+                'route'       => route('scan-kempu.scan', 'qc-proses-force'),
                 'badge_color' => 'danger',
                 'icon'        => 'ri-shield-flash-line',
             ]);
@@ -151,7 +151,7 @@ class ScanKempuController extends Controller
      */
     public function scan($type)
     {
-        if ($type === 'qc-force' && !$this->canForceScan()) {
+        if (in_array($type, ['qc-force', 'qc-pm-force', 'qc-proses-force']) && !$this->canForceScan()) {
             return redirect()->route('scan-kempu.pm.index')
                 ->with('error', 'Akses ditolak: Hanya user dengan otoritas khusus QC (Non-Operator) yang dapat mengakses Force Scan.');
         }
