@@ -581,7 +581,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware([
-        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,QC',
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,QC,Analis Field,Analis Kimia',
     ])->group(function (): void {
         // Monitoring Storage Kimia
         Route::get('/monitoring-storage-kimia/getBatchData', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getBatchData'])->name('monitoring-storage-kimia.getBatchData');
