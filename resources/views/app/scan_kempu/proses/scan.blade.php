@@ -321,6 +321,7 @@
                                     {{-- Khusus QC PM: Release, Hold, Reject, Scrap --}}
                                     <option value="RELEASE_PM">Release (Release QC PM ke WPM)</option>
                                     <option value="HOLD">Hold (Ditahan di QC PM)</option>
+                                    <option value="REPRO" id="optForcePmRepro" class="d-none">Repro (Produk Reject ke Produksi)</option>
                                     <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
                                     <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
                                 @else
@@ -842,6 +843,18 @@
                     $('#boxManualReusedInputForce').addClass('d-none');
                     $('#inputManualReusedForce').val(curReused + 1);
                     checkForceTargetPreCuci();
+                }
+
+                // Khusus Force Scan QC PM: Opsi REPRO hanya muncul jika kempu posisinya di WFG
+                if (QC_TYPE === 'qc-pm-force') {
+                    if (k.is_in_wfg) {
+                        $('#optForcePmRepro').removeClass('d-none');
+                    } else {
+                        $('#optForcePmRepro').addClass('d-none');
+                        if ($('#modalForceTarget').val() === 'REPRO') {
+                            $('#modalForceTarget').val('RELEASE_PM');
+                        }
+                    }
                 }
 
                 decisionModal.show();
