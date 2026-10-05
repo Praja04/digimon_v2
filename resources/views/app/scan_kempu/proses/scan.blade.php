@@ -327,11 +327,14 @@
                                     <optgroup label="Alur 1: Cek Incoming & Pre Cuci">
                                         <option value="RELEASE_PRE_CUCI">Release Pre-Cuci (+1 Reused, Siap Cuci)</option>
                                         <option value="HOLD_PRE_CUCI">Hold Pre-Cuci (Ditahan di Pre Cuci)</option>
-                                        <option value="REJECT_WORKSHOP">Reject Pre-Cuci (Kirim Workshop Engineering)</option>
+                                        <option value="REJECT_WORKSHOP">Reject Pre-Cuci (Kirim Workshop Engineering)
+                                        </option>
                                     </optgroup>
                                     <optgroup label="Alur 2: Cek After Filling">
-                                        <option value="RELEASE_AFTER_FILLING">Release After Filling (Siap Kirim WFG)</option>
-                                        <option value="HOLD_AFTER_FILLING">Hold After Filling (Evaluasi QC Lanjutan)</option>
+                                        <option value="RELEASE_AFTER_FILLING">Release After Filling (Siap Kirim WFG)
+                                        </option>
+                                        <option value="HOLD_AFTER_FILLING">Hold After Filling (Evaluasi QC Lanjutan)
+                                        </option>
                                         <option value="REPRO">Repro (Produk Reject ke Produksi)</option>
                                         <option value="REJECT_WORKSHOP">Reject After Filling (Kirim Workshop)</option>
                                     </optgroup>
@@ -345,7 +348,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
                                     <span class="fw-bold text-dark fs-13">
-                                         <i class="ri-edit-2-line text-warning me-1"></i> Koreksi Manual Reused (Force
+                                        <i class="ri-edit-2-line text-warning me-1"></i> Koreksi Manual Reused (Force
                                         Pre-Cuci)
                                     </span>
                                     <div class="text-muted fs-11" id="labelReusedHelpForce">
@@ -377,7 +380,8 @@
                     <!-- Notes Input -->
                     <div class="mb-3">
                         <label for="modalInputNotes" class="form-label fs-12 fw-semibold text-body mb-1">
-                            Catatan Pemeriksaan {{ in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']) ? '' : '(Opsional)' }}<span
+                            Catatan Pemeriksaan
+                            {{ in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']) ? '' : '(Opsional)' }}<span
                                 class="{{ in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']) ? 'text-danger' : 'd-none' }}">*</span>:
                         </label>
                         <textarea class="form-control" id="modalInputNotes" rows="3"
@@ -445,7 +449,8 @@
                                 </button>
                             </div>
                             <div class="col-4">
-                                <button type="button" class="btn btn-warning btn-lg w-100 py-3 fw-bold fs-14 shadow-sm text-dark"
+                                <button type="button"
+                                    class="btn btn-warning btn-lg w-100 py-3 fw-bold fs-14 shadow-sm text-dark"
                                     id="btnDecisionHold" title="Hold (Ditahan untuk Evaluasi)">
                                     <i class="ri-pause-circle-line me-1"></i> Hold
                                 </button>
@@ -794,26 +799,26 @@
 
                 $('#btnDecisionOk').prop('disabled', false).html(
                     QC_TYPE === 'qc-after-filling' ?
-                    '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-checkbox-circle-line fs-16"></i> Release (OK)</span><small class="fs-11 text-white-50 mt-1">Lolos & Siap Kirim WFG</small>' :
+                    '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-checkbox-circle-line fs-16"></i> Release (OK)</span>' :
                     '<i class="ri-checkbox-circle-line me-1"></i> Release'
                 );
                 if ($('#btnDecisionHold').length) {
                     $('#btnDecisionHold').prop('disabled', false).html(
                         QC_TYPE === 'qc-after-filling' ?
-                        '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-pause-circle-line fs-16"></i> Hold</span><small class="fs-11 text-dark-50 mt-1">Evaluasi QC Lanjutan</small>' :
+                        '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-pause-circle-line fs-16"></i> Hold</span>' :
                         '<i class="ri-pause-circle-line me-1"></i> Hold'
                     );
                 }
                 if ($('#btnDecisionRepro').length) {
                     $('#btnDecisionRepro').prop('disabled', false).html(
                         QC_TYPE === 'qc-after-filling' ?
-                        '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-recycle-line fs-16"></i> Repro</span><small class="fs-11 text-white-50 mt-1">Produk Reject ke Produksi</small>' :
+                        '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-recycle-line fs-16"></i> Repro</span>' :
                         '<i class="ri-recycle-line me-1"></i> Repro'
                     );
                 }
                 $('#btnDecisionNotOk').prop('disabled', false).html(
                     QC_TYPE === 'qc-after-filling' ?
-                    '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-tools-line fs-16"></i> Repair</span><small class="fs-11 text-white-50 mt-1">Kempu Reject ke Workshop</small>' :
+                    '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-tools-line fs-16"></i> Repair</span>' :
                     '<i class="ri-close-circle-line me-1"></i> Reject'
                 );
 
@@ -964,22 +969,22 @@
                     success: function(res) {
                         btnOk.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1 fw-bold"><i class="ri-checkbox-circle-line fs-16"></i> Release (OK)</span><small class="fs-11 text-dark-50 mt-1">Lolos & Siap Kirim WFG</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1 fw-bold"><i class="ri-checkbox-circle-line fs-16"></i> Release (OK)</span>' :
                             '<i class="ri-checkbox-circle-line me-1"></i> Release'
                         );
                         if (btnHold.length) btnHold.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-pause-circle-line fs-16"></i> Hold</span><small class="fs-11 text-dark-50 mt-1">Evaluasi QC Lanjutan</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-pause-circle-line fs-16"></i> Hold</span>' :
                             '<i class="ri-pause-circle-line me-1"></i> Hold'
                         );
                         if (btnRepro.length) btnRepro.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1 fw-bold"><i class="ri-recycle-line fs-16"></i> Repro</span><small class="fs-11 text-dark-50 mt-1">Produk Reject ke Produksi</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1 fw-bold"><i class="ri-recycle-line fs-16"></i> Repro</span>' :
                             '<i class="ri-recycle-line me-1"></i> Repro'
                         );
                         btnNotOk.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1 fw-bold"><i class="ri-tools-line fs-16"></i> Repair</span><small class="fs-11 text-dark-50 mt-1">Kempu Reject ke Workshop</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1 fw-bold"><i class="ri-tools-line fs-16"></i> Repair</span>' :
                             '<i class="ri-close-circle-line me-1"></i> Reject'
                         );
                         if (btnForce.length) btnForce.prop('disabled', false).html(
@@ -1014,7 +1019,8 @@
 
                             let infoReused = '';
                             if (res.data && res.data.reused_count !== undefined && (
-                                    QC_TYPE === 'qc-pre-cuci' || QC_TYPE === 'qc-proses' || QC_TYPE === 'qc-proses-force' || QC_TYPE === 'qc-force'
+                                    QC_TYPE === 'qc-pre-cuci' || QC_TYPE === 'qc-proses' || QC_TYPE ===
+                                    'qc-proses-force' || QC_TYPE === 'qc-force'
                                 )) {
                                 infoReused =
                                     `<br><span class="badge bg-primary fs-12 mt-2 px-3 py-1">Siklus Reused: ${res.data.reused_count}/21x</span>`;
@@ -1036,22 +1042,22 @@
                     error: function(xhr) {
                         btnOk.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-checkbox-circle-line fs-16"></i> Release (OK)</span><small class="fs-11 text-white-50 mt-1">Lolos & Siap Kirim WFG</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-checkbox-circle-line fs-16"></i> Release (OK)</span>' :
                             '<i class="ri-checkbox-circle-line me-1"></i> Release'
                         );
                         if (btnHold.length) btnHold.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-pause-circle-line fs-16"></i> Hold</span><small class="fs-11 text-dark-50 mt-1">Evaluasi QC Lanjutan</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-pause-circle-line fs-16"></i> Hold</span>' :
                             '<i class="ri-pause-circle-line me-1"></i> Hold'
                         );
                         if (btnRepro.length) btnRepro.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-recycle-line fs-16"></i> Repro</span><small class="fs-11 text-white-50 mt-1">Produk Reject ke Produksi</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-recycle-line fs-16"></i> Repro</span>' :
                             '<i class="ri-recycle-line me-1"></i> Repro'
                         );
                         btnNotOk.prop('disabled', false).html(
                             QC_TYPE === 'qc-after-filling' ?
-                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-tools-line fs-16"></i> Repair</span><small class="fs-11 text-white-50 mt-1">Kempu Reject ke Workshop</small>' :
+                            '<span class="fw-bold fs-14 d-flex align-items-center gap-1"><i class="ri-tools-line fs-16"></i> Repair</span>' :
                             '<i class="ri-close-circle-line me-1"></i> Reject'
                         );
                         if (btnForce.length) btnForce.prop('disabled', false).html(
