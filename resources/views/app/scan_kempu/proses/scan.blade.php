@@ -318,10 +318,11 @@
                             <select class="form-select form-select-lg border-danger fw-semibold fs-14"
                                 id="modalForceTarget">
                                 @if ($card['key'] === 'qc-pm-force')
-                                    {{-- Khusus QC PM: Release, Hold, Reject --}}
+                                    {{-- Khusus QC PM: Release, Hold, Reject, Scrap --}}
                                     <option value="RELEASE_PM">Release (Release QC PM ke WPM)</option>
                                     <option value="HOLD">Hold (Ditahan di QC PM)</option>
                                     <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
+                                    <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
                                 @else
                                     {{-- Khusus QC Proses: Alur Pre Cuci & After Filling --}}
                                     <optgroup label="Alur 1: Cek Incoming & Pre Cuci">
