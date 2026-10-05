@@ -318,28 +318,17 @@
                             <select class="form-select form-select-lg border-danger fw-semibold fs-14"
                                 id="modalForceTarget">
                                 @if ($card['key'] === 'qc-pm-force')
-                                    {{-- Khusus QC PM: Release, Hold, Reject, Scrap --}}
-                                    <option value="RELEASE_PM">Release (Release QC PM ke WPM)</option>
+                                    <option value="RELEASE">Release (Release QC PM ke WPM)</option>
                                     <option value="HOLD">Hold (Ditahan di QC PM)</option>
                                     <option value="REPRO" id="optForcePmRepro" class="d-none">Repro (Produk Reject ke Produksi)</option>
                                     <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
                                     <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
                                 @else
-                                    {{-- Khusus QC Proses: Alur Pre Cuci & After Filling --}}
-                                    <optgroup label="Alur 1: Cek Incoming & Pre Cuci">
-                                        <option value="RELEASE_PRE_CUCI">Release Pre-Cuci (+1 Reused, Siap Cuci)</option>
-                                        <option value="HOLD_PRE_CUCI">Hold Pre-Cuci (Ditahan di Pre Cuci)</option>
-                                        <option value="REJECT_WORKSHOP">Reject Pre-Cuci (Kirim Workshop Engineering)
-                                        </option>
-                                    </optgroup>
-                                    <optgroup label="Alur 2: Cek After Filling">
-                                        <option value="RELEASE_AFTER_FILLING">Release After Filling (Siap Kirim WFG)
-                                        </option>
-                                        <option value="HOLD_AFTER_FILLING">Hold After Filling (Evaluasi QC Lanjutan)
-                                        </option>
-                                        <option value="REPRO">Repro (Produk Reject ke Produksi)</option>
-                                        <option value="REJECT_WORKSHOP">Reject After Filling (Kirim Workshop)</option>
-                                    </optgroup>
+                                    <option value="RELEASE" id="optForceProsesRelease">Release (Lolos)</option>
+                                    <option value="HOLD">Hold (Ditahan)</option>
+                                    <option value="REPRO" id="optForceProsesRepro">Repro (Produk Reject ke Produksi)</option>
+                                    <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
+                                    <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
                                 @endif
                             </select>
                         </div>
@@ -838,6 +827,29 @@
                     $('#inputManualReused').val(curReused + 1);
                 }
                 if ($('#badgeAutoNextReusedForce').length) {
+                    const isAfter = (k.qc_stage_context === 'after_filling' || k.is_in_wfg);
+                    if (QC_TYPE === 'qc-proses-force') {
+                        if (isAfter) {
+                            $('#optForceProsesRepro').removeClass('d-none');
+                            $('#optForceProsesRelease').text('Release (Lolos After Filling)');
+                        } else {
+                            $('#optForceProsesRepro').addClass('d-none');
+                            $('#optForceProsesRelease').text('Release (Lolos Pre-Cuci)');
+                            if ($('#modalForceTarget').val() === 'REPRO') {
+                                $('#modalForceTarget').val('RELEASE');
+                            }
+                        }
+                    } else if (QC_TYPE === 'qc-pm-force') {
+                        if (k.is_in_wfg) {
+                            $('#optForcePmRepro').removeClass('d-none');
+                        } else {
+                            $('#optForcePmRepro').addClass('d-none');
+                            if ($('#modalForceTarget').val() === 'REPRO') {
+                                $('#modalForceTarget').val('RELEASE');
+                            }
+                        }
+                    }
+
                     $('#badgeAutoNextReusedForce').text(`+1 (menjadi ${curReused + 1}x)`);
                     $('#checkManualReusedForce').prop('checked', false);
                     $('#boxManualReusedInputForce').addClass('d-none');
@@ -845,24 +857,16 @@
                     checkForceTargetPreCuci();
                 }
 
-                // Khusus Force Scan QC PM: Opsi REPRO hanya muncul jika kempu posisinya di WFG
-                if (QC_TYPE === 'qc-pm-force') {
-                    if (k.is_in_wfg) {
-                        $('#optForcePmRepro').removeClass('d-none');
-                    } else {
-                        $('#optForcePmRepro').addClass('d-none');
-                        if ($('#modalForceTarget').val() === 'REPRO') {
-                            $('#modalForceTarget').val('RELEASE_PM');
-                        }
-                    }
-                }
-
                 decisionModal.show();
             }
 
             // Fungsi cek target Force Scan apakah Pre-Cuci
             function checkForceTargetPreCuci() {
-                if ($('#modalForceTarget').length && $('#modalForceTarget').val() === 'RELEASE_PRE_CUCI') {
+                const val = $('#modalForceTarget').val();
+                const isRelease = (val === 'RELEASE' || val === 'RELEASE_PRE_CUCI');
+                const isPreCuci = (currentKempu && currentKempu.qc_stage_context === 'pre_cuci');
+
+                if ($('#modalForceTarget').length && isRelease && isPreCuci) {
                     $('#wrapperManualReusedForce').removeClass('d-none');
                 } else {
                     $('#wrapperManualReusedForce').addClass('d-none');
@@ -964,7 +968,7 @@
                         postData.manual_reused = parseInt(manualVal);
                     }
                 } else if ($('#checkManualReusedForce').length && $('#checkManualReusedForce').is(':checked') && (
-                        forceTarget === 'RELEASE_PRE_CUCI' || $('#modalForceTarget').val() === 'RELEASE_PRE_CUCI'
+                        forceTarget === 'RELEASE' || forceTarget === 'RELEASE_PRE_CUCI' || $('#modalForceTarget').val() === 'RELEASE' || $('#modalForceTarget').val() === 'RELEASE_PRE_CUCI'
                     )) {
                     const manualVal = $('#inputManualReusedForce').val();
                     if (manualVal !== '' && !isNaN(manualVal)) {
