@@ -25,7 +25,7 @@ class TimbanganRetailExport implements FromCollection, WithHeadings, WithStyles,
 
     public function headings(): array
     {
-        return ['Mesin', 'Variant', 'Waktu', 'Shift', 'Status', 'Berat', 'Unit', 'NIK'];
+        return ['Mesin', 'Variant', 'Filler', 'Waktu', 'Shift', 'Status', 'Berat', 'Unit', 'NIK'];
     }
 
     public function styles(Worksheet $sheet): array

@@ -290,6 +290,7 @@ class TimbanganRetailMesinController extends Controller
             return [
                 'Mesin'   => $row->mesin,
                 'Variant' => $row->variant,
+                'Filler'  => $row->filler,
                 'Waktu'   => $row->waktu,
                 'Shift'   => $this->getShiftLabel(Carbon::parse($row->waktu)),
                 'Status'  => $row->status,
