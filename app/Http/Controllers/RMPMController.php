@@ -703,7 +703,7 @@ public function pmKartonBct(
             $kategori = 'incoming';
         }
 
-        $isDraft = ($request->input('save_action') === 'draft');
+        $isDraft = ($request->input('save_action') === 'draft') || empty($request->input('disposisi'));
 
         $rules = [
             'id_identitas' => 'required|exists:identitas_rm,id',
@@ -772,6 +772,7 @@ public function pmKartonBct(
                     'warna'            => $this->nullableString($request->warna[$i] ?? null),
                     'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
                     'disposisi'        => $request->disposisi,
+                    'status'           => $isDraft ? 'draft' : 'final',
                     'keterangan'       => $request->keterangan,
                     'created_by'       => auth()->id(),
                     'created_at'       => now(),
