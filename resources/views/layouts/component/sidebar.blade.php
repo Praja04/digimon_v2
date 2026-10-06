@@ -58,7 +58,7 @@
                     true,
                 );
 
-                $showMasterDataSection = in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM'], true);
+                $showMasterDataSection = in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
 
                 $dashboardActive = request()->routeIs('dashboard.*');
                 $scanKempuActive = request()->routeIs('scan-kempu.*');
@@ -682,7 +682,7 @@
                     @endif
 
                     {{-- MASTER DATA RM --}}
-                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM'], true))
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
                         <li class="nav-item">
 
                             <a href="#sidebarMasterDataRm"

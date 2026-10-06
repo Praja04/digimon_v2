@@ -989,7 +989,7 @@ Route::middleware(['auth'])->group(function () {
     Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
     --------------------------------------------*/
     Route::middleware([
-        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+        'user-access:Head Of Dapartement,Supervisor,Foreman',
     ])->group(function (): void {
         Route::resource(
             'master-data-rm/jenis-bahan',

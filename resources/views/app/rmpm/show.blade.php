@@ -581,6 +581,7 @@
                                                     <th>Warna</th>
                                                     <th>Aroma</th>
                                                     <th>Disposisi</th>
+                                                    <th>Status</th>
                                                     <th>Keterangan</th>
                                                 </tr>
                                             </thead>
@@ -635,11 +636,25 @@
                                                         <span class="badge bg-secondary">{{ $short->disposisi ?? '-' }}</span>
                                                         @endif
                                                     </td>
+                                                    <td>
+                                                        @php
+                                                        $isRowDraft = (($short->status ?? '') === 'draft' || empty($short->disposisi) || $short->disposisi === '-');
+                                                        @endphp
+                                                        @if ($isRowDraft)
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="mdi mdi-content-save-edit-outline me-1"></i> Draft
+                                                        </span>
+                                                        @else
+                                                        <span class="badge bg-success-subtle text-success">
+                                                            <i class="ri-checkbox-circle-line me-1"></i> Final
+                                                        </span>
+                                                        @endif
+                                                    </td>
                                                     <td><small class="text-muted">{{ $short->keterangan ?? '-' }}</small></td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="11" class="text-center text-muted py-4">
+                                                    <td colspan="12" class="text-center text-muted py-4">
                                                         <i class="ri-inbox-line fs-3 d-block mb-1 text-muted"></i>
                                                         Belum ada data analisa (Incoming, STA, atau Monitoring)
                                                     </td>
@@ -705,6 +720,7 @@
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
+                                                    <td class="text-muted small">-</td>
                                                 </tr>
                                                 @endforeach
                                             </tfoot>
@@ -735,7 +751,6 @@
                                                     <th>Lampiran Foto</th>
                                                     <th>Status</th>
                                                     <th>Keterangan</th>
-                                                    <th width="12%" class="text-end">Aksi</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -784,7 +799,7 @@
                                                             tabindex="-1" aria-hidden="true">
                                                             <div class="modal-dialog modal-dialog-centered modal-lg">
                                                                 <div class="modal-content">
-                                                                    <div class="modal-header">
+                                                                  <div class="modal-header">
                                                                         <h5 class="modal-title">
                                                                             <i class="mdi mdi-image-outline me-1"></i> Lampiran Kristal — ({{ count($photos) }} Foto)
                                                                         </h5>
@@ -826,21 +841,10 @@
                                                         @endif
                                                     </td>
                                                     <td>{{ $long->keterangan ?? '-' }}</td>
-                                                    <td class="text-end">
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-warning"
-                                                            data-id="{{ $long->id }}"
-                                                            data-disposisi="{{ $long->disposisi }}"
-                                                            data-group="{{ $long->group }}"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#updateDisposisiModal">
-                                                            <i class="ri-edit-line"></i> Update Disposisi
-                                                        </button>
-                                                    </td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="8" class="text-center text-muted py-4">
+                                                    <td colspan="7" class="text-center text-muted py-4">
                                                         Belum ada data long term
                                                     </td>
                                                 </tr>
