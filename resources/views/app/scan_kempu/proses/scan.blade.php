@@ -172,18 +172,28 @@
 
                             <!-- Manual Input Box -->
                             <div class="mt-4 pt-2 border-top">
-                                <label class="form-label fs-13 fw-semibold text-body mb-2">
-                                    <i class="ri-keyboard-line text-muted me-1"></i> Atau Masukkan ID Kempu Manual:
-                                </label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text bg-light text-muted"><i
-                                            class="ri-barcode-line"></i></span>
-                                    <input type="text" id="inputManualId" class="form-control font-monospace"
-                                        placeholder="Contoh: KMP-001 lalu tekan Enter..." autocomplete="off">
-                                    <button class="btn btn-primary px-4 fw-semibold" type="button" id="btnLookupManual">
-                                        <i class="ri-search-line me-1"></i> Cari Kempu
-                                    </button>
-                                </div>
+                                @if ($canManualInput ?? false)
+                                    <label class="form-label fs-13 fw-semibold text-body mb-2 d-flex align-items-center justify-content-between">
+                                        <span><i class="ri-keyboard-line text-muted me-1"></i> Masukkan ID Kempu Manual:</span>
+                                        <span class="badge bg-info-subtle text-info fs-11"><i class="ri-shield-user-line me-1"></i> Otoritas Khusus Aktif</span>
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-light text-muted"><i
+                                                class="ri-barcode-line"></i></span>
+                                        <input type="text" id="inputManualId" class="form-control font-monospace"
+                                            placeholder="Contoh: KMP-001 lalu tekan Enter..." autocomplete="off">
+                                        <button class="btn btn-primary px-4 fw-semibold" type="button" id="btnLookupManual">
+                                            <i class="ri-search-line me-1"></i> Cari Kempu
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 px-3">
+                                        <i class="ri-lock-line fs-20 text-warning flex-shrink-0"></i>
+                                        <div class="fs-12 text-muted">
+                                            <strong class="text-body">Pengetikan Manual Terkunci:</strong> Operator wajib memindai kempu via kamera / barcode scanner. Pengetikan ID manual hanya diperuntukkan bagi Foreman / Leader / Supervisor.
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -306,6 +316,7 @@
                             </div>
                         </div>
                     @elseif (in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']))
+                        <div id="boxForceControls">
                         <div
                             class="alert alert-danger py-2 px-3 mb-3 fs-12 d-flex align-items-start gap-2 border-danger-subtle bg-danger-subtle text-danger">
                             <i class="ri-alert-line fs-18 flex-shrink-0 mt-1"></i>
@@ -372,6 +383,7 @@
                                 </small>
                             </div>
                         </div>
+                        </div>
                     @endif
 
                     <!-- Notes Input -->
@@ -388,14 +400,14 @@
 
                     <!-- Action Decision Buttons -->
                     @if (in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']))
-                        <div class="pt-2 border-top">
+                        <div class="pt-2 border-top" id="boxForceButtons">
                             <button type="button" class="btn btn-danger btn-lg w-100 py-3 fw-bold fs-15 shadow-sm"
                                 id="btnDecisionForce">
                                 <i class="ri-shield-flash-line me-1"></i> Eksekusi Force Decision
                             </button>
                         </div>
                     @elseif ($card['key'] === 'qc-after-filling')
-                        <div class="pt-2 border-top">
+                        <div class="pt-2 border-top" id="boxNormalButtons">
                             <label class="form-label fs-12 fw-semibold text-body mb-2">Pilih Keputusan QC After
                                 Filling:</label>
                             <div class="row g-2">
@@ -460,14 +472,15 @@
                             </div>
                         </div>
 
-                        <!-- Tombol Khusus Max Reused: Hanya Konfirmasi Scrap -->
-                        <div id="boxMaxReusedScrapButton" class="pt-2 border-top d-none">
-                            <button type="button" class="btn btn-dark btn-lg w-100 py-3 fw-bold fs-15 shadow-sm text-white"
-                                id="btnDecisionScrapPreCuci">
-                                <i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)
-                            </button>
-                        </div>
                     @endif
+
+                    <!-- Tombol Khusus Max Reused: Hanya Konfirmasi Scrap -->
+                    <div id="boxMaxReusedScrapButton" class="pt-2 border-top d-none">
+                        <button type="button" class="btn btn-dark btn-lg w-100 py-3 fw-bold fs-15 shadow-sm text-white"
+                            id="btnDecisionScrapPreCuci">
+                            <i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -720,7 +733,7 @@
             });
 
             // Lookup Kempu ke Server
-            function lookupKempu(code) {
+            function lookupKempu(code, isManual = false) {
                 Swal.fire({
                     title: 'Memeriksa Kempu...',
                     text: 'ID: ' + code,
@@ -746,12 +759,15 @@
                         operator_name: "{{ auth()->user()->name ?? (auth()->user()->nama_lengkap ?? '') }}",
                         operator_role: "{{ strtolower(auth()->user()->role ?? '') }}",
                         operator_email: "{{ auth()->user()->email ?? '' }}",
-                        app_source: "digimon_v2"
+                        app_source: "digimon_v2",
+                        is_manual: isManual ? 1 : 0
                     },
                     success: function(res) {
                         Swal.close();
                         if (res.status && res.data) {
                             const k = res.data;
+                            currentKempu = res.data;
+                            currentKempu.is_manual = isManual;
 
                             // Cek Validasi Alur
                             if (k.is_flow_valid === false) {
@@ -833,16 +849,23 @@
                 }
 
                 // Cek apakah mencapai batas maksimal reused di Pre Cuci (21x)
-                const isMaxReusedPreCuci = (QC_TYPE === 'qc-pre-cuci' || QC_TYPE === 'qc-proses') && (k.is_max_reused || (k.reused_count || 0) >= 21);
+                const isPreCuciContext = (k.qc_stage_context === 'pre_cuci' || !k.is_in_wfg);
+                const isMaxReusedPreCuci = ['qc-pre-cuci', 'qc-proses', 'qc-proses-force', 'qc-force'].includes(QC_TYPE) && isPreCuciContext && (k.is_max_reused || (k.reused_count || 0) >= 21);
 
                 if (isMaxReusedPreCuci) {
                     $('#alertMaxReusedNotice').removeClass('d-none');
-                    $('#boxNormalButtons').addClass('d-none');
+                    if ($('#boxNormalButtons').length) $('#boxNormalButtons').addClass('d-none');
+                    if ($('#boxForceButtons').length) $('#boxForceButtons').addClass('d-none');
+                    if ($('#boxForceControls').length) $('#boxForceControls').addClass('d-none');
                     $('#boxMaxReusedScrapButton').removeClass('d-none');
                     $('#wrapperManualReused').addClass('d-none');
+                    $('#wrapperManualReusedForce').addClass('d-none');
+                    if ($('#modalForceTarget').length) $('#modalForceTarget').val('SCRAP');
                 } else {
                     $('#alertMaxReusedNotice').addClass('d-none');
-                    $('#boxNormalButtons').removeClass('d-none');
+                    if ($('#boxNormalButtons').length) $('#boxNormalButtons').removeClass('d-none');
+                    if ($('#boxForceButtons').length) $('#boxForceButtons').removeClass('d-none');
+                    if ($('#boxForceControls').length) $('#boxForceControls').removeClass('d-none');
                     $('#boxMaxReusedScrapButton').addClass('d-none');
                 }
 
@@ -983,21 +1006,27 @@
                     btnNotOk.html('<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan...');
                 }
 
+                let resolvedTarget = forceTarget;
+                if (!resolvedTarget && decision === 'SCRAP') {
+                    resolvedTarget = 'SCRAP';
+                }
+
                 const postData = {
                     id_kempu: currentKempu.id_kempu,
                     qc_type: QC_TYPE,
-                    decision: (isForceScan ? (forceTarget || 'OK') : decision),
+                    decision: (isForceScan ? (resolvedTarget || decision || 'OK') : decision),
                     notes: $('#modalInputNotes').val().trim(),
                     user_id: "{{ auth()->id() }}",
                     operator_id: "{{ auth()->id() }}",
                     operator_name: "{{ auth()->user()->name ?? (auth()->user()->nama_lengkap ?? '') }}",
                     operator_role: "{{ strtolower(auth()->user()->role ?? '') }}",
                     operator_email: "{{ auth()->user()->email ?? '' }}",
-                    app_source: "digimon_v2"
+                    app_source: "digimon_v2",
+                    is_manual: (currentKempu && currentKempu.is_manual) ? 1 : 0
                 };
 
-                if (isForceScan && forceTarget) {
-                    postData.force_target = forceTarget;
+                if (isForceScan) {
+                    postData.force_target = resolvedTarget || decision || 'OK';
                 }
 
                 if ($('#checkManualReused').length && $('#checkManualReused').is(':checked')) {
@@ -1186,7 +1215,7 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        submitDecision('SCRAP');
+                        submitDecision('SCRAP', 'SCRAP');
                     }
                 });
             });

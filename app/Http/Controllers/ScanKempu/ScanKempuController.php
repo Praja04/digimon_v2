@@ -19,6 +19,33 @@ class ScanKempuController extends Controller
      * Memeriksa apakah user saat ini berhak melakukan Force Scan QC
      * Otoritas: role != 'operator' ATAU memiliki permission 'kempu-qc-force'
      */
+    /**
+     * Memeriksa apakah user saat ini berhak melakukan input/ketik manual ID Kempu
+     * Otoritas: role != 'operator' ATAU memiliki permission 'kempu-manual-input' / 'super-admin'
+     */
+    protected function canManualInput(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if (method_exists($user, 'hasRole') && $user->hasRole('super-admin')) {
+            return true;
+        }
+
+        if (method_exists($user, 'hasAnyPermission') && $user->hasAnyPermission(['kempu-manual-input', 'super-admin'])) {
+            return true;
+        }
+
+        $role = strtolower(trim($user->role ?? ''));
+        if ($role && $role !== 'operator') {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function canForceScan(): bool
     {
         $user = auth()->user();
@@ -164,7 +191,8 @@ class ScanKempuController extends Controller
         }
 
         $card = $configs[$type];
-        return view('app.scan_kempu.proses.scan', compact('card'));
+        $canManualInput = $this->canManualInput();
+        return view('app.scan_kempu.proses.scan', compact('card', 'canManualInput'));
     }
 
     /**
