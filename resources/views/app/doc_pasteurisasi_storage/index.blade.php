@@ -215,86 +215,76 @@
             <div class="col-12">
                 <div id="printableArea" class="document-paper mb-5">
                     
-                    <!-- Document Header -->
-                    <div class="row border-bottom pb-3 mb-3 align-items-center">
-                        <div class="col-12 col-md-8 text-center text-md-start mb-2 mb-md-0">
-                            <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3">
-                                <div class="doc-logo-box p-1 border rounded" style="border: 2px solid #000 !important; background: #fff;">
-                                    <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 48px; object-fit: contain;">
-                                </div>
-                                <div>
-                                    <h4 class="doc-header-title mb-0">HASIL ANALISIS PASTEURISASI DAN STORAGE TANK</h4>
-                                    <span class="badge bg-primary-subtle text-primary no-print">Format Resmi Quality Control</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-4 text-md-end">
-                            <div class="d-flex flex-column align-items-md-end">
-                                <div class="d-flex align-items-center gap-2 mb-1">
-                                    <span class="fw-bold small text-nowrap">Tanggal Record Doc :</span>
-                                    <input type="date" id="tanggal_record_doc" class="form-control form-control-sm text-center" style="max-width: 150px;" value="{{ $initialData['tanggal_record_doc'] ?? date('Y-m-d') }}">
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold small text-nowrap">Halaman :</span>
-                                    <input type="text" id="halaman" class="form-control form-control-sm text-center" style="max-width: 100px;" value="{{ $initialData['halaman'] ?? '1' }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- 1. Header Dokumen Resmi (Format Solid Terpadu) -->
+                    <table class="w-100 mb-0" style="border: 1px solid #000; border-collapse: collapse; font-size: 0.83rem;">
+                        <tr>
+                            <td style="width: 20%; text-align: center; vertical-align: middle; padding: 6px; border-right: 1px solid #000;">
+                                <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 42px; object-fit: contain;">
+                            </td>
+                            <td style="width: 55%; text-align: center; vertical-align: middle; padding: 8px; border-right: 1px solid #000;">
+                                <div class="fw-bold text-dark mb-0" style="font-size: 1.15rem; letter-spacing: 0.5px;">HASIL ANALISIS PASTEURISASI DAN STORAGE TANK</div>
+                            </td>
+                            <td style="width: 25%; padding: 0; vertical-align: middle;">
+                                <table class="w-100 h-100" style="border-collapse: collapse; font-size: 0.80rem;">
+                                    <tr style="border-bottom: 1px solid #000;">
+                                        <td class="px-2 py-1 bg-light fw-bold text-start" style="width: 55%; border: none; border-right: 1px solid #000;">Tanggal Record Doc</td>
+                                        <td class="px-2 py-1 text-start" style="width: 45%; border: none;">: <input type="date" id="tanggal_record_doc" class="border-0 bg-transparent p-0 text-start" style="font-size: 0.80rem; max-width: 110px;" value="{{ $initialData['tanggal_record_doc'] ?? date('Y-m-d') }}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-2 py-1 bg-light fw-bold text-start" style="border: none; border-right: 1px solid #000;">Halaman</td>
+                                        <td class="px-2 py-1 text-start fw-semibold" style="border: none;">: <input type="text" id="halaman" class="border-0 bg-transparent p-0 text-start" style="font-size: 0.80rem; max-width: 50px;" value="{{ $initialData['halaman'] ?? '1' }}"></td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
 
-                    <!-- Meta Information Grid (Sesuai Form Resmi) -->
-                    <div class="row mb-4 bg-light p-3 rounded mx-0">
-                        <div class="col-12 mb-2">
-                            <div class="row align-items-center">
-                                <div class="col-12 col-md-6">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="fw-bold text-nowrap" style="min-width: 140px;">Jenis Produk :</span>
-                                        <input type="text" id="jenis_produk" class="form-control form-control-sm bg-white" placeholder="Nama Produk / Varian" value="{{ $initialData['jenis_produk'] ?? ($initialData['variant'] ?? '') }}">
-                                    </div>
+                    <!-- 2. Meta Information Grid (Format Terpadu Tanpa Celah) -->
+                    <table class="w-100 mb-3" style="border: 1px solid #000; border-top: none; border-collapse: collapse; font-size: 0.83rem;">
+                        <tr>
+                            <td style="width: 14%; font-weight: 700; background: #fafafa; padding: 4px 8px; border-bottom: 1px solid #000;">Jenis Produk</td>
+                            <td colspan="3" style="padding: 4px 8px; border-bottom: 1px solid #000;">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1 fw-bold">:</span>
+                                    <input type="text" id="jenis_produk" class="form-control form-control-sm border-0 bg-transparent p-0" placeholder="Nama Produk / Varian" value="{{ $initialData['jenis_produk'] ?? ($initialData['variant'] ?? '') }}">
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 mb-2 mb-md-0">
-                            <table class="w-100 doc-meta-table">
-                                <tr>
-                                    <td width="35%" class="fw-bold">Tanggal Produksi</td>
-                                    <td width="5%">:</td>
-                                    <td>
-                                        <input type="date" id="tanggal_produksi" class="form-control form-control-sm bg-white" value="{{ $initialData['tanggal_produksi'] ?? date('Y-m-d') }}">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Jam Produksi</td>
-                                    <td>:</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <input type="text" id="jam_produksi_start" class="form-control form-control-sm bg-white text-center" placeholder="00:00" value="{{ $initialData['jam_produksi_start'] ?? '' }}" style="max-width: 90px;">
-                                            <span class="small fw-semibold text-muted">s/d</span>
-                                            <input type="text" id="jam_produksi_end" class="form-control form-control-sm bg-white text-center" placeholder="00:00" value="{{ $initialData['jam_produksi_end'] ?? '' }}" style="max-width: 90px;">
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <table class="w-100 doc-meta-table">
-                                <tr>
-                                    <td width="35%" class="fw-bold">Kode Shift & Grup</td>
-                                    <td width="5%">:</td>
-                                    <td>
-                                        <input type="text" id="kode_shift_grup" class="form-control form-control-sm bg-white" placeholder="Contoh: Shift 1 / Grup A" value="{{ $initialData['kode_shift_grup'] ?? '' }}">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Batch</td>
-                                    <td>:</td>
-                                    <td>
-                                        <input type="text" id="batch" class="form-control form-control-sm bg-white" placeholder="Contoh: 01 s/d 10" value="{{ $initialData['batch'] ?? ($initialData['batch_range'] ?? '') }}">
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 14%; font-weight: 700; background: #fafafa; padding: 4px 8px; border-bottom: 1px solid #000;">Tanggal Produksi</td>
+                            <td style="width: 36%; padding: 4px 8px; border-bottom: 1px solid #000; border-right: 1px solid #000;">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1 fw-bold">:</span>
+                                    <input type="date" id="tanggal_produksi" class="form-control form-control-sm border-0 bg-transparent p-0" value="{{ $initialData['tanggal_produksi'] ?? date('Y-m-d') }}">
+                                </div>
+                            </td>
+                            <td style="width: 16%; font-weight: 700; background: #fafafa; padding: 4px 8px; border-bottom: 1px solid #000;">Kode Shift & Grup</td>
+                            <td style="width: 34%; padding: 4px 8px; border-bottom: 1px solid #000;">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1 fw-bold">:</span>
+                                    <input type="text" id="kode_shift_grup" class="form-control form-control-sm border-0 bg-transparent p-0" placeholder="Shift 1 / Grup A" value="{{ $initialData['kode_shift_grup'] ?? '' }}">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700; background: #fafafa; padding: 4px 8px;">Jam Produksi</td>
+                            <td style="padding: 4px 8px; border-right: 1px solid #000;">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1 fw-bold">:</span>
+                                    <input type="text" id="jam_produksi_start" class="form-control form-control-sm border-0 bg-transparent p-0 text-center" placeholder="00:00" value="{{ $initialData['jam_produksi_start'] ?? '' }}" style="max-width: 50px;">
+                                    <span class="small fw-semibold text-muted mx-1">s/d</span>
+                                    <input type="text" id="jam_produksi_end" class="form-control form-control-sm border-0 bg-transparent p-0 text-center" placeholder="00:00" value="{{ $initialData['jam_produksi_end'] ?? '' }}" style="max-width: 50px;">
+                                </div>
+                            </td>
+                            <td style="font-weight: 700; background: #fafafa; padding: 4px 8px;">Batch</td>
+                            <td style="padding: 4px 8px;">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1 fw-bold">:</span>
+                                    <input type="text" id="batch" class="form-control form-control-sm border-0 bg-transparent p-0" placeholder="Contoh: 01 s/d 10" value="{{ $initialData['batch'] ?? ($initialData['batch_range'] ?? '') }}">
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
 
                     <!-- SECTION 1: TABEL PASTEURISASI -->
                     <div class="section-container mb-4">
@@ -448,25 +438,33 @@
                         </div>
                         <div class="col-12 col-lg-8">
                             <div class="row">
-                                <div class="col-4 mb-3">
+                                <div class="col-6 mb-3">
                                     <div class="doc-signature-box">
-                                        <div class="fw-bold small mb-4">Disampling oleh,</div>
-                                        <input type="text" id="pic_sampling" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( ________________ )" value="{{ $initialData['pic_sampling'] ?? '' }}">
-                                        <div class="fw-bold text-muted small">Produksi</div>
+                                        <div class="fw-bold small mb-3">Disampling oleh,</div>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <input type="text" id="pic_sampling" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( ________________ )" value="{{ $initialData['pic_sampling'] ?? '' }}">
+                                                <div class="fw-bold text-muted small">Produksi</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="text" id="pic_serah_terima" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( ________________ )" value="{{ $initialData['pic_serah_terima'] ?? '' }}">
+                                                <div class="fw-bold text-muted small">Produksi</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-4 mb-3">
+                                <div class="col-3 mb-3">
                                     <div class="doc-signature-box">
-                                        <div class="fw-bold small mb-4">Dianalisis oleh,</div>
-                                        <input type="text" id="pic_analis" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( ________________ )" value="{{ $initialData['pic_analis'] ?? (auth()->user()->name ?? '') }}">
+                                        <div class="fw-bold small mb-3">Dianalisis oleh,</div>
+                                        <input type="text" id="pic_analis" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1 mt-3" placeholder="( ________________ )" value="{{ $initialData['pic_analis'] ?? (auth()->user()->name ?? '') }}">
                                         <div class="fw-bold text-muted small">QC Analis</div>
                                     </div>
                                 </div>
-                                <div class="col-4 mb-3">
+                                <div class="col-3 mb-3">
                                     <div class="doc-signature-box">
-                                        <div class="fw-bold small mb-4">Dicek oleh,</div>
-                                        <input type="text" id="pic_checker" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( ________________ )" value="{{ $initialData['pic_checker'] ?? '' }}">
-                                        <div class="fw-bold text-muted small">Staff/SPV/MNG QC</div>
+                                        <div class="fw-bold small mb-3">Dicek oleh,</div>
+                                        <input type="text" id="pic_checker" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1 mt-3" placeholder="( ________________ )" value="{{ $initialData['pic_checker'] ?? '' }}">
+                                        <div class="fw-bold text-muted small">SPV/MNG QC</div>
                                     </div>
                                 </div>
                             </div>

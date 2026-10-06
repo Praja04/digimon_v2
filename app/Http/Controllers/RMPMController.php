@@ -543,10 +543,9 @@ public function pmKartonBct(
         }
 
         if ($request->hasFile('attachments')) {
-            $rules['attachments'] = ['array', 'max:5'];
-            $rules['attachments.*'] = ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'];
+            $rules['attachments'] = ['nullable'];
         } elseif ($request->hasFile('attachment')) {
-            $rules['attachment'] = ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'];
+            $rules['attachment'] = ['nullable'];
         }
 
         $request->validate($rules);
@@ -569,29 +568,55 @@ public function pmKartonBct(
                 $existing = is_array($decoded) ? $decoded : [$existing];
             }
             if (is_array($existing)) {
-                $photoList = array_values(array_filter($existing));
+                foreach ($existing as $item) {
+                    if (is_string($item)) {
+                        $clean = basename(urldecode(trim($item)));
+                        if ($clean !== '' && $clean !== '-' && !in_array($clean, $photoList)) {
+                            $photoList[] = $clean;
+                        }
+                    }
+                }
             }
         }
 
         // Process uploaded files (max 5 photos total)
         $filesToUpload = [];
         if ($request->hasFile('attachments')) {
-            $filesToUpload = $request->file('attachments');
+            $raw = $request->file('attachments');
+            $filesToUpload = is_array($raw) ? $raw : [$raw];
         } elseif ($request->hasFile('attachment')) {
-            $filesToUpload = [$request->file('attachment')];
+            $raw = $request->file('attachment');
+            $filesToUpload = is_array($raw) ? $raw : [$raw];
+        } else {
+            $all = $request->allFiles();
+            foreach ($all as $f) {
+                if (is_array($f)) {
+                    foreach ($f as $subF) {
+                        if ($subF instanceof \Illuminate\Http\UploadedFile && $subF->isValid()) {
+                            $filesToUpload[] = $subF;
+                        }
+                    }
+                } elseif ($f instanceof \Illuminate\Http\UploadedFile && $f->isValid()) {
+                    $filesToUpload[] = $f;
+                }
+            }
         }
 
         foreach ($filesToUpload as $file) {
+            if (!$file instanceof \Illuminate\Http\UploadedFile || !$file->isValid()) {
+                continue;
+            }
             if (count($photoList) >= 5) {
                 break;
             }
+            $ext = $file->getClientOriginalExtension() ?: ($file->extension() ?: 'jpg');
             $filename =
                 'attachment_' .
                 time() .
                 '_' .
                 uniqid() .
                 '.' .
-                $file->extension();
+                strtolower($ext);
 
             $file->storeAs(
                 'uploads/attachment_analisa',
@@ -600,6 +625,14 @@ public function pmKartonBct(
             );
 
             $photoList[] = basename($filename);
+        }
+
+        // Safety fallback: If still empty and no new files were uploaded, check if existing record in DB already has photos
+        if (empty($photoList) && empty($filesToUpload)) {
+            $existingRecord = AnalisaLongTerm::where('id_identitas', $request->id_identitas)->latest()->first();
+            if ($existingRecord && !empty($existingRecord->photos)) {
+                $photoList = $existingRecord->photos;
+            }
         }
 
         if (!$isDraft && $ujiKristal === 'positif' && empty($photoList)) {

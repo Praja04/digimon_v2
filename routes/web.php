@@ -7,10 +7,14 @@ use App\Http\Controllers\IncomingController;
 use App\Http\Controllers\JenisIncomingController;
 use App\Http\Controllers\JenisMaterialController;
 use App\Http\Controllers\MasterAsalBahanController;
+use App\Http\Controllers\MasterAromaRmController;
 use App\Http\Controllers\MasterGlasswareController;
 use App\Http\Controllers\MasterJenisBahanController;
+use App\Http\Controllers\MasterOrganoRmController;
+use App\Http\Controllers\MasterParameterRmController;
 use App\Http\Controllers\MasterStandarRmController;
 use App\Http\Controllers\MasterSupplierRmController;
+use App\Http\Controllers\MasterWarnaRmController;
 use App\Http\Controllers\NonconformityTypeController;
 use App\Http\Controllers\PackagingIncomingController;
 use App\Http\Controllers\PackagingInnerOuterController;
@@ -1066,6 +1070,45 @@ Route::middleware(['auth'])->group(function () {
             'master-data-rm/standar',
             MasterStandarRmController::class
         )->names('master-standar-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::get('master-data-rm/parameter', function () {
+            return redirect()->route('master-warna-rm.index');
+        })->name('master-parameter-rm.index');
+
+        Route::get(
+            'master-data-rm/parameter/active-options',
+            [MasterParameterRmController::class, 'getActiveOptions']
+        )->name('master-parameter-rm.active-options');
+
+        Route::resource(
+            'master-data-rm/warna',
+            MasterWarnaRmController::class
+        )->names('master-warna-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'master-data-rm/aroma',
+            MasterAromaRmController::class
+        )->names('master-aroma-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'master-data-rm/organo',
+            MasterOrganoRmController::class
+        )->names('master-organo-rm')->only([
             'index',
             'store',
             'edit',

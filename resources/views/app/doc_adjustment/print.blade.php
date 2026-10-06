@@ -6,27 +6,38 @@
     <title>FORM ADJUSTMENT - {{ $data['po_number'] ?? '' }}</title>
     <link href="{{ asset('assets') }}/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #000;
             background: #fff;
             margin: 0;
             padding: 10px;
         }
 
+        .sheet-page {
+            width: 100%;
+            background: #fff;
+            padding: 4px;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+
         .doc-title {
-            font-size: 12pt;
+            font-size: 13pt;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 0;
             text-transform: uppercase;
         }
 
         .table-doc {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 8.5pt;
         }
 
@@ -38,170 +49,209 @@
         }
 
         .table-doc th {
-            background-color: #f2f2f2;
+            background-color: #f2f2f2 !important;
             font-weight: bold;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .meta-table td {
-            padding: 2px 4px;
+            padding: 2.5px 4px;
             font-size: 8.5pt;
         }
 
-        .sign-box {
-            text-align: center;
-            font-size: 8pt;
-            border: 1px solid #000;
-            padding: 6px;
-        }
-
         .sign-space {
-            height: 40px;
+            height: 38px;
         }
 
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 8mm;
+                margin: 7mm 8mm;
             }
             body {
                 padding: 0;
+                margin: 0;
             }
             .no-print {
                 display: none !important;
+            }
+            .sheet-page {
+                padding: 0;
+                margin-bottom: 0;
+                page-break-after: always;
+                break-after: page;
+            }
+            .sheet-page:last-child {
+                page-break-after: avoid;
+                break-after: avoid;
             }
         }
     </style>
 </head>
 <body onload="window.print()">
-    <div class="container-fluid px-0">
-        <!-- Header Table -->
-        <table class="table-doc mb-2">
+    <!-- Tombol Aksi Layar Non-Print -->
+    <div class="no-print mb-3 text-end">
+        <button onclick="window.print()" class="btn btn-primary btn-sm me-1">
+            <i class="ri-printer-line"></i> Cetak / Print
+        </button>
+        <button onclick="window.close()" class="btn btn-secondary btn-sm">Tutup</button>
+    </div>
+
+    @php
+        $sheets = !empty($data['adjustment_sheets']) ? $data['adjustment_sheets'] : [$data];
+        $totalSheets = count($sheets);
+        $defaultBahans = [
+            'Gula Kelapa',
+            'Gula Tebu',
+            'Larutan Garam',
+            'Garam Kasar',
+            'Air',
+            'Garam Halus',
+            'Karamel (Jenis)',
+        ];
+    @endphp
+
+    @foreach($sheets as $sIdx => $sheet)
+    <div class="sheet-page">
+        <!-- Header Dokumen (FRM/QLB/04/104/011-00) -->
+        <table class="w-100 mb-2 border" style="border-collapse: collapse;">
             <tr>
-                <td width="20%" class="text-center p-2" style="border: 1px solid #000;">
+                <td width="20%" class="align-middle p-2 border-end text-center">
                     <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 42px; object-fit: contain;">
                 </td>
-                <td width="55%" class="text-center align-middle" style="border: 1px solid #000;">
+                <td width="55%" class="align-middle text-center border-end">
                     <div class="doc-title">FORM ADJUSTMENT</div>
                 </td>
-                <td width="25%" class="p-1" style="border: 1px solid #000; font-size: 8pt;">
-                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
-                        <span class="fw-bold">Tanggal Record Doc:</span>
-                        <span>{{ $data['tanggal_record_doc'] ?? date('Y-m-d') }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="fw-bold">Halaman:</span>
-                        <span>{{ $data['halaman'] ?? '1' }}</span>
-                    </div>
+                <td width="25%" class="align-middle p-0">
+                    <table class="w-100" style="font-size: 8pt; border-collapse: collapse;">
+                        <tr>
+                            <td class="p-1 border-bottom text-start fw-bold bg-light" width="55%">Tanggal Record Doc</td>
+                            <td class="p-1 border-bottom text-start" width="45%">: {{ $data['tanggal_record_doc'] ?? date('Y-m-d') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="p-1 text-start fw-bold bg-light">Halaman</td>
+                            <td class="p-1 text-start">: {{ $sIdx + 1 }} / {{ $totalSheets }}</td>
+                        </tr>
+                    </table>
                 </td>
             </tr>
         </table>
 
-        <!-- Meta Table -->
+        <!-- Metadata Informasi (3 Baris) -->
         <table class="w-100 meta-table mb-2">
             <tr>
                 <td width="15%" class="fw-bold">Proses</td>
-                <td width="35%">: {{ $data['proses'] ?? 'Blending' }}</td>
-                <td width="18%" class="fw-bold">Jenis Kecap</td>
-                <td width="32%">: {{ $data['jenis_kecap'] ?? ($data['variant'] ?? '-') }}</td>
+                <td width="35%">: {{ $sheet['proses'] ?? 'Blending' }}</td>
+                <td width="15%" class="fw-bold">Jenis Kecap</td>
+                <td width="35%">: {{ $sheet['jenis_kecap'] ?? ($data['variant'] ?? '-') }}</td>
             </tr>
             <tr>
                 <td class="fw-bold">No. Batch</td>
-                <td>: {{ $data['no_batch'] ?? ($data['batch_range'] ?? '-') }}</td>
+                <td>: {{ $sheet['no_batch'] ?? '-' }}</td>
                 <td class="fw-bold">Tanggal Produksi</td>
-                <td>: {{ $data['tanggal_produksi'] ?? ($data['tanggal_record_doc'] ?? '-') }}</td>
+                <td>: {{ $sheet['tanggal_produksi'] ?? ($data['tanggal_record_doc'] ?? '-') }}</td>
             </tr>
             <tr>
                 <td class="fw-bold">Volume Batch</td>
-                <td>: {{ $data['volume_batch'] ?? '-' }}</td>
+                <td>: {{ $sheet['volume_batch'] ?? '-' }}</td>
                 <td class="fw-bold">Shift</td>
-                <td>: {{ $data['shift'] ?? '1' }}</td>
+                <td>: {{ $sheet['shift'] ?? '1' }}</td>
             </tr>
         </table>
 
-        <!-- TABEL UTAMA -->
+        <!-- Tabel Utama Bahan & Adjustment -->
+        @php
+            $rawRows = $sheet['bahan_rows'] ?? [];
+            $bMap = [];
+            foreach($rawRows as $r) {
+                if(!empty($r['bahan'])) {
+                    $bMap[$r['bahan']] = $r;
+                }
+            }
+        @endphp
         <table class="table-doc">
             <thead>
                 <tr>
-                    <th style="width: 25%;">BAHAN</th>
+                    <th style="width: 28%; text-align: center;">BAHAN</th>
                     <th style="width: 18%;">ADJUSMENT 1</th>
                     <th style="width: 18%;">ADJUSMENT 2</th>
                     <th style="width: 18%;">ADJUSMENT 3</th>
-                    <th style="width: 21%;">DISPOSISI</th>
+                    <th style="width: 18%;">DISPOSISI</th>
                 </tr>
             </thead>
             <tbody>
-                @php
-                    $bahanList = !empty($data['bahan_rows']) ? $data['bahan_rows'] : [
-                        ['bahan' => 'Gula Kelapa', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => 'Gula Tebu', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => 'Larutan Garam', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => 'Garam Kasar', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => 'Air', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => 'Garam Halus', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => 'Karamel (Jenis)', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                        ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''],
-                    ];
-                    $totalRows = count($bahanList);
-                @endphp
-
-                @foreach($bahanList as $idx => $b)
-                <tr>
-                    <td class="text-start ps-2 fw-semibold">{{ $b['bahan'] ?? '' }}</td>
-                    <td>{{ $b['adj1'] ?? '' }}</td>
-                    <td>{{ $b['adj2'] ?? '' }}</td>
-                    <td>{{ $b['adj3'] ?? '' }}</td>
-                    
-                    @if($idx === 0)
-                    <td rowspan="{{ $totalRows }}" class="align-middle fw-bold text-success p-2" style="font-size: 10pt;">
-                        {{ $data['disposisi'] ?? 'Release' }}
-                    </td>
-                    @endif
-                </tr>
+                @foreach($defaultBahans as $idxB => $bName)
+                    @php
+                        $rData = $bMap[$bName] ?? ($rawRows[$idxB] ?? []);
+                    @endphp
+                    <tr>
+                        <td class="text-start ps-2">{{ $bName }}</td>
+                        <td>{{ $rData['adj1'] ?? '' }}</td>
+                        <td>{{ $rData['adj2'] ?? '' }}</td>
+                        <td>{{ $rData['adj3'] ?? '' }}</td>
+                        @if($loop->first)
+                            <td rowspan="7" class="fw-bold fs-12 align-middle text-center bg-white" style="border: 1px solid #000;">
+                                {{ $sheet['disposisi'] ?? 'Release' }}
+                            </td>
+                        @endif
+                    </tr>
                 @endforeach
-
-                <!-- Keterangan & Signatures Section -->
-                <tr>
-                    <td rowspan="4" class="align-top text-start p-2" style="border: 1px solid #000;">
-                        <div class="fw-bold small mb-1">Keterangan :</div>
-                        <div class="small" style="white-space: pre-wrap;">{{ $data['keterangan'] ?? '' }}</div>
-                    </td>
-                    <td class="text-start ps-2" style="font-size: 8pt;">Jam : {{ $data['adj1_jam'] ?? '' }}</td>
-                    <td class="text-start ps-2" style="font-size: 8pt;">Jam : {{ $data['adj2_jam'] ?? '' }}</td>
-                    <td class="text-start ps-2" style="font-size: 8pt;">Jam : {{ $data['adj3_jam'] ?? '' }}</td>
-                    <td rowspan="2" class="align-middle" style="font-size: 8pt;">Tanda Tangan,</td>
-                </tr>
-                <tr>
-                    <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $data['adj1_status'] ?? 'Sudah dilakukan/belum' }}</td>
-                    <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $data['adj2_status'] ?? 'Sudah dilakukan/belum' }}</td>
-                    <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $data['adj3_status'] ?? 'Sudah dilakukan/belum' }}</td>
-                </tr>
-                <tr>
-                    <td style="font-size: 8pt;">Tanda Tangan,</td>
-                    <td style="font-size: 8pt;">Tanda Tangan,</td>
-                    <td style="font-size: 8pt;">Tanda Tangan,</td>
-                    <td rowspan="2" class="align-bottom pb-1" style="height: 60px;">
-                        <div class="fw-bold" style="font-size: 7.5pt;">( {{ $data['qc_analis'] ?: 'Analis QC' }} )</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="align-bottom pb-1" style="height: 50px;">
-                        <div class="fw-bold" style="font-size: 7.5pt;">( {{ $data['adj1_petugas'] ?: 'Petugas Produksi' }} )</div>
-                    </td>
-                    <td class="align-bottom pb-1" style="height: 50px;">
-                        <div class="fw-bold" style="font-size: 7.5pt;">( {{ $data['adj2_petugas'] ?: 'Petugas Produksi' }} )</div>
-                    </td>
-                    <td class="align-bottom pb-1" style="height: 50px;">
-                        <div class="fw-bold" style="font-size: 7.5pt;">( {{ $data['adj3_petugas'] ?: 'Petugas Produksi' }} )</div>
-                    </td>
-                </tr>
             </tbody>
         </table>
 
-        <!-- Document Code Footer -->
-        <div class="text-end pt-1" style="font-size: 7.5pt; font-style: italic;">
-            {{ $data['doc_code'] ?? 'FRM/QLB/04/104/011-00' }}
+        <!-- Keterangan & Tanda Tangan Sesuai Format -->
+        <table class="table-doc" style="margin-top: -9px;">
+            <tr>
+                <!-- Kotak Keterangan di Kiri -->
+                <td rowspan="5" class="align-top text-start p-2" style="width: 28%; border: 1px solid #000;">
+                    <span class="fw-bold">Keterangan :</span>
+                    <div style="min-height: 80px; font-size: 8pt; white-space: pre-wrap;" class="mt-1">
+                        {{ $sheet['keterangan'] ?: '-' }}
+                    </div>
+                </td>
+                <!-- Baris Jam -->
+                <td style="width: 18%;" class="text-start ps-2">Jam : {{ $sheet['adj1_jam'] ?? '' }}</td>
+                <td style="width: 18%;" class="text-start ps-2">Jam : {{ $sheet['adj2_jam'] ?? '' }}</td>
+                <td style="width: 18%;" class="text-start ps-2">Jam : {{ $sheet['adj3_jam'] ?? '' }}</td>
+                <!-- Header Tanda Tangan Disposisi -->
+                <td rowspan="2" style="width: 18%; vertical-align: middle;">Tanda Tangan,</td>
+            </tr>
+            <tr>
+                <!-- Baris Status -->
+                <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj1_status'] ?? 'Sudah dilakukan/belum' }}</td>
+                <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj2_status'] ?? 'Sudah dilakukan/belum' }}</td>
+                <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj3_status'] ?? 'Sudah dilakukan/belum' }}</td>
+            </tr>
+            <tr>
+                <!-- Baris Header Tanda Tangan -->
+                <td>Tanda Tangan,</td>
+                <td>Tanda Tangan,</td>
+                <td>Tanda Tangan,</td>
+                <td rowspan="2" class="align-middle">
+                    <div class="sign-space"></div>
+                </td>
+            </tr>
+            <tr>
+                <!-- Space Tanda Tangan -->
+                <td><div class="sign-space"></div></td>
+                <td><div class="sign-space"></div></td>
+                <td><div class="sign-space"></div></td>
+            </tr>
+            <tr>
+                <!-- Nama Tanda Tangan -->
+                <td class="fw-semibold">( {{ $sheet['adj1_petugas'] ?: 'Petugas Produksi' }} )</td>
+                <td class="fw-semibold">( {{ $sheet['adj2_petugas'] ?: 'Petugas Produksi' }} )</td>
+                <td class="fw-semibold">( {{ $sheet['adj3_petugas'] ?: 'Petugas Produksi' }} )</td>
+                <td class="fw-semibold">( {{ $sheet['qc_analis'] ?: ($data['qc_analis'] ?: 'Analis QC') }} )</td>
+            </tr>
+        </table>
+
+        <!-- Kode Dokumen -->
+        <div class="text-end pe-1" style="font-size: 7.5pt; font-style: italic;">
+            FRM/QLB/04/104/011-00
         </div>
     </div>
+    @endforeach
 </body>
 </html>

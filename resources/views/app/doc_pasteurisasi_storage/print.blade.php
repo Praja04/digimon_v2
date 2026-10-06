@@ -243,27 +243,34 @@
                 <td width="70%" class="align-top">
                     <table class="w-100">
                         <tr>
-                            <td width="33.3%" class="sign-box">
-                                <div>Disampling oleh,</div>
+                            <td colspan="2" class="text-center fw-bold small p-1" style="border: 1px solid #000; border-bottom: none; background: #f2f2f2;">Disampling oleh,</td>
+                            <td class="text-center fw-bold small p-1" style="border: 1px solid #000; border-bottom: none; background: #f2f2f2;">Dianalisis oleh,</td>
+                            <td class="text-center fw-bold small p-1" style="border: 1px solid #000; border-bottom: none; background: #f2f2f2;">Dicek oleh,</td>
+                        </tr>
+                        <tr>
+                            <td width="25%" class="sign-box" style="border-top: none;">
                                 <div class="sign-space"></div>
                                 <div>( {{ $data['pic_sampling'] ?: '________________' }} )</div>
                                 <div class="fw-bold">Produksi</div>
                             </td>
-                            <td width="33.3%" class="sign-box">
-                                <div>Dianalisis oleh,</div>
+                            <td width="25%" class="sign-box" style="border-top: none;">
+                                <div class="sign-space"></div>
+                                <div>( {{ $data['pic_serah_terima'] ?: '________________' }} )</div>
+                                <div class="fw-bold">Produksi</div>
+                            </td>
+                            <td width="25%" class="sign-box" style="border-top: none;">
                                 <div class="sign-space"></div>
                                 <div>( {{ $data['pic_analis'] ?: '________________' }} )</div>
                                 <div class="fw-bold">QC Analis</div>
                             </td>
-                            <td width="33.3%" class="sign-box">
-                                <div>Dicek oleh,</div>
+                            <td width="25%" class="sign-box" style="border-top: none;">
                                 <div class="sign-space"></div>
                                 <div>( {{ $data['pic_checker'] ?: '________________' }} )</div>
-                                <div class="fw-bold">Staff/SPV/MNG QC</div>
+                                <div class="fw-bold">SPV/MNG QC</div>
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="text-end pt-1" style="font-size: 7.5pt; font-style: italic;">
+                            <td colspan="4" class="text-end pt-1" style="font-size: 7.5pt; font-style: italic;">
                                 {{ $data['doc_code'] ?? 'FRM/QLB/04/104/006-01' }}
                             </td>
                         </tr>

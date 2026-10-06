@@ -128,8 +128,10 @@ class DocPasteurisasiStorageController extends Controller
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
 
+                $samplingLabel = ($batch->monitoringPasteurisasi->count() === 1) ? 'Tengah' : ('Tengah ' . ($pIdx + 1));
+
                 $pasteurisasiRows[] = [
-                    'sampling' => 'Sampling ' . ($pIdx + 1),
+                    'sampling' => $samplingLabel,
                     'jam' => $jamStr,
                     'pic' => $mp->user->name ?? '',
                     'bj' => $mp->bj !== null ? (string)$mp->bj : '',
@@ -149,6 +151,7 @@ class DocPasteurisasiStorageController extends Controller
 
         $storageRows = [];
         $detectedSt = 'ST 01';
+        $storageDefaultStages = ['Awal', 'Tengah', 'Akhir', 'Outlet', 'Inlet'];
 
         if ($batch->monitoringStorageKimia && $batch->monitoringStorageKimia->count() > 0) {
             foreach ($batch->monitoringStorageKimia as $sIdx => $msk) {
@@ -164,8 +167,10 @@ class DocPasteurisasiStorageController extends Controller
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $msk->disposition_remark;
                 }
 
+                $stLabel = $storageDefaultStages[$sIdx] ?? ('Sampling ' . ($sIdx + 1));
+
                 $storageRows[] = [
-                    'sampling' => 'Sampling ' . ($sIdx + 1),
+                    'sampling' => $stLabel,
                     'jam' => $msk->created_at ? $msk->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $msk->user->name ?? '',
                     'bj' => $msk->bj !== null ? (string)$msk->bj : '',
@@ -188,7 +193,7 @@ class DocPasteurisasiStorageController extends Controller
         // Jika baris masih kosong, buat minimal 1 baris kosong sebagai template
         if (empty($pasteurisasiRows)) {
             $pasteurisasiRows[] = [
-                'sampling' => 'Sampling 1',
+                'sampling' => 'Tengah',
                 'jam' => '',
                 'pic' => '',
                 'bj' => '',
@@ -207,7 +212,7 @@ class DocPasteurisasiStorageController extends Controller
 
         if (empty($storageRows)) {
             $storageRows[] = [
-                'sampling' => 'Sampling 1',
+                'sampling' => 'Awal',
                 'jam' => '',
                 'pic' => '',
                 'bj' => '',
