@@ -66,13 +66,15 @@ class DocBlendingAwalController extends Controller
 
     /**
      * Helper untuk mengambil data dokumen tersimpan atau auto-generate dari database
+     * 1 Lembar = 1 Tangki / Blending (1 Pasangan Batch)
      */
     public function getDocumentData($poId)
     {
         $batch = ProductionBatch::with([
             'BlendingAwal.user',
             'BlendingAwal.color',
-            'blendingAfterAdjustMikro'
+            'blendingAfterAdjustMikro',
+            'monitoringTurunBlending.user',
         ])->find($poId);
 
         if (!$batch) {
@@ -82,6 +84,45 @@ class DocBlendingAwalController extends Controller
         $savedDoc = DocBlendingAwal::where('production_batch_id', $poId)->first();
 
         if ($savedDoc) {
+            $blocks = $savedDoc->batch_blocks ?: [];
+            $totalBlocks = count($blocks);
+
+            // Pastikan setiap blok memiliki properti catatan & PIC lengkap dan baris ternormalisasi
+            foreach ($blocks as $idx => &$blk) {
+                if (!isset($blk['catatan']) || $blk['catatan'] === '') {
+                    $blk['catatan'] = $savedDoc->catatan ?: '';
+                }
+                if (!isset($blk['pic_sampling']) || $blk['pic_sampling'] === '') {
+                    $blk['pic_sampling'] = $savedDoc->pic_sampling ?: '';
+                }
+                if (!isset($blk['pic_analis']) || $blk['pic_analis'] === '') {
+                    $blk['pic_analis'] = $savedDoc->pic_analis ?: '';
+                }
+                if (!isset($blk['pic_checker']) || $blk['pic_checker'] === '') {
+                    $blk['pic_checker'] = $savedDoc->pic_checker ?: '';
+                }
+                if (!isset($blk['halaman']) || $blk['halaman'] === '') {
+                    $blk['halaman'] = ($idx + 1) . ' / ' . max(1, $totalBlocks);
+                }
+
+                // Normalisasi baris Turun Blending jika sebelumnya tersimpan dengan vol_tangki = Awal
+                if (!empty($blk['rows'])) {
+                    foreach ($blk['rows'] as &$row) {
+                        if (isset($row['vol_tangki']) && strtolower(trim((string)$row['vol_tangki'])) === 'awal') {
+                            $row['vol_tangki'] = '';
+                            if (empty($row['sampling_ke']) || $row['sampling_ke'] === '4') {
+                                $row['sampling_ke'] = 'Awal';
+                            }
+                            if (isset($row['waktu_adjustment']) && ($row['waktu_adjustment'] === ($row['serah_terima_jam'] ?? '') || $row['waktu_adjustment'] === '')) {
+                                $row['waktu_adjustment'] = '-';
+                            }
+                        }
+                    }
+                    unset($row);
+                }
+            }
+            unset($blk);
+
             return [
                 'is_saved' => true,
                 'id' => $savedDoc->id,
@@ -90,7 +131,7 @@ class DocBlendingAwalController extends Controller
                 'variant' => $batch->variant,
                 'tanggal_record_doc' => $savedDoc->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
                 'halaman' => $savedDoc->halaman ?: '1',
-                'batch_blocks' => $savedDoc->batch_blocks ?: [],
+                'batch_blocks' => $blocks,
                 'catatan' => $savedDoc->catatan ?: '',
                 'pic_sampling' => $savedDoc->pic_sampling ?: '',
                 'pic_analis' => $savedDoc->pic_analis ?: '',
@@ -98,26 +139,93 @@ class DocBlendingAwalController extends Controller
             ];
         }
 
-        // Auto-generate Batch Blocks dari data Blending Awal
-        $blendingItems = $batch->BlendingAwal ?? collect();
+        // Auto-generate Batch Blocks dari data Blending Awal (1 Lembar = 1 Blending / Tangki)
+        $blendingItems = $batch->BlendingAwal ? $batch->BlendingAwal->sortBy('id')->values() : collect();
+        $turunItems = $batch->monitoringTurunBlending ? $batch->monitoringTurunBlending->sortBy('id')->values() : collect();
         $batchBlocks = [];
         $detectedAnalis = '';
 
         if ($blendingItems->count() > 0) {
-            // Group berdasarkan nomor_blending atau per item
-            $groupedBlending = $blendingItems->groupBy(function($item) {
-                return $item->nomor_blending ?: $item->id;
-            });
+            // Group items into separate Blending Cycles / Tanks (1 Lembar = 1 Blending)
+            $cycles = [];
+            $currentCycle = [];
+            $prevItem = null;
 
-            foreach ($groupedBlending as $noBlending => $items) {
-                $first = $items->first();
-                if (!$detectedAnalis && $first->user) {
-                    $detectedAnalis = $first->user->name;
+            foreach ($blendingItems as $item) {
+                // Tentukan apakah siklus baru harus dimulai:
+                $isNewCycle = false;
+                if (!empty($currentCycle) && $prevItem) {
+                    $prevDisp = strtolower(trim((string)$prevItem->disposition));
+                    $prevIsRelease = (strpos($prevDisp, 'release') !== false);
+
+                    $noBlChanged = ($item->nomor_blending && $prevItem->nomor_blending && (string)$item->nomor_blending !== (string)$prevItem->nomor_blending);
+                    $batchChanged = ($item->batch_range && $prevItem->batch_range && (string)$item->batch_range !== (string)$prevItem->batch_range);
+
+                    if ($prevIsRelease || $noBlChanged || $batchChanged) {
+                        $isNewCycle = true;
+                    }
+                }
+
+                if ($isNewCycle) {
+                    $cycles[] = $currentCycle;
+                    $currentCycle = [];
+                }
+
+                // Periksa baris kosong / recheck nilai 0 (BJ=0, Brix=0, pH=0)
+                $isZeroRecheck = ($item->bj == 0 && $item->brix == 0 && ($item->visco == 0 || $item->visco === null) && ($item->ph == 0 || $item->ph === null));
+                if ($isZeroRecheck && !empty($currentCycle)) {
+                    // Gabungkan catatan adjustment ke baris sebelumnya
+                    $lastIdx = count($currentCycle) - 1;
+                    $adjParts = [];
+                    if ($item->adjustment_qty_air) $adjParts[] = 'Air: ' . $item->adjustment_qty_air . ' L';
+                    if ($item->adjustment_qty_garam) $adjParts[] = 'Garam: ' . $item->adjustment_qty_garam . ' kg';
+                    if ($item->adjustment_qty_caramel) $adjParts[] = 'Caramel: ' . $item->adjustment_qty_caramel . ' kg';
+                    if ($item->disposition_remark) $adjParts[] = $item->disposition_remark;
+                    $recheckNote = !empty($adjParts) ? implode('; ', $adjParts) : ($item->disposition ?: 'Recheck');
+
+                    if ($recheckNote && $recheckNote !== '-') {
+                        $currentCycle[$lastIdx]['merged_adj'] = (!empty($currentCycle[$lastIdx]['merged_adj']) ? ($currentCycle[$lastIdx]['merged_adj'] . ' | ') : '') . $recheckNote;
+                    }
+                    continue;
+                }
+
+                $currentCycle[] = [
+                    'model' => $item,
+                    'merged_adj' => '',
+                ];
+                $prevItem = $item;
+            }
+
+            if (!empty($currentCycle)) {
+                $cycles[] = $currentCycle;
+            }
+
+            $totalCycles = count($cycles);
+
+            foreach ($cycles as $cIdx => $cycleItems) {
+                if (empty($cycleItems)) continue;
+
+                $first = $cycleItems[0]['model'];
+                $last = end($cycleItems)['model'];
+
+                $cycleAnalis = '';
+                foreach ($cycleItems as $ci) {
+                    if ($ci['model']->user) {
+                        $cycleAnalis = $ci['model']->user->name;
+                        break;
+                    }
+                }
+
+                if (!$detectedAnalis && $cycleAnalis) {
+                    $detectedAnalis = $cycleAnalis;
                 }
 
                 $rows = [];
                 $samplingIndex = 1;
-                foreach ($items as $item) {
+
+                foreach ($cycleItems as $entry) {
+                    $item = $entry['model'];
+
                     // Waktu & Adjustment description
                     $adjParts = [];
                     if ($item->adjustment_qty_air) $adjParts[] = 'Air: ' . $item->adjustment_qty_air . ' L';
@@ -125,6 +233,10 @@ class DocBlendingAwalController extends Controller
                     if ($item->adjustment_qty_caramel) $adjParts[] = 'Caramel: ' . $item->adjustment_qty_caramel . ' kg';
                     if ($item->disposition_remark) $adjParts[] = $item->disposition_remark;
                     $adjStr = !empty($adjParts) ? implode('; ', $adjParts) : '-';
+
+                    if (!empty($entry['merged_adj'])) {
+                        $adjStr = ($adjStr !== '-' ? ($adjStr . ' | ') : '') . $entry['merged_adj'];
+                    }
 
                     $rows[] = [
                         'sampling_ke' => (string)$samplingIndex++,
@@ -137,8 +249,8 @@ class DocBlendingAwalController extends Controller
                         'nacl' => $item->nacl !== null ? (string)$item->nacl : '',
                         'visco' => $item->visco !== null ? (string)$item->visco : '',
                         'organo' => $item->organo ?: 'OK',
-                        'aroma' => $item->aroma ?: 'Khas',
-                        'warna' => $item->color ? $item->color->name : 'Standar',
+                        'aroma' => $item->aroma ?: 'OK',
+                        'warna' => $item->color ? $item->color->name : 'Hitam',
                         'buih' => 'Tidak Ada',
                         'aw' => $item->aw !== null ? (string)$item->aw : '',
                         'waktu_adjustment' => $adjStr,
@@ -146,7 +258,30 @@ class DocBlendingAwalController extends Controller
                     ];
                 }
 
-                // Pad rows to at least 4 rows for standard template appearance
+                // Cek apakah ada data Monitoring Turun Blending yang sesuai untuk siklus ini
+                $turun = $turunItems->get($cIdx);
+                if ($turun) {
+                    $rows[] = [
+                        'sampling_ke' => 'Awal',
+                        'vol_tangki' => '',
+                        'serah_terima_jam' => $turun->created_at ? $turun->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '',
+                        'serah_terima_pic' => $turun->user ? $turun->user->name : ($first->user ? $first->user->name : ''),
+                        'bj' => isset($turun->bj) ? (string)$turun->bj : ($last->bj !== null ? (string)$last->bj : ''),
+                        'brix' => $turun->brix !== null ? (string)$turun->brix : ($last->brix !== null ? (string)$last->brix : ''),
+                        'ph' => isset($turun->ph) ? (string)$turun->ph : ($last->ph !== null ? (string)$last->ph : ''),
+                        'nacl' => isset($turun->nacl) ? (string)$turun->nacl : ($last->nacl !== null ? (string)$last->nacl : ''),
+                        'visco' => $turun->visco !== null ? (string)$turun->visco : ($last->visco !== null ? (string)$last->visco : ''),
+                        'organo' => isset($turun->organo) ? $turun->organo : ($last->organo ?: 'OK'),
+                        'aroma' => isset($turun->aroma) ? $turun->aroma : ($last->aroma ?: 'OK'),
+                        'warna' => ($last->color ? $last->color->name : 'Hitam'),
+                        'buih' => 'Tidak Ada',
+                        'aw' => $turun->aw !== null ? (string)$turun->aw : ($last->aw !== null ? (string)$last->aw : ''),
+                        'waktu_adjustment' => '-',
+                        'disposisi' => $turun->status ?: ($turun->disposition ?: 'Release'),
+                    ];
+                }
+
+                // Pad rows up to 4 rows for clean initial display in UI
                 while (count($rows) < 4) {
                     $nextSamp = count($rows) + 1;
                     $rows[] = [
@@ -169,14 +304,23 @@ class DocBlendingAwalController extends Controller
                     ];
                 }
 
+                $jamStart = $first->created_at ? $first->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '08:00';
+                $jamEnd = ($last && $last->created_at && $last->id !== $first->id) ? $last->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+                $jamProduksiStr = $jamEnd ? "{$jamStart} - {$jamEnd}" : $jamStart;
+
                 $batchBlocks[] = [
+                    'halaman' => ($cIdx + 1) . ' / ' . $totalCycles,
                     'jenis_produk' => $batch->variant ?: 'Kecap Sedap',
-                    'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
-                    'jam_produksi' => $first->created_at ? $first->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '08:00',
+                    'tanggal_produksi' => $first->created_at ? $first->created_at->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
+                    'jam_produksi' => $jamProduksiStr,
                     'kode_shift_grup' => 'Shift 1 / Grup A',
-                    'batch' => (string)($first->batch_range ?: '1'),
-                    'no_blending' => (string)($first->nomor_blending ?: $noBlending),
-                    'volume_awal' => $first->volume ? ($first->volume . ' L') : '5000 L',
+                    'batch' => (string)($first->batch_range ?: ($cIdx + 1)),
+                    'no_blending' => (string)($first->nomor_blending ?: ($cIdx + 1)),
+                    'volume_awal' => $first->volume ? ($first->volume . ' L') : '10000 L',
+                    'catatan' => '',
+                    'pic_sampling' => '',
+                    'pic_analis' => $cycleAnalis ?: ($detectedAnalis ?: (auth()->user()->name ?? '')),
+                    'pic_checker' => '',
                     'rows' => $rows,
                 ];
             }
@@ -205,13 +349,18 @@ class DocBlendingAwalController extends Controller
             }
 
             $batchBlocks[] = [
+                'halaman' => '1 / 1',
                 'jenis_produk' => $batch->variant ?: 'Kecap Sedap',
                 'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
                 'jam_produksi' => '08:00',
                 'kode_shift_grup' => 'Shift 1 / Grup A',
                 'batch' => (string)($batch->batch_range ?: '1'),
                 'no_blending' => '1',
-                'volume_awal' => '5000 L',
+                'volume_awal' => '10000 L',
+                'catatan' => '',
+                'pic_sampling' => '',
+                'pic_analis' => auth()->user()->name ?? '',
+                'pic_checker' => '',
                 'rows' => $defaultRows,
             ];
         }
@@ -243,17 +392,19 @@ class DocBlendingAwalController extends Controller
         ]);
 
         $batchBlocks = $request->input('batch_blocks', []);
+        $firstBlock = !empty($batchBlocks[0]) ? $batchBlocks[0] : [];
+        $totalBlocks = count($batchBlocks);
 
         $doc = DocBlendingAwal::updateOrCreate(
             ['production_batch_id' => $request->input('production_batch_id')],
             [
                 'tanggal_record_doc' => $request->input('tanggal_record_doc'),
-                'halaman' => $request->input('halaman', '1'),
+                'halaman' => $request->input('halaman', $totalBlocks > 0 ? "1 / {$totalBlocks}" : '1'),
                 'batch_blocks' => $batchBlocks,
-                'catatan' => $request->input('catatan'),
-                'pic_sampling' => $request->input('pic_sampling'),
-                'pic_analis' => $request->input('pic_analis'),
-                'pic_checker' => $request->input('pic_checker'),
+                'catatan' => $request->input('catatan') ?? ($firstBlock['catatan'] ?? ''),
+                'pic_sampling' => $request->input('pic_sampling') ?? ($firstBlock['pic_sampling'] ?? ''),
+                'pic_analis' => $request->input('pic_analis') ?? ($firstBlock['pic_analis'] ?? ''),
+                'pic_checker' => $request->input('pic_checker') ?? ($firstBlock['pic_checker'] ?? ''),
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
             ]
@@ -268,6 +419,7 @@ class DocBlendingAwalController extends Controller
 
     /**
      * Export Dokumen ke Excel Sesuai Format Resmi FRM/QLB/04/104/005-01
+     * (1 Lembar / Sheet = 1 Siklus Blending / Tangki)
      */
     public function exportExcel(Request $request)
     {
@@ -291,7 +443,7 @@ class DocBlendingAwalController extends Controller
     }
 
     /**
-     * Tampilan Khusus Cetak / Print Dokumen
+     * Tampilan Khusus Cetak / Print Dokumen (1 Lembar = 1 Tangki/Blending)
      */
     public function printView($id)
     {

@@ -231,8 +231,8 @@ class MasterDataRmSeeder extends Seeder
             ['jenis' => 'GULA KELAPA', 'parameter' => '%Kadar Air', 'min' => null, 'max' => 8.0, 'target' => 'Maks 8.0%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA', 'parameter' => '%Kotoran', 'min' => null, 'max' => 10.0, 'target' => 'Maks 10.0%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK >= 70%', 'uom' => '%'],
-            ['jenis' => 'GULA KELAPA', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat tua / Coklat muda / Coklat', 'uom' => ''],
-            ['jenis' => 'GULA KELAPA', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK / Khas', 'uom' => ''],
+            ['jenis' => 'GULA KELAPA', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat / Coklat tua / Coklat muda / Gelap', 'uom' => ''],
+            ['jenis' => 'GULA KELAPA', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
 
             // GULA KELAPA B
             ['jenis' => 'GULA KELAPA B', 'parameter' => 'pH', 'min' => 5.5, 'max' => 6.5, 'target' => '5.5 - 6.5', 'uom' => ''],
@@ -240,8 +240,8 @@ class MasterDataRmSeeder extends Seeder
             ['jenis' => 'GULA KELAPA B', 'parameter' => '%Kadar Air', 'min' => null, 'max' => 8.0, 'target' => 'Maks 8.0%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA B', 'parameter' => '%Kotoran', 'min' => null, 'max' => 10.0, 'target' => 'Maks 10.0%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA B', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK >= 70%', 'uom' => '%'],
-            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat tua / Coklat muda / Coklat', 'uom' => ''],
-            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK / Khas', 'uom' => ''],
+            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat / Coklat tua / Coklat muda / Gelap', 'uom' => ''],
+            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
 
             // GULA TEBU
             ['jenis' => 'GULA TEBU', 'parameter' => 'pH', 'min' => 5.5, 'max' => 6.5, 'target' => '5.5 - 6.5', 'uom' => ''],
@@ -249,8 +249,8 @@ class MasterDataRmSeeder extends Seeder
             ['jenis' => 'GULA TEBU', 'parameter' => '%Kadar Air', 'min' => null, 'max' => 3.0, 'target' => 'Maks 3.0%', 'uom' => '%'],
             ['jenis' => 'GULA TEBU', 'parameter' => '%Kotoran', 'min' => null, 'max' => 10.0, 'target' => 'Maks 10.0%', 'uom' => '%'],
             ['jenis' => 'GULA TEBU', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK >= 70%', 'uom' => '%'],
-            ['jenis' => 'GULA TEBU', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Gelap / Sesuai Standar', 'uom' => ''],
-            ['jenis' => 'GULA TEBU', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK / Khas', 'uom' => ''],
+            ['jenis' => 'GULA TEBU', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat / Coklat tua / Coklat muda / Gelap', 'uom' => ''],
+            ['jenis' => 'GULA TEBU', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
 
             // GARAM
             ['jenis' => 'GARAM', 'parameter' => '%KA', 'min' => null, 'max' => 4.0, 'target' => 'Maks 4.0%', 'uom' => '%'],
@@ -260,7 +260,7 @@ class MasterDataRmSeeder extends Seeder
             ['jenis' => 'GARAM', 'parameter' => 'Fisik', 'min' => null, 'max' => null, 'target' => 'Bersih & Kering', 'uom' => ''],
             ['jenis' => 'GARAM', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
             ['jenis' => 'GARAM', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Putih', 'uom' => ''],
-            ['jenis' => 'GARAM', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK / Khas', 'uom' => ''],
+            ['jenis' => 'GARAM', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
         ];
 
         foreach ($standarList as $std) {

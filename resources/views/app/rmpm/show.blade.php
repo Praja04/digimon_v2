@@ -65,7 +65,7 @@
                                 <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi">
                                     Konfirmasi
                                 </button>
-                                <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'incoming']) }}" class="btn btn-info">
+                                <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info">
                                     <i class="ri-edit-line align-bottom me-1"></i> Update Analisa
                                 </a>
                             </div>
@@ -550,29 +550,20 @@
                                     </h5>
                                     <div class="d-flex gap-2 flex-wrap align-items-center">
                                         @if ($groupedShort->has('incoming'))
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel
                                         </span>
                                         @endif
                                         @if ($groupedShort->has('sta'))
-                                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle fs-7 py-1 px-2">
                                             <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel
                                         </span>
                                         @endif
                                         @if ($groupedShort->has('monitoring'))
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle fs-7 py-1 px-2">
                                             <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel
                                         </span>
                                         @endif
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'incoming']) }}" class="btn btn-sm btn-primary shadow-sm">
-                                            <i class="ri-inbox-archive-line me-1"></i> {{ $groupedShort->has('incoming') ? 'Update Incoming' : '+ Input Incoming' }}
-                                        </a>
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'sta']) }}" class="btn btn-sm btn-info shadow-sm text-white">
-                                            <i class="ri-flashlight-line me-1"></i> {{ $groupedShort->has('sta') ? 'Update STA' : '+ Input STA' }}
-                                        </a>
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'monitoring']) }}" class="btn btn-sm btn-success shadow-sm">
-                                            <i class="ri-line-chart-line me-1"></i> {{ $groupedShort->has('monitoring') ? 'Update Monitoring' : '+ Input Monitoring' }}
-                                        </a>
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -731,9 +722,6 @@
                                     <h5 class="mb-0 fw-semibold text-dark">
                                         <i class="ri-microscope-line text-primary me-1"></i> Hasil Analisa Long Term
                                     </h5>
-                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}?kategori=long-term" class="btn btn-sm btn-dark shadow-sm">
-                                        <i class="ri-edit-box-line me-1"></i> Update Long Term
-                                    </a>
                                 </div>
                                 <div class="card-body p-3">
                                     <div class="table-responsive">
@@ -1113,27 +1101,27 @@
                 <p>Silakan pilih kategori sampling yang ingin Anda isi.</p>
                 <div class="list-group">
                     @if (is_null($data_mobil))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_mobil" data-bs-dismiss="modal">
-                        <i class="ri-truck-line me-2"></i> Sampling Kondisi Mobil
+                    <button type="button" class="list-group-item list-group-item-action"
+                        data-bs-toggle="modal" data-bs-target="#modalKondisiMobil">
+                        <i class="ri-truck-line me-2 text-primary"></i> Sampling Kondisi Mobil
                     </button>
                     @endif
                     @if (is_null($data_dokumen))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_dokumen" data-bs-dismiss="modal">
-                        <i class="ri-file-text-line me-2"></i> Sampling Dokumen
+                    <button type="button" class="list-group-item list-group-item-action"
+                        data-bs-toggle="modal" data-bs-target="#modalDokumen">
+                        <i class="ri-file-text-line me-2 text-success"></i> Sampling Dokumen
                     </button>
                     @endif
                     @if (is_null($data_kemasan))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_kemasan" data-bs-dismiss="modal">
-                        <i class="ri-inbox-line me-2"></i> Sampling Kemasan
+                    <button type="button" class="list-group-item list-group-item-action"
+                        data-bs-toggle="modal" data-bs-target="#modalKemasan">
+                        <i class="ri-inbox-line me-2 text-warning"></i> Sampling Kemasan
                     </button>
                     @endif
                     @if (!$isGaram && is_null($data_raw))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_raw" data-bs-dismiss="modal">
-                        <i class="ri-flask-line me-2"></i> Sampling Raw
+                    <button type="button" class="list-group-item list-group-item-action"
+                        data-bs-toggle="modal" data-bs-target="#modalRaw">
+                        <i class="ri-flask-line me-2 text-danger"></i> Sampling Raw
                     </button>
                     @endif
                 </div>
@@ -1648,15 +1636,15 @@
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_yes" value="yes"
+                                    id="{{ $field }}_yes_edit" value="yes"
                                     {{ $value === 'yes' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_yes">Iya</label>
+                                <label class="form-check-label" for="{{ $field }}_yes_edit">Iya</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_no" value="no"
+                                    id="{{ $field }}_no_edit" value="no"
                                     {{ $value === 'no' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_no">Tidak</label>
+                                <label class="form-check-label" for="{{ $field }}_no_edit">Tidak</label>
                             </div>
                         </div>
                     </div>
@@ -1759,17 +1747,7 @@
             }
         });
 
-        // ── Routing pilihan sampling ──
-        $('.sampling-option').on('click', function() {
-            const map = {
-                kondisi_mobil: 'modalKondisiMobil',
-                kondisi_dokumen: 'modalDokumen',
-                kondisi_kemasan: 'modalKemasan',
-                kondisi_raw: 'modalRaw',
-            };
-            const id = map[$(this).data('sampling')];
-            if (id) setTimeout(() => new bootstrap.Modal(document.getElementById(id)).show(), 400);
-        });
+
 
         // ── Zak input toggle ──
         $('form.form-sampling input[type=radio]').on('change', function() {

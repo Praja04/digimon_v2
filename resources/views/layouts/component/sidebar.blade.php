@@ -86,6 +86,10 @@
                     'master-asal-bahan.*',
                     'master-glassware.*',
                     'master-standar-rm.*',
+                    'master-warna-rm.*',
+                    'master-aroma-rm.*',
+                    'master-organo-rm.*',
+                    'master-parameter-rm.*',
                 ]);
             @endphp
 
@@ -734,6 +738,30 @@
                                             class="nav-link {{ request()->routeIs('master-standar-rm.*') ? 'active' : '' }}">
                                             <i class="mdi mdi-clipboard-text-outline"></i>
                                             Standar Mutu
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-warna-rm.index') ? route('master-warna-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-warna-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-palette-outline"></i>
+                                            Warna
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-aroma-rm.index') ? route('master-aroma-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-aroma-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-scent"></i>
+                                            Aroma
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-organo-rm.index') ? route('master-organo-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-organo-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-food-apple-outline"></i>
+                                            Organo (Rasa)
                                         </a>
                                     </li>
 

@@ -3,25 +3,38 @@
 
 @section('styles')
 <style>
-    .document-paper {
+    .lembar-sheet-card {
         background: #ffffff;
-        border: 1px solid #c2c7d0;
+        border: 2px solid #343a40;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         border-radius: 6px;
-        padding: 30px;
+        padding: 24px;
         position: relative;
+        margin-bottom: 35px;
+    }
+
+    .lembar-header-badge {
+        background: #1e293b;
+        color: #ffffff;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .doc-logo-box {
         border: 2px solid #2d3748;
-        padding: 6px 12px;
+        padding: 4px 8px;
         display: inline-block;
         border-radius: 4px;
         background: #f8fafc;
     }
 
     .doc-title-main {
-        font-size: 1.35rem;
+        font-size: 1.25rem;
         font-weight: 800;
         letter-spacing: 0.5px;
         color: #1a202c;
@@ -29,20 +42,16 @@
         text-align: center;
     }
 
-    .doc-box-border {
-        border: 1px solid #000000;
-    }
-
     .table-pelarutan {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.82rem;
-        margin-bottom: 15px;
+        font-size: 0.78rem;
+        margin-bottom: 10px;
     }
 
     .table-pelarutan th, .table-pelarutan td {
         border: 1px solid #000000;
-        padding: 4px 3px;
+        padding: 3px 2px;
         text-align: center;
         vertical-align: middle;
     }
@@ -58,9 +67,9 @@
         border: 1px solid transparent;
         background: transparent;
         text-align: center;
-        font-size: 0.82rem;
-        padding: 3px 2px;
-        border-radius: 3px;
+        font-size: 0.78rem;
+        padding: 2px 2px;
+        border-radius: 2px;
     }
 
     .table-pelarutan .table-input:focus, .table-pelarutan .table-input:hover {
@@ -70,22 +79,22 @@
         box-shadow: 0 0 0 2px rgba(64, 81, 137, 0.2);
     }
 
-    .batch-block-card {
-        border: 1px solid #000000;
-        padding: 15px;
-        margin-bottom: 25px;
-        background: #ffffff;
-        position: relative;
+    .batch-sub-card {
+        border: 1px solid #94a3b8;
+        background: #fafafa;
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 15px;
     }
 
     .signature-container {
         border: 1px solid #000000;
-        margin-top: 15px;
+        margin-top: 10px;
     }
 
     .sig-col {
         border-right: 1px solid #000000;
-        padding: 8px 12px;
+        padding: 6px 10px;
         text-align: center;
     }
 
@@ -94,49 +103,27 @@
     }
 
     .sig-space {
-        height: 50px;
+        height: 45px;
     }
 
     .meta-input-group td {
         padding: 2px 4px;
-        font-size: 0.88rem;
+        font-size: 0.84rem;
     }
 
     .meta-input-group .form-control-sm {
         border: none;
         border-bottom: 1px dotted #888;
         border-radius: 0;
-        padding: 2px 5px;
+        padding: 2px 4px;
         background: transparent;
+        font-size: 0.84rem;
     }
 
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        #printableArea, #printableArea * {
-            visibility: visible;
-        }
-        #printableArea {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            border: none;
-            box-shadow: none;
-        }
-        .no-print {
-            display: none !important;
-        }
-        .table-pelarutan th, .table-pelarutan td, .batch-block-card, .signature-container, .sig-col {
-            border: 1px solid #000000 !important;
-        }
-        .table-pelarutan .table-input, .meta-input-group .form-control-sm {
-            border: none !important;
-            background: transparent !important;
-        }
+    .meta-input-group .form-control-sm:focus {
+        border-bottom: 2px solid #405189;
+        box-shadow: none;
+        background: #ffffff;
     }
 </style>
 @endsection
@@ -144,273 +131,84 @@
 @section('content')
 <div class="page-content">
     <div class="container-fluid">
-        <!-- Page Title & Navigation -->
-        <div class="row no-print">
+        <!-- start page title -->
+        <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0">@yield('title')</h4>
+                    <h4 class="mb-sm-0">Dokumen Analisis Pelarutan (FRM/QLB/04/104/004-01)</h4>
+
                     <div class="page-title-right">
                         <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="{{ route('pelarutan-1.menu') }}">Menu</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('pelarutan.export.index') }}">Dokumen Analisis Pelarutan (Export & Cetak)</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('analisa.pelarutan.index') }}">Menu</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('analisa.pelarutan.export.index') }}">Export & Cetak</a></li>
                             <li class="breadcrumb-item active">Formulir Dokumen</li>
                         </ol>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- end page title -->
 
-        <!-- Action Control Panel Card -->
-        <div class="row no-print mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-3">
-                        <div class="row g-3 align-items-center justify-content-between">
-                            <!-- PO Selector -->
-                            <div class="col-12 col-md-4 col-lg-3">
-                                <label class="form-label fw-semibold text-muted small mb-1">Pilih Nomor PO</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="ri-file-list-3-line text-primary"></i></span>
-                                    <select id="po_selector" class="form-select border-start-0 select2">
-                                        <option value="">-- Pilih Nomor PO --</option>
-                                        @foreach($batches as $b)
-                                            <option value="{{ $b->id }}" {{ $selectedBatchId == $b->id ? 'selected' : '' }}>
-                                                {{ $b->po_number }} ({{ $b->variant ?? 'Batch' }} - {{ $b->date ? \Carbon\Carbon::parse($b->date)->format('d/m/Y') : '' }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
+        <!-- Control Bar: Pilih PO & Action Buttons -->
+        <div class="card mb-3 shadow-sm border-0">
+            <div class="card-body p-3">
+                <div class="row align-items-center g-3">
+                    <div class="col-lg-4 col-md-6">
+                        <label for="selectPo" class="form-label fw-bold fs-13 mb-1">
+                            <i class="ri-folder-open-line me-1 text-primary"></i> Pilih Nomor PO Batch Produksi:
+                        </label>
+                        <select id="selectPo" class="form-select select2">
+                            @foreach($batches as $b)
+                                <option value="{{ $b->id }}" {{ $selectedBatchId == $b->id ? 'selected' : '' }}>
+                                    {{ $b->po_number }} - {{ $b->variant ?? 'Kecap Manis' }} ({{ \Carbon\Carbon::parse($b->date)->format('d/m/Y') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                            <!-- Buttons -->
-                            <div class="col-12 col-md-8 col-lg-9 d-flex flex-wrap gap-2 justify-content-md-end align-items-end">
-                                <button type="button" id="btnFetchDb" class="btn btn-soft-info d-flex align-items-center">
-                                    <i class="ri-refresh-line me-1"></i> Tarik Data Database
-                                </button>
-                                <button type="button" id="btnSaveDoc" class="btn btn-primary d-flex align-items-center shadow-sm">
-                                    <i class="ri-save-3-line me-1"></i> Simpan Dokumen
-                                </button>
-                                <button type="button" id="btnExportExcel" class="btn btn-success d-flex align-items-center shadow-sm">
-                                    <i class="ri-file-excel-2-line me-1"></i> Export Excel (Sesuai Format)
-                                </button>
-                                <button type="button" id="btnPrint" class="btn btn-dark d-flex align-items-center shadow-sm">
-                                    <i class="ri-printer-line me-1"></i> Cetak / Print PDF
-                                </button>
-                                <a href="{{ route('pelarutan.export.index') }}" class="btn btn-soft-secondary d-flex align-items-center">
-                                    <i class="ri-arrow-left-line me-1"></i> Kembali ke Menu
-                                </a>
-                            </div>
-                        </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="globalTanggalDoc" class="form-label fw-bold fs-13 mb-1">
+                            <i class="ri-calendar-event-line me-1 text-primary"></i> Tanggal Record Dokumen:
+                        </label>
+                        <input type="date" class="form-control form-control-sm" id="globalTanggalDoc" value="{{ $initialData['tanggal_record_doc'] ?? date('Y-m-d') }}">
+                    </div>
+
+                    <div class="col-lg-5 col-md-12 text-md-end text-start d-flex flex-wrap gap-2 justify-content-md-end justify-content-start align-items-end">
+                        <a href="{{ route('analisa.pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="ri-arrow-left-line me-1"></i> Kembali
+                        </a>
+                        <button type="button" id="btnSaveDoc" class="btn btn-primary btn-sm">
+                            <i class="ri-save-3-line me-1"></i> Simpan Dokumen
+                        </button>
+                        <a href="#" id="btnExportExcel" class="btn btn-success btn-sm">
+                            <i class="ri-file-excel-2-line me-1"></i> Download Excel
+                        </a>
+                        <a href="#" id="btnPrintView" target="_blank" class="btn btn-info btn-sm text-white">
+                            <i class="ri-printer-line me-1"></i> Cetak / Print
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Interactive Document Canvas -->
-        <div class="row">
-            <div class="col-12">
-                <div id="printableArea" class="document-paper mb-5">
-                    
-                    <!-- Header Dokumen Sesuai Gambar -->
-                    <div class="row align-items-center border-bottom pb-3 mb-4">
-                        <div class="col-12 col-md-3 text-center text-md-start mb-2 mb-md-0">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="doc-logo-box p-1">
-                                    <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 48px; object-fit: contain;">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 text-center">
-                            <h4 class="doc-title-main mb-0">HASIL ANALISIS PROSES PELARUTAN</h4>
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <div class="border p-2 rounded bg-light">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="fw-bold small">Tanggal Record Doc :</span>
-                                    <input type="date" id="tanggal_record_doc" class="form-control form-control-sm text-center" style="max-width: 130px;" value="{{ $initialData['tanggal_record_doc'] ?? date('Y-m-d') }}">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="fw-bold small">Halaman :</span>
-                                    <input type="text" id="halaman" class="form-control form-control-sm text-center" style="max-width: 80px;" value="{{ $initialData['halaman'] ?? '1' }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Batch Blocks Container -->
-                    <div id="batchBlocksContainer">
-                        @if(!empty($initialData['batch_blocks']))
-                            @foreach($initialData['batch_blocks'] as $bIndex => $block)
-                            <div class="batch-block-card" data-block-index="{{ $bIndex }}">
-                                
-                                <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-                                    <span class="badge bg-primary fs-12">Blok Batch #{{ $bIndex + 1 }}</span>
-                                    <button type="button" class="btn btn-sm btn-soft-danger btn-delete-block" title="Hapus Blok Batch Ini">
-                                        <i class="ri-delete-bin-line me-1"></i> Hapus Blok Batch
-                                    </button>
-                                </div>
-
-                                <!-- Metadata Blok (Kiri & Kanan) -->
-                                <div class="row mb-3">
-                                    <div class="col-12 col-md-6">
-                                        <table class="w-100 meta-input-group">
-                                            <tr>
-                                                <td width="35%" class="fw-bold">Jenis Produk</td>
-                                                <td width="3%">:</td>
-                                                <td><input type="text" class="form-control form-control-sm block-jenis-produk" value="{{ $block['jenis_produk'] ?? '' }}"></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-bold">Tanggal Produksi</td>
-                                                <td>:</td>
-                                                <td><input type="date" class="form-control form-control-sm block-tgl-prod" value="{{ $block['tanggal_produksi'] ?? date('Y-m-d') }}"></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-bold">Jam Produksi</td>
-                                                <td>:</td>
-                                                <td><input type="text" class="form-control form-control-sm block-jam-prod" value="{{ $block['jam_produksi'] ?? '08:00' }}" placeholder="08:00"></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-bold">Kode Shift & Grup</td>
-                                                <td>:</td>
-                                                <td><input type="text" class="form-control form-control-sm block-shift-grup" value="{{ $block['kode_shift_grup'] ?? 'Shift 1 / Grup A' }}" placeholder="Shift 1 / Grup A"></td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <table class="w-100 meta-input-group">
-                                            <tr>
-                                                <td width="35%" class="fw-bold">Batch</td>
-                                                <td width="3%">:</td>
-                                                <td><input type="text" class="form-control form-control-sm block-batch" value="{{ $block['batch'] ?? '' }}" placeholder="1"></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-bold">No. Dissolver</td>
-                                                <td>:</td>
-                                                <td><input type="text" class="form-control form-control-sm block-dissolver" value="{{ $block['no_dissolver'] ?? '' }}" placeholder="1"></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-bold">Volume</td>
-                                                <td>:</td>
-                                                <td><input type="text" class="form-control form-control-sm block-volume" value="{{ $block['volume'] ?? '5000 L' }}" placeholder="5000 L"></td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <!-- Tabel Pelarutan I & II -->
-                                <div class="table-responsive">
-                                    <table class="table-pelarutan">
-                                        <thead>
-                                            <tr>
-                                                <th rowspan="2" style="width: 50px;">Sampling ke-</th>
-                                                <th colspan="2">Serah Terima</th>
-                                                <th colspan="5">Pelarutan I (GGA)</th>
-                                                <th rowspan="2" style="width: 50px;">Sampling ke-</th>
-                                                <th colspan="2">Serah Terima</th>
-                                                <th colspan="5">Pelarutan II (GGAS)</th>
-                                                <th rowspan="2" style="min-width: 90px;">Disposisi</th>
-                                                <th rowspan="2" class="no-print" width="35">Aksi</th>
-                                            </tr>
-                                            <tr>
-                                                <th style="min-width: 55px;">Jam</th>
-                                                <th style="min-width: 75px;">PIC</th>
-                                                <th style="min-width: 55px;">Brix</th>
-                                                <th style="min-width: 55px;">%NaCl</th>
-                                                <th style="min-width: 65px;">Warna</th>
-                                                <th style="min-width: 60px;">Organo</th>
-                                                <th style="min-width: 110px;">Waktu & Adjustment</th>
-                                                <th style="min-width: 55px;">Jam</th>
-                                                <th style="min-width: 75px;">PIC</th>
-                                                <th style="min-width: 55px;">Brix</th>
-                                                <th style="min-width: 55px;">%NaCl</th>
-                                                <th style="min-width: 65px;">Warna</th>
-                                                <th style="min-width: 60px;">Organo</th>
-                                                <th style="min-width: 110px;">Waktu & Adjustment</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @if(!empty($block['rows']))
-                                                @foreach($block['rows'] as $rIdx => $r)
-                                                <tr>
-                                                    <td><input type="text" class="table-input p1-samp" value="{{ $r['p1_sampling_ke'] ?? ($rIdx + 1) }}"></td>
-                                                    <td><input type="text" class="table-input p1-jam" value="{{ $r['p1_jam'] ?? '' }}" placeholder="08:00"></td>
-                                                    <td><input type="text" class="table-input p1-pic" value="{{ $r['p1_pic'] ?? '' }}" placeholder="PIC"></td>
-                                                    <td><input type="text" class="table-input p1-brix" value="{{ $r['p1_brix'] ?? '' }}" placeholder="65.0"></td>
-                                                    <td><input type="text" class="table-input p1-nacl" value="{{ $r['p1_nacl'] ?? '' }}" placeholder="12.0"></td>
-                                                    <td><input type="text" class="table-input p1-warna" value="{{ $r['p1_warna'] ?? 'Standar' }}"></td>
-                                                    <td><input type="text" class="table-input p1-organo" value="{{ $r['p1_organo'] ?? 'OK' }}"></td>
-                                                    <td><input type="text" class="table-input text-start p1-adj" value="{{ $r['p1_waktu_adjustment'] ?? '-' }}"></td>
-
-                                                    <td><input type="text" class="table-input p2-samp" value="{{ $r['p2_sampling_ke'] ?? ($rIdx + 1) }}"></td>
-                                                    <td><input type="text" class="table-input p2-jam" value="{{ $r['p2_jam'] ?? '' }}" placeholder="09:00"></td>
-                                                    <td><input type="text" class="table-input p2-pic" value="{{ $r['p2_pic'] ?? '' }}" placeholder="PIC"></td>
-                                                    <td><input type="text" class="table-input p2-brix" value="{{ $r['p2_brix'] ?? '' }}" placeholder="65.0"></td>
-                                                    <td><input type="text" class="table-input p2-nacl" value="{{ $r['p2_nacl'] ?? '' }}" placeholder="12.0"></td>
-                                                    <td><input type="text" class="table-input p2-warna" value="{{ $r['p2_warna'] ?? 'Standar' }}"></td>
-                                                    <td><input type="text" class="table-input p2-organo" value="{{ $r['p2_organo'] ?? 'OK' }}"></td>
-                                                    <td><input type="text" class="table-input text-start p2-adj" value="{{ $r['p2_waktu_adjustment'] ?? '-' }}"></td>
-
-                                                    <td><input type="text" class="table-input p-disposisi" value="{{ $r['disposisi'] ?? 'Release' }}"></td>
-                                                    <td class="no-print">
-                                                        <button type="button" class="btn btn-sm btn-soft-danger btn-delete-row" title="Hapus Baris">
-                                                            <i class="ri-delete-bin-line"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            @endif
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="text-end no-print">
-                                    <button type="button" class="btn btn-sm btn-soft-success btn-add-row-block">
-                                        <i class="ri-add-line me-1"></i> Tambah Baris Sampling
-                                    </button>
-                                </div>
-                            </div>
-                            @endforeach
-                        @endif
-                    </div>
-
-                    <!-- Tombol Tambah Blok Batch Baru -->
-                    <div class="mb-4 text-center no-print">
-                        <button type="button" id="btnAddBlock" class="btn btn-outline-primary">
-                            <i class="ri-add-circle-line me-1"></i> + Tambah Blok Batch Baru
-                        </button>
-                    </div>
-
-                    <!-- Catatan Section -->
-                    <div class="mb-4">
-                        <label class="fw-bold small mb-1">Catatan :</label>
-                        <textarea id="catatan" class="form-control form-control-sm" rows="2" placeholder="Tuliskan catatan disposisi atau keterangan tambahan disini...">{{ $initialData['catatan'] ?? '' }}</textarea>
-                    </div>
-
-                    <!-- Signatures Section (3 Kolom Sesuai Gambar) -->
-                    <div class="signature-container">
-                        <div class="row g-0">
-                            <div class="col-4 sig-col">
-                                <div class="fw-bold small mb-3 text-start">Disampling oleh,</div>
-                                <div class="sig-space"></div>
-                                <input type="text" id="pic_sampling" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( Nama Petugas )" value="{{ $initialData['pic_sampling'] ?? '' }}">
-                                <div class="small text-muted">&nbsp;</div>
-                            </div>
-                            <div class="col-4 sig-col">
-                                <div class="fw-bold small mb-3 text-start">Dianalisis oleh,</div>
-                                <div class="sig-space"></div>
-                                <input type="text" id="pic_analis" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( Nama Analis )" value="{{ $initialData['pic_analis'] ?? (auth()->user()->name ?? '') }}">
-                                <div class="fw-bold small">QC Analis</div>
-                            </div>
-                            <div class="col-4 sig-col">
-                                <div class="fw-bold small mb-3 text-start">Dicek oleh,</div>
-                                <div class="sig-space"></div>
-                                <input type="text" id="pic_checker" class="form-control form-control-sm text-center border-0 border-bottom rounded-0 bg-transparent mb-1" placeholder="( Nama SPV )" value="{{ $initialData['pic_checker'] ?? '' }}">
-                                <div class="fw-bold small">Staff/SPV/MNG QC</div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+        <!-- Alert Info Notes -->
+        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-3 py-2 px-3">
+            <i class="ri-information-line fs-18 me-2"></i>
+            <div class="fs-12">
+                <strong>Format Resmi Pelarutan:</strong> Formulir diatur dalam format <strong>1 Lembar = 2 Batch</strong>. Setiap lembar terdiri dari 2 blok batch pelarutan (Dissolver) dengan masing-masing 5 baris data sampling, serta footer catatan & tanda tangan di bagian bawah.
             </div>
+        </div>
+
+        <!-- Container Lembar Pelarutan -->
+        <div id="lembarSheetsContainer">
+            <!-- Di-render otomatis lewat JS per 2 Batch per Lembar -->
+        </div>
+
+        <!-- Tombol Tambah Pasang Batch (Lembar Baru) -->
+        <div class="text-center mb-5">
+            <button type="button" class="btn btn-outline-primary btn-md shadow-sm px-4" id="btnAddPairBatch">
+                <i class="ri-add-circle-line me-1 fs-16 align-middle"></i> Tambah 1 Lembar Baru (2 Batch Pelarutan)
+            </button>
         </div>
 
     </div>
@@ -419,6 +217,8 @@
 
 @section('scripts')
 <script>
+    var currentDocData = @json($initialData);
+
     $(document).ready(function() {
         $.ajaxSetup({
             headers: {
@@ -426,439 +226,590 @@
             }
         });
 
-        if ($.fn.select2) {
-            $('#po_selector').select2({
-                placeholder: "-- Pilih Nomor PO --",
-                allowClear: true,
-                width: '100%'
-            });
-        }
+        // Inisialisasi awal
+        renderLembarSheets(currentDocData ? currentDocData.batch_blocks : []);
+        updateActionLinks($('#selectPo').val());
 
-        // Template Baris Baru
-        function getNewRowTemplate(samplingNum = 1) {
-            return `
-                <tr>
-                    <td><input type="text" class="table-input p1-samp" value="${samplingNum}"></td>
-                    <td><input type="text" class="table-input p1-jam" placeholder="08:00"></td>
-                    <td><input type="text" class="table-input p1-pic" placeholder="PIC"></td>
-                    <td><input type="text" class="table-input p1-brix" placeholder="65.0"></td>
-                    <td><input type="text" class="table-input p1-nacl" placeholder="12.0"></td>
-                    <td><input type="text" class="table-input p1-warna" value="Standar"></td>
-                    <td><input type="text" class="table-input p1-organo" value="OK"></td>
-                    <td><input type="text" class="table-input text-start p1-adj" value="-"></td>
-
-                    <td><input type="text" class="table-input p2-samp" value="${samplingNum}"></td>
-                    <td><input type="text" class="table-input p2-jam" placeholder="09:00"></td>
-                    <td><input type="text" class="table-input p2-pic" placeholder="PIC"></td>
-                    <td><input type="text" class="table-input p2-brix" placeholder="65.0"></td>
-                    <td><input type="text" class="table-input p2-nacl" placeholder="12.0"></td>
-                    <td><input type="text" class="table-input p2-warna" value="Standar"></td>
-                    <td><input type="text" class="table-input p2-organo" value="OK"></td>
-                    <td><input type="text" class="table-input text-start p2-adj" value="-"></td>
-
-                    <td><input type="text" class="table-input p-disposisi" value="Release"></td>
-                    <td class="no-print">
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-delete-row" title="Hapus Baris">
-                            <i class="ri-delete-bin-line"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }
-
-        // Template Blok Batch Baru
-        function getNewBlockTemplate(blockNum) {
-            return `
-                <div class="batch-block-card" data-block-index="${blockNum}">
-                    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-                        <span class="badge bg-primary fs-12">Blok Batch #${blockNum + 1}</span>
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-delete-block" title="Hapus Blok Batch Ini">
-                            <i class="ri-delete-bin-line me-1"></i> Hapus Blok Batch
-                        </button>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-12 col-md-6">
-                            <table class="w-100 meta-input-group">
-                                <tr>
-                                    <td width="35%" class="fw-bold">Jenis Produk</td>
-                                    <td width="3%">:</td>
-                                    <td><input type="text" class="form-control form-control-sm block-jenis-produk" value="Kecap Manis"></td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Tanggal Produksi</td>
-                                    <td>:</td>
-                                    <td><input type="date" class="form-control form-control-sm block-tgl-prod" value="{{ date('Y-m-d') }}"></td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Jam Produksi</td>
-                                    <td>:</td>
-                                    <td><input type="text" class="form-control form-control-sm block-jam-prod" value="08:00" placeholder="08:00"></td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Kode Shift & Grup</td>
-                                    <td>:</td>
-                                    <td><input type="text" class="form-control form-control-sm block-shift-grup" value="Shift 1 / Grup A" placeholder="Shift 1 / Grup A"></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <table class="w-100 meta-input-group">
-                                <tr>
-                                    <td width="35%" class="fw-bold">Batch</td>
-                                    <td width="3%">:</td>
-                                    <td><input type="text" class="form-control form-control-sm block-batch" value="${blockNum + 1}" placeholder="1"></td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">No. Dissolver</td>
-                                    <td>:</td>
-                                    <td><input type="text" class="form-control form-control-sm block-dissolver" value="${blockNum + 1}" placeholder="1"></td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Volume</td>
-                                    <td>:</td>
-                                    <td><input type="text" class="form-control form-control-sm block-volume" value="5000 L" placeholder="5000 L"></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table-pelarutan">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" style="width: 50px;">Sampling ke-</th>
-                                    <th colspan="2">Serah Terima</th>
-                                    <th colspan="5">Pelarutan I (GGA)</th>
-                                    <th rowspan="2" style="width: 50px;">Sampling ke-</th>
-                                    <th colspan="2">Serah Terima</th>
-                                    <th colspan="5">Pelarutan II (GGAS)</th>
-                                    <th rowspan="2" style="min-width: 90px;">Disposisi</th>
-                                    <th rowspan="2" class="no-print" width="35">Aksi</th>
-                                </tr>
-                                <tr>
-                                    <th style="min-width: 55px;">Jam</th>
-                                    <th style="min-width: 75px;">PIC</th>
-                                    <th style="min-width: 55px;">Brix</th>
-                                    <th style="min-width: 55px;">%NaCl</th>
-                                    <th style="min-width: 65px;">Warna</th>
-                                    <th style="min-width: 60px;">Organo</th>
-                                    <th style="min-width: 110px;">Waktu & Adjustment</th>
-                                    <th style="min-width: 55px;">Jam</th>
-                                    <th style="min-width: 75px;">PIC</th>
-                                    <th style="min-width: 55px;">Brix</th>
-                                    <th style="min-width: 55px;">%NaCl</th>
-                                    <th style="min-width: 65px;">Warna</th>
-                                    <th style="min-width: 60px;">Organo</th>
-                                    <th style="min-width: 110px;">Waktu & Adjustment</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${getNewRowTemplate(1)}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="text-end no-print">
-                        <button type="button" class="btn btn-sm btn-soft-success btn-add-row-block">
-                            <i class="ri-add-line me-1"></i> Tambah Baris Sampling
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Tambah Baris dalam Blok
-        $(document).on('click', '.btn-add-row-block', function() {
-            var tbody = $(this).closest('.batch-block-card').find('table.table-pelarutan tbody');
-            var nextIndex = tbody.find('tr').length + 1;
-            tbody.append(getNewRowTemplate(nextIndex));
-        });
-
-        // Hapus Baris
-        $(document).on('click', '.btn-delete-row', function() {
-            var tbody = $(this).closest('tbody');
-            if (tbody.find('tr').length > 1) {
-                $(this).closest('tr').remove();
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pemberitahuan',
-                    text: 'Minimal harus ada 1 baris sampling pada blok batch.'
-                });
-            }
-        });
-
-        // Tambah Blok Batch Baru
-        $('#btnAddBlock').on('click', function() {
-            var count = $('#batchBlocksContainer .batch-block-card').length;
-            $('#batchBlocksContainer').append(getNewBlockTemplate(count));
-        });
-
-        // Hapus Blok Batch
-        $(document).on('click', '.btn-delete-block', function() {
-            var totalBlocks = $('#batchBlocksContainer .batch-block-card').length;
-            if (totalBlocks > 1) {
-                $(this).closest('.batch-block-card').remove();
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pemberitahuan',
-                    text: 'Minimal harus ada 1 blok batch pada dokumen.'
-                });
-            }
-        });
-
-        // Load Data Berdasarkan PO
-        function loadPelarutanDataByPo(poId) {
-            if (!poId) return;
+        // Event saat PO diganti
+        $('#selectPo').on('change', function() {
+            var poId = $(this).val();
+            updateActionLinks(poId);
 
             Swal.fire({
-                title: 'Memuat Data Pelarutan...',
-                text: 'Mohon tunggu sejenak',
+                title: 'Memuat Data PO...',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
 
             $.ajax({
                 url: "{{ route('doc-pelarutan.fetch') }}",
-                type: "GET",
+                type: 'GET',
                 data: { po_id: poId },
-                success: function(response) {
+                success: function(res) {
                     Swal.close();
-                    if (response.status === 'success' && response.data) {
-                        var doc = response.data;
-                        
-                        $('#tanggal_record_doc').val(doc.tanggal_record_doc || '');
-                        $('#halaman').val(doc.halaman || '1');
-                        $('#catatan').val(doc.catatan || '');
-                        $('#pic_sampling').val(doc.pic_sampling || '');
-                        $('#pic_analis').val(doc.pic_analis || '');
-                        $('#pic_checker').val(doc.pic_checker || '');
-
-                        var container = $('#batchBlocksContainer');
-                        container.empty();
-
-                        if (doc.batch_blocks && doc.batch_blocks.length > 0) {
-                            $.each(doc.batch_blocks, function(bIdx, block) {
-                                var blockHtml = $(getNewBlockTemplate(bIdx));
-                                blockHtml.find('.block-jenis-produk').val(block.jenis_produk || '');
-                                blockHtml.find('.block-tgl-prod').val(block.tanggal_produksi || '');
-                                blockHtml.find('.block-jam-prod').val(block.jam_produksi || '');
-                                blockHtml.find('.block-shift-grup').val(block.kode_shift_grup || '');
-                                blockHtml.find('.block-batch').val(block.batch || '');
-                                blockHtml.find('.block-dissolver').val(block.no_dissolver || '');
-                                blockHtml.find('.block-volume').val(block.volume || '');
-
-                                var tbody = blockHtml.find('table.table-pelarutan tbody');
-                                tbody.empty();
-
-                                if (block.rows && block.rows.length > 0) {
-                                    $.each(block.rows, function(rIdx, r) {
-                                        tbody.append(`
-                                            <tr>
-                                                <td><input type="text" class="table-input p1-samp" value="${r.p1_sampling_ke || (rIdx + 1)}"></td>
-                                                <td><input type="text" class="table-input p1-jam" value="${r.p1_jam || ''}" placeholder="08:00"></td>
-                                                <td><input type="text" class="table-input p1-pic" value="${r.p1_pic || ''}" placeholder="PIC"></td>
-                                                <td><input type="text" class="table-input p1-brix" value="${r.p1_brix || ''}" placeholder="65.0"></td>
-                                                <td><input type="text" class="table-input p1-nacl" value="${r.p1_nacl || ''}" placeholder="12.0"></td>
-                                                <td><input type="text" class="table-input p1-warna" value="${r.p1_warna || 'Standar'}"></td>
-                                                <td><input type="text" class="table-input p1-organo" value="${r.p1_organo || 'OK'}"></td>
-                                                <td><input type="text" class="table-input text-start p1-adj" value="${r.p1_waktu_adjustment || '-'}"></td>
-
-                                                <td><input type="text" class="table-input p2-samp" value="${r.p2_sampling_ke || (rIdx + 1)}"></td>
-                                                <td><input type="text" class="table-input p2-jam" value="${r.p2_jam || ''}" placeholder="09:00"></td>
-                                                <td><input type="text" class="table-input p2-pic" value="${r.p2_pic || ''}" placeholder="PIC"></td>
-                                                <td><input type="text" class="table-input p2-brix" value="${r.p2_brix || ''}" placeholder="65.0"></td>
-                                                <td><input type="text" class="table-input p2-nacl" value="${r.p2_nacl || ''}" placeholder="12.0"></td>
-                                                <td><input type="text" class="table-input p2-warna" value="${r.p2_warna || 'Standar'}"></td>
-                                                <td><input type="text" class="table-input p2-organo" value="${r.p2_organo || 'OK'}"></td>
-                                                <td><input type="text" class="table-input text-start p2-adj" value="${r.p2_waktu_adjustment || '-'}"></td>
-
-                                                <td><input type="text" class="table-input p-disposisi" value="${r.disposisi || 'Release'}"></td>
-                                                <td class="no-print">
-                                                    <button type="button" class="btn btn-sm btn-soft-danger btn-delete-row" title="Hapus Baris">
-                                                        <i class="ri-delete-bin-line"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        `);
-                                    });
-                                } else {
-                                    tbody.append(getNewRowTemplate(1));
-                                }
-
-                                container.append(blockHtml);
-                            });
-                        } else {
-                            container.append(getNewBlockTemplate(0));
-                        }
-
-                        const Toast = Swal.mixin({
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 2000,
-                            timerProgressBar: true
-                        });
-                        Toast.fire({
-                            icon: 'success',
-                            title: doc.is_saved ? 'Memuat Dokumen Tersimpan' : 'Data Terisi Otomatis dari Database Pelarutan'
-                        });
+                    if (res.status === 'success' && res.data) {
+                        currentDocData = res.data;
+                        populateDocData(res.data);
                     }
                 },
                 error: function(xhr) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal Memuat Data',
-                        text: xhr.responseJSON?.message || 'Terjadi kesalahan sistem saat mengambil data PO.'
-                    });
+                    Swal.fire('Error', 'Gagal mengambil data formulir pelarutan.', 'error');
                 }
             });
-        }
-
-        // PO Selector change
-        $('#po_selector').on('change', function() {
-            var poId = $(this).val();
-            if (poId) {
-                loadPelarutanDataByPo(poId);
-            }
         });
 
-        // Tarik Data DB
-        $('#btnFetchDb').on('click', function() {
-            var poId = $('#po_selector').val();
-            if (!poId) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pilih PO Terlebih Dahulu',
-                    text: 'Silakan pilih nomor PO pada dropdown di atas.'
-                });
-                return;
-            }
-            loadPelarutanDataByPo(poId);
-        });
-
-        // Simpan Dokumen
-        $('#btnSaveDoc').on('click', function() {
-            var poId = $('#po_selector').val();
-            if (!poId) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pilih PO Terlebih Dahulu',
-                    text: 'Silakan pilih nomor PO sebelum menyimpan formulir.'
-                });
-                return;
-            }
-
-            var batchBlocks = [];
-            $('#batchBlocksContainer .batch-block-card').each(function() {
-                var card = $(this);
-                var rows = [];
-
-                card.find('table.table-pelarutan tbody tr').each(function() {
-                    var tr = $(this);
-                    rows.push({
-                        p1_sampling_ke: tr.find('.p1-samp').val(),
-                        p1_jam: tr.find('.p1-jam').val(),
-                        p1_pic: tr.find('.p1-pic').val(),
-                        p1_brix: tr.find('.p1-brix').val(),
-                        p1_nacl: tr.find('.p1-nacl').val(),
-                        p1_warna: tr.find('.p1-warna').val(),
-                        p1_organo: tr.find('.p1-organo').val(),
-                        p1_waktu_adjustment: tr.find('.p1-adj').val(),
-
-                        p2_sampling_ke: tr.find('.p2-samp').val(),
-                        p2_jam: tr.find('.p2-jam').val(),
-                        p2_pic: tr.find('.p2-pic').val(),
-                        p2_brix: tr.find('.p2-brix').val(),
-                        p2_nacl: tr.find('.p2-nacl').val(),
-                        p2_warna: tr.find('.p2-warna').val(),
-                        p2_organo: tr.find('.p2-organo').val(),
-                        p2_waktu_adjustment: tr.find('.p2-adj').val(),
-
-                        disposisi: tr.find('.p-disposisi').val()
-                    });
-                });
-
-                batchBlocks.push({
-                    jenis_produk: card.find('.block-jenis-produk').val(),
-                    tanggal_produksi: card.find('.block-tgl-prod').val(),
-                    jam_produksi: card.find('.block-jam-prod').val(),
-                    kode_shift_grup: card.find('.block-shift-grup').val(),
-                    batch: card.find('.block-batch').val(),
-                    no_dissolver: card.find('.block-dissolver').val(),
-                    volume: card.find('.block-volume').val(),
-                    rows: rows
-                });
+        // Global tanggal doc sync
+        $('#globalTanggalDoc').on('change', function() {
+            var newDate = $(this).val();
+            $('.block-meta-tanggal').each(function() {
+                if (!$(this).val()) {
+                    $(this).val(newDate);
+                }
             });
+            $('.doc-date-display').text(newDate);
+        });
+
+        // Event Tambah 1 Lembar Baru (2 Batch)
+        $('#btnAddPairBatch').on('click', function() {
+            var currentBlocks = collectBatchBlocksFromDOM();
+            var startBatch = currentBlocks.length + 1;
+            var defaultDate = $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}';
+            var variant = (currentDocData && currentDocData.variant) ? currentDocData.variant : 'Kecap Manis';
+
+            for (var b = 0; b < 2; b++) {
+                var bNum = startBatch + b;
+                var newBlock = {
+                    jenis_produk: variant,
+                    tanggal_produksi: defaultDate,
+                    jam_produksi: '08:00',
+                    kode_shift_grup: 'Shift 1 / Grup A',
+                    batch: String(bNum),
+                    no_dissolver: String(bNum),
+                    volume: '',
+                    rows: []
+                };
+
+                for (var r = 1; r <= 5; r++) {
+                    newBlock.rows.push({
+                        p1_sampling_ke: String(r),
+                        p1_jam: '',
+                        p1_pic: '',
+                        p1_brix: '',
+                        p1_nacl: '',
+                        p1_warna: '',
+                        p1_organo: '',
+                        p1_waktu_adjustment: '',
+                        p2_sampling_ke: String(r),
+                        p2_jam: '',
+                        p2_pic: '',
+                        p2_brix: '',
+                        p2_nacl: '',
+                        p2_warna: '',
+                        p2_organo: '',
+                        p2_waktu_adjustment: '',
+                        disposisi: ''
+                    });
+                }
+                currentBlocks.push(newBlock);
+            }
+
+            renderLembarSheets(currentBlocks);
+        });
+
+        // Event Simpan Dokumen
+        $('#btnSaveDoc').on('click', function() {
+            var poId = $('#selectPo').val();
+            if (!poId) {
+                Swal.fire('Peringatan', 'Silakan pilih Nomor PO terlebih dahulu.', 'warning');
+                return;
+            }
+
+            var blocks = collectBatchBlocksFromDOM();
+            var totalSheets = Math.max(1, Math.ceil(blocks.length / 2));
 
             var payload = {
                 production_batch_id: poId,
-                tanggal_record_doc: $('#tanggal_record_doc').val(),
-                halaman: $('#halaman').val(),
-                batch_blocks: batchBlocks,
-                catatan: $('#catatan').val(),
-                pic_sampling: $('#pic_sampling').val(),
-                pic_analis: $('#pic_analis').val(),
-                pic_checker: $('#pic_checker').val()
+                tanggal_record_doc: $('#globalTanggalDoc').val(),
+                halaman: '1 / ' + totalSheets,
+                catatan: $('#globalCatatan').val() || (currentDocData ? currentDocData.catatan : ''),
+                pic_sampling: $('#globalPicSampling').val() || (currentDocData ? currentDocData.pic_sampling : ''),
+                pic_analis: $('#globalPicAnalis').val() || (currentDocData ? currentDocData.pic_analis : ''),
+                pic_checker: $('#globalPicChecker').val() || (currentDocData ? currentDocData.pic_checker : ''),
+                batch_blocks: blocks
             };
 
             Swal.fire({
                 title: 'Menyimpan Dokumen...',
-                text: 'Mohon tunggu sejenak',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
 
             $.ajax({
                 url: "{{ route('doc-pelarutan.store') }}",
-                type: "POST",
-                data: JSON.stringify(payload),
-                contentType: "application/json",
-                dataType: "json",
-                success: function(response) {
+                type: 'POST',
+                data: payload,
+                success: function(res) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Berhasil Disimpan!',
-                        text: response.message || 'Formulir Analisis Proses Pelarutan berhasil disimpan.',
+                        title: 'Berhasil!',
+                        text: res.message || 'Formulir Pelarutan berhasil disimpan.',
                         timer: 2000,
                         showConfirmButton: false
                     });
                 },
                 error: function(xhr) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal Menyimpan Dokumen',
-                        text: xhr.responseJSON?.message || 'Terjadi kesalahan saat menyimpan formulir dokumen.'
-                    });
+                    Swal.fire('Error', 'Terjadi kesalahan saat menyimpan formulir.', 'error');
+                }
+            });
+        });
+    });
+
+    function updateActionLinks(poId) {
+        if (!poId) return;
+        $('#btnExportExcel').attr('href', "{{ route('doc-pelarutan.export') }}?po_id=" + poId);
+        $('#btnPrintView').attr('href', "{{ url('/doc-pelarutan/print') }}/" + poId);
+    }
+
+    function populateDocData(data) {
+        $('#globalTanggalDoc').val(data.tanggal_record_doc || '{{ date("Y-m-d") }}');
+        renderLembarSheets(data.batch_blocks || []);
+    }
+
+    function renderLembarSheets(blocks) {
+        var container = $('#lembarSheetsContainer');
+        container.empty();
+
+        if (!blocks || blocks.length === 0) {
+            container.html('<div class="text-center py-5 text-muted border border-dashed rounded bg-white mb-4">Belum ada data lembar pelarutan. Silakan klik tombol di bawah untuk menambah lembar.</div>');
+            return;
+        }
+
+        // Pastikan genap (1 Lembar = 2 Batch)
+        var pairedBlocks = [];
+        for (var i = 0; i < blocks.length; i += 2) {
+            pairedBlocks.push([blocks[i], blocks[i + 1] || createEmptyBlock(i + 2)]);
+        }
+
+        var totalSheets = pairedBlocks.length;
+        var globalDocDate = $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}';
+        var catatanVal = currentDocData ? (currentDocData.catatan || '') : '';
+        var picSamp = currentDocData ? (currentDocData.pic_sampling || '') : '';
+        var picAnalis = currentDocData ? (currentDocData.pic_analis || '') : '';
+        var picCheck = currentDocData ? (currentDocData.pic_checker || '') : '';
+
+        pairedBlocks.forEach(function(pair, pIdx) {
+            var b1 = pair[0];
+            var b2 = pair[1];
+            var b1Idx = pIdx * 2;
+            var b2Idx = pIdx * 2 + 1;
+
+            var sheetHtml = `
+            <div class="lembar-sheet-card">
+                <!-- Top Header Bar -->
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="lembar-header-badge">
+                            <i class="ri-pages-line"></i> LEMBAR PELARUTAN #${pIdx + 1}
+                        </span>
+                        <span class="badge bg-light text-dark border ms-2">
+                            Batch ${escapeHtml(b1.batch || String(b1Idx + 1))} & Batch ${escapeHtml(b2.batch || String(b2Idx + 1))}
+                        </span>
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info ms-2">
+                            1 Lembar = 2 Batch
+                        </span>
+                    </div>
+                    <div>
+                        ${totalSheets > 1 ? `
+                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-delete-sheet" data-sheet-index="${pIdx}">
+                            <i class="ri-delete-bin-line me-1"></i> Hapus Lembar Ini
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Format Header Dokumen Resmi -->
+                <div class="row align-items-center mb-3 pb-2 border-bottom">
+                    <div class="col-3">
+                        <div class="doc-logo-box p-1">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 42px; object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 text-center">
+                        <div class="doc-title-main">HASIL ANALISIS PROSES PELARUTAN</div>
+                    </div>
+                    <div class="col-3 text-end">
+                        <table class="float-end border" style="font-size: 0.80rem;">
+                            <tr>
+                                <td class="p-1 border-bottom text-start fw-bold bg-light">Tanggal Record Doc</td>
+                                <td class="p-1 border-bottom text-start doc-date-display">${globalDocDate}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-start fw-bold bg-light">Halaman</td>
+                                <td class="p-1 text-start fw-semibold">${pIdx + 1} / ${totalSheets}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Blok Batch 1 -->
+                <div class="batch-sub-card">
+                    <div class="fw-bold fs-13 text-primary mb-2">
+                        <i class="ri-flask-line me-1"></i> Batch Pertama: Batch ${escapeHtml(b1.batch || String(b1Idx + 1))}
+                    </div>
+                    ${renderBatchBlockForm(b1, b1Idx)}
+                </div>
+
+                <!-- Blok Batch 2 -->
+                <div class="batch-sub-card">
+                    <div class="fw-bold fs-13 text-primary mb-2">
+                        <i class="ri-flask-line me-1"></i> Batch Kedua: Batch ${escapeHtml(b2.batch || String(b2Idx + 1))}
+                    </div>
+                    ${renderBatchBlockForm(b2, b2Idx)}
+                </div>
+
+                <!-- Footer: Catatan & Tanda Tangan -->
+                <div class="signature-container">
+                    <div class="row g-0">
+                        <div class="col-md-5 p-2 border-end">
+                            <label class="fw-bold fs-12 mb-1">Catatan :</label>
+                            <textarea class="form-control form-control-sm" id="globalCatatan" rows="4" placeholder="Ketik catatan khusus proses pelarutan di sini...">${escapeHtml(catatanVal)}</textarea>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="row g-0 text-center h-100">
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Disampling oleh,</div>
+                                    <div class="sig-space"></div>
+                                    <div>
+                                        <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="globalPicSampling" placeholder="Nama PIC" value="${escapeHtml(picSamp)}">
+                                        <small class="text-muted d-block mt-1">Produksi</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Dianalisis oleh,</div>
+                                    <div class="sig-space"></div>
+                                    <div>
+                                        <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="globalPicAnalis" placeholder="Nama Analis" value="${escapeHtml(picAnalis)}">
+                                        <small class="text-muted d-block mt-1">QC Analis</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Dicek oleh,</div>
+                                    <div class="sig-space"></div>
+                                    <div>
+                                        <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="globalPicChecker" placeholder="Nama SPV/MNG" value="${escapeHtml(picCheck)}">
+                                        <small class="text-muted d-block mt-1">Staff/SPV/MNG QC</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-0 border-top bg-light">
+                        <div class="col-12 text-end px-3 py-1">
+                            <span class="fs-11 fw-bold text-muted fst-italic">FRM/QLB/04/104/004-01</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            `;
+            container.append(sheetHtml);
+        });
+
+        attachSheetEvents();
+    }
+
+    function renderBatchBlockForm(block, bIdx) {
+        var globalDocDate = $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}';
+        return `
+        <div class="batch-block-data" data-block-index="${bIdx}">
+            <!-- Meta Table -->
+            <table class="w-100 meta-input-group mb-2">
+                <tr>
+                    <td width="15%" class="fw-bold">Jenis Produk</td>
+                    <td width="35%">
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="text" class="form-control form-control-sm block-meta-jenis" value="${escapeHtml(block.jenis_produk || '')}">
+                        </div>
+                    </td>
+                    <td width="15%" class="fw-bold">Batch</td>
+                    <td width="35%">
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="text" class="form-control form-control-sm block-meta-batch" value="${escapeHtml(block.batch || '')}">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Tanggal Produksi</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="date" class="form-control form-control-sm block-meta-tanggal" value="${escapeHtml(block.tanggal_produksi || globalDocDate)}">
+                        </div>
+                    </td>
+                    <td class="fw-bold">No. Dissolver</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="text" class="form-control form-control-sm block-meta-no-dissolver" value="${escapeHtml(block.no_dissolver || String(bIdx + 1))}">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Jam Produksi</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="text" class="form-control form-control-sm block-meta-jam" placeholder="HH:mm - HH:mm" value="${escapeHtml(block.jam_produksi || '')}">
+                        </div>
+                    </td>
+                    <td class="fw-bold">Volume</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="text" class="form-control form-control-sm block-meta-volume" value="${escapeHtml(block.volume || '')}">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Kode Shift & Grup</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-1">:</span>
+                            <input type="text" class="form-control form-control-sm block-meta-shift" value="${escapeHtml(block.kode_shift_grup || 'Shift 1 / Grup A')}">
+                        </div>
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+            </table>
+
+            <!-- Tabel Analisis Pelarutan (5 Baris Standar) -->
+            <div class="table-responsive">
+                <table class="table-pelarutan">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 4%;">Sampling ke-</th>
+                            <th colspan="2" style="width: 10%;">Serah Terima</th>
+                            <th colspan="5" style="width: 36%;">Pelarutan I (GGA)</th>
+                            <th rowspan="2" style="width: 4%;">Sampling ke-</th>
+                            <th colspan="2" style="width: 10%;">Serah Terima</th>
+                            <th colspan="5" style="width: 36%;">Pelarutan II (GGAS)</th>
+                            <th rowspan="2" style="width: 8%;">Disposisi</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 4%;">Jam</th>
+                            <th style="width: 6%;">PIC</th>
+                            <th style="width: 5%;">Brix</th>
+                            <th style="width: 5%;">%NaCl</th>
+                            <th style="width: 6%;">Warna</th>
+                            <th style="width: 5%;">Organo</th>
+                            <th style="width: 15%;">Waktu & Adjustment</th>
+                            <th style="width: 4%;">Jam</th>
+                            <th style="width: 6%;">PIC</th>
+                            <th style="width: 5%;">Brix</th>
+                            <th style="width: 5%;">%NaCl</th>
+                            <th style="width: 6%;">Warna</th>
+                            <th style="width: 5%;">Organo</th>
+                            <th style="width: 15%;">Waktu & Adjustment</th>
+                        </tr>
+                    </thead>
+                    <tbody class="block-table-body" data-block-index="${bIdx}">
+                        ${renderBlockRows(block.rows || [], bIdx)}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-11 btn-add-row" data-block-index="${bIdx}">
+                    <i class="ri-add-line"></i> Tambah Baris
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fs-11 btn-delete-row" data-block-index="${bIdx}">
+                    <i class="ri-subtract-line"></i> Hapus Baris
+                </button>
+            </div>
+        </div>
+        `;
+    }
+
+    function renderBlockRows(rows, bIdx) {
+        if (!rows || rows.length === 0) return '';
+        var html = '';
+        rows.forEach(function(r, rIdx) {
+            html += `
+            <tr class="data-row" data-row-index="${rIdx}">
+                <td><input type="text" class="table-input r-p1-sampling-ke" value="${escapeHtml(r.p1_sampling_ke || String(rIdx + 1))}"></td>
+                <td><input type="text" class="table-input r-p1-jam" value="${escapeHtml(r.p1_jam || '')}"></td>
+                <td><input type="text" class="table-input r-p1-pic" value="${escapeHtml(r.p1_pic || '')}"></td>
+                <td><input type="text" class="table-input r-p1-brix" value="${escapeHtml(r.p1_brix || '')}"></td>
+                <td><input type="text" class="table-input r-p1-nacl" value="${escapeHtml(r.p1_nacl || '')}"></td>
+                <td><input type="text" class="table-input r-p1-warna" value="${escapeHtml(r.p1_warna || 'Standar')}"></td>
+                <td><input type="text" class="table-input r-p1-organo" value="${escapeHtml(r.p1_organo || 'OK')}"></td>
+                <td><input type="text" class="table-input r-p1-waktu-adj text-start px-1" value="${escapeHtml(r.p1_waktu_adjustment || '')}"></td>
+
+                <td><input type="text" class="table-input r-p2-sampling-ke" value="${escapeHtml(r.p2_sampling_ke || String(rIdx + 1))}"></td>
+                <td><input type="text" class="table-input r-p2-jam" value="${escapeHtml(r.p2_jam || '')}"></td>
+                <td><input type="text" class="table-input r-p2-pic" value="${escapeHtml(r.p2_pic || '')}"></td>
+                <td><input type="text" class="table-input r-p2-brix" value="${escapeHtml(r.p2_brix || '')}"></td>
+                <td><input type="text" class="table-input r-p2-nacl" value="${escapeHtml(r.p2_nacl || '')}"></td>
+                <td><input type="text" class="table-input r-p2-warna" value="${escapeHtml(r.p2_warna || 'Standar')}"></td>
+                <td><input type="text" class="table-input r-p2-organo" value="${escapeHtml(r.p2_organo || 'OK')}"></td>
+                <td><input type="text" class="table-input r-p2-waktu-adj text-start px-1" value="${escapeHtml(r.p2_waktu_adjustment || '')}"></td>
+
+                <td><input type="text" class="table-input r-disposisi fw-semibold" value="${escapeHtml(r.disposisi || '')}"></td>
+            </tr>
+            `;
+        });
+        return html;
+    }
+
+    function attachSheetEvents() {
+        $('.btn-delete-sheet').off('click').on('click', function() {
+            var sIdx = $(this).data('sheet-index');
+            Swal.fire({
+                title: 'Hapus Lembar Ini?',
+                text: 'Lembar Pelarutan #' + (sIdx + 1) + ' (2 Batch) akan dihapus.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var currentBlocks = collectBatchBlocksFromDOM();
+                    currentBlocks.splice(sIdx * 2, 2);
+                    renderLembarSheets(currentBlocks);
                 }
             });
         });
 
-        // Export Excel
-        $('#btnExportExcel').on('click', function() {
-            var poId = $('#po_selector').val();
-            if (!poId) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pilih PO Terlebih Dahulu',
-                    text: 'Silakan pilih nomor PO yang ingin diexport ke Excel.'
-                });
-                return;
+        $('.btn-add-row').off('click').on('click', function() {
+            var bIdx = $(this).data('block-index');
+            var currentBlocks = collectBatchBlocksFromDOM();
+            var nextSamp = (currentBlocks[bIdx].rows.length || 0) + 1;
+            currentBlocks[bIdx].rows.push({
+                p1_sampling_ke: String(nextSamp),
+                p1_jam: '',
+                p1_pic: '',
+                p1_brix: '',
+                p1_nacl: '',
+                p1_warna: 'Standar',
+                p1_organo: 'OK',
+                p1_waktu_adjustment: '',
+                p2_sampling_ke: String(nextSamp),
+                p2_jam: '',
+                p2_pic: '',
+                p2_brix: '',
+                p2_nacl: '',
+                p2_warna: 'Standar',
+                p2_organo: 'OK',
+                p2_waktu_adjustment: '',
+                disposisi: ''
+            });
+            renderLembarSheets(currentBlocks);
+        });
+
+        $('.btn-delete-row').off('click').on('click', function() {
+            var bIdx = $(this).data('block-index');
+            var currentBlocks = collectBatchBlocksFromDOM();
+            if (currentBlocks[bIdx].rows.length > 1) {
+                currentBlocks[bIdx].rows.pop();
+                renderLembarSheets(currentBlocks);
+            } else {
+                Swal.fire('Info', 'Minimal satu baris tersisa pada tabel ini.', 'info');
             }
-
-            var exportUrl = "{{ route('doc-pelarutan.export') }}?po_id=" + poId;
-            window.location.href = exportUrl;
         });
+    }
 
-        // Print
-        $('#btnPrint').on('click', function() {
-            window.print();
+    function collectBatchBlocksFromDOM() {
+        var blocks = [];
+        $('.batch-block-data').each(function(idx) {
+            var blockCard = $(this);
+            var blockObj = {
+                jenis_produk: blockCard.find('.block-meta-jenis').val() || '',
+                tanggal_produksi: blockCard.find('.block-meta-tanggal').val() || '',
+                jam_produksi: blockCard.find('.block-meta-jam').val() || '',
+                kode_shift_grup: blockCard.find('.block-meta-shift').val() || '',
+                batch: blockCard.find('.block-meta-batch').val() || String(idx + 1),
+                no_dissolver: blockCard.find('.block-meta-no-dissolver').val() || String(idx + 1),
+                volume: blockCard.find('.block-meta-volume').val() || '',
+                rows: []
+            };
+
+            blockCard.find('.data-row').each(function() {
+                var row = $(this);
+                blockObj.rows.push({
+                    p1_sampling_ke: row.find('.r-p1-sampling-ke').val() || '',
+                    p1_jam: row.find('.r-p1-jam').val() || '',
+                    p1_pic: row.find('.r-p1-pic').val() || '',
+                    p1_brix: row.find('.r-p1-brix').val() || '',
+                    p1_nacl: row.find('.r-p1-nacl').val() || '',
+                    p1_warna: row.find('.r-p1-warna').val() || '',
+                    p1_organo: row.find('.r-p1-organo').val() || '',
+                    p1_waktu_adjustment: row.find('.r-p1-waktu-adj').val() || '',
+                    p2_sampling_ke: row.find('.r-p2-sampling-ke').val() || '',
+                    p2_jam: row.find('.r-p2-jam').val() || '',
+                    p2_pic: row.find('.r-p2-pic').val() || '',
+                    p2_brix: row.find('.r-p2-brix').val() || '',
+                    p2_nacl: row.find('.r-p2-nacl').val() || '',
+                    p2_warna: row.find('.r-p2-warna').val() || '',
+                    p2_organo: row.find('.r-p2-organo').val() || '',
+                    p2_waktu_adjustment: row.find('.r-p2-waktu-adj').val() || '',
+                    disposisi: row.find('.r-disposisi').val() || ''
+                });
+            });
+
+            blocks.push(blockObj);
         });
-    });
+        return blocks;
+    }
+
+    function createEmptyBlock(batchNum) {
+        var rows = [];
+        for (var r = 1; r <= 5; r++) {
+            rows.push({
+                p1_sampling_ke: String(r),
+                p1_jam: '',
+                p1_pic: '',
+                p1_brix: '',
+                p1_nacl: '',
+                p1_warna: '',
+                p1_organo: '',
+                p1_waktu_adjustment: '',
+                p2_sampling_ke: String(r),
+                p2_jam: '',
+                p2_pic: '',
+                p2_brix: '',
+                p2_nacl: '',
+                p2_warna: '',
+                p2_organo: '',
+                p2_waktu_adjustment: '',
+                disposisi: ''
+            });
+        }
+        return {
+            jenis_produk: 'Kecap Manis',
+            tanggal_produksi: $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}',
+            jam_produksi: '08:00',
+            kode_shift_grup: 'Shift 1 / Grup A',
+            batch: String(batchNum),
+            no_dissolver: String(batchNum),
+            volume: '',
+            rows: rows
+        };
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 </script>
 @endsection
