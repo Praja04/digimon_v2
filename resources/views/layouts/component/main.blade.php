@@ -278,6 +278,22 @@
                 }
             });
 
+            // Session / CSRF Token Keep-Alive (every 5 minutes)
+            setInterval(function() {
+                $.getJSON("{{ route('csrf.token') }}")
+                    .done(function(data) {
+                        if (data && data.token) {
+                            $('meta[name="csrf-token"]').attr('content', data.token);
+                            $('input[name="_token"]').val(data.token);
+                            $.ajaxSetup({
+                                headers: {
+                                    'X-CSRF-TOKEN': data.token
+                                }
+                            });
+                        }
+                    });
+            }, 5 * 60 * 1000);
+
             $('body').on('click', '.logout-link', function(e) {
                 e.preventDefault();
                 Swal.fire({
@@ -305,16 +321,18 @@
             })
 
             function logoutUser() {
+                const token = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
                 $.ajax({
                     url: "{{ route('logout') }}",
                     type: 'POST',
-                    data: $('#logout-form').serialize(),
-                    success: function(response) {
-                        window.location.href = "{{ route('login') }}";
+                    data: {
+                        _token: token
                     },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                        alert(xhr.status + "\n" + xhr.responseText + "\n" +
-                            thrownError);
+                    headers: {
+                        'X-CSRF-TOKEN': token
+                    },
+                    complete: function() {
+                        window.location.href = "{{ route('login') }}";
                     }
                 });
             }

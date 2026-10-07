@@ -5,6 +5,9 @@
 @endsection
 
 @section('content')
+    @php
+        $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
+    @endphp
     <div class="page-content">
         <div class="container-fluid">
 
@@ -227,8 +230,9 @@
                                         </label>
 
                                         <input type="date" name="exp_date" id="exp_date"
-                                            class="form-control @error('exp_date') is-invalid @enderror"
-                                            value="{{ old('exp_date') }}">
+                                            class="form-control @if(!$isForeman) bg-light @endif @error('exp_date') is-invalid @enderror"
+                                            value="{{ old('exp_date', now()->addMonths(6)->format('Y-m-d')) }}"
+                                            @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif>
 
                                         @error('exp_date')
                                             <div class="invalid-feedback">
@@ -943,6 +947,7 @@
             const defaultAction = @json(route('rmpm.pm.incoming.store'));
             const updateBaseUrl = @json(url('/rmpm/pm/incoming'));
             const defaultDate = @json(now()->format('Y-m-d'));
+            const defaultExpDate = @json(now()->addMonths(6)->format('Y-m-d'));
             const defaultTime = @json(now()->format('H:i'));
             const listContainer = document.getElementById('incomingListContainer');
             const midInput = document.getElementById('mid');
@@ -1338,34 +1343,42 @@
 
                 const jenisIncOpt = (jenisIncomingSelect?.options[jenisIncomingSelect.selectedIndex]?.textContent || '').trim().toLowerCase();
                 const jenisMatOpt = (jenisMaterialSelect?.options[jenisMaterialSelect.selectedIndex]?.textContent || '').trim().toLowerCase();
+                const jenisIncLainnya = (jenisIncomingLainnyaInput?.value || '').trim().toLowerCase();
 
-                const isKarton = jenisIncOpt.includes('karton') || jenisIncOpt.includes('kardus') ||
-                                 jenisMatOpt.includes('karton') || jenisMatOpt.includes('kardus');
+                const isKarton = jenisIncOpt.includes('karton') || jenisIncOpt.includes('kardus') || jenisIncOpt.includes('box') ||
+                                 jenisMatOpt.includes('karton') || jenisMatOpt.includes('kardus') || jenisMatOpt.includes('box') ||
+                                 jenisIncLainnya.includes('karton') || jenisIncLainnya.includes('kardus') || jenisIncLainnya.includes('box');
 
-                const isPouchOrInner = jenisIncOpt.includes('pouch') || jenisIncOpt.includes('inner') || jenisIncOpt.includes('outer') ||
-                                       jenisMatOpt.includes('pouch') || jenisMatOpt.includes('inner') || jenisMatOpt.includes('outer');
+                const parts = tglVal.split('-');
+                if (parts.length !== 3) return;
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                if (isNaN(year) || isNaN(month) || isNaN(day)) return;
 
-                if (!isKarton && !isPouchOrInner) {
-                    return;
-                }
-
-                const d = new Date(tglVal + 'T00:00:00');
+                const d = new Date(year, month, day);
                 if (isNaN(d.getTime())) return;
 
                 if (isKarton) {
-                    d.setFullYear(d.getFullYear() + 1);
-                } else if (isPouchOrInner) {
-                    const expectedMonth = (d.getMonth() + 6) % 12;
-                    d.setMonth(d.getMonth() + 6);
-                    if (d.getMonth() !== expectedMonth && d.getMonth() !== (expectedMonth + 12) % 12) {
+                    const targetYear = year + 1;
+                    const targetMonth = month;
+                    d.setFullYear(targetYear);
+                    if (d.getMonth() !== targetMonth) {
+                        d.setDate(0);
+                    }
+                } else {
+                    const targetMonth = month + 6;
+                    d.setMonth(targetMonth);
+                    const expectedMonth = targetMonth % 12;
+                    if (d.getMonth() !== expectedMonth) {
                         d.setDate(0);
                     }
                 }
 
                 const y = d.getFullYear();
                 const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                expEl.value = `${y}-${m}-${day}`;
+                const dt = String(d.getDate()).padStart(2, '0');
+                expEl.value = `${y}-${m}-${dt}`;
             }
 
             function resetForm(scrollToTop = true) {
@@ -1385,7 +1398,7 @@
 
                 const expDateEl = document.getElementById('exp_date');
                 if (expDateEl) {
-                    expDateEl.value = '';
+                    expDateEl.value = defaultExpDate;
                 }
                 document.getElementById('jam_kedatangan').value = defaultTime;
 
@@ -2076,6 +2089,13 @@
                 }
             );
 
+            jenisIncomingLainnyaInput?.addEventListener(
+                'input',
+                function() {
+                    updateAutoExpDate(true);
+                }
+            );
+
             jenisMaterialSelect?.addEventListener(
                 'change',
                 function() {
@@ -2233,7 +2253,7 @@
             updateWpmDetail();
             updateJenisIncomingLainnya(false);
             updateSupplierLainnya(false);
-            updateAutoExpDate(false);
+            updateAutoExpDate(true);
             loadWpmDataViaAjax();
 
             document.addEventListener('submit', function(event) {

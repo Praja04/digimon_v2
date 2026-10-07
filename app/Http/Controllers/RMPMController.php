@@ -446,26 +446,22 @@ public function pmKartonBct(
                 'samplingFisikRaw',
             ])->findOrFail($id);
 
-            $jamAnalisaExist =
-                KonfirmasiKedatangan::where(
-                    'id_identitas',
-                    $id
-                )->exists();
+            $konfirmasi = KonfirmasiKedatangan::where('id_identitas', $id)->first();
+
+            $jamAnalisaExist = !empty($konfirmasi?->waktu_analisa);
+            $jamKedatanganExist = !empty($konfirmasi?->waktu_kedatangan);
 
             return response()->json([
-                'jam_analisa_exists' =>
-                    $jamAnalisaExist,
-
-                'sampling_complete' =>
-                    $identitas->isSamplingComplete(),
+                'jam_analisa_exists' => $jamAnalisaExist,
+                'jam_kedatangan_exists' => $jamKedatanganExist,
+                'jam_analisa' => $konfirmasi?->waktu_analisa ? \Carbon\Carbon::parse($konfirmasi->waktu_analisa)->format('Y-m-d\TH:i') : null,
+                'jam_kedatangan' => $konfirmasi?->waktu_kedatangan ? \Carbon\Carbon::parse($konfirmasi->waktu_kedatangan)->format('Y-m-d\TH:i') : null,
+                'sampling_complete' => (bool) $identitas->isSamplingComplete(),
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-
-                'message' =>
-                    'Gagal mengambil data konfirmasi: ' .
-                    $e->getMessage(),
+                'message' => 'Gagal mengambil data konfirmasi: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -477,11 +473,16 @@ public function pmKartonBct(
                 'required',
                 'exists:identitas_rm,id',
             ],
-
             'jam' => [
                 'required',
             ],
+            'tipe' => [
+                'nullable',
+                'in:kedatangan,analisa',
+            ],
         ]);
+
+        $tipe = $request->input('tipe', 'kedatangan');
 
         $konfirmasi = KonfirmasiKedatangan::where(
             'id_identitas',
@@ -489,23 +490,37 @@ public function pmKartonBct(
         )->first();
 
         if ($konfirmasi) {
-            $konfirmasi->update([
-                'waktu_analisa' => $request->jam,
-                'dianalisa_by' => auth()->id(),
-            ]);
+            if ($tipe === 'analisa') {
+                $konfirmasi->update([
+                    'waktu_analisa' => $request->jam,
+                    'dianalisa_by' => auth()->id(),
+                ]);
+            } else {
+                $konfirmasi->update([
+                    'waktu_kedatangan' => $request->jam,
+                    'diterima_by' => auth()->id(),
+                ]);
+            }
         } else {
-            KonfirmasiKedatangan::create([
-                'id_identitas' => $request->id,
-                'waktu_kedatangan' => $request->jam,
-                'diterima_by' => auth()->id(),
-            ]);
+            if ($tipe === 'analisa') {
+                KonfirmasiKedatangan::create([
+                    'id_identitas' => $request->id,
+                    'waktu_analisa' => $request->jam,
+                    'dianalisa_by' => auth()->id(),
+                ]);
+            } else {
+                KonfirmasiKedatangan::create([
+                    'id_identitas' => $request->id,
+                    'waktu_kedatangan' => $request->jam,
+                    'diterima_by' => auth()->id(),
+                ]);
+            }
         }
 
         return response()->json([
             'status' => 'success',
-            'message' =>
-                'Data konfirmasi berhasil disimpan.',
-        ], 201);
+            'message' => 'Data konfirmasi berhasil disimpan.',
+        ], 200);
     }
 
     /*
@@ -531,9 +546,9 @@ public function pmKartonBct(
         ];
 
         if ($isDraft) {
-            $rules['uji_kristal'] = ['nullable', 'in:positif,negatif'];
-            $rules['disposisi'] = ['nullable', 'in:Release,Release Bersyarat,Reject'];
-            $rules['group'] = ['nullable', 'in:Group A,Group B,Group C'];
+            $rules['uji_kristal'] = ['nullable', 'in:positif,negatif,'];
+            $rules['disposisi'] = ['nullable', 'in:Release,Release Bersyarat,Reject,'];
+            $rules['group'] = ['nullable', 'in:Group A,Group B,Group C,'];
         } else {
             $rules['uji_kristal'] = ['required', 'in:positif,negatif'];
             $rules['disposisi'] = ['required', 'in:Release,Release Bersyarat,Reject'];
@@ -550,14 +565,14 @@ public function pmKartonBct(
 
         $request->validate($rules);
 
-        $ujiKristal = $request->uji_kristal;
-        $disposisi = $request->disposisi;
+        $ujiKristal = $request->filled('uji_kristal') ? $request->uji_kristal : null;
+        $disposisi = $request->filled('disposisi') ? $request->disposisi : null;
 
         if (!$isDraft && $ujiKristal === 'negatif' && empty($disposisi)) {
             $disposisi = 'Release';
         }
 
-        $group = in_array($disposisi, ['Release', 'Release Bersyarat']) ? $request->group : null;
+        $group = in_array($disposisi, ['Release', 'Release Bersyarat']) ? ($request->filled('group') ? $request->group : null) : null;
 
         // Collect existing saved photos
         $photoList = [];
@@ -703,11 +718,12 @@ public function pmKartonBct(
             $kategori = 'incoming';
         }
 
-        $isDraft = ($request->input('save_action') === 'draft') || empty($request->input('disposisi'));
+        $saveAction = $request->input('save_action', 'final');
+        $isDraft = ($saveAction === 'draft');
 
         $rules = [
             'id_identitas' => 'required|exists:identitas_rm,id',
-            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject' : 'required|in:Release,Reject',
+            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
             'keterangan'   => 'nullable|string',
             'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
         ];
@@ -828,7 +844,8 @@ public function pmKartonBct(
 
     public function storeGaramGula(Request $request)
     {
-        $isDraft = ($request->input('save_action') === 'draft');
+        $saveAction = $request->input('save_action', 'final');
+        $isDraft = ($saveAction === 'draft');
 
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
@@ -841,7 +858,7 @@ public function pmKartonBct(
             'aroma'        => 'nullable|array',
             '%nacl'        => 'nullable|array',
             'gross_weight' => 'nullable|array',
-            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject' : 'required|in:Release,Reject',
+            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
             'keterangan'   => 'nullable|string',
         ]);
 
@@ -970,6 +987,55 @@ public function pmKartonBct(
             'message' => 'Disposisi berhasil diperbarui.',
             'data' => $data,
         ]);
+    }
+
+    public function resetDraft(Request $request, $id)
+    {
+        try {
+            // Delete all unfinalized/draft records for this identitas ID across short-term, long-term, and garam-gula
+            AnalisaShortTerm::where('id_identitas', $id)
+                ->where(function ($q) {
+                    $q->where('status', 'draft')
+                      ->orWhereNull('disposisi')
+                      ->orWhere('disposisi', '');
+                })
+                ->delete();
+
+            $draftLongTerms = AnalisaLongTerm::where('id_identitas', $id)
+                ->where(function ($q) {
+                    $q->where('status', 'draft')
+                      ->orWhereNull('disposisi')
+                      ->orWhere('disposisi', '');
+                })
+                ->get();
+
+            foreach ($draftLongTerms as $dlt) {
+                AnalisaLongTermHistory::where('analisa_long_term_id', $dlt->id)->delete();
+                $dlt->delete();
+            }
+
+            AnalisaLongTermHistory::where('id_identitas', $id)
+                ->where('action', 'Simpan Sementara')
+                ->delete();
+
+            AnalisaGaramGula::where('id_identitas', $id)
+                ->where(function ($q) {
+                    $q->where('status', 'draft')
+                      ->orWhereNull('disposisi')
+                      ->orWhere('disposisi', '');
+                })
+                ->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Semua data simpan sementara (draft) berhasil di-reset.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal reset draft: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /*
