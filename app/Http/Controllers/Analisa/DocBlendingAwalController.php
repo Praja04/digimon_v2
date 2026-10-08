@@ -105,17 +105,12 @@ class DocBlendingAwalController extends Controller
                     $blk['halaman'] = ($idx + 1) . ' / ' . max(1, $totalBlocks);
                 }
 
-                // Normalisasi baris Turun Blending jika sebelumnya tersimpan dengan vol_tangki = Awal
+                // Normalisasi baris jika sebelumnya tersimpan dengan format lama
                 if (!empty($blk['rows'])) {
-                    foreach ($blk['rows'] as &$row) {
-                        if (isset($row['vol_tangki']) && strtolower(trim((string)$row['vol_tangki'])) === 'awal') {
-                            $row['vol_tangki'] = '';
-                            if (empty($row['sampling_ke']) || $row['sampling_ke'] === '4') {
-                                $row['sampling_ke'] = 'Awal';
-                            }
-                            if (isset($row['waktu_adjustment']) && ($row['waktu_adjustment'] === ($row['serah_terima_jam'] ?? '') || $row['waktu_adjustment'] === '')) {
-                                $row['waktu_adjustment'] = '-';
-                            }
+                    foreach ($blk['rows'] as $rIdx => &$row) {
+                        if (isset($row['sampling_ke']) && strtolower(trim((string)$row['sampling_ke'])) === 'awal') {
+                            $row['sampling_ke'] = '';
+                            $row['vol_tangki'] = 'Awal';
                         }
                     }
                     unset($row);
@@ -179,9 +174,10 @@ class DocBlendingAwalController extends Controller
                     $adjParts = [];
                     if ($item->adjustment_qty_air) $adjParts[] = 'Air: ' . $item->adjustment_qty_air . ' L';
                     if ($item->adjustment_qty_garam) $adjParts[] = 'Garam: ' . $item->adjustment_qty_garam . ' kg';
+                    if ($item->adjustment_qty_gula) $adjParts[] = 'Gula: ' . $item->adjustment_qty_gula . ' kg';
                     if ($item->adjustment_qty_caramel) $adjParts[] = 'Caramel: ' . $item->adjustment_qty_caramel . ' kg';
-                    if ($item->disposition_remark) $adjParts[] = $item->disposition_remark;
-                    $recheckNote = !empty($adjParts) ? implode('; ', $adjParts) : ($item->disposition ?: 'Recheck');
+                    if ($item->adjustment_remark) $adjParts[] = $item->adjustment_remark;
+                    $recheckNote = !empty($adjParts) ? implode('; ', $adjParts) : '';
 
                     if ($recheckNote && $recheckNote !== '-') {
                         $currentCycle[$lastIdx]['merged_adj'] = (!empty($currentCycle[$lastIdx]['merged_adj']) ? ($currentCycle[$lastIdx]['merged_adj'] . ' | ') : '') . $recheckNote;
@@ -226,22 +222,37 @@ class DocBlendingAwalController extends Controller
                 foreach ($cycleItems as $entry) {
                     $item = $entry['model'];
 
-                    // Waktu & Adjustment description
+                    // Jam scan / tambah sample
+                    $jamScan = $item->created_at ? $item->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+
+                    // Jam Disposisi & Qty Adj Rekomendasi QC
+                    $jamDisp = $item->updated_at ? $item->updated_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
                     $adjParts = [];
                     if ($item->adjustment_qty_air) $adjParts[] = 'Air: ' . $item->adjustment_qty_air . ' L';
                     if ($item->adjustment_qty_garam) $adjParts[] = 'Garam: ' . $item->adjustment_qty_garam . ' kg';
+                    if ($item->adjustment_qty_gula) $adjParts[] = 'Gula: ' . $item->adjustment_qty_gula . ' kg';
                     if ($item->adjustment_qty_caramel) $adjParts[] = 'Caramel: ' . $item->adjustment_qty_caramel . ' kg';
-                    if ($item->disposition_remark) $adjParts[] = $item->disposition_remark;
-                    $adjStr = !empty($adjParts) ? implode('; ', $adjParts) : '-';
+                    if ($item->adjustment_remark) $adjParts[] = $item->adjustment_remark;
+                    $adjDetail = !empty($adjParts) ? implode('; ', $adjParts) : '';
 
                     if (!empty($entry['merged_adj'])) {
-                        $adjStr = ($adjStr !== '-' ? ($adjStr . ' | ') : '') . $entry['merged_adj'];
+                        $adjDetail = ($adjDetail ? ($adjDetail . ' | ') : '') . $entry['merged_adj'];
                     }
+
+                    $waktuAdjLines = [];
+                    if ($jamDisp) $waktuAdjLines[] = $jamDisp;
+                    if ($adjDetail) $waktuAdjLines[] = $adjDetail;
+                    $waktuAdjStr = !empty($waktuAdjLines) ? implode("\n", $waktuAdjLines) : ($jamDisp ?: '-');
+
+                    // Disposisi & Keterangan (Disposisi di baris 1, Keterangan di baris 2)
+                    $disp = $item->disposition ?: 'Release';
+                    $dispRemark = $item->disposition_remark ?: '';
+                    $dispStr = ($dispRemark && $dispRemark !== $disp) ? ($disp . "\n" . $dispRemark) : $disp;
 
                     $rows[] = [
                         'sampling_ke' => (string)$samplingIndex++,
                         'vol_tangki' => $item->volume !== null ? (string)$item->volume : '',
-                        'serah_terima_jam' => $item->created_at ? $item->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '',
+                        'serah_terima_jam' => $jamScan,
                         'serah_terima_pic' => $item->user ? $item->user->name : '',
                         'bj' => $item->bj !== null ? (string)$item->bj : '',
                         'brix' => $item->brix !== null ? (string)$item->brix : '',
@@ -253,39 +264,67 @@ class DocBlendingAwalController extends Controller
                         'warna' => $item->color ? $item->color->name : 'Hitam',
                         'buih' => 'Tidak Ada',
                         'aw' => $item->aw !== null ? (string)$item->aw : '',
-                        'waktu_adjustment' => $adjStr,
-                        'disposisi' => $item->disposition ?: 'Release',
+                        'waktu_adjustment' => $waktuAdjStr,
+                        'disposisi' => $dispStr,
                     ];
                 }
 
                 // Cek apakah ada data Monitoring Turun Blending yang sesuai untuk siklus ini
                 $turun = $turunItems->get($cIdx);
                 if ($turun) {
+                    // Beri baris kosong sebagai jarak di antara sampling proses dan turun blending (area tengah/bawah, target baris ke-9)
+                    while (count($rows) < 8) {
+                        $rows[] = [
+                            'sampling_ke' => '',
+                            'vol_tangki' => '',
+                            'serah_terima_jam' => '',
+                            'serah_terima_pic' => '',
+                            'bj' => '',
+                            'brix' => '',
+                            'ph' => '',
+                            'nacl' => '',
+                            'visco' => '',
+                            'organo' => '',
+                            'aroma' => '',
+                            'warna' => '',
+                            'buih' => '',
+                            'aw' => '',
+                            'waktu_adjustment' => '',
+                            'disposisi' => '',
+                        ];
+                    }
+
+                    $turunJamScan = $turun->created_at ? $turun->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+                    $turunJamDisp = $turun->updated_at ? $turun->updated_at->setTimezone('Asia/Jakarta')->format('H:i') : $turunJamScan;
+                    $turunDispLines = [];
+                    if ($turun->disposition || $turun->status) $turunDispLines[] = $turun->disposition ?: $turun->status;
+                    if ($turun->disposition_remark && $turun->disposition_remark !== $turun->disposition) $turunDispLines[] = $turun->disposition_remark;
+                    $turunDispStr = !empty($turunDispLines) ? implode("\n", $turunDispLines) : ($turun->disposition ?: 'Release');
+
                     $rows[] = [
-                        'sampling_ke' => 'Awal',
-                        'vol_tangki' => '',
-                        'serah_terima_jam' => $turun->created_at ? $turun->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '',
+                        'sampling_ke' => '',
+                        'vol_tangki' => 'Awal',
+                        'serah_terima_jam' => $turunJamScan,
                         'serah_terima_pic' => $turun->user ? $turun->user->name : ($first->user ? $first->user->name : ''),
-                        'bj' => isset($turun->bj) ? (string)$turun->bj : ($last->bj !== null ? (string)$last->bj : ''),
-                        'brix' => $turun->brix !== null ? (string)$turun->brix : ($last->brix !== null ? (string)$last->brix : ''),
-                        'ph' => isset($turun->ph) ? (string)$turun->ph : ($last->ph !== null ? (string)$last->ph : ''),
-                        'nacl' => isset($turun->nacl) ? (string)$turun->nacl : ($last->nacl !== null ? (string)$last->nacl : ''),
-                        'visco' => $turun->visco !== null ? (string)$turun->visco : ($last->visco !== null ? (string)$last->visco : ''),
-                        'organo' => isset($turun->organo) ? $turun->organo : ($last->organo ?: 'OK'),
-                        'aroma' => isset($turun->aroma) ? $turun->aroma : ($last->aroma ?: 'OK'),
-                        'warna' => ($last->color ? $last->color->name : 'Hitam'),
-                        'buih' => 'Tidak Ada',
-                        'aw' => $turun->aw !== null ? (string)$turun->aw : ($last->aw !== null ? (string)$last->aw : ''),
-                        'waktu_adjustment' => '-',
-                        'disposisi' => $turun->status ?: ($turun->disposition ?: 'Release'),
+                        'bj' => '',
+                        'brix' => $turun->brix !== null ? (string)$turun->brix : '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => $turun->visco !== null ? (string)$turun->visco : '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => $turun->aw !== null ? (string)$turun->aw : '',
+                        'waktu_adjustment' => $turunJamDisp,
+                        'disposisi' => $turunDispStr,
                     ];
                 }
 
-                // Pad rows up to 4 rows for clean initial display in UI
-                while (count($rows) < 4) {
-                    $nextSamp = count($rows) + 1;
+                // Lengkapi sisa baris hingga minimal 11 baris
+                while (count($rows) < 11) {
                     $rows[] = [
-                        'sampling_ke' => (string)$nextSamp,
+                        'sampling_ke' => '',
                         'vol_tangki' => '',
                         'serah_terima_jam' => '',
                         'serah_terima_pic' => '',
