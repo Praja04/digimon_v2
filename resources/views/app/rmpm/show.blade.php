@@ -1105,26 +1105,26 @@
                 <p>Silakan pilih kategori sampling yang ingin Anda isi.</p>
                 <div class="list-group">
                     @if (is_null($data_mobil))
-                    <button type="button" class="list-group-item list-group-item-action"
-                        data-bs-toggle="modal" data-bs-target="#modalKondisiMobil">
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalKondisiMobil">
                         <i class="ri-truck-line me-2 text-primary"></i> Sampling Kondisi Mobil
                     </button>
                     @endif
                     @if (is_null($data_dokumen))
-                    <button type="button" class="list-group-item list-group-item-action"
-                        data-bs-toggle="modal" data-bs-target="#modalDokumen">
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalDokumen">
                         <i class="ri-file-text-line me-2 text-success"></i> Sampling Dokumen
                     </button>
                     @endif
                     @if (is_null($data_kemasan))
-                    <button type="button" class="list-group-item list-group-item-action"
-                        data-bs-toggle="modal" data-bs-target="#modalKemasan">
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalKemasan">
                         <i class="ri-inbox-line me-2 text-warning"></i> Sampling Kemasan
                     </button>
                     @endif
                     @if (!$isGaram && is_null($data_raw))
-                    <button type="button" class="list-group-item list-group-item-action"
-                        data-bs-toggle="modal" data-bs-target="#modalRaw">
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalRaw">
                         <i class="ri-flask-line me-2 text-danger"></i> Sampling Raw
                     </button>
                     @endif
@@ -1665,80 +1665,31 @@
 
 {{-- Konfirmasi Jam --}}
 <div class="modal fade" id="modalKonfirmasi" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Konfirmasi Jam</h5>
+                <h5 class="modal-title" id="modalKonfirmasiTitle">Konfirmasi Jam</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="konfirmasiTipe" value="kedatangan">
                 <div class="mb-3">
-                    <label for="jamInput" class="form-label" id="labelJam">Jam Kedatangan</label>
-                    <input type="datetime-local" class="form-control" id="jamInput"
-                        value="{{ now()->format('Y-m-d\TH:i') }}">
+                    <label for="jamInput" class="form-label fw-semibold" id="labelJam">Jam Kedatangan</label>
+                    <input type="datetime-local" class="form-control" id="jamInput">
+                    <div class="form-text mt-2" id="konfirmasiHelpText"></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" id="btnSimpanJam" class="btn btn-primary">Simpan</button>
+                <button type="button" id="btnSimpanJam" class="btn btn-primary">
+                    <i class="ri-save-line me-1"></i> Simpan
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Update Disposisi Long Term --}}
-<div class="modal fade" id="updateDisposisiModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <form id="formUpdateDisposisi">
-            @csrf
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="ri-edit-2-line me-1 text-primary"></i> Update Disposisi Long Term</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="id_analisa" id="disposisi_id">
-                    <div class="mb-3">
-                        <label for="disposisi_new" class="form-label fw-semibold">Disposisi Baru <span class="text-danger">*</span></label>
-                        <select name="disposisi" id="disposisi_new" class="form-select" required>
-                            <option value="">-- Pilih Disposisi --</option>
-                            <option value="Release">Release</option>
-                            <option value="Release Bersyarat">Release Bersyarat</option>
-                            <option value="Reject">Reject</option>
-                        </select>
-                    </div>
 
-                    {{-- Dynamic Group ABC field in update modal --}}
-                    <div class="mb-3 p-3 border border-primary-subtle rounded bg-light" id="group_update_wrapper" style="display:none;">
-                        <label for="group_new" class="form-label fw-semibold text-primary">
-                            <i class="ri-node-tree me-1"></i> Group ABC <span class="text-danger">*</span>
-                        </label>
-                        <select name="group" id="group_new" class="form-select border-primary">
-                            <option value="">-- Pilih Group ABC --</option>
-                            <option value="Group A">Group A</option>
-                            <option value="Group B">Group B</option>
-                            <option value="Group C">Group C</option>
-                        </select>
-                        <div class="form-text text-muted small mt-1">
-                            Wajib dipilih untuk Disposisi Release / Release Bersyarat.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="keterangan_update" class="form-label fw-semibold">Catatan / Alasan Update</label>
-                        <textarea name="keterangan_update" id="keterangan_update" class="form-control" rows="3" placeholder="Masukkan alasan atau catatan perubahan disposisi..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-3">
-                        <i class="ri-save-line me-1"></i> Simpan Perubahan
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
 @endsection
 
@@ -1749,6 +1700,22 @@
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
+        });
+
+        // ── Smooth modal transition from #samplingModal to specific sampling modals (prevents focus trap & blinking) ──
+        $(document).on('click', '.btn-open-sampling-modal', function(e) {
+            e.preventDefault();
+            const targetSelector = $(this).data('target-modal');
+            const $samplingModal = $('#samplingModal');
+
+            $samplingModal.modal('hide');
+            $samplingModal.one('hidden.bs.modal', function() {
+                const targetModalEl = document.querySelector(targetSelector);
+                if (targetModalEl) {
+                    const bsModal = bootstrap.Modal.getOrCreateInstance(targetModalEl);
+                    bsModal.show();
+                }
+            });
         });
 
 
@@ -1935,164 +1902,122 @@
             });
         });
 
+        // ── Helper format datetime-local ──
+        function getCurrentDateTimeLocal() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
         // ── Konfirmasi Jam ──
-        KonfirmasiInitialCheck();
-        $('#btnBukaModalKonfirmasi').on('click', KonfirmasiCheckAndShow);
-        $('#btnSimpanJam').on('click', handleKonfirmasiJam);
+        $('#btnBukaModalKonfirmasi').on('click', function() {
+            const defaultNow = getCurrentDateTimeLocal();
 
-        function KonfirmasiInitialCheck() {
             $.ajax({
                 url: "{{ url('rmpm/konfirmasi/' . $identitas->id) }}",
                 type: 'GET',
                 dataType: 'json',
-                success: r => {
-                    if (r.jam_analisa_exists) {
-                        $('#labelJam').text('Jam Analisa (Sudah Terisi)');
-                        $('#jamInput').val(r.jam_analisa);
-                        $('#btnSimpanJam').hide();
-                    } else if (r.sampling_complete) {
-                        $('#labelJam').text('Jam Analisa');
-                    } else {
+                beforeSend: function() {
+                    $('#btnBukaModalKonfirmasi').prop('disabled', true);
+                },
+                complete: function() {
+                    $('#btnBukaModalKonfirmasi').prop('disabled', false);
+                },
+                success: function(r) {
+                    if (!r.jam_kedatangan_exists) {
+                        // Belum ada jam kedatangan
+                        $('#modalKonfirmasiTitle').html('<i class="ri-truck-line text-warning me-1"></i> Konfirmasi Jam Kedatangan');
                         $('#labelJam').text('Jam Kedatangan');
-                    }
-                },
-            });
-        }
-
-        function KonfirmasiCheckAndShow() {
-            $.ajax({
-                url: "{{ url('rmpm/konfirmasi/' . $identitas->id) }}",
-                type: 'GET',
-                dataType: 'json',
-                success: r => {
-                    if (r.jam_analisa_exists) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Selesai',
-                            text: 'Konfirmasi Jam Analisa sudah terisi.'
-                        });
-                        KonfirmasiInitialCheck();
-                        $('#modalKonfirmasi').modal('show');
-                        $('#btnSimpanJam').hide();
-                    } else if (r.sampling_complete) {
+                        $('#konfirmasiTipe').val('kedatangan');
+                        $('#jamInput').val(defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-muted">Silakan tentukan waktu kedatangan bahan baku.</span>');
+                        $('#btnSimpanJam').show();
+                    } else if (r.sampling_complete && !r.jam_analisa_exists) {
+                        // Sampling selesai & belum konfirmasi jam analisa
+                        $('#modalKonfirmasiTitle').html('<i class="ri-flask-line text-info me-1"></i> Konfirmasi Jam Analisa');
                         $('#labelJam').text('Jam Analisa');
-                        $('#jamInput').val('{{ now()->format('
-                            Y - m - d\ TH: i ') }}');
+                        $('#konfirmasiTipe').val('analisa');
+                        $('#jamInput').val(defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-muted">Sampling telah lengkap. Silakan masukkan waktu mulai analisa.</span>');
                         $('#btnSimpanJam').show();
-                        $('#modalKonfirmasi').modal('show');
-                    } else {
+                    } else if (r.jam_kedatangan_exists && !r.sampling_complete) {
+                        // Jam kedatangan sudah ada, tapi sampling belum lengkap
+                        $('#modalKonfirmasiTitle').html('<i class="ri-truck-line text-warning me-1"></i> Edit Jam Kedatangan');
                         $('#labelJam').text('Jam Kedatangan');
-                        $('#jamInput').val('{{ now()->format('
-                            Y - m - d\ TH: i ') }}');
+                        $('#konfirmasiTipe').val('kedatangan');
+                        $('#jamInput').val(r.jam_kedatangan || defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-warning"><i class="ri-information-line me-1"></i> Jam Kedatangan sudah tersimpan. Lengkapi data Sampling untuk mengisi Jam Analisa.</span>');
                         $('#btnSimpanJam').show();
-                        $('#modalKonfirmasi').modal('show');
+                    } else if (r.jam_analisa_exists) {
+                        // Keduanya sudah ada
+                        $('#modalKonfirmasiTitle').html('<i class="ri-checkbox-circle-line text-success me-1"></i> Edit Jam Analisa');
+                        $('#labelJam').text('Jam Analisa');
+                        $('#konfirmasiTipe').val('analisa');
+                        $('#jamInput').val(r.jam_analisa || defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Jam Kedatangan & Jam Analisa sudah lengkap. Anda dapat memperbarui jam analisa jika diperlukan.</span>');
+                        $('#btnSimpanJam').show();
                     }
-                },
-                error: () => Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Gagal memuat status konfirmasi.'
-                }),
-            });
-        }
 
-        function handleKonfirmasiJam() {
-            $.ajax({
-                url: "{{ route('rmpm.konfirmasi.update') }}",
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    id: "{{ $identitas->id }}",
-                    tipe: $('#labelJam').text().includes('Analisa') ? 'analisa' : 'kedatangan',
-                    jam: $('#jamInput').val(),
+                    $('#modalKonfirmasi').modal('show');
                 },
-                success: r => {
-                    $('#modalKonfirmasi').modal('hide');
+                error: function() {
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: r.message || 'Data berhasil disimpan!'
-                    }).then(() => location.reload());
-                },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: xhr.responseJSON?.message || 'Gagal menyimpan jam.'
-                }),
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Gagal memuat status konfirmasi.'
+                    });
+                }
             });
-        }
-
-        // ── Update Disposisi Long Term ──
-        $('#disposisi_new').on('change', function() {
-            const val = $(this).val();
-            if (val === 'Release' || val === 'Release Bersyarat') {
-                $('#group_update_wrapper').slideDown(150);
-            } else {
-                $('#group_update_wrapper').slideUp(150);
-                $('#group_new').val('');
-            }
         });
 
-        $('#updateDisposisiModal').on('show.bs.modal', function(e) {
-            const btn = $(e.relatedTarget);
-            const currentDisp = btn.data('disposisi') || '';
-            const currentGroup = btn.data('group') || '';
-            $('#disposisi_id').val(btn.data('id'));
-            $('#disposisi_new').val(currentDisp).trigger('change');
-            $('#group_new').val(currentGroup);
-            $('#keterangan_update').val('');
-        });
+        $('#btnSimpanJam').on('click', function() {
+            const jamVal = $('#jamInput').val();
+            const tipeVal = $('#konfirmasiTipe').val();
 
-        $('#formUpdateDisposisi').on('submit', function(e) {
-            e.preventDefault();
-            const disposisiBaru = $('#disposisi_new').val();
-            const groupBaru = $('#group_new').val();
-            const keteranganUpdate = $('#keterangan_update').val();
-
-            if (!disposisiBaru) {
+            if (!jamVal) {
                 return Swal.fire({
                     icon: 'warning',
-                    text: 'Silakan pilih disposisi baru.'
-                });
-            }
-
-            if (['Release', 'Release Bersyarat'].includes(disposisiBaru) && !groupBaru) {
-                return Swal.fire({
-                    icon: 'warning',
-                    text: 'Silakan pilih Group ABC untuk disposisi ' + disposisiBaru + '.'
+                    text: 'Silakan isi tanggal dan jam terlebih dahulu.'
                 });
             }
 
             Swal.fire({
-                title: 'Memperbarui Disposisi...',
+                title: 'Menyimpan Konfirmasi...',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
 
             $.ajax({
-                url: "{{ route('rmpm.update-disposisi.long-term') }}",
+                url: "{{ route('rmpm.konfirmasi.update') }}",
                 type: 'POST',
                 dataType: 'json',
                 data: {
-                    id: $('#disposisi_id').val(),
-                    disposisi: disposisiBaru,
-                    group: groupBaru,
-                    keterangan_update: keteranganUpdate,
+                    _token: "{{ csrf_token() }}",
+                    id: "{{ $identitas->id }}",
+                    tipe: tipeVal,
+                    jam: jamVal,
                 },
-                success: r => {
-                    $('#updateDisposisiModal').modal('hide');
+                success: function(r) {
+                    $('#modalKonfirmasi').modal('hide');
                     Swal.fire({
                         icon: 'success',
-                        title: 'Sukses',
-                        text: r.message || 'Disposisi berhasil diperbarui!'
+                        title: 'Berhasil',
+                        text: r.message || 'Data konfirmasi berhasil disimpan!'
                     }).then(() => location.reload());
                 },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Kesalahan',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memperbarui disposisi.'
-                }),
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Gagal menyimpan data konfirmasi.'
+                    });
+                }
             });
+        });
     });
 </script>
 @endsection

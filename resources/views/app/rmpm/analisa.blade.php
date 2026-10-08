@@ -111,7 +111,7 @@
                                 </div>
 
                                 <div class="col-md-3">
-                                    <button class="btn btn-primary w-100" id="btnMulai">
+                                    <button type="button" class="btn btn-primary w-100" id="btnMulai">
                                         <i class="ri-play-line me-1"></i> Mulai Input
                                     </button>
                                 </div>
@@ -171,7 +171,7 @@
                                         <i class="mdi mdi-file-document-edit-outline me-1"></i> Status: Tersimpan Sementara (Draft)
                                     </span>
                                 </div>
-                                <button class="btn btn-sm btn-outline-danger" id="btnReset">
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="btnReset">
                                     <i class="ri-refresh-line me-1"></i> Reset
                                 </button>
                             </div>
@@ -939,6 +939,7 @@
     let currentType = null;
     let currentKategori = 'incoming';
     let currentJumlah = 0;
+    let globalSampleCount = 1;   // Persisted sample count across category switching and inline editing
     let selectedFiles = [];       // array of File objects for newly added photos
     let existingPhotos = [];      // array of string filenames from server draft/record
     let parsedPasteData = [];     // parsed rows from excel paste modal
@@ -1769,31 +1770,19 @@
             saveDraft();
         });
 
-        $('input[name="analisa_type"]').on('change', function() {
-            const val = $(this).val();
-            const isLong = (val === 'long-term');
-            $('#jumlahWrapper').toggle(!isLong);
-            if (isLong) {
-                $('#jumlahData').val('1');
-            } else if (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0) {
-                const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === val);
-                if (matching.length > 0) {
-                    $('#jumlahData').val(matching.length);
-                } else {
-                    $('#jumlahData').val(1);
-                }
-            } else {
-                $('#jumlahData').val(1);
-            }
-        });
-
         $('#btnMulai').on('click', handleMulai);
         $('#btnReset').on('click', handleReset);
         $(document).on('click', '#btnBackToSetup', function(e) {
             e.preventDefault();
+            currentType = null;
             $('#analisaSection, #dividerForm').hide();
             updateSetupBadges();
             $('#setupSection').slideDown(150);
+            const showCount = (globalSampleCount > 0) ? globalSampleCount : (currentJumlah > 0 ? currentJumlah : 1);
+            $('#jumlahData').val(showCount);
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('kategori');
+            window.history.replaceState({}, '', newUrl.pathname);
         });
         $(document).on('click', '.btn-category-switch', function() {
             const targetCat = $(this).data('cat');
@@ -2184,20 +2173,22 @@
             $(this).val($(this).val().toUpperCase());
         });
 
+        $(document).on('input change', '#jumlahData', function() {
+            const val = parseInt($(this).val());
+            if (val && val > 0) {
+                globalSampleCount = val;
+            }
+        });
+
         // Category selection in setup screen
         $(document).on('change', 'input[name="analisa_type"]', function() {
             const val = $(this).val();
-            if (val === 'long-term') {
-                $('#jumlahWrapper').hide();
+            const isLong = (val === 'long-term');
+            $('#jumlahWrapper').toggle(!isLong);
+            if (isLong) {
                 $('#jumlahData').val(1);
             } else {
-                $('#jumlahWrapper').show();
-                const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === val);
-                if (matching.length > 0) {
-                    $('#jumlahData').val(matching.length);
-                } else {
-                    $('#jumlahData').val(1);
-                }
+                $('#jumlahData').val(globalSampleCount || 1);
             }
         });
 
@@ -2246,7 +2237,7 @@
 
         setTimeout(() => {
             if (SERVER_EXISTING) {
-                if (SERVER_EXISTING.status === 'draft' || !SERVER_EXISTING.disposisi) {
+                if (SERVER_EXISTING.status === 'draft') {
                     $('#draftStatusBadge').show();
                 } else {
                     $('#draftStatusBadge').hide();
@@ -2269,33 +2260,55 @@
         return true;
     }
 
+    function updateDraftBadgeStatus() {
+        let isDraft = false;
+        if (currentType === 'long-term') {
+            isDraft = (SERVER_EXISTING && SERVER_EXISTING.status === 'draft');
+        } else if (currentType === 'short-term') {
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (currentKategori || 'incoming'));
+            isDraft = (matching.length > 0 && matching[0].status === 'draft');
+        } else if (currentType === 'garam-gula') {
+            isDraft = (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 && SERVER_GARAM_GULA[0].status === 'draft');
+        }
+
+        if (isDraft) {
+            $('#draftStatusBadge').show();
+        } else {
+            $('#draftStatusBadge').hide();
+        }
+    }
+
     function updateSetupBadges() {
         if (!isGulaKristalMaterial(JENIS)) return;
-        const incomingCount = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming').length;
-        const staCount = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta').length;
-        const monitoringCount = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring').length;
+        const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
+        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
+        const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
         const hasLongTerm = (SERVER_EXISTING && SERVER_EXISTING.id);
 
-        if (incomingCount > 0) {
-            $('#setupBadgeIncoming').text(`(${incomingCount} Sampel)`).show();
+        if (incoming.length > 0) {
+            const isDraft = (incoming[0].status === 'draft');
+            $('#setupBadgeIncoming').text(isDraft ? `(Draft - ${incoming.length} Sampel)` : `(${incoming.length} Sampel)`).show();
         } else {
             $('#setupBadgeIncoming').hide();
         }
 
-        if (staCount > 0) {
-            $('#setupBadgeSta').text(`(${staCount} Sampel)`).show();
+        if (sta.length > 0) {
+            const isDraft = (sta[0].status === 'draft');
+            $('#setupBadgeSta').text(isDraft ? `(Draft - ${sta.length} Sampel)` : `(${sta.length} Sampel)`).show();
         } else {
             $('#setupBadgeSta').hide();
         }
 
-        if (monitoringCount > 0) {
-            $('#setupBadgeMonitoring').text(`(${monitoringCount} Sampel)`).show();
+        if (monitoring.length > 0) {
+            const isDraft = (monitoring[0].status === 'draft');
+            $('#setupBadgeMonitoring').text(isDraft ? `(Draft - ${monitoring.length} Sampel)` : `(${monitoring.length} Sampel)`).show();
         } else {
             $('#setupBadgeMonitoring').hide();
         }
 
         if (hasLongTerm) {
-            $('#setupBadgeLongTerm').html('<i class="ri-check-line"></i> Tersimpan').show();
+            const isDraft = (SERVER_EXISTING.status === 'draft');
+            $('#setupBadgeLongTerm').html(isDraft ? '<i class="ri-file-edit-line"></i> Draft' : '<i class="ri-check-line"></i> Tersimpan').show();
         } else {
             $('#setupBadgeLongTerm').hide();
         }
@@ -2306,10 +2319,11 @@
         const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming'));
         if (!matching.length) return false;
 
-        const count = (customJumlah && customJumlah > 0) ? customJumlah : matching.length;
+        const count = (customJumlah && customJumlah > 0) ? customJumlah : (globalSampleCount > 0 ? globalSampleCount : (matching.length > 0 ? matching.length : 1));
         currentType = 'short-term';
         currentKategori = kategori;
         currentJumlah = count;
+        globalSampleCount = count;
 
         if (isGulaKristalMaterial(JENIS)) {
             $(`input[name="analisa_type"][value="${kategori}"]`).prop('checked', true);
@@ -2320,11 +2334,10 @@
         setTimeout(() => {
             if (matching[0].disposisi) {
                 $('select[name="disposisi"]').val(matching[0].disposisi).trigger('change');
-                $('#draftStatusBadge').hide();
             } else {
                 $('select[name="disposisi"]').val('').trigger('change');
-                $('#draftStatusBadge').show();
             }
+            updateDraftBadgeStatus();
             if (matching[0].keterangan) {
                 $('textarea[name="keterangan"]').val(matching[0].keterangan);
             }
@@ -2407,11 +2420,10 @@
         setTimeout(() => {
             if (SERVER_GARAM_GULA[0].disposisi) {
                 $('select[name="disposisi"]').val(SERVER_GARAM_GULA[0].disposisi).trigger('change');
-                $('#draftStatusBadge').hide();
             } else {
                 $('select[name="disposisi"]').val('').trigger('change');
-                $('#draftStatusBadge').show();
             }
+            updateDraftBadgeStatus();
             if (SERVER_GARAM_GULA[0].keterangan) {
                 $('textarea[name="keterangan"]').val(SERVER_GARAM_GULA[0].keterangan);
             }
@@ -2441,6 +2453,11 @@
     function initFormData() {
         updateSetupBadges();
 
+        // If user already started a form before AJAX callbacks finished, don't reset!
+        if (currentType) {
+            return;
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const reqKategori = urlParams.get('kategori');
 
@@ -2463,25 +2480,24 @@
                     $(`input[name="analisa_type"][value="${reqKategori}"]`).prop('checked', true);
                 }
 
-                // 1a. Try database records for this specific category
-                const hasDb = populateExistingShortTerm(reqKategori);
-                if (hasDb) return;
-
-                // 1b. Try localStorage draft for this specific category
                 let draft;
-                try {
-                    draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
-                } catch (e) {}
+                try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (e) {}
+
+                const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === reqKategori);
+                const draftCount = (draft && draft.setup && draft.setup.jumlah) ? draft.setup.jumlah : null;
+                const sampleCount = draftCount || (matching.length > 0 ? matching.length : 1);
+
+                $('#jumlahData').val(sampleCount);
+
+                const hasDb = populateExistingShortTerm(reqKategori, sampleCount);
+                if (hasDb) return;
 
                 if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === reqKategori) {
                     restoreFromDraft();
                     return;
                 }
 
-                // 1c. Directly open form with default samples (e.g. 1 or from draft count)
-                const jumlah = (draft && draft.setup && draft.setup.jumlah) ? draft.setup.jumlah : 1;
-                $('#jumlahData').val(jumlah);
-                startForm('short-term', jumlah, reqKategori);
+                startForm('short-term', sampleCount, reqKategori);
                 return;
             }
         }
@@ -2496,49 +2512,15 @@
             return;
         }
 
-        // Priority 3: Check for active draft (Simpan Sementara) to resume automatically
-        // 3a. Check localStorage draft cache
-        let draft;
-        try {
-            draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
-        } catch (e) {}
-
-        if (draft && draft.setup && draft.setup.type) {
-            restoreFromDraft();
-            return;
-        }
-
-        // 3b. Check database records for unfinalized short-term draft (status === 'draft' or !disposisi)
-        if (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0) {
-            const draftShort = SERVER_SHORT_TERM.find(item => item.status === 'draft' || !item.disposisi);
-            if (draftShort) {
-                populateExistingShortTerm(draftShort.kategori || 'incoming');
-                return;
-            }
-        }
-
-        // 3c. Check database records for unfinalized long-term draft
-        if (SERVER_EXISTING && SERVER_EXISTING.id && (SERVER_EXISTING.status === 'draft' || !SERVER_EXISTING.disposisi)) {
-            populateExistingLongTerm();
-            return;
-        }
-
-        // Priority 4: Fresh / No active draft:
-        // STAY ON SETUP SECTION (Show the 4 category cards, Jumlah Sampel, Mulai Input)
+        // Priority 3: For Gula without ?kategori param in URL:
+        // Always present the Setup Section so the user can choose category & input sample count freely!
         $('#setupSection').show();
         $('#dividerForm, #analisaSection').hide();
-
-        // Set initial sample count for currently checked radio (default: incoming)
-        const activeRadioVal = $('input[name="analisa_type"]:checked').val() || 'incoming';
-        const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === activeRadioVal);
-        if (matching.length > 0) {
-            $('#jumlahData').val(matching.length);
-        } else {
-            $('#jumlahData').val(1);
-        }
+        $('#jumlahData').val(1);
     }
 
-    function handleMulai() {
+    function handleMulai(e) {
+        if (e) e.preventDefault();
         const isGulaKristal = isGulaKristalMaterial(JENIS);
         let selectedVal = isGulaKristal ? $('input[name="analisa_type"]:checked').val() : 'garam-gula';
 
@@ -2547,6 +2529,11 @@
                 icon: 'warning',
                 text: 'Pilih jenis analisa terlebih dahulu.'
             });
+        }
+
+        const inputJumlah = parseInt($('#jumlahData').val()) || globalSampleCount || 1;
+        if (selectedVal !== 'long-term') {
+            globalSampleCount = inputJumlah;
         }
 
         if (selectedVal === 'long-term') {
@@ -2559,18 +2546,16 @@
         }
 
         if (selectedVal === 'garam-gula') {
-            const jumlah = parseInt($('#jumlahData').val()) || 1;
             if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
-                populateExistingGaramGula(jumlah);
+                populateExistingGaramGula(inputJumlah);
             } else {
-                startForm('garam-gula', jumlah, 'incoming');
+                startForm('garam-gula', inputJumlah, 'incoming');
             }
             return;
         }
 
         // Short-term: incoming, sta, monitoring
         const matching = SERVER_SHORT_TERM ? SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === selectedVal) : [];
-        const inputJumlah = parseInt($('#jumlahData').val()) || 1;
 
         if (matching.length > 0) {
             populateExistingShortTerm(selectedVal, inputJumlah);
@@ -2582,6 +2567,7 @@
             } catch (e) {}
 
             if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === selectedVal) {
+                draft.setup.jumlah = inputJumlah;
                 restoreFromDraft();
             } else {
                 startForm('short-term', inputJumlah, selectedVal);
@@ -2594,35 +2580,67 @@
         if (!newJumlah || newJumlah <= 0) {
             return Swal.fire({
                 icon: 'warning',
-                text: 'Masukkan jumlah sampel yang valid.'
+                text: 'Masukkan jumlah sampel yang valid (minimal 1).'
             });
         }
         const savedValues = collectArrayValues();
 
+        globalSampleCount = newJumlah;
         currentJumlah = newJumlah;
+        $('#jumlahData').val(newJumlah);
         renderAccordion(currentType, currentJumlah);
         updateLabels();
         restoreArrayValues(savedValues, newJumlah);
+
+        for (let i = 0; i < newJumlah; i++) {
+            calculateRowKotoran(i);
+            calculateRowKa(i);
+        }
 
         $('#editJumlahWrapper').slideUp(150);
         $('#btnEditJumlah').show();
         calculateStatistics();
         saveDraft();
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `Jumlah sampel diubah menjadi ${newJumlah}`,
+            showConfirmButton: false,
+            timer: 1500
+        });
     }
 
     function collectArrayValues() {
         const saved = {};
-        $('#formAnalisa').find('input, select').each(function() {
+        $('#formAnalisa').find('input, select, textarea').each(function() {
             const name = $(this).attr('name');
-            if (!name || !name.endsWith('[]')) return;
-            if (!saved[name]) saved[name] = [];
-            saved[name].push($(this).val());
+            if (!name || name === '_token') return;
+            if (name.endsWith('[]')) {
+                if (!saved[name]) saved[name] = [];
+                saved[name].push($(this).val());
+            } else {
+                saved[name] = $(this).val();
+            }
         });
         return saved;
     }
 
     function restoreArrayValues(saved, maxCount) {
         for (const [name, values] of Object.entries(saved)) {
+            if (!name.endsWith('[]')) {
+                const $el = $(`[name="${name}"]`);
+                if ($el.length && values !== undefined && values !== null) {
+                    if ($el.is('select')) {
+                        $el.val(values).trigger('change');
+                    } else {
+                        $el.val(values);
+                    }
+                }
+                continue;
+            }
+
             if (name === 'organo[]') {
                 $('.organo-cell-container').each(function(i) {
                     if (i >= maxCount) return;
@@ -2682,18 +2700,42 @@
         }
     }
 
-    function handleReset() {
+    function handleReset(e) {
+        if (e) e.preventDefault();
+        const targetType = currentType;
+        const targetKategori = currentKategori;
+
         Swal.fire({
             icon: 'question',
             title: 'Reset Form?',
-            text: 'Semua data yang belum disimpan final akan dihapus dari form.',
+            text: 'Semua isian form dan draft sementara akan dikosongkan dan kembali ke pemilihan kategori.',
             showCancelButton: true,
             confirmButtonText: 'Ya, Reset',
             cancelButtonText: 'Batal',
         }).then(r => {
             if (r.isConfirmed) {
                 clearDraft();
-                location.reload();
+
+                Swal.fire({
+                    title: 'Mereset form...',
+                    text: 'Mohon tunggu sebentar...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                $.ajax({
+                    url: "{{ route('rmpm.analisa.reset-draft', $identitas->id) }}",
+                    type: "POST",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        type: targetType,
+                        kategori: targetKategori,
+                    },
+                    complete: function() {
+                        clearDraft();
+                        window.location.href = "{{ route('rmpm.analisa', $identitas->id) }}";
+                    }
+                });
             }
         });
     }
@@ -2704,6 +2746,15 @@
         currentKategori = kategori;
         $('#hiddenAnalisaType').val(type);
         $('#hiddenKategori').val(kategori);
+
+        const newUrl = new URL(window.location.href);
+        if (type === 'long-term') {
+            newUrl.searchParams.set('kategori', 'long-term');
+        } else if (type === 'short-term') {
+            newUrl.searchParams.set('kategori', kategori);
+        }
+        window.history.replaceState({}, '', newUrl);
+
         renderAccordion(type, jumlah);
         $('#setupSection').hide();
         $('#dividerForm, #analisaSection').show();
@@ -2717,37 +2768,58 @@
             $('#summaryStatsBar').show();
             calculateStatistics();
         }
+        updateDraftBadgeStatus();
         updateMainFormActionsVisibility();
         saveDraft();
     }
 
     function updateCategorySwitcherBadges() {
         if (!isGulaKristalMaterial(JENIS)) return;
-        const incomingCount = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming').length;
-        const staCount = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta').length;
-        const monitoringCount = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring').length;
+        const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
+        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
+        const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
         const hasLongTerm = (SERVER_EXISTING && SERVER_EXISTING.id);
 
-        if (incomingCount > 0) {
-            $('#badgeCatIncoming').text(`(${incomingCount})`).show();
+        if (incoming.length > 0) {
+            const isDraft = (incoming[0].status === 'draft');
+            if (isDraft) {
+                $('#badgeCatIncoming').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+            } else {
+                $('#badgeCatIncoming').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
+            }
         } else {
             $('#badgeCatIncoming').hide();
         }
 
-        if (staCount > 0) {
-            $('#badgeCatSta').text(`(${staCount})`).show();
+        if (sta.length > 0) {
+            const isDraft = (sta[0].status === 'draft');
+            if (isDraft) {
+                $('#badgeCatSta').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+            } else {
+                $('#badgeCatSta').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
+            }
         } else {
             $('#badgeCatSta').hide();
         }
 
-        if (monitoringCount > 0) {
-            $('#badgeCatMonitoring').text(`(${monitoringCount})`).show();
+        if (monitoring.length > 0) {
+            const isDraft = (monitoring[0].status === 'draft');
+            if (isDraft) {
+                $('#badgeCatMonitoring').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+            } else {
+                $('#badgeCatMonitoring').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
+            }
         } else {
             $('#badgeCatMonitoring').hide();
         }
 
         if (hasLongTerm) {
-            $('#badgeCatLongTerm').html('<span class="badge bg-success text-white py-0 px-1"><i class="ri-check-line"></i></span>').show();
+            const isDraft = (SERVER_EXISTING.status === 'draft');
+            if (isDraft) {
+                $('#badgeCatLongTerm').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+            } else {
+                $('#badgeCatLongTerm').html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>').show();
+            }
         } else {
             $('#badgeCatLongTerm').hide();
         }
@@ -2781,7 +2853,10 @@
             $(`input[name="analisa_type"][value="${targetCat}"]`).prop('checked', true);
         }
 
-        const hasDb = populateExistingShortTerm(targetCat);
+        const keepJumlah = (globalSampleCount > 0) ? globalSampleCount : (currentJumlah > 0 ? currentJumlah : (parseInt($('#jumlahData').val()) || 1));
+        globalSampleCount = keepJumlah;
+
+        const hasDb = populateExistingShortTerm(targetCat, keepJumlah);
         if (!hasDb) {
             let draft;
             try {
@@ -2789,9 +2864,10 @@
             } catch (e) {}
 
             if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === targetCat) {
+                draft.setup.jumlah = keepJumlah;
                 restoreFromDraft();
             } else {
-                startForm('short-term', 1, targetCat);
+                startForm('short-term', keepJumlah, targetCat);
             }
         }
     }
@@ -5248,41 +5324,82 @@
             didOpen: () => Swal.showLoading()
         });
 
-        $.ajax({
-            url: urlMap[currentType],
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(resp) {
-                clearDraft();
-                if (isDraft) {
-                    $('#draftStatusBadge').show();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Tersimpan Sementara',
-                        text: resp.message || 'Data analisa berhasil disimpan sementara (Draft).'
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: resp.message || 'Data analisa berhasil disimpan!'
-                    }).then(() => {
-                        window.location.href = "{{ route('rmpm.show', $identitas->id) }}";
-                    });
-                }
-            },
-            error: function(xhr) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Menyimpan',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan saat menyimpan data.'
-                });
-            },
-        });
+        function executeAjaxSubmit(isRetry) {
+            const currentToken = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val();
+            formData.set('_token', currentToken);
+
+            $.ajax({
+                url: urlMap[currentType],
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': currentToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(resp) {
+                    clearDraft();
+                    if (isDraft) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Tersimpan Sementara',
+                            text: resp.message || 'Data analisa berhasil disimpan sementara (Draft).'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: resp.message || 'Data analisa berhasil disimpan!'
+                        }).then(() => {
+                            window.location.href = "{{ route('rmpm.show', $identitas->id) }}";
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 419 && !isRetry) {
+                        // Attempt automatic token refresh and retry once
+                        $.getJSON("{{ route('csrf.token') }}")
+                            .done(function(data) {
+                                if (data && data.token) {
+                                    $('meta[name="csrf-token"]').attr('content', data.token);
+                                    $('input[name="_token"]').val(data.token);
+                                    $.ajaxSetup({
+                                        headers: {
+                                            'X-CSRF-TOKEN': data.token
+                                        }
+                                    });
+                                    executeAjaxSubmit(true);
+                                    return;
+                                }
+                                handleAjaxError(xhr);
+                            })
+                            .fail(function() {
+                                handleAjaxError(xhr);
+                            });
+                        return;
+                    }
+                    handleAjaxError(xhr);
+                },
+            });
+        }
+
+        function handleAjaxError(xhr) {
+            let errorMsg = xhr.responseJSON?.message || 'Terjadi kesalahan saat menyimpan data.';
+            if (xhr.status === 419) {
+                errorMsg = 'Sesi telah kedaluwarsa (CSRF token mismatch). Data Anda tetap tersimpan di draft lokal. Silakan muat ulang halaman ini untuk memperbarui sesi, lalu simpan kembali.';
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan',
+                text: errorMsg
+            });
+        }
+
+        executeAjaxSubmit(false);
     }
 
     // ─────────────────────────────────────────────
@@ -5384,7 +5501,8 @@
 
         currentType = draft.setup.type;
         currentKategori = draft.setup.kategori || 'incoming';
-        currentJumlah = draft.setup.jumlah;
+        currentJumlah = (globalSampleCount > 0) ? globalSampleCount : (draft.setup.jumlah || parseInt($('#jumlahData').val()) || 1);
+        globalSampleCount = currentJumlah;
 
         if (draft.existingPhotos && Array.isArray(draft.existingPhotos)) {
             existingPhotos = [...draft.existingPhotos];
@@ -5392,7 +5510,8 @@
 
         if (isGulaKristalMaterial(JENIS)) {
             const radioVal = currentType === 'long-term' ? 'long-term' : currentKategori;
-            $(`input[name="analisa_type"][value="${radioVal}"]`).prop('checked', true).trigger('change');
+            $(`input[name="analisa_type"][value="${radioVal}"]`).prop('checked', true);
+            $('#jumlahWrapper').toggle(radioVal !== 'long-term');
         }
         $('#jumlahData').val(currentJumlah);
 

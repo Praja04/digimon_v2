@@ -316,6 +316,7 @@
                     </div>
 
                     @php
+                        $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
                         $defaultKartonExpDate = $sampling?->exp_date 
                             ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
                             : ($packagingIncoming->exp_date 
@@ -387,8 +388,9 @@
                                 type="date"
                                 name="exp_date"
                                 id="exp_date"
-                                class="form-control"
+                                class="form-control @if(!$isForeman) bg-light @endif"
                                 value="{{ old('exp_date', $defaultKartonExpDate) }}"
+                                @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif
                             >
                         </div>
 

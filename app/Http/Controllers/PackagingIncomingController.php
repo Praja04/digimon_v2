@@ -1081,7 +1081,9 @@ class PackagingIncomingController extends Controller
         int $jenisIncomingId,
         ?int $jenisMaterialId = null
     ): ?string {
-        if (! empty($expDate)) {
+        $isForeman = auth()->check() && in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
+
+        if ($isForeman && ! empty($expDate)) {
             return $expDate;
         }
 
@@ -1102,8 +1104,10 @@ class PackagingIncomingController extends Controller
         if (
             str_contains($jenisName, 'karton')
             || str_contains($jenisName, 'kardus')
+            || str_contains($jenisName, 'box')
             || str_contains($matName, 'karton')
             || str_contains($matName, 'kardus')
+            || str_contains($matName, 'box')
         ) {
             return $tgl->addYear()->toDateString();
         }
@@ -1119,6 +1123,6 @@ class PackagingIncomingController extends Controller
             return $tgl->addMonths(6)->toDateString();
         }
 
-        return null;
+        return ! empty($expDate) ? $expDate : null;
     }
 }

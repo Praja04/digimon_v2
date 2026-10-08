@@ -50,6 +50,11 @@ Auth::routes();
 // Timbangan Retail Mesin Ranking (TV Mode - Public/Stateless)
 Route::get('/dashboard/timbangan-retail/mesin-ranking', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'mesinRanking'])->name('dashboard.timbangan-retail.mesin-ranking');
 
+// CSRF Token Refresh / Keep-Alive Endpoint
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.token');
+
 /*------------------------------------------
 --------------------------------------------
 Routes berdasarkan Role Access
@@ -482,6 +487,11 @@ Route::middleware(['auth'])->group(function () {
             '/analisa/rmpm/garam-gula',
             [App\Http\Controllers\RMPMController::class, 'storeGaramGula']
         )->name('rmpm.store.garam-gula');
+
+        Route::post(
+            '/analisa/rmpm/{id}/reset-draft',
+            [App\Http\Controllers\RMPMController::class, 'resetDraft']
+        )->name('rmpm.analisa.reset-draft');
 
         /*
     |--------------------------------------------------------------------------
