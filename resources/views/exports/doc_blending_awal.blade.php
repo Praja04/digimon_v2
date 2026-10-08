@@ -114,10 +114,16 @@
             @endphp
 
             @for($i = 0; $i < $totalRows; $i++)
-                @php $row = $rows[$i] ?? null; @endphp
+                @php
+                    $row = $rows[$i] ?? null;
+                    $displaySamp = $row['sampling_ke'] ?? '';
+                    $displayVol = $row['vol_tangki'] ?? '';
+                    $displayAdj = $row['waktu_adjustment'] ?? '';
+                    $displayDisp = $row['disposisi'] ?? '';
+                @endphp
                 <tr>
-                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row ? ($row['sampling_ke'] ?? ($i + 1)) : '' }}</td>
-                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['vol_tangki'] ?? '' }}</td>
+                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $displaySamp }}</td>
+                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle; font-weight: {{ strtolower(trim((string)$displayVol)) === 'awal' ? 'bold' : 'normal' }};">{{ $displayVol }}</td>
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['serah_terima_jam'] ?? '' }}</td>
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['serah_terima_pic'] ?? '' }}</td>
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['bj'] ?? '' }}</td>
@@ -128,10 +134,10 @@
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['organo'] ?? '' }}</td>
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['aroma'] ?? '' }}</td>
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['warna'] ?? '' }}</td>
-                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['buih'] ?? '' }}</td>
+                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle; white-space: pre-wrap;">{{ (isset($row['buih']) && (strtolower(trim($row['buih'])) === 'tidak ada' || strtolower(trim($row['buih'])) === "tidak\nada")) ? "Tidak\nAda" : ($row['buih'] ?? '') }}</td>
                     <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['aw'] ?? '' }}</td>
-                    <td style="border: 1px solid #000000; text-align: left; font-size: 8.5pt; vertical-align: middle;">{{ $row['waktu_adjustment'] ?? '' }}</td>
-                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle;">{{ $row['disposisi'] ?? '' }}</td>
+                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle; white-space: pre-wrap;">{!! nl2br(e($displayAdj)) !!}</td>
+                    <td style="border: 1px solid #000000; text-align: center; font-size: 8.5pt; vertical-align: middle; white-space: pre-wrap;">{!! nl2br(e($displayDisp)) !!}</td>
                 </tr>
             @endfor
         @endforeach

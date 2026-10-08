@@ -120,22 +120,22 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
 
                 // Setup 16 Columns Widths (A to P)
                 $widths = [
-                    'A' => 14, // Sampling ke-
-                    'B' => 15, // Vol Tangki (L)
+                    'A' => 12, // Sampling ke-
+                    'B' => 14, // Vol Tangki (L)
                     'C' => 9,  // Jam
-                    'D' => 15, // PIC
-                    'E' => 12, // BJ (g/mL)
-                    'F' => 10, // Brix
+                    'D' => 14, // PIC
+                    'E' => 11, // BJ (g/mL)
+                    'F' => 9,  // Brix
                     'G' => 8,  // pH
-                    'H' => 10, // % NaCl
-                    'I' => 15, // Viskositas (ps)
-                    'J' => 10, // Organo
-                    'K' => 10, // Aroma
-                    'L' => 12, // Warna
-                    'M' => 10, // Buih
+                    'H' => 9,  // % NaCl
+                    'I' => 13, // Viskositas (ps)
+                    'J' => 9,  // Organo
+                    'K' => 9,  // Aroma
+                    'L' => 10, // Warna
+                    'M' => 9,  // Buih
                     'N' => 8,  // Aw
-                    'O' => 32, // Waktu & Adjustment
-                    'P' => 20, // Disposisi/ Keterangan
+                    'O' => 26, // Waktu & Adjustment
+                    'P' => 24, // Disposisi/ Keterangan
                 ];
                 foreach ($widths as $col => $w) {
                     $sheet->getColumnDimension($col)->setWidth($w);
@@ -328,14 +328,10 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                     $row = $rows[$i] ?? null;
 
                     if ($row) {
-                        $rawSamp = (string)($row['sampling_ke'] ?? ($i + 1));
-                        $rawVol = (string)($row['vol_tangki'] ?? '');
-                        $rawAdj = (string)($row['waktu_adjustment'] ?? '');
-
-                        $isAwal = (strtolower(trim($rawSamp)) === 'awal' || strtolower(trim($rawVol)) === 'awal');
-                        $displaySamp = $isAwal ? 'Awal' : $rawSamp;
-                        $displayVol = $isAwal ? '' : $rawVol;
-                        $displayAdj = ($isAwal && ($rawAdj === (string)($row['serah_terima_jam'] ?? '') || $rawAdj === '')) ? '-' : $rawAdj;
+                        $displaySamp = (string)($row['sampling_ke'] ?? '');
+                        $displayVol = (string)($row['vol_tangki'] ?? '');
+                        $displayAdj = (string)($row['waktu_adjustment'] ?? '');
+                        $displayDisp = (string)($row['disposisi'] ?? '');
 
                         $rawBuih = (string)($row['buih'] ?? '');
                         if (strtolower(trim($rawBuih)) === 'tidak ada' || strtolower(trim($rawBuih)) === "tidak\nada") {
@@ -357,15 +353,21 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                         $sheet->setCellValueExplicit("M{$dr}", $rawBuih, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("N{$dr}", (string)($row['aw'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("O{$dr}", $displayAdj, DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("P{$dr}", (string)($row['disposisi'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("P{$dr}", $displayDisp, DataType::TYPE_STRING);
                     }
 
-                    $sheet->getRowDimension($dr)->setRowHeight(24);
-                    $sheet->getStyle("A{$dr}:N{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("A{$dr}:P{$dr}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                    $linesO = !empty($displayAdj) ? substr_count($displayAdj, "\n") + 1 : 1;
+                    $linesP = !empty($displayDisp) ? substr_count($displayDisp, "\n") + 1 : 1;
+                    $maxLines = max($linesO, $linesP, 1);
+                    $rowH = $maxLines > 1 ? max(28, $maxLines * 16) : 22;
+
+                    $sheet->getRowDimension($dr)->setRowHeight($rowH);
+                    $sheet->getStyle("A{$dr}:N{$dr}")->getFont()->setSize(8.5);
+                    $sheet->getStyle("O{$dr}:P{$dr}")->getFont()->setSize(8);
+                    $sheet->getStyle("A{$dr}:P{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                     $sheet->getStyle("M{$dr}")->getAlignment()->setWrapText(true);
-                    $sheet->getStyle("O{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-                    $sheet->getStyle("P{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("O{$dr}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("P{$dr}")->getAlignment()->setWrapText(true);
                     $sheet->getStyle("A{$dr}:P{$dr}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
 

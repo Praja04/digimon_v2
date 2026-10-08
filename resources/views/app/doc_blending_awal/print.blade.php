@@ -220,18 +220,14 @@
                 @for($i = 0; $i < $totalRows; $i++)
                     @php
                         $row = $rows[$i] ?? null;
-                        $rawSamp = $row['sampling_ke'] ?? '';
-                        $rawVol = $row['vol_tangki'] ?? '';
-                        $rawAdj = $row['waktu_adjustment'] ?? '';
-
-                        $isAwal = (strtolower(trim((string)$rawSamp)) === 'awal' || strtolower(trim((string)$rawVol)) === 'awal');
-                        $displaySamp = $isAwal ? 'Awal' : ($rawSamp ?: ($row ? ($i + 1) : ''));
-                        $displayVol = $isAwal ? '' : $rawVol;
-                        $displayAdj = ($isAwal && ($rawAdj === ($row['serah_terima_jam'] ?? '') || $rawAdj === '')) ? '-' : $rawAdj;
+                        $displaySamp = $row['sampling_ke'] ?? '';
+                        $displayVol = $row['vol_tangki'] ?? '';
+                        $displayAdj = $row['waktu_adjustment'] ?? '';
+                        $displayDisp = $row['disposisi'] ?? '';
                     @endphp
                     <tr>
-                        <td class="{{ $isAwal ? 'fw-bold' : '' }}">{{ $displaySamp }}</td>
-                        <td>{{ $displayVol }}</td>
+                        <td>{{ $displaySamp }}</td>
+                        <td class="{{ strtolower(trim((string)$displayVol)) === 'awal' ? 'fw-bold' : '' }}">{{ $displayVol }}</td>
                         <td>{{ $row['serah_terima_jam'] ?? '' }}</td>
                         <td>{{ $row['serah_terima_pic'] ?? '' }}</td>
                         <td>{{ $row['bj'] ?? '' }}</td>
@@ -244,8 +240,8 @@
                         <td>{{ $row['warna'] ?? '' }}</td>
                         <td style="line-height: 1.15; white-space: pre-line; font-size: 7.5pt;">{{ (isset($row['buih']) && (strtolower(trim($row['buih'])) === 'tidak ada' || strtolower(trim($row['buih'])) === "tidak\nada")) ? "Tidak\nAda" : ($row['buih'] ?? '') }}</td>
                         <td>{{ $row['aw'] ?? '' }}</td>
-                        <td class="text-start" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayAdj }}</td>
-                        <td class="fw-semibold">{{ $row['disposisi'] ?? '' }}</td>
+                        <td class="text-center" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayAdj }}</td>
+                        <td class="fw-semibold text-center" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayDisp }}</td>
                     </tr>
                 @endfor
             </tbody>
