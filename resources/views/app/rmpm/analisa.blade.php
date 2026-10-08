@@ -1066,6 +1066,14 @@
                         cawan_transactions: resp.cawan_transactions || []
                     };
                     updateGlasswareUsageDisplay();
+
+                    // Live re-sync tare labels and recalculate active rows
+                    if (currentType === 'short-term' && currentJumlah > 0) {
+                        for (let i = 0; i < currentJumlah; i++) {
+                            calculateRowKotoran(i);
+                            calculateRowKa(i);
+                        }
+                    }
                 }
                 if (typeof callback === 'function') callback();
             },
@@ -2459,12 +2467,13 @@
                 }
                 if (rec.no_beaker) {
                     $('select[name="no_beaker[]"]').eq(idx).html(getBeakerOptions(rec.no_beaker)).val(rec.no_beaker);
-                }
-                if (rec.berat_beaker_500 !== null && rec.berat_beaker_500 !== undefined) {
-                    $('input[name="berat_beaker_500[]"]').eq(idx).val(rec.berat_beaker_500);
-                }
-                if (rec.berat_beaker_250 !== null && rec.berat_beaker_250 !== undefined) {
-                    $('input[name="berat_beaker_250[]"]').eq(idx).val(rec.berat_beaker_250);
+                    const phys = getPhysicalNoFromCode(rec.no_beaker);
+                    const t500 = (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) ? glasswareData.beaker_500[phys] : rec.berat_beaker_500;
+                    const t250 = (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) ? glasswareData.beaker_250[phys] : rec.berat_beaker_250;
+                    $('input[name="berat_beaker_500[]"]').eq(idx).val(t500);
+                    $('input[name="berat_beaker_250[]"]').eq(idx).val(t250);
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
                 }
                 if (rec.timbang_a !== null && rec.timbang_a !== undefined) {
                     $('input[name="timbang_a[]"]').eq(idx).val(rec.timbang_a);
@@ -2483,9 +2492,10 @@
                 }
                 if (rec.no_cawan) {
                     $('select[name="no_cawan[]"]').eq(idx).html(getCawanOptions(rec.no_cawan)).val(rec.no_cawan);
-                }
-                if (rec.berat_cawan !== null && rec.berat_cawan !== undefined) {
-                    $('input[name="berat_cawan[]"]').eq(idx).val(rec.berat_cawan);
+                    const phys = getPhysicalNoFromCode(rec.no_cawan);
+                    const tCawan = (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) ? glasswareData.cawan[phys] : rec.berat_cawan;
+                    $('input[name="berat_cawan[]"]').eq(idx).val(tCawan);
+                    $('#tableLembarKa tbody tr').eq(idx).find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
                 }
                 if (rec.timbang_aa !== null && rec.timbang_aa !== undefined) {
                     $('input[name="timbang_aa[]"]').eq(idx).val(rec.timbang_aa);
@@ -3894,13 +3904,36 @@
         const $tabKotoranRow = $('#tableLembarKotoran tbody tr').eq(rowIdx);
         if (!$tabKotoranRow.length) return;
 
-        const tare500Str = $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val();
-        const tare250Str = $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val();
+        const selectedBeaker = $tabKotoranRow.find('.select-no-beaker').val();
+        let t500 = null;
+        let t250 = null;
+
+        if (selectedBeaker) {
+            const phys = getPhysicalNoFromCode(selectedBeaker);
+            if (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) {
+                t500 = parseFloat(glasswareData.beaker_500[phys]);
+                $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val(t500);
+                $tabKotoranRow.find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+            }
+            if (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) {
+                t250 = parseFloat(glasswareData.beaker_250[phys]);
+                $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val(t250);
+                $tabKotoranRow.find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
+            }
+        }
+
+        if (t500 === null || isNaN(t500)) {
+            const tare500Str = $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val();
+            t500 = parseRapidNumericValue(tare500Str);
+        }
+        if (t250 === null || isNaN(t250)) {
+            const tare250Str = $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val();
+            t250 = parseRapidNumericValue(tare250Str);
+        }
+
         const timbangAStr = $tabKotoranRow.find('input[name="timbang_a[]"]').val();
         const timbangBStr = $tabKotoranRow.find('input[name="timbang_b[]"]').val();
 
-        const t500 = parseRapidNumericValue(tare500Str);
-        const t250 = parseRapidNumericValue(tare250Str);
         const a = parseRapidNumericValue(timbangAStr);
         const b = parseRapidNumericValue(timbangBStr);
 
@@ -3957,10 +3990,24 @@
         const $tabKaRow = $('#tableLembarKa tbody tr').eq(rowIdx);
         if (!$tabKaRow.length) return;
 
-        const tareCawanStr = $tabKaRow.find('input[name="berat_cawan[]"]').val();
-        const timbangAaStr = $tabKaRow.find('input[name="timbang_aa[]"]').val();
+        const selectedCawan = $tabKaRow.find('.select-no-cawan').val();
+        let tCawan = null;
 
-        const tCawan = parseRapidNumericValue(tareCawanStr);
+        if (selectedCawan) {
+            const phys = getPhysicalNoFromCode(selectedCawan);
+            if (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) {
+                tCawan = parseFloat(glasswareData.cawan[phys]);
+                $tabKaRow.find('input[name="berat_cawan[]"]').val(tCawan);
+                $tabKaRow.find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
+            }
+        }
+
+        if (tCawan === null || isNaN(tCawan)) {
+            const tareCawanStr = $tabKaRow.find('input[name="berat_cawan[]"]').val();
+            tCawan = parseRapidNumericValue(tareCawanStr);
+        }
+
+        const timbangAaStr = $tabKaRow.find('input[name="timbang_aa[]"]').val();
         const aa = parseRapidNumericValue(timbangAaStr);
 
         const $badge = $tabKaRow.find('.badge-ka-calc');
@@ -5561,7 +5608,7 @@
     function loadFieldsFromDraft(fields) {
         setTimeout(() => {
             for (const [name, value] of Object.entries(fields)) {
-                if (['_token', 'id_identitas', 'jenis', 'analisa_type', 'kategori'].includes(name)) continue;
+                if (['_token', 'id_identitas', 'jenis', 'analisa_type', 'kategori', 'berat_beaker_500[]', 'berat_beaker_250[]', 'berat_cawan[]'].includes(name)) continue;
                 if (name === 'organo[]' && Array.isArray(value)) {
                     $('.organo-cell-container').each(function(i) {
                         if (value[i] !== undefined) {
