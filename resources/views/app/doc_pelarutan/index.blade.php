@@ -139,8 +139,8 @@
 
                     <div class="page-title-right">
                         <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="{{ route('analisa.pelarutan.index') }}">Menu</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('analisa.pelarutan.export.index') }}">Export & Cetak</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('pelarutan-1.menu') }}">Menu</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('pelarutan.export.index') }}">Export & Cetak</a></li>
                             <li class="breadcrumb-item active">Formulir Dokumen</li>
                         </ol>
                     </div>
@@ -174,7 +174,7 @@
                     </div>
 
                     <div class="col-lg-5 col-md-12 text-md-end text-start d-flex flex-wrap gap-2 justify-content-md-end justify-content-start align-items-end">
-                        <a href="{{ route('analisa.pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
                         <button type="button" id="btnSaveDoc" class="btn btn-primary btn-sm">
