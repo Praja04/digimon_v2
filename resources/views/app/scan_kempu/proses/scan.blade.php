@@ -284,7 +284,7 @@
                     </div>
 
                     @if ($card['key'] === 'qc-pre-cuci' || $card['key'] === 'qc-proses')
-                        <div class="alert alert-info py-2 px-3 mb-3 fs-12 d-flex align-items-center gap-2">
+                        <div id="alertPreCuciIncomingInfo" class="alert alert-info py-2 px-3 mb-3 fs-12 d-flex align-items-center gap-2">
                             <i class="ri-information-line fs-16 flex-shrink-0 text-primary"></i>
                             <div><strong>Cek Incoming & Pre Cuci:</strong> Pemeriksaan fisik incoming kempu sekaligus
                                 verifikasi kelayakan pre-cuci sebelum proses <strong>Cuci Kempu</strong> di Produksi.
@@ -877,6 +877,7 @@
 
                 if (isMaxReusedPreCuci) {
                     $('#alertMaxReusedNotice').removeClass('d-none');
+                    $('#alertPreCuciIncomingInfo').addClass('d-none');
                     if ($('#boxNormalButtons').length) $('#boxNormalButtons').addClass('d-none');
                     if ($('#boxForceButtons').length) $('#boxForceButtons').addClass('d-none');
                     if ($('#boxForceControls').length) $('#boxForceControls').addClass('d-none');
@@ -886,6 +887,7 @@
                     if ($('#modalForceTarget').length) $('#modalForceTarget').val('SCRAP');
                 } else {
                     $('#alertMaxReusedNotice').addClass('d-none');
+                    $('#alertPreCuciIncomingInfo').removeClass('d-none');
                     if ($('#boxNormalButtons').length) $('#boxNormalButtons').removeClass('d-none');
                     if ($('#boxForceButtons').length) $('#boxForceButtons').removeClass('d-none');
                     if ($('#boxForceControls').length) $('#boxForceControls').removeClass('d-none');
@@ -907,8 +909,8 @@
                     $('#inputManualReused').val(nextReused);
                     $('#badgeAutoNextReused').text(nextReused + '/21');
 
-                    // Tampilkan hanya jika memiliki wewenang otoritas
-                    if (k.can_manual_reused) {
+                    // Tampilkan hanya jika memiliki wewenang otoritas dan belum batas maksimal
+                    if (k.can_manual_reused && !isMaxReusedPreCuci) {
                         $('#wrapperManualReused').removeClass('d-none');
                     } else {
                         $('#wrapperManualReused').addClass('d-none');
@@ -956,6 +958,14 @@
                 const val = $('#modalForceTarget').val();
                 const isRelease = (val === 'RELEASE' || val === 'RELEASE_PRE_CUCI');
                 const isPreCuci = (currentKempu && currentKempu.qc_stage_context === 'pre_cuci');
+
+                const isMax = (currentKempu && (currentKempu.is_max_reused || (currentKempu.reused_count || 0) >= 21));
+                if (isMax) {
+                    $('#wrapperManualReusedForce').addClass('d-none');
+                    $('#checkManualReusedForce').prop('checked', false);
+                    $('#boxManualReusedInputForce').addClass('d-none');
+                    return;
+                }
 
                 if ($('#modalForceTarget').length && isRelease && isPreCuci && (currentKempu.can_manual_reused !==
                         false)) {
