@@ -197,14 +197,18 @@ class MasterGlasswareController extends Controller
         foreach ($glasswares as $gw) {
             $jenis = strtoupper(trim($gw->jenis_glassware));
             $nomor = (string) $gw->nomor_glassware;
+            $phys = trim(explode('.', (string)$gw->nomor_glassware)[0]);
             $berat = $gw->berat_glassware !== null ? (float) $gw->berat_glassware : 0;
 
             if (str_contains($jenis, '500')) {
                 $beaker500[$nomor] = $berat;
+                if ($phys !== '') $beaker500[$phys] = $berat;
             } elseif (str_contains($jenis, '250')) {
                 $beaker250[$nomor] = $berat;
+                if ($phys !== '') $beaker250[$phys] = $berat;
             } elseif (str_contains($jenis, 'CAWAN')) {
                 $cawan[$nomor] = $berat;
+                if ($phys !== '') $cawan[$phys] = $berat;
             }
         }
 

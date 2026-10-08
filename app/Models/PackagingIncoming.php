@@ -18,6 +18,7 @@ class PackagingIncoming extends Model
         'mid',
         'no_mobil',
         'tanggal_kedatangan',
+        'exp_date',
         'jam_kedatangan',
         'jumlah',
         'jumlah_sampel',
@@ -28,6 +29,7 @@ class PackagingIncoming extends Model
 
     protected $casts = [
         'tanggal_kedatangan' => 'date',
+        'exp_date' => 'date',
         'jumlah' => 'decimal:2',
         'jumlah_sampel' => 'integer',
     ];

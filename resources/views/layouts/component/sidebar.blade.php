@@ -86,6 +86,10 @@
                     'master-asal-bahan.*',
                     'master-glassware.*',
                     'master-standar-rm.*',
+                    'master-warna-rm.*',
+                    'master-aroma-rm.*',
+                    'master-organo-rm.*',
+                    'master-parameter-rm.*',
                 ]);
             @endphp
 
@@ -499,10 +503,10 @@
                             <div id="ScanKempu" class="collapse menu-dropdown {{ $scanKempuActive ? 'show' : '' }}">
                                 <ul class="nav nav-sm flex-column">
                                     <li class="nav-item">
-                                        <a href="{{ route('scan-kempu.dashboard') }}"
-                                            class="nav-link {{ request()->routeIs('scan-kempu.dashboard') || request()->routeIs('scan-kempu.index') ? 'active' : '' }}">
-                                            <i class="mdi mdi-view-dashboard-outline"></i>
-                                            Dashboard
+                                        <a href="{{ route('scan-kempu.report') }}"
+                                            class="nav-link {{ request()->routeIs('scan-kempu.report') || request()->routeIs('scan-kempu.dashboard') || request()->routeIs('scan-kempu.index') ? 'active' : '' }}">
+                                            <i class="mdi mdi-file-chart-outline"></i>
+                                            Report
                                         </a>
                                     </li>
                                     <li class="nav-item">
@@ -596,148 +600,176 @@
                     @endif
 
                     {{-- MASTER DATA PM --}}
-                    <li class="nav-item">
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
+                        <li class="nav-item">
 
-                        <a href="#sidebarMasterDataPm"
-                            class="nav-link menu-link {{ $masterDataPmActive ? 'active' : '' }}"
-                            data-bs-toggle="collapse" role="button"
-                            aria-expanded="{{ $masterDataPmActive ? 'true' : 'false' }}"
-                            aria-controls="sidebarMasterDataPm">
-                            <i class="mdi mdi-package-variant-closed"></i>
+                            <a href="#sidebarMasterDataPm"
+                                class="nav-link menu-link {{ $masterDataPmActive ? 'active' : '' }}"
+                                data-bs-toggle="collapse" role="button"
+                                aria-expanded="{{ $masterDataPmActive ? 'true' : 'false' }}"
+                                aria-controls="sidebarMasterDataPm">
+                                <i class="mdi mdi-package-variant-closed"></i>
 
-                            <span>
-                                Master Data PM
-                            </span>
-                        </a>
+                                <span>
+                                    Master Data PM
+                                </span>
+                            </a>
 
-                        <div id="sidebarMasterDataPm"
-                            class="collapse menu-dropdown {{ $masterDataPmActive ? 'show' : '' }}">
-                            <ul class="nav nav-sm flex-column">
+                            <div id="sidebarMasterDataPm"
+                                class="collapse menu-dropdown {{ $masterDataPmActive ? 'show' : '' }}">
+                                <ul class="nav nav-sm flex-column">
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('jenis-incoming.index') ? route('jenis-incoming.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('jenis-incoming.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-package-variant"></i>
-                                        Jenis Incoming
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('jenis-incoming.index') ? route('jenis-incoming.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('jenis-incoming.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-package-variant"></i>
+                                            Jenis Incoming
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('jenis-material.index') ? route('jenis-material.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('jenis-material.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-layers-outline"></i>
-                                        Jenis Material
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('jenis-material.index') ? route('jenis-material.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('jenis-material.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-layers-outline"></i>
+                                            Jenis Material
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('supplier.index') ? route('supplier.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('supplier.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-truck-delivery-outline"></i>
-                                        Supplier
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('supplier.index') ? route('supplier.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('supplier.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-truck-delivery-outline"></i>
+                                            Supplier
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('sampling-status.index') ? route('sampling-status.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('sampling-status.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-checkbox-marked-circle-outline"></i>
-                                        Status Sampling
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('sampling-status.index') ? route('sampling-status.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('sampling-status.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-checkbox-marked-circle-outline"></i>
+                                            Status Sampling
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('uom.index') ? route('uom.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('uom.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-scale-balance"></i>
-                                        UOM
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('uom.index') ? route('uom.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('uom.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-scale-balance"></i>
+                                            UOM
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('recommendation.index') ? route('recommendation.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('recommendation.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-clipboard-check-outline"></i>
-                                        Rekomendasi
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('recommendation.index') ? route('recommendation.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('recommendation.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-clipboard-check-outline"></i>
+                                            Rekomendasi
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('nonconformity-type.index') ? route('nonconformity-type.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('nonconformity-type.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-alert-circle-outline"></i>
-                                        Jenis Ketidaksesuaian
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('nonconformity-type.index') ? route('nonconformity-type.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('nonconformity-type.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-alert-circle-outline"></i>
+                                            Jenis Ketidaksesuaian
+                                        </a>
+                                    </li>
 
-                            </ul>
-                        </div>
+                                </ul>
+                            </div>
 
-                    </li>
+                        </li>
+                    @endif
 
                     {{-- MASTER DATA RM --}}
-                    <li class="nav-item">
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
+                        <li class="nav-item">
 
-                        <a href="#sidebarMasterDataRm"
-                            class="nav-link menu-link {{ $masterDataRmActive ? 'active' : '' }}"
-                            data-bs-toggle="collapse" role="button"
-                            aria-expanded="{{ $masterDataRmActive ? 'true' : 'false' }}"
-                            aria-controls="sidebarMasterDataRm">
-                            <i class="mdi mdi-beaker-outline"></i>
+                            <a href="#sidebarMasterDataRm"
+                                class="nav-link menu-link {{ $masterDataRmActive ? 'active' : '' }}"
+                                data-bs-toggle="collapse" role="button"
+                                aria-expanded="{{ $masterDataRmActive ? 'true' : 'false' }}"
+                                aria-controls="sidebarMasterDataRm">
+                                <i class="mdi mdi-beaker-outline"></i>
 
-                            <span>
-                                Master Data RM
-                            </span>
-                        </a>
+                                <span>
+                                    Master Data RM
+                                </span>
+                            </a>
 
-                        <div id="sidebarMasterDataRm"
-                            class="collapse menu-dropdown {{ $masterDataRmActive ? 'show' : '' }}">
-                            <ul class="nav nav-sm flex-column">
+                            <div id="sidebarMasterDataRm"
+                                class="collapse menu-dropdown {{ $masterDataRmActive ? 'show' : '' }}">
+                                <ul class="nav nav-sm flex-column">
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('master-jenis-bahan.index') ? route('master-jenis-bahan.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('master-jenis-bahan.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-format-list-bulleted-type"></i>
-                                        Jenis Bahan
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-jenis-bahan.index') ? route('master-jenis-bahan.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-jenis-bahan.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-format-list-bulleted-type"></i>
+                                            Jenis Bahan
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('master-supplier-rm.index') ? route('master-supplier-rm.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('master-supplier-rm.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-factory"></i>
-                                        Supplier / Manufactur
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-supplier-rm.index') ? route('master-supplier-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-supplier-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-factory"></i>
+                                            Supplier / Manufactur
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('master-asal-bahan.index') ? route('master-asal-bahan.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('master-asal-bahan.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-earth"></i>
-                                        Asal Bahan
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-asal-bahan.index') ? route('master-asal-bahan.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-asal-bahan.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-earth"></i>
+                                            Asal Bahan
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('master-glassware.index') ? route('master-glassware.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('master-glassware.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-flask-round-bottom"></i>
-                                        Glassware
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-glassware.index') ? route('master-glassware.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-glassware.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-flask-round-bottom"></i>
+                                            Glassware
+                                        </a>
+                                    </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ Route::has('master-standar-rm.index') ? route('master-standar-rm.index') : '#' }}"
-                                        class="nav-link {{ request()->routeIs('master-standar-rm.*') ? 'active' : '' }}">
-                                        <i class="mdi mdi-clipboard-text-outline"></i>
-                                        Standar Mutu
-                                    </a>
-                                </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-standar-rm.index') ? route('master-standar-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-standar-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-clipboard-text-outline"></i>
+                                            Standar Mutu
+                                        </a>
+                                    </li>
 
-                            </ul>
-                        </div>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-warna-rm.index') ? route('master-warna-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-warna-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-palette-outline"></i>
+                                            Warna
+                                        </a>
+                                    </li>
 
-                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-aroma-rm.index') ? route('master-aroma-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-aroma-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-scent"></i>
+                                            Aroma
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-organo-rm.index') ? route('master-organo-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-organo-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-food-apple-outline"></i>
+                                            Organo (Rasa)
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+
+                        </li>
+                    @endif
 
                 @endif
 

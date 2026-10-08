@@ -174,8 +174,9 @@ class MasterStandarRmController extends Controller
         if ($jenisId) {
             $query->where('id_jenis_bahan', $jenisId);
         } elseif ($jenisName) {
-            $query->whereHas('jenisBahan', function ($q) use ($jenisName) {
-                $q->where('nama', $jenisName);
+            $cleanName = strtoupper(trim($jenisName));
+            $query->whereHas('jenisBahan', function ($q) use ($cleanName) {
+                $q->whereRaw('UPPER(nama) = ?', [$cleanName]);
             });
         }
 

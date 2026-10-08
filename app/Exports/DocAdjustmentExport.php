@@ -3,13 +3,17 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
-class DocAdjustmentExport implements WithEvents, WithTitle
+class DocAdjustmentExport implements WithMultipleSheets
 {
     protected $data;
 
@@ -18,9 +22,66 @@ class DocAdjustmentExport implements WithEvents, WithTitle
         $this->data = $data;
     }
 
+    public function sheets(): array
+    {
+        $sheets = [];
+        $adjustmentSheets = !empty($this->data['adjustment_sheets']) ? $this->data['adjustment_sheets'] : [];
+
+        if (empty($adjustmentSheets)) {
+            // Fallback ke data tunggal jika belum dalam array multi-sheet
+            $adjustmentSheets = [$this->data];
+        }
+
+        $totalPages = count($adjustmentSheets);
+        $usedTitles = [];
+
+        foreach ($adjustmentSheets as $idx => $sheetData) {
+            $sheetNum = $idx + 1;
+            $batchStr = !empty($sheetData['no_batch']) ? $sheetData['no_batch'] : (string)$sheetNum;
+            $baseTitle = "Adj Batch {$batchStr}";
+
+            // Sheet title limit is 31 chars
+            $sheetTitle = substr($baseTitle, 0, 28);
+            if (isset($usedTitles[$sheetTitle])) {
+                $usedTitles[$sheetTitle]++;
+                $sheetTitle = substr($sheetTitle, 0, 25) . '_' . $usedTitles[$sheetTitle];
+            } else {
+                $usedTitles[$sheetTitle] = 1;
+            }
+
+            $sheets[] = new SingleDocAdjustmentSheetExport(
+                $this->data,
+                $sheetData,
+                $sheetNum,
+                $totalPages,
+                $sheetTitle
+            );
+        }
+
+        return $sheets;
+    }
+}
+
+class SingleDocAdjustmentSheetExport implements WithEvents, WithTitle
+{
+    protected $docData;
+    protected $sheetData;
+    protected $pageNumber;
+    protected $totalPages;
+    protected $sheetTitle;
+
+    public function __construct(array $docData, array $sheetData, int $pageNumber, int $totalPages, string $sheetTitle)
+    {
+        $this->docData = $docData;
+        $this->sheetData = $sheetData;
+        $this->pageNumber = $pageNumber;
+        $this->totalPages = $totalPages;
+        $this->sheetTitle = $sheetTitle;
+    }
+
     public function title(): string
     {
-        return 'Form Adjustment';
+        return $this->sheetTitle;
     }
 
     public function registerEvents(): array
@@ -29,16 +90,27 @@ class DocAdjustmentExport implements WithEvents, WithTitle
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
+                // Page setup: Portrait A4, Fit to 1x1 Page
+                $sheet->getPageSetup()->setOrientation(PageSetup::ORIENTATION_PORTRAIT);
+                $sheet->getPageSetup()->setPaperSize(PageSetup::PAPERSIZE_A4);
+                $sheet->getPageSetup()->setFitToPage(true);
+                $sheet->getPageSetup()->setFitToWidth(1);
+                $sheet->getPageSetup()->setFitToHeight(1);
+                $sheet->getPageMargins()->setTop(0.4);
+                $sheet->getPageMargins()->setBottom(0.4);
+                $sheet->getPageMargins()->setLeft(0.4);
+                $sheet->getPageMargins()->setRight(0.4);
+
                 // Set default font
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Arial');
                 $sheet->getParent()->getDefaultStyle()->getFont()->setSize(9);
 
-                // 16 Kolom (A s/d P) dengan proporsi rapih & lapang
+                // Setup 16 Kolom (A s/d P)
                 $widths = [
                     'A' => 12, // Bahan / Keterangan part 1
                     'B' => 10, // Bahan / Keterangan part 2
                     'C' => 10, // Bahan / Keterangan part 3
-                    'D' => 12, // Bahan / Keterangan part 4 -> Total A..D = 44 (Sangat lapang untuk Logo BAS & Teks Bahan)
+                    'D' => 12, // Bahan / Keterangan part 4 -> Total A..D = 44
                     'E' => 8,  // Adj 1 part 1
                     'F' => 8,  // Adj 1 part 2
                     'G' => 8,  // Adj 1 part 3 -> Total E..G = 24 (ADJUSMENT 1)
@@ -48,9 +120,9 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                     'K' => 8,  // Adj 3 part 1
                     'L' => 8,  // Adj 3 part 2
                     'M' => 9,  // Adj 3 part 3 / Tanggal Record Doc label part 1
-                    'N' => 9,  // Disposisi part 1 / Tanggal Record Doc label part 2 -> Total M..N = 18
+                    'N' => 9,  // Disposisi part 1 / Tanggal Record Doc label part 2
                     'O' => 10, // Disposisi part 2 / Tanggal Record Doc value part 1
-                    'P' => 14, // Disposisi part 3 / Tanggal Record Doc value part 2 -> Total O..P = 24
+                    'P' => 14, // Disposisi part 3 / Tanggal Record Doc value part 2
                 ];
                 foreach ($widths as $col => $w) {
                     $sheet->getColumnDimension($col)->setWidth($w);
@@ -59,13 +131,13 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 // ==========================================
                 // 1. HEADER DOKUMEN RESMI (Rows 1-4)
                 // ==========================================
-                // Logo BAS (A1:D4 - Total Lebar 44 -> Logo 180px memiliki ruang 320px, SANGAT LAPANG tanpa terpotong garis)
+                // Logo BAS (A1:D4)
                 $sheet->mergeCells('A1:D4');
                 $sheet->getStyle('A1:D4')->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
 
                 $logoPath = public_path('assets/images/logo-bas.png');
                 if (file_exists($logoPath)) {
-                    $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                    $drawing = new Drawing();
                     $drawing->setName('Logo BAS');
                     $drawing->setDescription('Logo BAS PT. Bumi Alam Segar');
                     $drawing->setPath($logoPath);
@@ -80,32 +152,32 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                     $sheet->getStyle('A1')->getFont()->setSize(10)->setBold(true);
                 }
 
-                // Judul Dokumen (E1:L4 - Total Lebar 64)
+                // Judul Dokumen (E1:L4)
                 $sheet->mergeCells('E1:L4');
                 $sheet->setCellValue('E1', "FORM ADJUSTMENT");
                 $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(12);
                 $sheet->getStyle('E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getStyle('E1:L4')->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
 
-                // Kotak Record Doc & Halaman (M1:P4)
-                // Label M1:N2 (Lebar 18) & Nilai O1:P2 (Lebar 24) -> Lapang & tidak terpotong
+                // Tanggal Record Doc & Halaman (M1:P4)
                 $sheet->mergeCells('M1:N2');
                 $sheet->setCellValue('M1', "Tanggal Record Doc");
                 $sheet->getStyle('M1')->getFont()->setBold(true)->setSize(8.5);
                 $sheet->getStyle('M1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
                 $sheet->mergeCells('O1:P2');
-                $sheet->setCellValueExplicit('O1', ": " . ($this->data['tanggal_record_doc'] ?? date('Y-m-d')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('O1', ": " . ($this->docData['tanggal_record_doc'] ?? date('Y-m-d')), DataType::TYPE_STRING);
                 $sheet->getStyle('O1')->getFont()->setSize(8.5);
                 $sheet->getStyle('O1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
+                $pageStr = $this->pageNumber . ' / ' . $this->totalPages;
                 $sheet->mergeCells('M3:N4');
                 $sheet->setCellValue('M3', "Halaman");
                 $sheet->getStyle('M3')->getFont()->setBold(true)->setSize(8.5);
                 $sheet->getStyle('M3')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
                 $sheet->mergeCells('O3:P4');
-                $sheet->setCellValueExplicit('O3', ": " . ($this->data['halaman'] ?? '1'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('O3', ": " . $pageStr, DataType::TYPE_STRING);
                 $sheet->getStyle('O3')->getFont()->setSize(8.5);
                 $sheet->getStyle('O3')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
@@ -116,7 +188,7 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 for ($r = 1; $r <= 4; $r++) {
                     $sheet->getRowDimension($r)->setRowHeight(16);
                 }
-                $sheet->getRowDimension(5)->setRowHeight(10);
+                $sheet->getRowDimension(5)->setRowHeight(8);
 
                 // ==========================================
                 // 2. METADATA INFORMASI (Rows 6-8)
@@ -127,14 +199,14 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 $sheet->getStyle('A6')->getFont()->setBold(true);
                 $sheet->setCellValue('C6', ":");
                 $sheet->mergeCells('D6:G6');
-                $sheet->setCellValueExplicit('D6', (string)($this->data['proses'] ?? 'Blending'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('D6', (string)($this->sheetData['proses'] ?? 'Blending'), DataType::TYPE_STRING);
 
                 $sheet->mergeCells('H6:J6');
                 $sheet->setCellValue('H6', "Jenis Kecap");
                 $sheet->getStyle('H6')->getFont()->setBold(true);
                 $sheet->setCellValue('K6', ":");
                 $sheet->mergeCells('L6:P6');
-                $sheet->setCellValueExplicit('L6', (string)($this->data['jenis_kecap'] ?? ($this->data['variant'] ?? '-')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('L6', (string)($this->sheetData['jenis_kecap'] ?? ($this->docData['variant'] ?? '-')), DataType::TYPE_STRING);
 
                 // Baris 7: No. Batch & Tanggal Produksi
                 $sheet->mergeCells('A7:B7');
@@ -142,14 +214,14 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 $sheet->getStyle('A7')->getFont()->setBold(true);
                 $sheet->setCellValue('C7', ":");
                 $sheet->mergeCells('D7:G7');
-                $sheet->setCellValueExplicit('D7', (string)($this->data['no_batch'] ?? ($this->data['batch_range'] ?? '-')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('D7', (string)($this->sheetData['no_batch'] ?? '-'), DataType::TYPE_STRING);
 
                 $sheet->mergeCells('H7:J7');
                 $sheet->setCellValue('H7', "Tanggal Produksi");
                 $sheet->getStyle('H7')->getFont()->setBold(true);
                 $sheet->setCellValue('K7', ":");
                 $sheet->mergeCells('L7:P7');
-                $sheet->setCellValueExplicit('L7', (string)($this->data['tanggal_produksi'] ?? ($this->data['tanggal_record_doc'] ?? '-')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('L7', (string)($this->sheetData['tanggal_produksi'] ?? ($this->docData['tanggal_record_doc'] ?? '-')), DataType::TYPE_STRING);
 
                 // Baris 8: Volume Batch & Shift
                 $sheet->mergeCells('A8:B8');
@@ -157,14 +229,14 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 $sheet->getStyle('A8')->getFont()->setBold(true);
                 $sheet->setCellValue('C8', ":");
                 $sheet->mergeCells('D8:G8');
-                $sheet->setCellValueExplicit('D8', (string)($this->data['volume_batch'] ?? '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('D8', (string)($this->sheetData['volume_batch'] ?? '-'), DataType::TYPE_STRING);
 
                 $sheet->mergeCells('H8:J8');
                 $sheet->setCellValue('H8', "Shift");
                 $sheet->getStyle('H8')->getFont()->setBold(true);
                 $sheet->setCellValue('K8', ":");
                 $sheet->mergeCells('L8:P8');
-                $sheet->setCellValueExplicit('L8', (string)($this->data['shift'] ?? '1'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit('L8', (string)($this->sheetData['shift'] ?? '1'), DataType::TYPE_STRING);
 
                 for ($r = 6; $r <= 8; $r++) {
                     $sheet->getRowDimension($r)->setRowHeight(18);
@@ -175,16 +247,15 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                     $sheet->getStyle("K{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                     $sheet->getStyle("L{$r}:P{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER);
                 }
-                $sheet->getRowDimension(9)->setRowHeight(10);
+                $sheet->getRowDimension(9)->setRowHeight(8);
 
                 // Garis Batas Kiri & Kanan Metadata
                 $sheet->getStyle("A5:A9")->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
                 $sheet->getStyle("P5:P9")->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
 
                 // ==========================================
-                // 3. TABEL UTAMA BAHAN & ADJUSTMENT (Rows 10-19)
+                // 3. TABEL UTAMA BAHAN & ADJUSTMENT (Rows 10-17)
                 // ==========================================
-                // Table Header (Row 10)
                 $sheet->mergeCells('A10:D10');
                 $sheet->setCellValue('A10', 'BAHAN');
 
@@ -200,13 +271,13 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 $sheet->mergeCells('N10:P10');
                 $sheet->setCellValue('N10', 'DISPOSISI');
 
-                $sheet->getRowDimension(10)->setRowHeight(24);
+                $sheet->getRowDimension(10)->setRowHeight(22);
                 $sheet->getStyle('A10:P10')->getFont()->setBold(true)->setSize(9);
                 $sheet->getStyle('A10:P10')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getStyle('A10:P10')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF2F2F2');
                 $sheet->getStyle('A10:P10')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // Default standard bahan list
+                // 7 Standar Bahan Resmi
                 $defaultBahans = [
                     'Gula Kelapa',
                     'Gula Tebu',
@@ -215,20 +286,22 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                     'Air',
                     'Garam Halus',
                     'Karamel (Jenis)',
-                    '',
-                    '',
                 ];
 
-                $bahanRows = !empty($this->data['bahan_rows']) ? $this->data['bahan_rows'] : [];
-                $totalBahanRows = max(count($defaultBahans), count($bahanRows));
+                $bahanRows = !empty($this->sheetData['bahan_rows']) ? $this->sheetData['bahan_rows'] : [];
+                $bahanMap = [];
+                foreach ($bahanRows as $b) {
+                    if (!empty($b['bahan'])) {
+                        $bahanMap[$b['bahan']] = $b;
+                    }
+                }
 
                 $startRow = 11;
-                $endRow = $startRow + $totalBahanRows - 1;
+                $endRow = $startRow + count($defaultBahans) - 1; // 17
 
-                for ($i = 0; $i < $totalBahanRows; $i++) {
+                foreach ($defaultBahans as $i => $bName) {
                     $r = $startRow + $i;
-                    $bData = $bahanRows[$i] ?? [];
-                    $bName = $bData['bahan'] ?? ($defaultBahans[$i] ?? '');
+                    $bData = $bahanMap[$bName] ?? ($bahanRows[$i] ?? []);
                     $adj1 = $bData['adj1'] ?? '';
                     $adj2 = $bData['adj2'] ?? '';
                     $adj3 = $bData['adj3'] ?? '';
@@ -242,67 +315,68 @@ class DocAdjustmentExport implements WithEvents, WithTitle
 
                     // Adj 1 (E..G)
                     $sheet->mergeCells("E{$r}:G{$r}");
-                    $sheet->setCellValue("E{$r}", $adj1);
+                    $sheet->setCellValueExplicit("E{$r}", (string)$adj1, DataType::TYPE_STRING);
                     $sheet->getStyle("E{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                     // Adj 2 (H..J)
                     $sheet->mergeCells("H{$r}:J{$r}");
-                    $sheet->setCellValue("H{$r}", $adj2);
+                    $sheet->setCellValueExplicit("H{$r}", (string)$adj2, DataType::TYPE_STRING);
                     $sheet->getStyle("H{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                     // Adj 3 (K..M)
                     $sheet->mergeCells("K{$r}:M{$r}");
-                    $sheet->setCellValue("K{$r}", $adj3);
+                    $sheet->setCellValueExplicit("K{$r}", (string)$adj3, DataType::TYPE_STRING);
                     $sheet->getStyle("K{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
 
                     $sheet->getStyle("A{$r}:M{$r}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
 
-                // Kotak DISPOSISI (Merged N11:P{$endRow} - 1 Kotak Utuh di samping tabel)
+                // Kotak DISPOSISI (Merged N11:P17)
                 $sheet->mergeCells("N{$startRow}:P{$endRow}");
-                $sheet->setCellValue("N{$startRow}", $this->data['disposisi'] ?? '');
+                $sheet->setCellValue("N{$startRow}", (string)($this->sheetData['disposisi'] ?? 'Release'));
                 $sheet->getStyle("N{$startRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+                $sheet->getStyle("N{$startRow}")->getFont()->setBold(true);
                 $sheet->getStyle("N{$startRow}:P{$endRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
                 // ==========================================
-                // 4. KETERANGAN & TANDA TANGAN (Rows 20-25)
+                // 4. KETERANGAN & TANDA TANGAN (Rows 18-23)
                 // ==========================================
-                $kStart = $endRow + 1;
-                $kStatusRow = $kStart + 1;
-                $kSignHeaderRow = $kStart + 2;
-                $kSignSpace1 = $kStart + 3;
-                $kSignSpace2 = $kStart + 4;
-                $kNameRow = $kStart + 5;
+                $kStart = 18;
+                $kStatusRow = 19;
+                $kSignHeaderRow = 20;
+                $kSignSpace1 = 21;
+                $kSignSpace2 = 22;
+                $kNameRow = 23;
 
-                // Kotak KETERANGAN di Kiri (Merged A{$kStart}:D{$kNameRow})
+                // Kotak KETERANGAN di Kiri (Merged A18:D23)
                 $sheet->mergeCells("A{$kStart}:D{$kNameRow}");
-                $sheet->setCellValue("A{$kStart}", "Keterangan :\n" . ($this->data['keterangan'] ?? ''));
+                $sheet->setCellValue("A{$kStart}", "Keterangan :\n" . ($this->sheetData['keterangan'] ?? ''));
                 $sheet->getStyle("A{$kStart}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true)->setIndent(1);
                 $sheet->getStyle("A{$kStart}:D{$kNameRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 1. Baris Jam
+                // 1. Baris Jam (Row 18)
                 $sheet->getRowDimension($kStart)->setRowHeight(18);
                 $sheet->mergeCells("E{$kStart}:G{$kStart}");
-                $sheet->setCellValue("E{$kStart}", "Jam : " . ($this->data['adj1_jam'] ?? ''));
+                $sheet->setCellValue("E{$kStart}", "Jam : " . ($this->sheetData['adj1_jam'] ?? ''));
                 $sheet->mergeCells("H{$kStart}:J{$kStart}");
-                $sheet->setCellValue("H{$kStart}", "Jam : " . ($this->data['adj2_jam'] ?? ''));
+                $sheet->setCellValue("H{$kStart}", "Jam : " . ($this->sheetData['adj2_jam'] ?? ''));
                 $sheet->mergeCells("K{$kStart}:M{$kStart}");
-                $sheet->setCellValue("K{$kStart}", "Jam : " . ($this->data['adj3_jam'] ?? ''));
+                $sheet->setCellValue("K{$kStart}", "Jam : " . ($this->sheetData['adj3_jam'] ?? ''));
                 $sheet->getStyle("E{$kStart}:M{$kStart}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);
                 $sheet->getStyle("E{$kStart}:M{$kStart}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 2. Baris Status
+                // 2. Baris Status (Row 19)
                 $sheet->getRowDimension($kStatusRow)->setRowHeight(18);
                 $sheet->mergeCells("E{$kStatusRow}:G{$kStatusRow}");
-                $sheet->setCellValue("E{$kStatusRow}", "Status : " . ($this->data['adj1_status'] ?? 'Sudah dilakukan/belum'));
+                $sheet->setCellValue("E{$kStatusRow}", "Status : " . ($this->sheetData['adj1_status'] ?? 'Sudah dilakukan/belum'));
                 $sheet->mergeCells("H{$kStatusRow}:J{$kStatusRow}");
-                $sheet->setCellValue("H{$kStatusRow}", "Status : " . ($this->data['adj2_status'] ?? 'Sudah dilakukan/belum'));
+                $sheet->setCellValue("H{$kStatusRow}", "Status : " . ($this->sheetData['adj2_status'] ?? 'Sudah dilakukan/belum'));
                 $sheet->mergeCells("K{$kStatusRow}:M{$kStatusRow}");
-                $sheet->setCellValue("K{$kStatusRow}", "Status : " . ($this->data['adj3_status'] ?? 'Sudah dilakukan/belum'));
+                $sheet->setCellValue("K{$kStatusRow}", "Status : " . ($this->sheetData['adj3_status'] ?? 'Sudah dilakukan/belum'));
                 $sheet->getStyle("E{$kStatusRow}:M{$kStatusRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);
                 $sheet->getStyle("E{$kStatusRow}:M{$kStatusRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 3. Baris Header Tanda Tangan
+                // 3. Baris Header Tanda Tangan (Row 20)
                 $sheet->getRowDimension($kSignHeaderRow)->setRowHeight(18);
                 $sheet->mergeCells("E{$kSignHeaderRow}:G{$kSignHeaderRow}");
                 $sheet->setCellValue("E{$kSignHeaderRow}", "Tanda Tangan,");
@@ -310,7 +384,7 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 $sheet->setCellValue("H{$kSignHeaderRow}", "Tanda Tangan,");
                 $sheet->mergeCells("K{$kSignHeaderRow}:M{$kSignHeaderRow}");
                 $sheet->setCellValue("K{$kSignHeaderRow}", "Tanda Tangan,");
-                
+
                 $sheet->mergeCells("N{$kStart}:P{$kSignHeaderRow}");
                 $sheet->setCellValue("N{$kStart}", "Tanda Tangan,");
                 $sheet->getStyle("E{$kSignHeaderRow}:M{$kSignHeaderRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
@@ -318,21 +392,21 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 $sheet->getStyle("E{$kSignHeaderRow}:M{$kSignHeaderRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 $sheet->getStyle("N{$kStart}:P{$kSignHeaderRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 4. Space Tanda Tangan
-                $sheet->getRowDimension($kSignSpace1)->setRowHeight(18);
-                $sheet->getRowDimension($kSignSpace2)->setRowHeight(18);
+                // 4. Space Tanda Tangan (Rows 21-22)
+                $sheet->getRowDimension($kSignSpace1)->setRowHeight(16);
+                $sheet->getRowDimension($kSignSpace2)->setRowHeight(16);
                 $sheet->mergeCells("E{$kSignSpace1}:G{$kSignSpace2}");
                 $sheet->mergeCells("H{$kSignSpace1}:J{$kSignSpace2}");
                 $sheet->mergeCells("K{$kSignSpace1}:M{$kSignSpace2}");
                 $sheet->mergeCells("N{$kSignSpace1}:P{$kSignSpace2}");
                 $sheet->getStyle("E{$kSignSpace1}:P{$kSignSpace2}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 5. Nama & Jabatan Tanda Tangan
-                $sheet->getRowDimension($kNameRow)->setRowHeight(20);
-                $petugas1 = !empty($this->data['adj1_petugas']) ? $this->data['adj1_petugas'] : 'Petugas Produksi';
-                $petugas2 = !empty($this->data['adj2_petugas']) ? $this->data['adj2_petugas'] : 'Petugas Produksi';
-                $petugas3 = !empty($this->data['adj3_petugas']) ? $this->data['adj3_petugas'] : 'Petugas Produksi';
-                $analisQc = !empty($this->data['qc_analis']) ? $this->data['qc_analis'] : 'Analis QC';
+                // 5. Nama Tanda Tangan (Row 23)
+                $sheet->getRowDimension($kNameRow)->setRowHeight(18);
+                $petugas1 = !empty($this->sheetData['adj1_petugas']) ? $this->sheetData['adj1_petugas'] : 'Petugas Produksi';
+                $petugas2 = !empty($this->sheetData['adj2_petugas']) ? $this->sheetData['adj2_petugas'] : 'Petugas Produksi';
+                $petugas3 = !empty($this->sheetData['adj3_petugas']) ? $this->sheetData['adj3_petugas'] : 'Petugas Produksi';
+                $analisQc = !empty($this->sheetData['qc_analis']) ? $this->sheetData['qc_analis'] : (!empty($this->docData['qc_analis']) ? $this->docData['qc_analis'] : 'Analis QC');
 
                 $sheet->mergeCells("E{$kNameRow}:G{$kNameRow}");
                 $sheet->setCellValue("E{$kNameRow}", "( {$petugas1} )");
@@ -352,11 +426,12 @@ class DocAdjustmentExport implements WithEvents, WithTitle
                 // ==========================================
                 // 5. KODE DOKUMEN RESMI (FRM/QLB/04/104/011-00)
                 // ==========================================
-                $docCodeRow = $kNameRow + 1;
+                $docCodeRow = $kNameRow + 1; // 24
                 $sheet->mergeCells("N{$docCodeRow}:P{$docCodeRow}");
                 $sheet->setCellValue("N{$docCodeRow}", 'FRM/QLB/04/104/011-00');
                 $sheet->getStyle("N{$docCodeRow}")->getFont()->setSize(8)->setItalic(true);
                 $sheet->getStyle("N{$docCodeRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getRowDimension($docCodeRow)->setRowHeight(16);
 
                 // Master Left & Right Border (No gaps/bolong)
                 $sheet->getStyle("A1:A{$docCodeRow}")->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);

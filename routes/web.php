@@ -7,10 +7,14 @@ use App\Http\Controllers\IncomingController;
 use App\Http\Controllers\JenisIncomingController;
 use App\Http\Controllers\JenisMaterialController;
 use App\Http\Controllers\MasterAsalBahanController;
+use App\Http\Controllers\MasterAromaRmController;
 use App\Http\Controllers\MasterGlasswareController;
 use App\Http\Controllers\MasterJenisBahanController;
+use App\Http\Controllers\MasterOrganoRmController;
+use App\Http\Controllers\MasterParameterRmController;
 use App\Http\Controllers\MasterStandarRmController;
 use App\Http\Controllers\MasterSupplierRmController;
+use App\Http\Controllers\MasterWarnaRmController;
 use App\Http\Controllers\NonconformityTypeController;
 use App\Http\Controllers\PackagingIncomingController;
 use App\Http\Controllers\PackagingInnerOuterController;
@@ -45,6 +49,11 @@ Auth::routes();
 
 // Timbangan Retail Mesin Ranking (TV Mode - Public/Stateless)
 Route::get('/dashboard/timbangan-retail/mesin-ranking', [App\Http\Controllers\Dashboard\TimbanganRetailController::class, 'mesinRanking'])->name('dashboard.timbangan-retail.mesin-ranking');
+
+// CSRF Token Refresh / Keep-Alive Endpoint
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.token');
 
 /*------------------------------------------
 --------------------------------------------
@@ -478,6 +487,11 @@ Route::middleware(['auth'])->group(function () {
             '/analisa/rmpm/garam-gula',
             [App\Http\Controllers\RMPMController::class, 'storeGaramGula']
         )->name('rmpm.store.garam-gula');
+
+        Route::post(
+            '/analisa/rmpm/{id}/reset-draft',
+            [App\Http\Controllers\RMPMController::class, 'resetDraft']
+        )->name('rmpm.analisa.reset-draft');
 
         /*
     |--------------------------------------------------------------------------
@@ -953,8 +967,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Scan Kempu
     Route::prefix('scan-kempu')->name('scan-kempu.')->middleware(['auth'])->group(function () {
-        Route::get('/dashboard', [ScanKempuController::class, 'dashboard'])->name('dashboard');
-        Route::get('/', [ScanKempuController::class, 'dashboard'])->name('index');
+        Route::get('/report', [ScanKempuController::class, 'report'])->name('report');
+        Route::get('/dashboard', fn() => redirect()->route('scan-kempu.report'))->name('dashboard');
+        Route::get('/', [ScanKempuController::class, 'report'])->name('index');
 
         // QC PM
         Route::prefix('pm')->name('pm.')->group(function () {
@@ -968,6 +983,11 @@ Route::middleware(['auth'])->group(function () {
         // Scanner Biasa
         Route::get('/scan/{type}', [ScanKempuController::class, 'scan'])->name('scan');
 
+        // Report API Proxy
+        Route::get('/report/data', [ScanKempuController::class, 'reportData'])->name('report.data');
+        Route::get('/report/stats', [ScanKempuController::class, 'reportStats'])->name('report.stats');
+        Route::get('/report/export', [ScanKempuController::class, 'reportExport'])->name('report.export');
+
         // Traceability & Stats Data
         Route::get('/traceability/data', [ScanKempuController::class, 'traceabilityData'])->name('traceability.data');
         Route::get('/traceability/history/{id}', [ScanKempuController::class, 'traceabilityHistory'])->name('traceability.history');
@@ -976,80 +996,133 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Master Data RM (Raw Material)
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
     --------------------------------------------*/
-    Route::resource(
-        'master-data-rm/jenis-bahan',
-        MasterJenisBahanController::class
-    )->names('master-jenis-bahan')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+    Route::middleware([
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+    ])->group(function (): void {
+        Route::resource(
+            'master-data-rm/jenis-bahan',
+            MasterJenisBahanController::class
+        )->names('master-jenis-bahan')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-    Route::get(
-        'master-data-rm/supplier/get-all-active',
-        [MasterSupplierRmController::class, 'getAllActive']
-    )->name('master-supplier-rm.get-all-active');
+        Route::get(
+            'master-data-rm/supplier/get-all-active',
+            [MasterSupplierRmController::class, 'getAllActive']
+        )->name('master-supplier-rm.get-all-active');
 
-    Route::get(
-        'master-data-rm/supplier/get-by-jenis-bahan/{jenisBahanId}',
-        [MasterSupplierRmController::class, 'getByJenisBahan']
-    )->name('master-supplier-rm.get-by-jenis-bahan');
+        Route::get(
+            'master-data-rm/supplier/get-by-jenis-bahan/{jenisBahanId}',
+            [MasterSupplierRmController::class, 'getByJenisBahan']
+        )->name('master-supplier-rm.get-by-jenis-bahan');
 
-    Route::resource(
-        'master-data-rm/supplier',
-        MasterSupplierRmController::class
-    )->names('master-supplier-rm')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::resource(
+            'master-data-rm/supplier',
+            MasterSupplierRmController::class
+        )->names('master-supplier-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-    Route::get(
-        'master-data-rm/asal-bahan/get-by-supplier/{supplierId}',
-        [MasterAsalBahanController::class, 'getBySupplier']
-    )->name('master-asal-bahan.get-by-supplier');
+        Route::get(
+            'master-data-rm/asal-bahan/get-all-active',
+            [MasterAsalBahanController::class, 'getAllActive']
+        )->name('master-asal-bahan.get-all-active');
 
-    Route::resource(
-        'master-data-rm/asal-bahan',
-        MasterAsalBahanController::class
-    )->names('master-asal-bahan')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::get(
+            'master-data-rm/asal-bahan/get-by-jenis-bahan/{jenisBahanId}',
+            [MasterAsalBahanController::class, 'getByJenisBahan']
+        )->name('master-asal-bahan.get-by-jenis-bahan');
 
-    Route::get(
-        'master-data-rm/glassware/active-data',
-        [MasterGlasswareController::class, 'getActiveData']
-    )->name('master-glassware.active-data');
+        Route::get(
+            'master-data-rm/asal-bahan/get-by-supplier/{supplierId}',
+            [MasterAsalBahanController::class, 'getBySupplier']
+        )->name('master-asal-bahan.get-by-supplier');
 
-    Route::resource(
-        'master-data-rm/glassware',
-        MasterGlasswareController::class
-    )->names('master-glassware')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::resource(
+            'master-data-rm/asal-bahan',
+            MasterAsalBahanController::class
+        )->names('master-asal-bahan')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
 
-    Route::get(
-        'master-data-rm/standar/get-by-jenis',
-        [MasterStandarRmController::class, 'getActiveByJenis']
-    )->name('master-standar-rm.get-by-jenis');
+        Route::get(
+            'master-data-rm/glassware/active-data',
+            [MasterGlasswareController::class, 'getActiveData']
+        )->name('master-glassware.active-data');
 
-    Route::resource(
-        'master-data-rm/standar',
-        MasterStandarRmController::class
-    )->names('master-standar-rm')->only([
-        'index',
-        'store',
-        'edit',
-        'destroy',
-    ]);
+        Route::resource(
+            'master-data-rm/glassware',
+            MasterGlasswareController::class
+        )->names('master-glassware')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::get(
+            'master-data-rm/standar/get-by-jenis',
+            [MasterStandarRmController::class, 'getActiveByJenis']
+        )->name('master-standar-rm.get-by-jenis');
+
+        Route::resource(
+            'master-data-rm/standar',
+            MasterStandarRmController::class
+        )->names('master-standar-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::get('master-data-rm/parameter', function () {
+            return redirect()->route('master-warna-rm.index');
+        })->name('master-parameter-rm.index');
+
+        Route::get(
+            'master-data-rm/parameter/active-options',
+            [MasterParameterRmController::class, 'getActiveOptions']
+        )->name('master-parameter-rm.active-options');
+
+        Route::resource(
+            'master-data-rm/warna',
+            MasterWarnaRmController::class
+        )->names('master-warna-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'master-data-rm/aroma',
+            MasterAromaRmController::class
+        )->names('master-aroma-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::resource(
+            'master-data-rm/organo',
+            MasterOrganoRmController::class
+        )->names('master-organo-rm')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+    });
 });
-

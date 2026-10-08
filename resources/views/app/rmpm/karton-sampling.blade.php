@@ -315,9 +315,20 @@
                         Informasi Sampel
                     </div>
 
+                    @php
+                        $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
+                        $defaultKartonExpDate = $sampling?->exp_date 
+                            ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
+                            : ($packagingIncoming->exp_date 
+                                ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d') 
+                                : ($packagingIncoming->tanggal_kedatangan 
+                                    ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addYear()->format('Y-m-d') 
+                                    : ''));
+                    @endphp
+
                     <div class="row g-3 mb-4">
 
-                        <div class="col-xl-6 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label
                                 for="jumlah_sampel"
                                 class="form-label"
@@ -342,7 +353,7 @@
                             </small>
                         </div>
 
-                        <div class="col-xl-6 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label
                                 for="no_batch"
                                 class="form-label"
@@ -361,8 +372,28 @@
                                     'no_batch',
                                     $sampling?->no_batch
                                 ) }}"
+                                placeholder="Masukkan nomor batch"
                             >
                         </div>
+
+                        <div class="col-xl-4 col-md-6">
+                            <label
+                                for="exp_date"
+                                class="form-label"
+                            >
+                                Expired Date
+                            </label>
+
+                            <input
+                                type="date"
+                                name="exp_date"
+                                id="exp_date"
+                                class="form-control @if(!$isForeman) bg-light @endif"
+                                value="{{ old('exp_date', $defaultKartonExpDate) }}"
+                                @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif
+                            >
+                        </div>
+
                     </div>
 
                     <div class="section-title mt-4">

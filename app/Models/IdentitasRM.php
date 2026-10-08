@@ -69,7 +69,8 @@ class IdentitasRM extends Model
 
     public function isSamplingComplete()
     {
-        if ($this->jenis === 'Garam') {
+        $jenisUpper = strtoupper(trim($this->jenis ?? ''));
+        if ($jenisUpper === 'GARAM') {
             return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan;
         } else {
             return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan && $this->samplingFisikRaw;

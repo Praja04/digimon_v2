@@ -44,12 +44,17 @@
             <!-- Cards Grid: 2 Cards (QC Pre Cuci & QC After Filling) -->
             <div class="row g-4 justify-content-center mb-4">
                 @foreach ($cards as $key => $card)
+                    {{-- Otoritas Force Scan: Operator tidak boleh, selain itu boleh --}}
+                    @if (in_array($key, ['qc-force', 'prod-force']) && strtolower(trim(auth()->user()->role ?? '')) === 'operator')
+                        @continue
+                    @endif
+
                     @php
                         $themeColor = $card['badge_color'] ?? 'primary';
                     @endphp
                     <div class="col-xl-4 col-lg-5 col-md-6 col-sm-10">
                         <a href="{{ $card['route'] }}"
-                            class="card card-animate text-decoration-none shadow-sm h-100 rounded border-top border-3 border-{{ $themeColor }}">
+                            class="card card-animate text-decoration-none shadow-sm h-100 rounded border-top border-3 border-{{ $themeColor }} {{ in_array($key, ['qc-force', 'prod-force']) ? 'border border-danger border-2' : '' }}">
                             <div
                                 class="card-body p-4 text-center d-flex flex-column align-items-center justify-content-between">
                                 <div>

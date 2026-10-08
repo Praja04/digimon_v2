@@ -106,23 +106,23 @@
                     <div class="section-title"><i class="mdi mdi-information-outline"></i> Identitas Incoming</div>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label">Nomor SPB</label>
                             <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->no_spb ?? '-' }}" readonly>
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label">Nama Supplier</label>
                             <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->supplier?->nama ?? $packagingIncoming->supplier?->nama_supplier ?? '-' }}" readonly>
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label">Nomor Mobil</label>
                             <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->no_mobil ?? '-' }}" readonly>
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label">Nama Item</label>
                             <input type="text" class="form-control bg-light" value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}" readonly>
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label">Qty</label>
                             <input
                                 type="number"
@@ -137,7 +137,7 @@
                                 Qty mengikuti Quantity Incoming dari Incoming PM dan tidak perlu diisi ulang.
                             </small>
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label">UOM</label>
                             <input
                                 type="text"
@@ -148,7 +148,23 @@
                                 readonly
                             >
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                    </div>
+
+                    <div class="section-title"><i class="mdi mdi-flask-outline"></i> Informasi Sampel</div>
+
+                    @php
+                        $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
+                        $defaultPouchExpDate = $sampling?->exp_date 
+                            ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
+                            : ($packagingIncoming->exp_date 
+                                ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d') 
+                                : ($packagingIncoming->tanggal_kedatangan 
+                                    ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addMonths(6)->format('Y-m-d') 
+                                    : ''));
+                    @endphp
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-xl-4 col-md-6">
                             <label for="jumlah_sampel" class="form-label">Jumlah Sampel</label>
                             <input
                                 type="number"
@@ -165,7 +181,7 @@
                                 Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
                             </small>
                         </div>
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-6">
                             <label for="no_batch" class="form-label">Nomor Batch</label>
                             <input
                                 type="text"
@@ -174,6 +190,17 @@
                                 class="form-control"
                                 value="{{ old('no_batch', $sampling?->no_batch) }}"
                                 placeholder="Masukkan nomor batch"
+                            >
+                        </div>
+                        <div class="col-xl-4 col-md-6">
+                            <label for="exp_date" class="form-label">Expired Date</label>
+                            <input
+                                type="date"
+                                name="exp_date"
+                                id="exp_date"
+                                class="form-control @if(!$isForeman) bg-light @endif"
+                                value="{{ old('exp_date', $defaultPouchExpDate) }}"
+                                @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif
                             >
                         </div>
                     </div>

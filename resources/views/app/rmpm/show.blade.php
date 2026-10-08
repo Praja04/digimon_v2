@@ -23,6 +23,11 @@
 @endsection
 
 @section('content')
+@php
+    $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
+    $isGaram = ($jenisUpper === 'GARAM');
+    $isGulaKristal = (!$isGaram && (str_contains($jenisUpper, 'GULA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'KELAPA')));
+@endphp
 <div class="page-content">
     <div class="container-fluid">
 
@@ -60,7 +65,7 @@
                                 <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi">
                                     Konfirmasi
                                 </button>
-                                <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'incoming']) }}" class="btn btn-info">
+                                <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info">
                                     <i class="ri-edit-line align-bottom me-1"></i> Update Analisa
                                 </a>
                             </div>
@@ -184,7 +189,7 @@
                                     </div>
                                     <div class="col-lg-3 col-6">
                                         <p class="text-muted mb-2 text-uppercase fw-semibold">Disposisi</p>
-                                        @if ($identitas->jenis == 'Gula Tebu' || $identitas->jenis == 'Gula Kelapa')
+                                        @if ($isGulaKristal)
                                         @php
                                         $disposisi_short_term =
                                         $analisa_short_term->first()->disposisi ?? null;
@@ -358,7 +363,7 @@
                                     @if ($data_kemasan)
                                     @php
                                     $kemasanFields =
-                                    $identitas->jenis === 'Garam'
+                                    $isGaram
                                     ? [
                                     'kotor' => ['label' => 'Kotor', 'type' => 'yes_bad'],
                                     'berair' => ['label' => 'Berair', 'type' => 'yes_bad'],
@@ -529,7 +534,7 @@
                         </div>
 
                         {{-- ── TABEL ANALISA ── --}}
-                        @if ($identitas->jenis == 'Gula Tebu' || $identitas->jenis == 'Gula Kelapa')
+                        @if ($isGulaKristal)
 
                         {{-- Unified Short Term Analysis: Incoming, STA, Monitoring --}}
                         <div class="col-lg-12">
@@ -545,32 +550,19 @@
                                     </h5>
                                     <div class="d-flex gap-2 flex-wrap align-items-center">
                                         @if ($groupedShort->has('incoming'))
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel
                                         </span>
                                         @endif
                                         @if ($groupedShort->has('sta'))
-                                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle fs-7 py-1 px-2">
                                             <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel
                                         </span>
                                         @endif
                                         @if ($groupedShort->has('monitoring'))
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle fs-7 py-1 px-2">
                                             <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel
                                         </span>
-                                        @endif
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'incoming']) }}" class="btn btn-sm btn-primary shadow-sm">
-                                            <i class="ri-edit-box-line me-1"></i> Update Incoming
-                                        </a>
-                                        @if ($groupedShort->has('sta'))
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'sta']) }}" class="btn btn-sm btn-info shadow-sm">
-                                            <i class="ri-edit-box-line me-1"></i> Update STA
-                                        </a>
-                                        @endif
-                                        @if ($groupedShort->has('monitoring'))
-                                        <a href="{{ route('rmpm.analisa', ['id' => $identitas->id, 'kategori' => 'monitoring']) }}" class="btn btn-sm btn-success shadow-sm">
-                                            <i class="ri-edit-box-line me-1"></i> Update Monitoring
-                                        </a>
                                         @endif
                                     </div>
                                 </div>
@@ -589,6 +581,7 @@
                                                     <th>Warna</th>
                                                     <th>Aroma</th>
                                                     <th>Disposisi</th>
+                                                    <th>Status</th>
                                                     <th>Keterangan</th>
                                                 </tr>
                                             </thead>
@@ -643,11 +636,25 @@
                                                         <span class="badge bg-secondary">{{ $short->disposisi ?? '-' }}</span>
                                                         @endif
                                                     </td>
+                                                    <td>
+                                                        @php
+                                                        $isRowDraft = (($short->status ?? '') === 'draft' || empty($short->disposisi) || $short->disposisi === '-');
+                                                        @endphp
+                                                        @if ($isRowDraft)
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="mdi mdi-content-save-edit-outline me-1"></i> Draft
+                                                        </span>
+                                                        @else
+                                                        <span class="badge bg-success-subtle text-success">
+                                                            <i class="ri-checkbox-circle-line me-1"></i> Final
+                                                        </span>
+                                                        @endif
+                                                    </td>
                                                     <td><small class="text-muted">{{ $short->keterangan ?? '-' }}</small></td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="11" class="text-center text-muted py-4">
+                                                    <td colspan="12" class="text-center text-muted py-4">
                                                         <i class="ri-inbox-line fs-3 d-block mb-1 text-muted"></i>
                                                         Belum ada data analisa (Incoming, STA, atau Monitoring)
                                                     </td>
@@ -713,6 +720,7 @@
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
+                                                    <td class="text-muted small">-</td>
                                                 </tr>
                                                 @endforeach
                                             </tfoot>
@@ -730,9 +738,6 @@
                                     <h5 class="mb-0 fw-semibold text-dark">
                                         <i class="ri-microscope-line text-primary me-1"></i> Hasil Analisa Long Term
                                     </h5>
-                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}?kategori=long-term" class="btn btn-sm btn-dark shadow-sm">
-                                        <i class="ri-edit-box-line me-1"></i> Update Long Term
-                                    </a>
                                 </div>
                                 <div class="card-body p-3">
                                     <div class="table-responsive">
@@ -746,7 +751,6 @@
                                                     <th>Lampiran Foto</th>
                                                     <th>Status</th>
                                                     <th>Keterangan</th>
-                                                    <th width="12%" class="text-end">Aksi</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -795,7 +799,7 @@
                                                             tabindex="-1" aria-hidden="true">
                                                             <div class="modal-dialog modal-dialog-centered modal-lg">
                                                                 <div class="modal-content">
-                                                                    <div class="modal-header">
+                                                                  <div class="modal-header">
                                                                         <h5 class="modal-title">
                                                                             <i class="mdi mdi-image-outline me-1"></i> Lampiran Kristal — ({{ count($photos) }} Foto)
                                                                         </h5>
@@ -837,21 +841,10 @@
                                                         @endif
                                                     </td>
                                                     <td>{{ $long->keterangan ?? '-' }}</td>
-                                                    <td class="text-end">
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-warning"
-                                                            data-id="{{ $long->id }}"
-                                                            data-disposisi="{{ $long->disposisi }}"
-                                                            data-group="{{ $long->group }}"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#updateDisposisiModal">
-                                                            <i class="ri-edit-line"></i> Update Disposisi
-                                                        </button>
-                                                    </td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="8" class="text-center text-muted py-4">
+                                                    <td colspan="7" class="text-center text-muted py-4">
                                                         Belum ada data long term
                                                     </td>
                                                 </tr>
@@ -1104,7 +1097,7 @@
                 !is_null($data_mobil) &&
                 !is_null($data_dokumen) &&
                 !is_null($data_kemasan) &&
-                ($identitas->jenis === 'Garam' || !is_null($data_raw));
+                ($isGaram || !is_null($data_raw));
                 @endphp
                 @if ($samplingComplete)
                 <div class="alert alert-info text-center">Anda sudah mengisi semua sampling.</div>
@@ -1112,27 +1105,27 @@
                 <p>Silakan pilih kategori sampling yang ingin Anda isi.</p>
                 <div class="list-group">
                     @if (is_null($data_mobil))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_mobil" data-bs-dismiss="modal">
-                        <i class="ri-truck-line me-2"></i> Sampling Kondisi Mobil
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalKondisiMobil">
+                        <i class="ri-truck-line me-2 text-primary"></i> Sampling Kondisi Mobil
                     </button>
                     @endif
                     @if (is_null($data_dokumen))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_dokumen" data-bs-dismiss="modal">
-                        <i class="ri-file-text-line me-2"></i> Sampling Dokumen
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalDokumen">
+                        <i class="ri-file-text-line me-2 text-success"></i> Sampling Dokumen
                     </button>
                     @endif
                     @if (is_null($data_kemasan))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_kemasan" data-bs-dismiss="modal">
-                        <i class="ri-inbox-line me-2"></i> Sampling Kemasan
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalKemasan">
+                        <i class="ri-inbox-line me-2 text-warning"></i> Sampling Kemasan
                     </button>
                     @endif
-                    @if ($identitas->jenis !== 'Garam' && is_null($data_raw))
-                    <button type="button" class="list-group-item list-group-item-action sampling-option"
-                        data-sampling="kondisi_raw" data-bs-dismiss="modal">
-                        <i class="ri-flask-line me-2"></i> Sampling Raw
+                    @if (!$isGaram && is_null($data_raw))
+                    <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
+                        data-target-modal="#modalRaw">
+                        <i class="ri-flask-line me-2 text-danger"></i> Sampling Raw
                     </button>
                     @endif
                 </div>
@@ -1314,7 +1307,7 @@
                 <form class="form-sampling" id="form-kemasan">
                     @csrf
                     <input type="hidden" name="id_identitas" value="{{ $identitas->id }}">
-                    @if ($identitas->jenis == 'Garam')
+                    @if ($isGaram)
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <label class="form-label mb-0 fw-semibold">a. Kotor</label>
@@ -1529,7 +1522,7 @@
                     <input type="hidden" name="id_kemasan" value="{{ $data_kemasan->id ?? null }}">
                     @php
                     $modalFields =
-                    $identitas->jenis === 'Garam'
+                    $isGaram
                     ? [
                     'kotor' => 'a. Kotor',
                     'berair' => 'b. Berair',
@@ -1566,7 +1559,7 @@
                     @endforeach
                     <div class="mb-3">
                         <label
-                            class="form-label fw-semibold">{{ $identitas->jenis === 'Garam' ? 'g. Lain-lain' : 'd. Lain-lain' }}</label>
+                            class="form-label fw-semibold">{{ $isGaram ? 'g. Lain-lain' : 'd. Lain-lain' }}</label>
                         <input type="text" class="form-control" name="lain_lain"
                             value="{{ $data_kemasan->lain_lain ?? '' }}" placeholder="Tuliskan keterangan lain...">
                     </div>
@@ -1647,15 +1640,15 @@
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_yes" value="yes"
+                                    id="{{ $field }}_yes_edit" value="yes"
                                     {{ $value === 'yes' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_yes">Iya</label>
+                                <label class="form-check-label" for="{{ $field }}_yes_edit">Iya</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_no" value="no"
+                                    id="{{ $field }}_no_edit" value="no"
                                     {{ $value === 'no' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_no">Tidak</label>
+                                <label class="form-check-label" for="{{ $field }}_no_edit">Tidak</label>
                             </div>
                         </div>
                     </div>
@@ -1672,80 +1665,31 @@
 
 {{-- Konfirmasi Jam --}}
 <div class="modal fade" id="modalKonfirmasi" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Konfirmasi Jam</h5>
+                <h5 class="modal-title" id="modalKonfirmasiTitle">Konfirmasi Jam</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="konfirmasiTipe" value="kedatangan">
                 <div class="mb-3">
-                    <label for="jamInput" class="form-label" id="labelJam">Jam Kedatangan</label>
-                    <input type="datetime-local" class="form-control" id="jamInput"
-                        value="{{ now()->format('Y-m-d\TH:i') }}">
+                    <label for="jamInput" class="form-label fw-semibold" id="labelJam">Jam Kedatangan</label>
+                    <input type="datetime-local" class="form-control" id="jamInput">
+                    <div class="form-text mt-2" id="konfirmasiHelpText"></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" id="btnSimpanJam" class="btn btn-primary">Simpan</button>
+                <button type="button" id="btnSimpanJam" class="btn btn-primary">
+                    <i class="ri-save-line me-1"></i> Simpan
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Update Disposisi Long Term --}}
-<div class="modal fade" id="updateDisposisiModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <form id="formUpdateDisposisi">
-            @csrf
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="ri-edit-2-line me-1 text-primary"></i> Update Disposisi Long Term</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="id_analisa" id="disposisi_id">
-                    <div class="mb-3">
-                        <label for="disposisi_new" class="form-label fw-semibold">Disposisi Baru <span class="text-danger">*</span></label>
-                        <select name="disposisi" id="disposisi_new" class="form-select" required>
-                            <option value="">-- Pilih Disposisi --</option>
-                            <option value="Release">Release</option>
-                            <option value="Release Bersyarat">Release Bersyarat</option>
-                            <option value="Reject">Reject</option>
-                        </select>
-                    </div>
 
-                    {{-- Dynamic Group ABC field in update modal --}}
-                    <div class="mb-3 p-3 border border-primary-subtle rounded bg-light" id="group_update_wrapper" style="display:none;">
-                        <label for="group_new" class="form-label fw-semibold text-primary">
-                            <i class="ri-node-tree me-1"></i> Group ABC <span class="text-danger">*</span>
-                        </label>
-                        <select name="group" id="group_new" class="form-select border-primary">
-                            <option value="">-- Pilih Group ABC --</option>
-                            <option value="Group A">Group A</option>
-                            <option value="Group B">Group B</option>
-                            <option value="Group C">Group C</option>
-                        </select>
-                        <div class="form-text text-muted small mt-1">
-                            Wajib dipilih untuk Disposisi Release / Release Bersyarat.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="keterangan_update" class="form-label fw-semibold">Catatan / Alasan Update</label>
-                        <textarea name="keterangan_update" id="keterangan_update" class="form-control" rows="3" placeholder="Masukkan alasan atau catatan perubahan disposisi..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-3">
-                        <i class="ri-save-line me-1"></i> Simpan Perubahan
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
 @endsection
 
@@ -1758,17 +1702,23 @@
             }
         });
 
-        // ── Routing pilihan sampling ──
-        $('.sampling-option').on('click', function() {
-            const map = {
-                kondisi_mobil: 'modalKondisiMobil',
-                kondisi_dokumen: 'modalDokumen',
-                kondisi_kemasan: 'modalKemasan',
-                kondisi_raw: 'modalRaw',
-            };
-            const id = map[$(this).data('sampling')];
-            if (id) setTimeout(() => new bootstrap.Modal(document.getElementById(id)).show(), 400);
+        // ── Smooth modal transition from #samplingModal to specific sampling modals (prevents focus trap & blinking) ──
+        $(document).on('click', '.btn-open-sampling-modal', function(e) {
+            e.preventDefault();
+            const targetSelector = $(this).data('target-modal');
+            const $samplingModal = $('#samplingModal');
+
+            $samplingModal.modal('hide');
+            $samplingModal.one('hidden.bs.modal', function() {
+                const targetModalEl = document.querySelector(targetSelector);
+                if (targetModalEl) {
+                    const bsModal = bootstrap.Modal.getOrCreateInstance(targetModalEl);
+                    bsModal.show();
+                }
+            });
         });
+
+
 
         // ── Zak input toggle ──
         $('form.form-sampling input[type=radio]').on('change', function() {
@@ -1952,164 +1902,122 @@
             });
         });
 
+        // ── Helper format datetime-local ──
+        function getCurrentDateTimeLocal() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
         // ── Konfirmasi Jam ──
-        KonfirmasiInitialCheck();
-        $('#btnBukaModalKonfirmasi').on('click', KonfirmasiCheckAndShow);
-        $('#btnSimpanJam').on('click', handleKonfirmasiJam);
+        $('#btnBukaModalKonfirmasi').on('click', function() {
+            const defaultNow = getCurrentDateTimeLocal();
 
-        function KonfirmasiInitialCheck() {
             $.ajax({
                 url: "{{ url('rmpm/konfirmasi/' . $identitas->id) }}",
                 type: 'GET',
                 dataType: 'json',
-                success: r => {
-                    if (r.jam_analisa_exists) {
-                        $('#labelJam').text('Jam Analisa (Sudah Terisi)');
-                        $('#jamInput').val(r.jam_analisa);
-                        $('#btnSimpanJam').hide();
-                    } else if (r.sampling_complete) {
-                        $('#labelJam').text('Jam Analisa');
-                    } else {
+                beforeSend: function() {
+                    $('#btnBukaModalKonfirmasi').prop('disabled', true);
+                },
+                complete: function() {
+                    $('#btnBukaModalKonfirmasi').prop('disabled', false);
+                },
+                success: function(r) {
+                    if (!r.jam_kedatangan_exists) {
+                        // Belum ada jam kedatangan
+                        $('#modalKonfirmasiTitle').html('<i class="ri-truck-line text-warning me-1"></i> Konfirmasi Jam Kedatangan');
                         $('#labelJam').text('Jam Kedatangan');
-                    }
-                },
-            });
-        }
-
-        function KonfirmasiCheckAndShow() {
-            $.ajax({
-                url: "{{ url('rmpm/konfirmasi/' . $identitas->id) }}",
-                type: 'GET',
-                dataType: 'json',
-                success: r => {
-                    if (r.jam_analisa_exists) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Selesai',
-                            text: 'Konfirmasi Jam Analisa sudah terisi.'
-                        });
-                        KonfirmasiInitialCheck();
-                        $('#modalKonfirmasi').modal('show');
-                        $('#btnSimpanJam').hide();
-                    } else if (r.sampling_complete) {
+                        $('#konfirmasiTipe').val('kedatangan');
+                        $('#jamInput').val(defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-muted">Silakan tentukan waktu kedatangan bahan baku.</span>');
+                        $('#btnSimpanJam').show();
+                    } else if (r.sampling_complete && !r.jam_analisa_exists) {
+                        // Sampling selesai & belum konfirmasi jam analisa
+                        $('#modalKonfirmasiTitle').html('<i class="ri-flask-line text-info me-1"></i> Konfirmasi Jam Analisa');
                         $('#labelJam').text('Jam Analisa');
-                        $('#jamInput').val('{{ now()->format('
-                            Y - m - d\ TH: i ') }}');
+                        $('#konfirmasiTipe').val('analisa');
+                        $('#jamInput').val(defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-muted">Sampling telah lengkap. Silakan masukkan waktu mulai analisa.</span>');
                         $('#btnSimpanJam').show();
-                        $('#modalKonfirmasi').modal('show');
-                    } else {
+                    } else if (r.jam_kedatangan_exists && !r.sampling_complete) {
+                        // Jam kedatangan sudah ada, tapi sampling belum lengkap
+                        $('#modalKonfirmasiTitle').html('<i class="ri-truck-line text-warning me-1"></i> Edit Jam Kedatangan');
                         $('#labelJam').text('Jam Kedatangan');
-                        $('#jamInput').val('{{ now()->format('
-                            Y - m - d\ TH: i ') }}');
+                        $('#konfirmasiTipe').val('kedatangan');
+                        $('#jamInput').val(r.jam_kedatangan || defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-warning"><i class="ri-information-line me-1"></i> Jam Kedatangan sudah tersimpan. Lengkapi data Sampling untuk mengisi Jam Analisa.</span>');
                         $('#btnSimpanJam').show();
-                        $('#modalKonfirmasi').modal('show');
+                    } else if (r.jam_analisa_exists) {
+                        // Keduanya sudah ada
+                        $('#modalKonfirmasiTitle').html('<i class="ri-checkbox-circle-line text-success me-1"></i> Edit Jam Analisa');
+                        $('#labelJam').text('Jam Analisa');
+                        $('#konfirmasiTipe').val('analisa');
+                        $('#jamInput').val(r.jam_analisa || defaultNow);
+                        $('#konfirmasiHelpText').html('<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Jam Kedatangan & Jam Analisa sudah lengkap. Anda dapat memperbarui jam analisa jika diperlukan.</span>');
+                        $('#btnSimpanJam').show();
                     }
-                },
-                error: () => Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Gagal memuat status konfirmasi.'
-                }),
-            });
-        }
 
-        function handleKonfirmasiJam() {
-            $.ajax({
-                url: "{{ route('rmpm.konfirmasi.update') }}",
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    id: "{{ $identitas->id }}",
-                    tipe: $('#labelJam').text().includes('Analisa') ? 'analisa' : 'kedatangan',
-                    jam: $('#jamInput').val(),
+                    $('#modalKonfirmasi').modal('show');
                 },
-                success: r => {
-                    $('#modalKonfirmasi').modal('hide');
+                error: function() {
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: r.message || 'Data berhasil disimpan!'
-                    }).then(() => location.reload());
-                },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: xhr.responseJSON?.message || 'Gagal menyimpan jam.'
-                }),
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Gagal memuat status konfirmasi.'
+                    });
+                }
             });
-        }
-
-        // ── Update Disposisi Long Term ──
-        $('#disposisi_new').on('change', function() {
-            const val = $(this).val();
-            if (val === 'Release' || val === 'Release Bersyarat') {
-                $('#group_update_wrapper').slideDown(150);
-            } else {
-                $('#group_update_wrapper').slideUp(150);
-                $('#group_new').val('');
-            }
         });
 
-        $('#updateDisposisiModal').on('show.bs.modal', function(e) {
-            const btn = $(e.relatedTarget);
-            const currentDisp = btn.data('disposisi') || '';
-            const currentGroup = btn.data('group') || '';
-            $('#disposisi_id').val(btn.data('id'));
-            $('#disposisi_new').val(currentDisp).trigger('change');
-            $('#group_new').val(currentGroup);
-            $('#keterangan_update').val('');
-        });
+        $('#btnSimpanJam').on('click', function() {
+            const jamVal = $('#jamInput').val();
+            const tipeVal = $('#konfirmasiTipe').val();
 
-        $('#formUpdateDisposisi').on('submit', function(e) {
-            e.preventDefault();
-            const disposisiBaru = $('#disposisi_new').val();
-            const groupBaru = $('#group_new').val();
-            const keteranganUpdate = $('#keterangan_update').val();
-
-            if (!disposisiBaru) {
+            if (!jamVal) {
                 return Swal.fire({
                     icon: 'warning',
-                    text: 'Silakan pilih disposisi baru.'
-                });
-            }
-
-            if (['Release', 'Release Bersyarat'].includes(disposisiBaru) && !groupBaru) {
-                return Swal.fire({
-                    icon: 'warning',
-                    text: 'Silakan pilih Group ABC untuk disposisi ' + disposisiBaru + '.'
+                    text: 'Silakan isi tanggal dan jam terlebih dahulu.'
                 });
             }
 
             Swal.fire({
-                title: 'Memperbarui Disposisi...',
+                title: 'Menyimpan Konfirmasi...',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
 
             $.ajax({
-                url: "{{ route('rmpm.update-disposisi.long-term') }}",
+                url: "{{ route('rmpm.konfirmasi.update') }}",
                 type: 'POST',
                 dataType: 'json',
                 data: {
-                    id: $('#disposisi_id').val(),
-                    disposisi: disposisiBaru,
-                    group: groupBaru,
-                    keterangan_update: keteranganUpdate,
+                    _token: "{{ csrf_token() }}",
+                    id: "{{ $identitas->id }}",
+                    tipe: tipeVal,
+                    jam: jamVal,
                 },
-                success: r => {
-                    $('#updateDisposisiModal').modal('hide');
+                success: function(r) {
+                    $('#modalKonfirmasi').modal('hide');
                     Swal.fire({
                         icon: 'success',
-                        title: 'Sukses',
-                        text: r.message || 'Disposisi berhasil diperbarui!'
+                        title: 'Berhasil',
+                        text: r.message || 'Data konfirmasi berhasil disimpan!'
                     }).then(() => location.reload());
                 },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Kesalahan',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memperbarui disposisi.'
-                }),
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Gagal menyimpan data konfirmasi.'
+                    });
+                }
             });
+        });
     });
 </script>
 @endsection

@@ -5,6 +5,9 @@
 @endsection
 
 @section('content')
+    @php
+        $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
+    @endphp
     <div class="page-content">
         <div class="container-fluid">
 
@@ -180,7 +183,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-4 col-md-6">
                                         <label for="no_spb" class="form-label">
                                             Nomor SPB
                                             <span class="text-danger">*</span>
@@ -194,7 +197,7 @@
                                             <input type="text" name="no_spb" id="no_spb"
                                                 class="form-control @error('no_spb') is-invalid @enderror"
                                                 value="{{ old('no_spb') }}" placeholder="Contoh: 9000724343"
-                                                maxlength="100">
+                                                maxlength="100" required>
                                         </div>
 
                                         @error('no_spb')
@@ -204,7 +207,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-4 col-md-6">
                                         <label for="tanggal_kedatangan" class="form-label">
                                             Tanggal Kedatangan
                                             <span class="text-danger">*</span>
@@ -212,7 +215,7 @@
 
                                         <input type="date" name="tanggal_kedatangan" id="tanggal_kedatangan"
                                             class="form-control @error('tanggal_kedatangan') is-invalid @enderror"
-                                            value="{{ old('tanggal_kedatangan', now()->format('Y-m-d')) }}">
+                                            value="{{ old('tanggal_kedatangan', now()->format('Y-m-d')) }}" required>
 
                                         @error('tanggal_kedatangan')
                                             <div class="invalid-feedback">
@@ -221,7 +224,24 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-4 col-md-6">
+                                        <label for="exp_date" class="form-label">
+                                            Expired Date
+                                        </label>
+
+                                        <input type="date" name="exp_date" id="exp_date"
+                                            class="form-control @if(!$isForeman) bg-light @endif @error('exp_date') is-invalid @enderror"
+                                            value="{{ old('exp_date', now()->addMonths(6)->format('Y-m-d')) }}"
+                                            @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif>
+
+                                        @error('exp_date')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-xl-6 col-md-6">
                                         <label for="jam_kedatangan" class="form-label">
                                             Jam Kedatangan
                                             <span class="text-danger">*</span>
@@ -238,7 +258,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-xl-3 col-md-6">
+                                    <div class="col-xl-6 col-md-6">
                                         <label for="no_mobil" class="form-label">
                                             Nomor Mobil
                                             <span class="text-danger">*</span>
@@ -506,6 +526,7 @@
                                             </div>
                                         @enderror
                                     </div>
+
 
                                     <div class="col-12">
                                         <label class="form-label">
@@ -926,6 +947,7 @@
             const defaultAction = @json(route('rmpm.pm.incoming.store'));
             const updateBaseUrl = @json(url('/rmpm/pm/incoming'));
             const defaultDate = @json(now()->format('Y-m-d'));
+            const defaultExpDate = @json(now()->addMonths(6)->format('Y-m-d'));
             const defaultTime = @json(now()->format('H:i'));
             const listContainer = document.getElementById('incomingListContainer');
             const midInput = document.getElementById('mid');
@@ -935,8 +957,17 @@
             const wpmSuggestionList = document.getElementById('wpmSuggestionList');
             const btnClearMid = document.getElementById('btnClearMid');
 
+            const tanggalKedatanganInput =
+                document.getElementById('tanggal_kedatangan');
+
+            const expDateInput =
+                document.getElementById('exp_date');
+
             const jenisIncomingSelect =
                 document.getElementById('jenis_incoming_id');
+
+            const jenisMaterialSelect =
+                document.getElementById('jenis_material_id');
 
             const jenisIncomingLainnyaWrapper =
                 document.getElementById('jenisIncomingLainnyaWrapper');
@@ -1297,6 +1328,59 @@
                 }
             }
 
+
+
+            function updateAutoExpDate(force = false) {
+                const tglEl = document.getElementById('tanggal_kedatangan');
+                const expEl = document.getElementById('exp_date');
+                if (!tglEl || !expEl) return;
+
+                const tglVal = tglEl.value;
+                if (!tglVal) {
+                    if (force) expEl.value = '';
+                    return;
+                }
+
+                const jenisIncOpt = (jenisIncomingSelect?.options[jenisIncomingSelect.selectedIndex]?.textContent || '').trim().toLowerCase();
+                const jenisMatOpt = (jenisMaterialSelect?.options[jenisMaterialSelect.selectedIndex]?.textContent || '').trim().toLowerCase();
+                const jenisIncLainnya = (jenisIncomingLainnyaInput?.value || '').trim().toLowerCase();
+
+                const isKarton = jenisIncOpt.includes('karton') || jenisIncOpt.includes('kardus') || jenisIncOpt.includes('box') ||
+                                 jenisMatOpt.includes('karton') || jenisMatOpt.includes('kardus') || jenisMatOpt.includes('box') ||
+                                 jenisIncLainnya.includes('karton') || jenisIncLainnya.includes('kardus') || jenisIncLainnya.includes('box');
+
+                const parts = tglVal.split('-');
+                if (parts.length !== 3) return;
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                if (isNaN(year) || isNaN(month) || isNaN(day)) return;
+
+                const d = new Date(year, month, day);
+                if (isNaN(d.getTime())) return;
+
+                if (isKarton) {
+                    const targetYear = year + 1;
+                    const targetMonth = month;
+                    d.setFullYear(targetYear);
+                    if (d.getMonth() !== targetMonth) {
+                        d.setDate(0);
+                    }
+                } else {
+                    const targetMonth = month + 6;
+                    d.setMonth(targetMonth);
+                    const expectedMonth = targetMonth % 12;
+                    if (d.getMonth() !== expectedMonth) {
+                        d.setDate(0);
+                    }
+                }
+
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const dt = String(d.getDate()).padStart(2, '0');
+                expEl.value = `${y}-${m}-${dt}`;
+            }
+
             function resetForm(scrollToTop = true) {
                 form.reset();
                 form.action = defaultAction;
@@ -1307,7 +1391,15 @@
                 editModeBanner.classList.add('d-none');
                 editModeSpb.textContent = '-';
 
-                document.getElementById('tanggal_kedatangan').value = defaultDate;
+                const tglKedatanganEl = document.getElementById('tanggal_kedatangan');
+                if (tglKedatanganEl) {
+                    tglKedatanganEl.value = defaultDate;
+                }
+
+                const expDateEl = document.getElementById('exp_date');
+                if (expDateEl) {
+                    expDateEl.value = defaultExpDate;
+                }
                 document.getElementById('jam_kedatangan').value = defaultTime;
 
                 updateStatusDisplay('Belum Sampling');
@@ -1556,11 +1648,24 @@
 
                     updateWpmDetail();
 
+                    const tglKedatanganEl = document.getElementById('tanggal_kedatangan');
+                    if (tglKedatanganEl) {
+                        tglKedatanganEl.value =
+                            data.tanggal_kedatangan ?
+                            String(data.tanggal_kedatangan).slice(0, 10) :
+                            defaultDate;
+                    }
+
                     document.getElementById('no_mobil').value =
                         data.no_mobil ?? '';
 
-                    document.getElementById('tanggal_kedatangan').value =
-                        data.tanggal_kedatangan ?? '';
+                    const expDateEl = document.getElementById('exp_date');
+                    if (expDateEl) {
+                        expDateEl.value = data.exp_date ? String(data.exp_date).slice(0, 10) : '';
+                        if (!expDateEl.value) {
+                            updateAutoExpDate(false);
+                        }
+                    }
 
                     document.getElementById('jam_kedatangan').value =
                         data.jam_kedatangan ?
@@ -1980,6 +2085,35 @@
                 'change',
                 function() {
                     updateJenisIncomingLainnya();
+                    updateAutoExpDate(true);
+                }
+            );
+
+            jenisIncomingLainnyaInput?.addEventListener(
+                'input',
+                function() {
+                    updateAutoExpDate(true);
+                }
+            );
+
+            jenisMaterialSelect?.addEventListener(
+                'change',
+                function() {
+                    updateAutoExpDate(true);
+                }
+            );
+
+            tanggalKedatanganInput?.addEventListener(
+                'change',
+                function() {
+                    updateAutoExpDate(true);
+                }
+            );
+
+            tanggalKedatanganInput?.addEventListener(
+                'input',
+                function() {
+                    updateAutoExpDate(true);
                 }
             );
 
@@ -2119,6 +2253,7 @@
             updateWpmDetail();
             updateJenisIncomingLainnya(false);
             updateSupplierLainnya(false);
+            updateAutoExpDate(true);
             loadWpmDataViaAjax();
 
             document.addEventListener('submit', function(event) {

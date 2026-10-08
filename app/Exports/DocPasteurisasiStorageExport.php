@@ -29,6 +29,17 @@ class DocPasteurisasiStorageExport implements WithEvents, WithTitle
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 
+                // Page setup: Landscape A4, Fit to 1x1 Page
+                $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+                $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+                $sheet->getPageSetup()->setFitToPage(true);
+                $sheet->getPageSetup()->setFitToWidth(1);
+                $sheet->getPageSetup()->setFitToHeight(1);
+                $sheet->getPageMargins()->setTop(0.4);
+                $sheet->getPageMargins()->setBottom(0.4);
+                $sheet->getPageMargins()->setLeft(0.4);
+                $sheet->getPageMargins()->setRight(0.4);
+
                 // Set default font
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Arial');
                 $sheet->getParent()->getDefaultStyle()->getFont()->setSize(9);
@@ -367,61 +378,71 @@ class DocPasteurisasiStorageExport implements WithEvents, WithTitle
                 $sheet->getStyle("A{$fStart}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP)->setHorizontal(Alignment::HORIZONTAL_LEFT);
                 $sheet->getStyle("A{$fStart}:D{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
 
-                // Tanda Tangan: 3 Kotak Simetris (Masing-masing 4 Kolom: E-H, I-L, M-P)
-                // Baris Header Tanda Tangan
-                $sheet->mergeCells("E{$fStart}:H{$fStart}");
+                // Tanda Tangan: Sesuai Template Resmi FRM/QLB/04/104/006-01
+                // 1. Baris Header Tanda Tangan
+                $sheet->mergeCells("E{$fStart}:J{$fStart}");
                 $sheet->setCellValue("E{$fStart}", 'Disampling oleh,');
 
-                $sheet->mergeCells("I{$fStart}:L{$fStart}");
-                $sheet->setCellValue("I{$fStart}", 'Dianalisis oleh,');
+                $sheet->mergeCells("K{$fStart}:M{$fStart}");
+                $sheet->setCellValue("K{$fStart}", 'Dianalisis oleh,');
 
-                $sheet->mergeCells("M{$fStart}:P{$fStart}");
-                $sheet->setCellValue("M{$fStart}", 'Dicek oleh,');
+                $sheet->mergeCells("N{$fStart}:P{$fStart}");
+                $sheet->setCellValue("N{$fStart}", 'Dicek oleh,');
 
                 $sheet->getStyle("E{$fStart}:P{$fStart}")->getFont()->setSize(8.5);
                 $sheet->getStyle("E{$fStart}:P{$fStart}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Space Tanda Tangan
-                $sheet->mergeCells("E{$s1}:H{$s2}");
-                $sheet->mergeCells("I{$s1}:L{$s2}");
-                $sheet->mergeCells("M{$s1}:P{$s2}");
+                // 2. Space Tanda Tangan
+                $sheet->mergeCells("E{$s1}:G{$s2}");
+                $sheet->mergeCells("H{$s1}:J{$s2}");
+                $sheet->mergeCells("K{$s1}:M{$s2}");
+                $sheet->mergeCells("N{$s1}:P{$s2}");
                 $sheet->getRowDimension($s1)->setRowHeight(18);
                 $sheet->getRowDimension($s2)->setRowHeight(18);
 
                 $picSampling = !empty($this->data['pic_sampling']) ? $this->data['pic_sampling'] : '________________';
+                $picSerahTerima = !empty($this->data['pic_serah_terima']) ? $this->data['pic_serah_terima'] : '________________';
                 $picAnalis = !empty($this->data['pic_analis']) ? $this->data['pic_analis'] : '________________';
                 $picChecker = !empty($this->data['pic_checker']) ? $this->data['pic_checker'] : '________________';
 
-                $sheet->mergeCells("E{$sName}:H{$sName}");
+                // 3. Nama Penandatangan
+                $sheet->mergeCells("E{$sName}:G{$sName}");
                 $sheet->setCellValue("E{$sName}", "( {$picSampling} )");
 
-                $sheet->mergeCells("I{$sName}:L{$sName}");
-                $sheet->setCellValue("I{$sName}", "( {$picAnalis} )");
+                $sheet->mergeCells("H{$sName}:J{$sName}");
+                $sheet->setCellValue("H{$sName}", "( {$picSerahTerima} )");
 
-                $sheet->mergeCells("M{$sName}:P{$sName}");
-                $sheet->setCellValue("M{$sName}", "( {$picChecker} )");
+                $sheet->mergeCells("K{$sName}:M{$sName}");
+                $sheet->setCellValue("K{$sName}", "( {$picAnalis} )");
+
+                $sheet->mergeCells("N{$sName}:P{$sName}");
+                $sheet->setCellValue("N{$sName}", "( {$picChecker} )");
 
                 $sheet->getStyle("E{$sName}:P{$sName}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getRowDimension($sName)->setRowHeight(18);
 
-                // Role Tanda Tangan
-                $sheet->mergeCells("E{$sRole}:H{$sRole}");
+                // 4. Role Penandatangan
+                $sheet->mergeCells("E{$sRole}:G{$sRole}");
                 $sheet->setCellValue("E{$sRole}", 'Produksi');
 
-                $sheet->mergeCells("I{$sRole}:L{$sRole}");
-                $sheet->setCellValue("I{$sRole}", 'QC Analis');
+                $sheet->mergeCells("H{$sRole}:J{$sRole}");
+                $sheet->setCellValue("H{$sRole}", 'Produksi');
 
-                $sheet->mergeCells("M{$sRole}:P{$sRole}");
-                $sheet->setCellValue("M{$sRole}", 'Staff/SPV/MNG QC');
+                $sheet->mergeCells("K{$sRole}:M{$sRole}");
+                $sheet->setCellValue("K{$sRole}", 'QC Analis');
+
+                $sheet->mergeCells("N{$sRole}:P{$sRole}");
+                $sheet->setCellValue("N{$sRole}", 'SPV/MNG QC');
 
                 $sheet->getStyle("E{$sRole}:P{$sRole}")->getFont()->setSize(8)->setBold(true);
                 $sheet->getStyle("E{$sRole}:P{$sRole}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getRowDimension($sRole)->setRowHeight(18);
 
                 // Outline Borders Kotak Tanda Tangan
-                $sheet->getStyle("E{$fStart}:H{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
-                $sheet->getStyle("I{$fStart}:L{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
-                $sheet->getStyle("M{$fStart}:P{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("E{$fStart}:J{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("E{$s1}:G{$sRole}")->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("K{$fStart}:M{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("N{$fStart}:P{$sRole}")->getBorders()->getOutline()->setBorderStyle(Border::BORDER_THIN);
 
                 // Kode Dokumen Form Resmi
                 $docCodeRow = $sRole + 1;

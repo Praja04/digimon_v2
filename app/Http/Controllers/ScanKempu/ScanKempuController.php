@@ -19,6 +19,33 @@ class ScanKempuController extends Controller
      * Memeriksa apakah user saat ini berhak melakukan Force Scan QC
      * Otoritas: role != 'operator' ATAU memiliki permission 'kempu-qc-force'
      */
+    /**
+     * Memeriksa apakah user saat ini berhak melakukan input/ketik manual ID Kempu
+     * Otoritas: role != 'operator' ATAU memiliki permission 'kempu-manual-input' / 'super-admin'
+     */
+    protected function canManualInput(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if (method_exists($user, 'hasRole') && $user->hasRole('super-admin')) {
+            return true;
+        }
+
+        if (method_exists($user, 'hasAnyPermission') && $user->hasAnyPermission(['kempu-manual-input', 'super-admin'])) {
+            return true;
+        }
+
+        $role = strtolower(trim($user->role ?? ''));
+        if ($role && $role !== 'operator') {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function canForceScan(): bool
     {
         $user = auth()->user();
@@ -43,29 +70,26 @@ class ScanKempuController extends Controller
     }
 
     /**
-     * Halaman Dashboard Monitoring & Traceability Kempu
+     * Halaman Report Scan Kempu QC (QC PM & QC Proses)
      */
-    public function dashboard()
+    public function report()
     {
-        $locations = [
-            'WPM'                  => 'WPM (Packaging Material)',
-            'QC_PM'                => 'QC Packaging Material',
-            'ENGINEERING_WORKSHOP' => 'Engineering Workshop',
-            'PRODUKSI'             => 'Produksi',
-            'QC_PROSES'            => 'QC Proses',
-            'WFG'                  => 'WFG (Finished Goods)',
-            'WAREHOUSE_PAS'        => 'Warehouse PT PAS',
-            'SCRAP'                => 'Scrap / Afkir',
-        ];
-
         try {
-            $response = Http::timeout(5)->get("{$this->warehouseApi}/kempu/traceability/stats");
+            $response = Http::timeout(8)->get("{$this->warehouseApi}/kempu/qc/report/stats");
             $statsData = $response->json('data') ?? [];
         } catch (\Throwable $e) {
             $statsData = [];
         }
 
-        return view('app.scan_kempu.dashboard', compact('locations', 'statsData'));
+        return view('app.scan_kempu.report', compact('statsData'));
+    }
+
+    /**
+     * Halaman Dashboard Monitoring & Traceability Kempu (Dialihkan ke Report)
+     */
+    public function dashboard()
+    {
+        return redirect()->route('scan-kempu.report');
     }
 
     /**
@@ -96,7 +120,7 @@ class ScanKempuController extends Controller
 
         if ($this->canForceScan() && isset($rawCards['qc-force'])) {
             $cards['qc-force'] = array_merge($rawCards['qc-force'], [
-                'route'       => route('scan-kempu.scan', 'qc-force'),
+                'route'       => route('scan-kempu.scan', 'qc-pm-force'),
                 'badge_color' => 'danger',
                 'icon'        => 'ri-shield-flash-line',
             ]);
@@ -140,7 +164,7 @@ class ScanKempuController extends Controller
 
         if ($this->canForceScan() && isset($rawCards['qc-force'])) {
             $cards['qc-force'] = array_merge($rawCards['qc-force'], [
-                'route'       => route('scan-kempu.scan', 'qc-force'),
+                'route'       => route('scan-kempu.scan', 'qc-proses-force'),
                 'badge_color' => 'danger',
                 'icon'        => 'ri-shield-flash-line',
             ]);
@@ -154,7 +178,7 @@ class ScanKempuController extends Controller
      */
     public function scan($type)
     {
-        if ($type === 'qc-force' && !$this->canForceScan()) {
+        if (in_array($type, ['qc-force', 'qc-pm-force', 'qc-proses-force']) && !$this->canForceScan()) {
             return redirect()->route('scan-kempu.pm.index')
                 ->with('error', 'Akses ditolak: Hanya user dengan otoritas khusus QC (Non-Operator) yang dapat mengakses Force Scan.');
         }
@@ -167,7 +191,8 @@ class ScanKempuController extends Controller
         }
 
         $card = $configs[$type];
-        return view('app.scan_kempu.proses.scan', compact('card'));
+        $canManualInput = $this->canManualInput();
+        return view('app.scan_kempu.proses.scan', compact('card', 'canManualInput'));
     }
 
     /**
@@ -216,6 +241,53 @@ class ScanKempuController extends Controller
                 'status'  => false,
                 'message' => 'Gagal mengambil statistik: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * API Proxy: Mengambil statistik KPI Report QC
+     */
+    public function reportStats(Request $request)
+    {
+        try {
+            $response = Http::timeout(8)->get("{$this->warehouseApi}/kempu/qc/report/stats", $request->all());
+            return response()->json($response->json(), $response->status());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil statistik report: ' . $e->getMessage(),
+                'data'    => [],
+            ], 500);
+        }
+    }
+
+    /**
+     * API Proxy: Mengambil data report QC (Server-side Pagination & Filter)
+     */
+    public function reportData(Request $request)
+    {
+        try {
+            $response = Http::timeout(10)->get("{$this->warehouseApi}/kempu/qc/report/data", $request->all());
+            return response()->json($response->json(), $response->status());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil data report: ' . $e->getMessage(),
+                'data'    => [],
+            ], 500);
+        }
+    }
+
+    /**
+     * Export Report CSV untuk QC Kempu
+     */
+    public function reportExport(Request $request)
+    {
+        try {
+            $url = "{$this->warehouseApi}/kempu/qc/report/export?" . http_build_query($request->all());
+            return redirect($url);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Gagal mengunduh report: ' . $e->getMessage());
         }
     }
 }

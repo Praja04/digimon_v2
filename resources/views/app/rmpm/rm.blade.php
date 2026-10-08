@@ -1044,14 +1044,35 @@
                 });
             });
 
+            function populateAsalBahan(url) {
+                let asalBahanSelect = $('#asal_bahan');
+                asalBahanSelect.empty().append('<option value="">Memuat asal bahan...</option>').trigger('change.select2');
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        let opts = '<option value="">-- Cari / Pilih Asal Bahan --</option>';
+                        if (res.status && res.data && res.data.length > 0) {
+                            res.data.forEach(function(a) {
+                                opts += `<option value="${a.asal_bahan}">${a.asal_bahan}</option>`;
+                            });
+                        }
+                        asalBahanSelect.html(opts).val('').trigger('change.select2');
+                    },
+                    error: function() {
+                        asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
+                    }
+                });
+            }
+
             $('#jenis').on('change', function() {
                 let selectedOption = $(this).find('option:selected');
                 let jenisId = selectedOption.data('id');
                 let supplierSelect = $('#supplier');
-                let asalBahanSelect = $('#asal_bahan');
 
                 supplierSelect.empty().append('<option value="">Memuat supplier...</option>').trigger('change.select2');
-                asalBahanSelect.empty().append('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
 
                 if (jenisId) {
                     $.ajax({
@@ -1060,7 +1081,7 @@
                         dataType: 'json',
                         success: function(res) {
                             let opts = '<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>';
-                            if (res.status && res.data.length > 0) {
+                            if (res.status && res.data && res.data.length > 0) {
                                 res.data.forEach(function(s) {
                                     opts += `<option value="${s.nama_supplier}" data-id="${s.id}">${s.nama_supplier}</option>`;
                                 });
@@ -1071,6 +1092,8 @@
                             supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change.select2');
                         }
                     });
+
+                    populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-by-jenis-bahan') }}/" + jenisId);
                 } else {
                     $.ajax({
                         url: "{{ url('/master-data-rm/supplier/get-all-active') }}",
@@ -1078,7 +1101,7 @@
                         dataType: 'json',
                         success: function(res) {
                             let opts = '<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>';
-                            if (res.status && res.data.length > 0) {
+                            if (res.status && res.data && res.data.length > 0) {
                                 res.data.forEach(function(s) {
                                     opts += `<option value="${s.nama_supplier}" data-id="${s.id}">${s.nama_supplier}</option>`;
                                 });
@@ -1089,36 +1112,24 @@
                             supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change.select2');
                         }
                     });
+
+                    populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-all-active') }}");
                 }
             });
 
             $('#supplier').on('change', function() {
                 let selectedOption = $(this).find('option:selected');
                 let supplierId = selectedOption.data('id');
-                let asalBahanSelect = $('#asal_bahan');
-
-                asalBahanSelect.empty().append('<option value="">Memuat asal bahan...</option>').trigger('change.select2');
 
                 if (supplierId) {
-                    $.ajax({
-                        url: "{{ url('/master-data-rm/asal-bahan/get-by-supplier') }}/" + supplierId,
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(res) {
-                            let opts = '<option value="">-- Cari / Pilih Asal Bahan --</option>';
-                            if (res.status && res.data.length > 0) {
-                                res.data.forEach(function(a) {
-                                    opts += `<option value="${a.asal_bahan}">${a.asal_bahan}</option>`;
-                                });
-                            }
-                            asalBahanSelect.html(opts).val('').trigger('change.select2');
-                        },
-                        error: function() {
-                            asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
-                        }
-                    });
+                    populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-by-supplier') }}/" + supplierId);
                 } else {
-                    asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
+                    let jenisId = $('#jenis').find('option:selected').data('id');
+                    if (jenisId) {
+                        populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-by-jenis-bahan') }}/" + jenisId);
+                    } else {
+                        populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-all-active') }}");
+                    }
                 }
             });
 
