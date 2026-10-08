@@ -270,20 +270,19 @@
                         <div class="alert alert-info py-2 px-3 mb-3 fs-12 d-flex align-items-center gap-2">
                             <i class="ri-information-line fs-16 flex-shrink-0 text-primary"></i>
                             <div><strong>Cek Incoming & Pre Cuci:</strong> Pemeriksaan fisik incoming kempu sekaligus
-                                verifikasi kelayakan pre-cuci. Keputusan <strong>OK (Lolos)</strong> akan menambah
-                                <strong>+1 siklus pemakaian (Reused)</strong> kempu sebelum proses pencucian.
+                                verifikasi kelayakan pre-cuci sebelum proses <strong>Cuci Kempu</strong> di Produksi.
                             </div>
                         </div>
 
                         <!-- Panel Otoritas Koreksi Reused Manual (Khusus Pre-Cuci) -->
-                        <div class="card border border-primary-subtle bg-soft-primary p-3 mb-3" id="wrapperManualReused">
+                        <div class="card border border-primary-subtle bg-soft-primary p-3 mb-3 d-none" id="wrapperManualReused">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
                                     <span class="fw-bold text-dark fs-13">
-                                        <i class="ri-edit-2-line text-primary me-1"></i> Koreksi Manual Reused
+                                        <i class="ri-edit-2-line text-primary me-1"></i> Koreksi Manual Reused (Otoritas QC)
                                     </span>
                                     <div class="text-muted fs-11" id="labelReusedHelp">
-                                        Default: auto <span class="badge bg-primary" id="badgeAutoNextReused">+1</span>.
+                                        Saat ini: <span class="badge bg-primary" id="badgeAutoNextReused">0/21</span>.
                                         Centang untuk atur manual.
                                     </div>
                                 </div>
@@ -301,8 +300,8 @@
                                     <span class="input-group-text fs-12 bg-white fw-semibold">/ 21 kali</span>
                                 </div>
                                 <small class="text-muted fs-11 mt-1 d-block">
-                                    <i class="ri-information-line text-warning"></i> Nilai ini akan menggantikan
-                                    auto-increment +1 saat konfirmasi Release (OK).
+                                    <i class="ri-information-line text-warning"></i> Nilai ini akan memperbarui siklus
+                                    reused kempu saat konfirmasi Release (OK).
                                 </small>
                             </div>
                         </div>
@@ -360,8 +359,8 @@
                                         Pre-Cuci)
                                     </span>
                                     <div class="text-muted fs-11" id="labelReusedHelpForce">
-                                        Default: auto <span class="badge bg-primary"
-                                            id="badgeAutoNextReusedForce">+1</span>. Centang untuk atur manual.
+                                        Saat ini: <span class="badge bg-primary"
+                                            id="badgeAutoNextReusedForce">0/21</span>. Centang untuk atur manual.
                                     </div>
                                 </div>
                                 <div class="form-check form-switch fs-16 mb-0">
@@ -378,8 +377,8 @@
                                     <span class="input-group-text fs-12 bg-white fw-semibold">/ 21 kali</span>
                                 </div>
                                 <small class="text-muted fs-11 mt-1 d-block">
-                                    <i class="ri-information-line text-warning"></i> Nilai ini akan menggantikan
-                                    auto-increment +1 saat eksekusi Force Release Pre-Cuci.
+                                    <i class="ri-information-line text-warning"></i> Nilai ini akan memperbarui siklus
+                                    reused kempu saat eksekusi Force Release Pre-Cuci.
                                 </small>
                             </div>
                         </div>
@@ -875,13 +874,21 @@
                 }
 
                 // Setup panel manual reused jika ada
-                const curReused = parseInt(k.reused_count || 0);
-                if ($('#badgeAutoNextReused').length) {
-                    $('#badgeAutoNextReused').text(`+1 (menjadi ${curReused + 1}x)`);
+                if ($('#checkManualReused').length) {
                     $('#checkManualReused').prop('checked', false);
                     $('#boxManualReusedInput').addClass('d-none');
-                    $('#inputManualReused').val(curReused + 1);
+                    const nextReused = k.next_auto_reused !== undefined ? k.next_auto_reused : (k.reused_count || 0);
+                    $('#inputManualReused').val(nextReused);
+                    $('#badgeAutoNextReused').text(nextReused + '/21');
+
+                    // Tampilkan hanya jika memiliki wewenang otoritas
+                    if (k.can_manual_reused) {
+                        $('#wrapperManualReused').removeClass('d-none');
+                    } else {
+                        $('#wrapperManualReused').addClass('d-none');
+                    }
                 }
+
                 if ($('#badgeAutoNextReusedForce').length) {
                     const isAfter = (k.qc_stage_context === 'after_filling' || k.is_in_wfg);
                     if (QC_TYPE === 'qc-proses-force') {
@@ -906,10 +913,11 @@
                         }
                     }
 
-                    $('#badgeAutoNextReusedForce').text(`+1 (menjadi ${curReused + 1}x)`);
+                    const nextReusedForce = k.next_auto_reused !== undefined ? k.next_auto_reused : (k.reused_count || 0);
+                    $('#inputManualReusedForce').val(nextReusedForce);
+                    $('#badgeAutoNextReusedForce').text(nextReusedForce + '/21');
                     $('#checkManualReusedForce').prop('checked', false);
                     $('#boxManualReusedInputForce').addClass('d-none');
-                    $('#inputManualReusedForce').val(curReused + 1);
                     checkForceTargetPreCuci();
                 }
 
@@ -922,7 +930,7 @@
                 const isRelease = (val === 'RELEASE' || val === 'RELEASE_PRE_CUCI');
                 const isPreCuci = (currentKempu && currentKempu.qc_stage_context === 'pre_cuci');
 
-                if ($('#modalForceTarget').length && isRelease && isPreCuci) {
+                if ($('#modalForceTarget').length && isRelease && isPreCuci && (currentKempu.can_manual_reused !== false)) {
                     $('#wrapperManualReusedForce').removeClass('d-none');
                 } else {
                     $('#wrapperManualReusedForce').addClass('d-none');
