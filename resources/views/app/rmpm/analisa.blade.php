@@ -928,6 +928,9 @@
     const SERVER_EXISTING = @json($existingLongTerm ?? null);
     const SERVER_SHORT_TERM = @json($existingShortTerm ?? []);
     const SERVER_GARAM_GULA = @json($existingGaramGula ?? []);
+    const SERVER_INITIAL_GLASSWARE = @json($initialGlassware ?? null);
+    const SERVER_INITIAL_STANDARDS = @json($initialStandards ?? null);
+    const SERVER_INITIAL_PARAMETERS = @json($initialParameters ?? null);
 
     function isGulaKristalMaterial(jenisStr) {
         if (!jenisStr) return false;
@@ -939,14 +942,56 @@
     let currentType = null;
     let currentKategori = 'incoming';
     let currentJumlah = 0;
-    let globalSampleCount = 1;   // Persisted sample count across category switching and inline editing
+    // Independent sample count tracking per category
+    let categorySampleCounts = {
+        'incoming': 1,
+        'sta': 1,
+        'monitoring': 1,
+        'long-term': 1,
+        'garam-gula': 1
+    };
     let selectedFiles = [];       // array of File objects for newly added photos
     let existingPhotos = [];      // array of string filenames from server draft/record
     let parsedPasteData = [];     // parsed rows from excel paste modal
     let isBroadcastingSelection = false; // guard to prevent recursive change event loops on selection broadcast
 
-    // Master Glassware Active Data & Daily Quota Tracking State
-    let glasswareData = {
+    function getDraftKey(kategori = null) {
+        const cat = kategori || currentKategori || 'incoming';
+        return `rmpm_analisa_${IDENTITAS_ID}_${cat}`;
+    }
+
+    function initCategorySampleCounts() {
+        ['incoming', 'sta', 'monitoring'].forEach(cat => {
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === cat);
+            if (matching.length > 0) {
+                categorySampleCounts[cat] = matching.length;
+                return;
+            }
+
+            let draft;
+            try {
+                draft = JSON.parse(localStorage.getItem(getDraftKey(cat)));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.kategori === cat) draft = legacy;
+                }
+            } catch (e) {}
+
+            if (draft && draft.setup && draft.setup.jumlah) {
+                categorySampleCounts[cat] = parseInt(draft.setup.jumlah) || 1;
+                return;
+            }
+
+            categorySampleCounts[cat] = 1;
+        });
+
+        if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
+            categorySampleCounts['garam-gula'] = SERVER_GARAM_GULA.length;
+        }
+    }
+
+    // Master Glassware Active Data & Daily Quota Tracking State (Preloaded Server Fallback)
+    let glasswareData = (SERVER_INITIAL_GLASSWARE && SERVER_INITIAL_GLASSWARE.status) ? SERVER_INITIAL_GLASSWARE : {
         beaker_500: {},
         beaker_250: {},
         cawan: {},
@@ -960,9 +1005,30 @@
     // Master Standar Mutu RM Active Standards State (CRUD SPV Sync)
     let dynamicStandards = {
         kotoran: { max: 10.0, min: null, label: '10.0%' },
-        ka: { max: 3.0, min: null, label: '3.0%' },
+        ka: { max: (JENIS && JENIS.toLowerCase().includes('garam')) ? 8.0 : 3.0, min: null, label: (JENIS && JENIS.toLowerCase().includes('garam')) ? '8.0%' : '3.0%' },
         raw: {}
     };
+
+    if (SERVER_INITIAL_STANDARDS && SERVER_INITIAL_STANDARDS.status && SERVER_INITIAL_STANDARDS.standards) {
+        dynamicStandards.raw = SERVER_INITIAL_STANDARDS.standards;
+        for (const [key, std] of Object.entries(SERVER_INITIAL_STANDARDS.standards)) {
+            const upper = key.toUpperCase();
+            if (upper.includes('KOTORAN')) {
+                dynamicStandards.kotoran = {
+                    min: std.min !== null ? parseFloat(std.min) : null,
+                    max: std.max !== null ? parseFloat(std.max) : 10.0,
+                    label: std.max !== null ? `${std.max}%` : (std.target_text || '10.0%')
+                };
+            } else if (upper.includes('KADAR AIR') || upper === 'KA' || upper === '%KA') {
+                const defaultMaxKa = (JENIS && JENIS.toLowerCase().includes('garam')) ? 8.0 : 3.0;
+                dynamicStandards.ka = {
+                    min: std.min !== null ? parseFloat(std.min) : null,
+                    max: std.max !== null ? parseFloat(std.max) : defaultMaxKa,
+                    label: std.max !== null ? `${std.max}%` : (std.target_text || `${defaultMaxKa}%`)
+                };
+            }
+        }
+    }
 
     function updateGlasswareUsageDisplay() {
         const beakerUsed = glasswareData.total_today?.beaker || 0;
@@ -1000,6 +1066,14 @@
                         cawan_transactions: resp.cawan_transactions || []
                     };
                     updateGlasswareUsageDisplay();
+
+                    // Live re-sync tare labels and recalculate active rows
+                    if (currentType === 'short-term' && currentJumlah > 0) {
+                        for (let i = 0; i < currentJumlah; i++) {
+                            calculateRowKotoran(i);
+                            calculateRowKa(i);
+                        }
+                    }
                 }
                 if (typeof callback === 'function') callback();
             },
@@ -1311,6 +1385,42 @@
         }
     };
 
+    if (SERVER_INITIAL_PARAMETERS && SERVER_INITIAL_PARAMETERS.status && SERVER_INITIAL_PARAMETERS.data) {
+        const pData = SERVER_INITIAL_PARAMETERS.data;
+        if (pData.warna && pData.warna.length > 0) {
+            MASTER_DATA['default'].warna = pData.warna;
+            if (MASTER_DATA['Gula Kelapa']) MASTER_DATA['Gula Kelapa'].warna = pData.warna;
+            if (MASTER_DATA['Gula Tebu']) MASTER_DATA['Gula Tebu'].warna = pData.warna;
+        }
+        if (pData.aroma && pData.aroma.length > 0) {
+            MASTER_DATA['default'].aroma = pData.aroma;
+            if (MASTER_DATA['Gula Kelapa']) MASTER_DATA['Gula Kelapa'].aroma = pData.aroma;
+            if (MASTER_DATA['Gula Tebu']) MASTER_DATA['Gula Tebu'].aroma = pData.aroma;
+        }
+        if (pData.organo && pData.organo.length > 0) {
+            const rawJenis = (JENIS || '').trim().toUpperCase();
+            if (rawJenis.includes('KELAPA') && MASTER_DATA['Gula Kelapa']) {
+                MASTER_DATA['Gula Kelapa'].organo = pData.organo.map(o => ({
+                    label: o.label,
+                    value: o.value,
+                    isCustom: o.isCustom
+                }));
+            } else if (rawJenis.includes('TEBU') && MASTER_DATA['Gula Tebu']) {
+                MASTER_DATA['Gula Tebu'].organo = pData.organo.map(o => ({
+                    label: o.label,
+                    value: o.value,
+                    isCustom: o.isCustom
+                }));
+            } else {
+                MASTER_DATA['default'].organo = pData.organo.map(o => ({
+                    label: o.label,
+                    value: o.value,
+                    isCustom: o.isCustom
+                }));
+            }
+        }
+    }
+
     function getMasterOptions(fieldKey) {
         if (fieldKey === 'aroma_pengotor') {
             return ['OK', 'Bau Asam', 'Bau Sangit', 'Bau Apek', 'Bau Kimia', 'Lain-lain'];
@@ -1464,13 +1574,14 @@
             }
         });
 
-        fetchGlasswareData(function() {
-            fetchMasterStandards(function() {
-                fetchMasterParameterOptions(function() {
-                    initFormData();
-                });
-            });
-        });
+        // Initialize form immediately with preloaded master data (instant response)
+        initFormData();
+        updateGlasswareUsageDisplay();
+
+        // Refresh master data & quota logs asynchronously in background
+        fetchGlasswareData();
+        fetchMasterStandards();
+        fetchMasterParameterOptions();
 
         // Tab switching handler for worksheet
         $(document).on('click', '.btn-switch-tab', function(e) {
@@ -1774,11 +1885,13 @@
         $('#btnReset').on('click', handleReset);
         $(document).on('click', '#btnBackToSetup', function(e) {
             e.preventDefault();
+            saveDraft();
             currentType = null;
             $('#analisaSection, #dividerForm').hide();
             updateSetupBadges();
             $('#setupSection').slideDown(150);
-            const showCount = (globalSampleCount > 0) ? globalSampleCount : (currentJumlah > 0 ? currentJumlah : 1);
+            const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
+            const showCount = categorySampleCounts[activeRadio] || 1;
             $('#jumlahData').val(showCount);
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('kategori');
@@ -2176,7 +2289,8 @@
         $(document).on('input change', '#jumlahData', function() {
             const val = parseInt($(this).val());
             if (val && val > 0) {
-                globalSampleCount = val;
+                const selectedCat = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
+                categorySampleCounts[selectedCat] = val;
             }
         });
 
@@ -2188,7 +2302,8 @@
             if (isLong) {
                 $('#jumlahData').val(1);
             } else {
-                $('#jumlahData').val(globalSampleCount || 1);
+                const countForCat = categorySampleCounts[val] || 1;
+                $('#jumlahData').val(countForCat);
             }
         });
 
@@ -2319,11 +2434,11 @@
         const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming'));
         if (!matching.length) return false;
 
-        const count = (customJumlah && customJumlah > 0) ? customJumlah : (globalSampleCount > 0 ? globalSampleCount : (matching.length > 0 ? matching.length : 1));
+        const count = (customJumlah && customJumlah > 0) ? customJumlah : (categorySampleCounts[kategori] || (matching.length > 0 ? matching.length : 1));
+        categorySampleCounts[kategori] = count;
         currentType = 'short-term';
         currentKategori = kategori;
         currentJumlah = count;
-        globalSampleCount = count;
 
         if (isGulaKristalMaterial(JENIS)) {
             $(`input[name="analisa_type"][value="${kategori}"]`).prop('checked', true);
@@ -2352,12 +2467,13 @@
                 }
                 if (rec.no_beaker) {
                     $('select[name="no_beaker[]"]').eq(idx).html(getBeakerOptions(rec.no_beaker)).val(rec.no_beaker);
-                }
-                if (rec.berat_beaker_500 !== null && rec.berat_beaker_500 !== undefined) {
-                    $('input[name="berat_beaker_500[]"]').eq(idx).val(rec.berat_beaker_500);
-                }
-                if (rec.berat_beaker_250 !== null && rec.berat_beaker_250 !== undefined) {
-                    $('input[name="berat_beaker_250[]"]').eq(idx).val(rec.berat_beaker_250);
+                    const phys = getPhysicalNoFromCode(rec.no_beaker);
+                    const t500 = (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) ? glasswareData.beaker_500[phys] : rec.berat_beaker_500;
+                    const t250 = (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) ? glasswareData.beaker_250[phys] : rec.berat_beaker_250;
+                    $('input[name="berat_beaker_500[]"]').eq(idx).val(t500);
+                    $('input[name="berat_beaker_250[]"]').eq(idx).val(t250);
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
                 }
                 if (rec.timbang_a !== null && rec.timbang_a !== undefined) {
                     $('input[name="timbang_a[]"]').eq(idx).val(rec.timbang_a);
@@ -2376,9 +2492,10 @@
                 }
                 if (rec.no_cawan) {
                     $('select[name="no_cawan[]"]').eq(idx).html(getCawanOptions(rec.no_cawan)).val(rec.no_cawan);
-                }
-                if (rec.berat_cawan !== null && rec.berat_cawan !== undefined) {
-                    $('input[name="berat_cawan[]"]').eq(idx).val(rec.berat_cawan);
+                    const phys = getPhysicalNoFromCode(rec.no_cawan);
+                    const tCawan = (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) ? glasswareData.cawan[phys] : rec.berat_cawan;
+                    $('input[name="berat_cawan[]"]').eq(idx).val(tCawan);
+                    $('#tableLembarKa tbody tr').eq(idx).find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
                 }
                 if (rec.timbang_aa !== null && rec.timbang_aa !== undefined) {
                     $('input[name="timbang_aa[]"]').eq(idx).val(rec.timbang_aa);
@@ -2451,6 +2568,7 @@
     }
 
     function initFormData() {
+        initCategorySampleCounts();
         updateSetupBadges();
 
         // If user already started a form before AJAX callbacks finished, don't reset!
@@ -2481,19 +2599,26 @@
                 }
 
                 let draft;
-                try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (e) {}
+                try {
+                    draft = JSON.parse(localStorage.getItem(getDraftKey(reqKategori)));
+                    if (!draft) {
+                        const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                        if (legacy && legacy.setup && legacy.setup.kategori === reqKategori) draft = legacy;
+                    }
+                } catch (e) {}
 
                 const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === reqKategori);
-                const draftCount = (draft && draft.setup && draft.setup.jumlah) ? draft.setup.jumlah : null;
-                const sampleCount = draftCount || (matching.length > 0 ? matching.length : 1);
+                const draftCount = (draft && draft.setup && draft.setup.jumlah) ? parseInt(draft.setup.jumlah) : null;
+                const sampleCount = draftCount || (matching.length > 0 ? matching.length : (categorySampleCounts[reqKategori] || 1));
 
+                categorySampleCounts[reqKategori] = sampleCount;
                 $('#jumlahData').val(sampleCount);
 
                 const hasDb = populateExistingShortTerm(reqKategori, sampleCount);
                 if (hasDb) return;
 
                 if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === reqKategori) {
-                    restoreFromDraft();
+                    restoreFromDraft(reqKategori);
                     return;
                 }
 
@@ -2516,7 +2641,8 @@
         // Always present the Setup Section so the user can choose category & input sample count freely!
         $('#setupSection').show();
         $('#dividerForm, #analisaSection').hide();
-        $('#jumlahData').val(1);
+        const activeRadio = $('input[name="analisa_type"]:checked').val() || 'incoming';
+        $('#jumlahData').val(categorySampleCounts[activeRadio] || 1);
     }
 
     function handleMulai(e) {
@@ -2531,10 +2657,8 @@
             });
         }
 
-        const inputJumlah = parseInt($('#jumlahData').val()) || globalSampleCount || 1;
-        if (selectedVal !== 'long-term') {
-            globalSampleCount = inputJumlah;
-        }
+        const inputJumlah = parseInt($('#jumlahData').val()) || categorySampleCounts[selectedVal] || 1;
+        categorySampleCounts[selectedVal] = inputJumlah;
 
         if (selectedVal === 'long-term') {
             if (SERVER_EXISTING && SERVER_EXISTING.id) {
@@ -2563,12 +2687,16 @@
             // Check draft for this category
             let draft;
             try {
-                draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                draft = JSON.parse(localStorage.getItem(getDraftKey(selectedVal)));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.kategori === selectedVal) draft = legacy;
+                }
             } catch (e) {}
 
             if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === selectedVal) {
                 draft.setup.jumlah = inputJumlah;
-                restoreFromDraft();
+                restoreFromDraft(selectedVal);
             } else {
                 startForm('short-term', inputJumlah, selectedVal);
             }
@@ -2585,7 +2713,7 @@
         }
         const savedValues = collectArrayValues();
 
-        globalSampleCount = newJumlah;
+        categorySampleCounts[currentKategori] = newJumlah;
         currentJumlah = newJumlah;
         $('#jumlahData').val(newJumlah);
         renderAccordion(currentType, currentJumlah);
@@ -2606,7 +2734,7 @@
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: `Jumlah sampel diubah menjadi ${newJumlah}`,
+            title: `Jumlah sampel ${currentKategori.toUpperCase()} diubah menjadi ${newJumlah}`,
             showConfirmButton: false,
             timer: 1500
         });
@@ -2831,6 +2959,9 @@
             return;
         }
 
+        // Save current category draft before switching
+        saveDraft();
+
         // Update URL query param quietly without full reload
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('kategori', targetCat);
@@ -2853,21 +2984,23 @@
             $(`input[name="analisa_type"][value="${targetCat}"]`).prop('checked', true);
         }
 
-        const keepJumlah = (globalSampleCount > 0) ? globalSampleCount : (currentJumlah > 0 ? currentJumlah : (parseInt($('#jumlahData').val()) || 1));
-        globalSampleCount = keepJumlah;
+        const targetJumlah = categorySampleCounts[targetCat] || 1;
 
-        const hasDb = populateExistingShortTerm(targetCat, keepJumlah);
+        const hasDb = populateExistingShortTerm(targetCat, targetJumlah);
         if (!hasDb) {
             let draft;
             try {
-                draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                draft = JSON.parse(localStorage.getItem(getDraftKey(targetCat)));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.kategori === targetCat) draft = legacy;
+                }
             } catch (e) {}
 
             if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === targetCat) {
-                draft.setup.jumlah = keepJumlah;
-                restoreFromDraft();
+                restoreFromDraft(targetCat);
             } else {
-                startForm('short-term', keepJumlah, targetCat);
+                startForm('short-term', targetJumlah, targetCat);
             }
         }
     }
@@ -3771,13 +3904,36 @@
         const $tabKotoranRow = $('#tableLembarKotoran tbody tr').eq(rowIdx);
         if (!$tabKotoranRow.length) return;
 
-        const tare500Str = $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val();
-        const tare250Str = $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val();
+        const selectedBeaker = $tabKotoranRow.find('.select-no-beaker').val();
+        let t500 = null;
+        let t250 = null;
+
+        if (selectedBeaker) {
+            const phys = getPhysicalNoFromCode(selectedBeaker);
+            if (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) {
+                t500 = parseFloat(glasswareData.beaker_500[phys]);
+                $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val(t500);
+                $tabKotoranRow.find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+            }
+            if (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) {
+                t250 = parseFloat(glasswareData.beaker_250[phys]);
+                $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val(t250);
+                $tabKotoranRow.find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
+            }
+        }
+
+        if (t500 === null || isNaN(t500)) {
+            const tare500Str = $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val();
+            t500 = parseRapidNumericValue(tare500Str);
+        }
+        if (t250 === null || isNaN(t250)) {
+            const tare250Str = $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val();
+            t250 = parseRapidNumericValue(tare250Str);
+        }
+
         const timbangAStr = $tabKotoranRow.find('input[name="timbang_a[]"]').val();
         const timbangBStr = $tabKotoranRow.find('input[name="timbang_b[]"]').val();
 
-        const t500 = parseRapidNumericValue(tare500Str);
-        const t250 = parseRapidNumericValue(tare250Str);
         const a = parseRapidNumericValue(timbangAStr);
         const b = parseRapidNumericValue(timbangBStr);
 
@@ -3834,10 +3990,24 @@
         const $tabKaRow = $('#tableLembarKa tbody tr').eq(rowIdx);
         if (!$tabKaRow.length) return;
 
-        const tareCawanStr = $tabKaRow.find('input[name="berat_cawan[]"]').val();
-        const timbangAaStr = $tabKaRow.find('input[name="timbang_aa[]"]').val();
+        const selectedCawan = $tabKaRow.find('.select-no-cawan').val();
+        let tCawan = null;
 
-        const tCawan = parseRapidNumericValue(tareCawanStr);
+        if (selectedCawan) {
+            const phys = getPhysicalNoFromCode(selectedCawan);
+            if (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) {
+                tCawan = parseFloat(glasswareData.cawan[phys]);
+                $tabKaRow.find('input[name="berat_cawan[]"]').val(tCawan);
+                $tabKaRow.find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
+            }
+        }
+
+        if (tCawan === null || isNaN(tCawan)) {
+            const tareCawanStr = $tabKaRow.find('input[name="berat_cawan[]"]').val();
+            tCawan = parseRapidNumericValue(tareCawanStr);
+        }
+
+        const timbangAaStr = $tabKaRow.find('input[name="timbang_aa[]"]').val();
         const aa = parseRapidNumericValue(timbangAaStr);
 
         const $badge = $tabKaRow.find('.badge-ka-calc');
@@ -5420,7 +5590,7 @@
             }
         });
 
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        const draftData = {
             setup: {
                 type: currentType,
                 kategori: currentKategori,
@@ -5428,13 +5598,17 @@
             },
             fields,
             existingPhotos: existingPhotos,
-        }));
+        };
+
+        // Save per category and to legacy key
+        localStorage.setItem(getDraftKey(currentKategori), JSON.stringify(draftData));
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
     }
 
     function loadFieldsFromDraft(fields) {
         setTimeout(() => {
             for (const [name, value] of Object.entries(fields)) {
-                if (['_token', 'id_identitas', 'jenis', 'analisa_type', 'kategori'].includes(name)) continue;
+                if (['_token', 'id_identitas', 'jenis', 'analisa_type', 'kategori', 'berat_beaker_500[]', 'berat_beaker_250[]', 'berat_cawan[]'].includes(name)) continue;
                 if (name === 'organo[]' && Array.isArray(value)) {
                     $('.organo-cell-container').each(function(i) {
                         if (value[i] !== undefined) {
@@ -5490,19 +5664,24 @@
         }, 150);
     }
 
-    function restoreFromDraft() {
+    function restoreFromDraft(targetCat = null) {
+        const cat = targetCat || currentKategori || 'incoming';
         let draft;
         try {
-            draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+            draft = JSON.parse(localStorage.getItem(getDraftKey(cat)));
+            if (!draft) {
+                const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                if (legacy && legacy.setup && legacy.setup.kategori === cat) draft = legacy;
+            }
         } catch (e) {
             return;
         }
         if (!draft?.setup?.type) return;
 
         currentType = draft.setup.type;
-        currentKategori = draft.setup.kategori || 'incoming';
-        currentJumlah = (globalSampleCount > 0) ? globalSampleCount : (draft.setup.jumlah || parseInt($('#jumlahData').val()) || 1);
-        globalSampleCount = currentJumlah;
+        currentKategori = draft.setup.kategori || cat;
+        currentJumlah = draft.setup.jumlah || categorySampleCounts[cat] || parseInt($('#jumlahData').val()) || 1;
+        categorySampleCounts[currentKategori] = currentJumlah;
 
         if (draft.existingPhotos && Array.isArray(draft.existingPhotos)) {
             existingPhotos = [...draft.existingPhotos];
@@ -5521,8 +5700,15 @@
         renderPhotoPreviews();
     }
 
-    function clearDraft() {
-        localStorage.removeItem(DRAFT_KEY);
+    function clearDraft(targetCat = null) {
+        if (targetCat) {
+            localStorage.removeItem(getDraftKey(targetCat));
+        } else {
+            localStorage.removeItem(DRAFT_KEY);
+            ['incoming', 'sta', 'monitoring', 'long-term', 'garam-gula'].forEach(cat => {
+                localStorage.removeItem(getDraftKey(cat));
+            });
+        }
     }
 </script>
 @endsection

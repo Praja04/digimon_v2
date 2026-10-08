@@ -9,6 +9,10 @@ use App\Models\AnalisaLongTermHistory;
 use App\Models\AnalisaShortTerm;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
+use App\Models\MasterGlassware;
+use App\Models\MasterJenisBahan;
+use App\Models\MasterParameterRm;
+use App\Models\MasterStandarRm;
 use App\Models\PackagingIncoming;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -343,9 +347,174 @@ public function pmKartonBct(
         $existingGaramGula = $identitas->analisaGaramGula ?? collect();
         $histories = $identitas->analisaLongTermHistories;
 
+        // Preload Master Glassware Tare Weights & Quota
+        $glasswares = MasterGlassware::where('status', true)->get();
+        $beaker500 = [];
+        $beaker250 = [];
+        $cawan = [];
+
+        foreach ($glasswares as $gw) {
+            $jenisGw = strtoupper(trim($gw->jenis_glassware));
+            $nomor = (string) $gw->nomor_glassware;
+            $phys = trim(explode('.', (string)$gw->nomor_glassware)[0]);
+            $berat = $gw->berat_glassware !== null ? (float) $gw->berat_glassware : 0;
+
+            if (str_contains($jenisGw, '500')) {
+                $beaker500[$nomor] = $berat;
+                if ($phys !== '') {
+                    $beaker500[$phys] = $berat;
+                }
+            } elseif (str_contains($jenisGw, '250')) {
+                $beaker250[$nomor] = $berat;
+                if ($phys !== '') {
+                    $beaker250[$phys] = $berat;
+                }
+            } elseif (str_contains($jenisGw, 'CAWAN')) {
+                $cawan[$nomor] = $berat;
+                if ($phys !== '') {
+                    $cawan[$phys] = $berat;
+                }
+            }
+        }
+
+        $beakerQuery = DB::table('analisa_short_term')
+            ->whereDate('created_at', today())
+            ->whereNotNull('no_beaker')
+            ->where('no_beaker', '!=', '')
+            ->where('id_identitas', '!=', $id);
+
+        $cawanQuery = DB::table('analisa_short_term')
+            ->whereDate('created_at', today())
+            ->whereNotNull('no_cawan')
+            ->where('no_cawan', '!=', '')
+            ->where('id_identitas', '!=', $id);
+
+        $totalBeakerToday = (clone $beakerQuery)->count();
+        $totalCawanToday = (clone $cawanQuery)->count();
+
+        $beakerUsage = [];
+        $rawBeakerUsage = (clone $beakerQuery)
+            ->select('no_beaker', DB::raw('count(*) as count'))
+            ->groupBy('no_beaker')
+            ->pluck('count', 'no_beaker')
+            ->toArray();
+        foreach ($rawBeakerUsage as $code => $cnt) {
+            $phys = trim(explode('.', (string)$code)[0]);
+            if ($phys !== '') {
+                $beakerUsage[$phys] = ($beakerUsage[$phys] ?? 0) + $cnt;
+            }
+        }
+
+        $cawanUsage = [];
+        $rawCawanUsage = (clone $cawanQuery)
+            ->select('no_cawan', DB::raw('count(*) as count'))
+            ->groupBy('no_cawan')
+            ->pluck('count', 'no_cawan')
+            ->toArray();
+        foreach ($rawCawanUsage as $code => $cnt) {
+            $phys = trim(explode('.', (string)$code)[0]);
+            if ($phys !== '') {
+                $cawanUsage[$phys] = ($cawanUsage[$phys] ?? 0) + $cnt;
+            }
+        }
+
+        $initialGlassware = [
+            'status'     => true,
+            'beaker_500' => $beaker500,
+            'beaker_250' => $beaker250,
+            'cawan'      => $cawan,
+            'total_today'=> [
+                'beaker' => $totalBeakerToday,
+                'cawan'  => $totalCawanToday,
+            ],
+            'usage'      => [
+                'beaker' => $beakerUsage,
+                'cawan'  => $cawanUsage,
+            ],
+            'max_limits' => [
+                'beaker' => 8,
+                'cawan'  => 2,
+            ],
+        ];
+
+        // Preload Master Standards for this material
+        $cleanJenis = strtoupper(trim((string)$identitas->jenis));
+        $standards = MasterStandarRm::where('status', true)
+            ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
+                $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
+            })
+            ->get();
+
+        $standardsMap = [];
+        foreach ($standards as $s) {
+            $key = strtoupper(trim($s->parameter));
+            $standardsMap[$key] = [
+                'parameter'   => $s->parameter,
+                'min'         => $s->min_standar,
+                'max'         => $s->max_standar,
+                'target_text' => $s->target_text,
+                'uom'         => $s->uom,
+            ];
+        }
+
+        $initialStandards = [
+            'status'    => true,
+            'standards' => $standardsMap,
+        ];
+
+        // Preload Master Parameters (Warna, Aroma, Organo)
+        $jb = MasterJenisBahan::where('nama', 'LIKE', '%' . trim((string)$identitas->jenis) . '%')->first();
+        $paramQuery = MasterParameterRm::where('status', true);
+        if ($jb) {
+            $paramQuery->where(function ($q) use ($jb) {
+                $q->where('jenis_bahan_id', $jb->id)
+                  ->orWhereNull('jenis_bahan_id');
+            });
+        }
+        $paramList = $paramQuery->orderBy('urutan')->orderBy('id')->get();
+        $pWarna = [];
+        $pAroma = [];
+        $pOrgano = [];
+        foreach ($paramList as $p) {
+            $kat = strtolower($p->kategori);
+            $val = trim($p->nama_pilihan);
+            if ($kat === 'warna') {
+                if (!in_array($val, $pWarna)) {
+                    $pWarna[] = $val;
+                }
+            } elseif ($kat === 'aroma') {
+                if (!in_array($val, $pAroma)) {
+                    $pAroma[] = $val;
+                }
+            } elseif ($kat === 'organo') {
+                $pOrgano[] = [
+                    'label'    => $val,
+                    'value'    => $val,
+                    'isCustom' => (bool) $p->is_custom,
+                ];
+            }
+        }
+        $initialParameters = [
+            'status' => true,
+            'data'   => [
+                'warna'  => $pWarna,
+                'aroma'  => $pAroma,
+                'organo' => $pOrgano,
+            ],
+        ];
+
         return view(
             'app.rmpm.analisa',
-            compact('identitas', 'existingLongTerm', 'existingShortTerm', 'existingGaramGula', 'histories')
+            compact(
+                'identitas',
+                'existingLongTerm',
+                'existingShortTerm',
+                'existingGaramGula',
+                'histories',
+                'initialGlassware',
+                'initialStandards',
+                'initialParameters'
+            )
         );
     }
 

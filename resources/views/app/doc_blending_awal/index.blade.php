@@ -601,23 +601,12 @@
         if (!rows || rows.length === 0) return '';
         var html = '';
         rows.forEach(function(row, rIdx) {
-            // Normalisasi data jika ada format lama
-            var rawSamp = row.sampling_ke ? String(row.sampling_ke).trim() : '';
-            var rawVol = row.vol_tangki ? String(row.vol_tangki).trim() : '';
-            var rawAdj = row.waktu_adjustment ? String(row.waktu_adjustment).trim() : '';
+            var sampValue = row.sampling_ke !== undefined && row.sampling_ke !== null ? String(row.sampling_ke).trim() : '';
+            var volValue = row.vol_tangki !== undefined && row.vol_tangki !== null ? String(row.vol_tangki).trim() : '';
+            var adjValue = row.waktu_adjustment !== undefined && row.waktu_adjustment !== null ? String(row.waktu_adjustment).trim() : '';
+            var dispValue = row.disposisi !== undefined && row.disposisi !== null ? String(row.disposisi).trim() : '';
 
-            var isAwalTurun = (rawSamp.toLowerCase() === 'awal' || rawVol.toLowerCase() === 'awal');
-            var sampValue = rawSamp;
-            var volValue = rawVol;
-            var adjValue = rawAdj;
-
-            if (isAwalTurun) {
-                sampValue = 'Awal';
-                if (volValue.toLowerCase() === 'awal') volValue = '';
-                if (adjValue === (row.serah_terima_jam || '') || adjValue === '') adjValue = '-';
-            } else if (!sampValue) {
-                sampValue = String(rIdx + 1);
-            }
+            var isAwalTurun = (volValue.toLowerCase() === 'awal');
 
             var buihRaw = row.buih ? String(row.buih).trim() : 'Tidak Ada';
             if (buihRaw.toLowerCase() === 'tidak ada' || buihRaw.toLowerCase() === 'tidak\nada') {
@@ -626,26 +615,28 @@
 
             html += `
             <tr class="data-row ${isAwalTurun ? 'bg-light' : ''}" data-row-index="${rIdx}">
-                <td><input type="text" class="clean-cell-input r-sampling-ke fw-bold ${isAwalTurun ? 'text-primary' : ''}" value="${escapeHtml(sampValue)}"></td>
-                <td><input type="text" class="clean-cell-input r-vol-tangki fw-semibold" value="${escapeHtml(volValue)}"></td>
-                <td><input type="text" class="clean-cell-input r-serah-jam" value="${escapeHtml(row.serah_terima_jam || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-serah-pic" value="${escapeHtml(row.serah_terima_pic || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-bj" value="${escapeHtml(row.bj || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-brix" value="${escapeHtml(row.brix || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-ph" value="${escapeHtml(row.ph || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-nacl" value="${escapeHtml(row.nacl || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-visco" value="${escapeHtml(row.visco || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-organo" value="${escapeHtml(row.organo || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-aroma" value="${escapeHtml(row.aroma || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-warna" value="${escapeHtml(row.warna || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-sampling-ke fw-bold text-center" value="${escapeHtml(sampValue)}"></td>
+                <td><input type="text" class="clean-cell-input r-vol-tangki fw-semibold text-center ${isAwalTurun ? 'text-primary' : ''}" value="${escapeHtml(volValue)}"></td>
+                <td><input type="text" class="clean-cell-input r-serah-jam text-center" value="${escapeHtml(row.serah_terima_jam || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-serah-pic text-center" value="${escapeHtml(row.serah_terima_pic || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-bj text-center" value="${escapeHtml(row.bj || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-brix text-center" value="${escapeHtml(row.brix || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-ph text-center" value="${escapeHtml(row.ph || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-nacl text-center" value="${escapeHtml(row.nacl || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-visco text-center" value="${escapeHtml(row.visco || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-organo text-center" value="${escapeHtml(row.organo || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-aroma text-center" value="${escapeHtml(row.aroma || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-warna text-center" value="${escapeHtml(row.warna || '')}"></td>
                 <td style="padding: 1px 0;">
                     <textarea class="clean-cell-input r-buih" rows="2" style="resize:none; padding:1px 0; line-height:1.15; font-size:0.75rem; height:34px; overflow:hidden; text-align:center; white-space:pre-wrap;">${escapeHtml(buihRaw)}</textarea>
                 </td>
-                <td><input type="text" class="clean-cell-input r-aw" value="${escapeHtml(row.aw || '')}"></td>
+                <td><input type="text" class="clean-cell-input r-aw text-center" value="${escapeHtml(row.aw || '')}"></td>
                 <td class="p-1">
-                    <textarea class="clean-cell-textarea r-waktu-adj" rows="2" placeholder="Catatan / Waktu & Adjustment...">${escapeHtml(adjValue)}</textarea>
+                    <textarea class="clean-cell-textarea r-waktu-adj text-center" rows="2" placeholder="Waktu & Adjustment...">${escapeHtml(adjValue)}</textarea>
                 </td>
-                <td><input type="text" class="clean-cell-input r-disposisi fw-semibold ${row.disposisi === 'Reject' ? 'text-danger' : 'text-success'}" value="${escapeHtml(row.disposisi || '')}"></td>
+                <td class="p-1">
+                    <textarea class="clean-cell-textarea r-disposisi text-center fw-semibold ${dispValue.includes('Reject') ? 'text-danger' : 'text-success'}" rows="2" placeholder="Disposisi / Keterangan...">${escapeHtml(dispValue)}</textarea>
+                </td>
             </tr>
             `;
         });
