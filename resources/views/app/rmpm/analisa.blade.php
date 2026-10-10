@@ -2308,15 +2308,23 @@
         });
 
         // Submit buttons
-        $('#btnSimpanDraft').on('click', function() {
+        $('#btnSimpanDraft, .btn-draft-worksheet').on('click', function() {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+            }
             $('#saveAction').val('draft');
-            submitForm('draft');
+            submitForm('draft', false);
         });
 
         $('#formAnalisa').on('submit', function(e) {
             e.preventDefault();
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+            }
             $('#saveAction').val('final');
-            submitForm('final');
+            submitForm('final', false);
         });
     });
 
@@ -2402,28 +2410,44 @@
 
         if (incoming.length > 0) {
             const isDraft = (incoming[0].status === 'draft');
-            $('#setupBadgeIncoming').text(isDraft ? `(Draft - ${incoming.length} Sampel)` : `(${incoming.length} Sampel)`).show();
+            if (isDraft) {
+                $('#setupBadgeIncoming').hide();
+            } else {
+                $('#setupBadgeIncoming').text(`(${incoming.length} Sampel)`).show();
+            }
         } else {
             $('#setupBadgeIncoming').hide();
         }
 
         if (sta.length > 0) {
             const isDraft = (sta[0].status === 'draft');
-            $('#setupBadgeSta').text(isDraft ? `(Draft - ${sta.length} Sampel)` : `(${sta.length} Sampel)`).show();
+            if (isDraft) {
+                $('#setupBadgeSta').hide();
+            } else {
+                $('#setupBadgeSta').text(`(${sta.length} Sampel)`).show();
+            }
         } else {
             $('#setupBadgeSta').hide();
         }
 
         if (monitoring.length > 0) {
             const isDraft = (monitoring[0].status === 'draft');
-            $('#setupBadgeMonitoring').text(isDraft ? `(Draft - ${monitoring.length} Sampel)` : `(${monitoring.length} Sampel)`).show();
+            if (isDraft) {
+                $('#setupBadgeMonitoring').hide();
+            } else {
+                $('#setupBadgeMonitoring').text(`(${monitoring.length} Sampel)`).show();
+            }
         } else {
             $('#setupBadgeMonitoring').hide();
         }
 
         if (hasLongTerm) {
             const isDraft = (SERVER_EXISTING.status === 'draft');
-            $('#setupBadgeLongTerm').html(isDraft ? '<i class="ri-file-edit-line"></i> Draft' : '<i class="ri-check-line"></i> Tersimpan').show();
+            if (isDraft) {
+                $('#setupBadgeLongTerm').hide();
+            } else {
+                $('#setupBadgeLongTerm').html('<i class="ri-check-line"></i> Tersimpan').show();
+            }
         } else {
             $('#setupBadgeLongTerm').hide();
         }
@@ -2911,7 +2935,7 @@
         if (incoming.length > 0) {
             const isDraft = (incoming[0].status === 'draft');
             if (isDraft) {
-                $('#badgeCatIncoming').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+                $('#badgeCatIncoming').hide();
             } else {
                 $('#badgeCatIncoming').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
             }
@@ -2922,7 +2946,7 @@
         if (sta.length > 0) {
             const isDraft = (sta[0].status === 'draft');
             if (isDraft) {
-                $('#badgeCatSta').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+                $('#badgeCatSta').hide();
             } else {
                 $('#badgeCatSta').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
             }
@@ -2933,7 +2957,7 @@
         if (monitoring.length > 0) {
             const isDraft = (monitoring[0].status === 'draft');
             if (isDraft) {
-                $('#badgeCatMonitoring').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+                $('#badgeCatMonitoring').hide();
             } else {
                 $('#badgeCatMonitoring').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
             }
@@ -2944,7 +2968,7 @@
         if (hasLongTerm) {
             const isDraft = (SERVER_EXISTING.status === 'draft');
             if (isDraft) {
-                $('#badgeCatLongTerm').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+                $('#badgeCatLongTerm').hide();
             } else {
                 $('#badgeCatLongTerm').html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>').show();
             }
@@ -2959,8 +2983,14 @@
             return;
         }
 
-        // Save current category draft before switching
-        saveDraft();
+        // Flush pending auto-save immediately before switching
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
+            executeAutoSave();
+        } else {
+            saveDraft();
+        }
 
         // Update URL query param quietly without full reload
         const newUrl = new URL(window.location.href);
@@ -5309,9 +5339,9 @@
     }
 
     // ─────────────────────────────────────────────
-    // SUBMIT (FINAL vs DRAFT)
+    // SUBMIT (FINAL vs DRAFT vs AUTO-SAVE)
     // ─────────────────────────────────────────────
-    function submitForm(actionType) {
+    function submitForm(actionType, isAutoSave = false) {
         const isDraft = (actionType === 'draft');
 
         if (!isDraft) {
@@ -5452,6 +5482,7 @@
 
         const formData = new FormData(document.getElementById('formAnalisa'));
         formData.set('save_action', actionType);
+        formData.set('is_auto_save', isAutoSave ? '1' : '0');
         formData.set('kategori', currentKategori);
 
         if (currentType === 'long-term') {
@@ -5487,12 +5518,14 @@
             'garam-gula': "{{ route('rmpm.store.garam-gula') }}",
         };
 
-        Swal.fire({
-            title: isDraft ? 'Menyimpan Sementara...' : 'Menyimpan Analisa...',
-            text: 'Mohon tunggu sebentar...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        if (!isAutoSave) {
+            Swal.fire({
+                title: isDraft ? 'Menyimpan Sementara...' : 'Menyimpan Analisa...',
+                text: 'Mohon tunggu sebentar...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        }
 
         function executeAjaxSubmit(isRetry) {
             const currentToken = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val();
@@ -5510,23 +5543,32 @@
                     'Accept': 'application/json'
                 },
                 success: function(resp) {
-                    clearDraft();
-                    if (isDraft) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Tersimpan Sementara',
-                            text: resp.message || 'Data analisa berhasil disimpan sementara (Draft).'
-                        }).then(() => {
-                            window.location.reload();
-                        });
+                    if (isAutoSave) {
+                        isAutoSaving = false;
+                        syncServerStateAfterDraftSave(currentType, currentKategori, currentJumlah);
+                        if (pendingAutoSave) {
+                            pendingAutoSave = false;
+                            scheduleAutoSave();
+                        }
                     } else {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: resp.message || 'Data analisa berhasil disimpan!'
-                        }).then(() => {
-                            window.location.href = "{{ route('rmpm.show', $identitas->id) }}";
-                        });
+                        clearDraft();
+                        if (isDraft) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Tersimpan Sementara',
+                                text: resp.message || 'Data analisa berhasil disimpan sementara (Draft).'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: resp.message || 'Data analisa berhasil disimpan!'
+                            }).then(() => {
+                                window.location.href = "{{ route('rmpm.show', $identitas->id) }}";
+                            });
+                        }
                     }
                 },
                 error: function(xhr) {
@@ -5545,14 +5587,26 @@
                                     executeAjaxSubmit(true);
                                     return;
                                 }
-                                handleAjaxError(xhr);
+                                if (isAutoSave) {
+                                    isAutoSaving = false;
+                                } else {
+                                    handleAjaxError(xhr);
+                                }
                             })
                             .fail(function() {
-                                handleAjaxError(xhr);
+                                if (isAutoSave) {
+                                    isAutoSaving = false;
+                                } else {
+                                    handleAjaxError(xhr);
+                                }
                             });
                         return;
                     }
-                    handleAjaxError(xhr);
+                    if (isAutoSave) {
+                        isAutoSaving = false;
+                    } else {
+                        handleAjaxError(xhr);
+                    }
                 },
             });
         }
@@ -5573,8 +5627,78 @@
     }
 
     // ─────────────────────────────────────────────
-    // LOCALSTORAGE DRAFT CACHE
+    // AUTO-SAVE & LOCALSTORAGE DRAFT CACHE
     // ─────────────────────────────────────────────
+    let autoSaveTimer = null;
+    let isAutoSaving = false;
+    let pendingAutoSave = false;
+
+    function scheduleAutoSave() {
+        if (!currentType || $('#analisaSection').is(':hidden')) return;
+
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+        }
+
+        autoSaveTimer = setTimeout(() => {
+            executeAutoSave();
+        }, 1800);
+    }
+
+    function executeAutoSave() {
+        if (!currentType || $('#analisaSection').is(':hidden')) return;
+        if (isAutoSaving) {
+            pendingAutoSave = true;
+            return;
+        }
+
+        isAutoSaving = true;
+        submitForm('draft', true);
+    }
+
+    function syncServerStateAfterDraftSave(type, kategori, jumlah) {
+        if (type === 'short-term') {
+            if (!Array.isArray(SERVER_SHORT_TERM)) {
+                SERVER_SHORT_TERM = [];
+            }
+            SERVER_SHORT_TERM = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') !== kategori);
+
+            for (let i = 0; i < jumlah; i++) {
+                SERVER_SHORT_TERM.push({
+                    kategori: kategori,
+                    status: 'draft',
+                    disposisi: $('select[name="disposisi"]').val() || null,
+                    keterangan: $('textarea[name="keterangan"]').val() || null,
+                    brix: $('input[name="brix[]"]').eq(i).val() || null,
+                    ph: $('input[name="ph[]"]').eq(i).val() || null,
+                });
+            }
+        } else if (type === 'garam-gula') {
+            if (!Array.isArray(SERVER_GARAM_GULA)) {
+                SERVER_GARAM_GULA = [];
+            }
+            SERVER_GARAM_GULA = [];
+            for (let i = 0; i < jumlah; i++) {
+                SERVER_GARAM_GULA.push({
+                    status: 'draft',
+                    disposisi: $('select[name="disposisi"]').val() || null,
+                    keterangan: $('textarea[name="keterangan"]').val() || null,
+                    fisik: $('input[name="fisik[]"]').eq(i).val() || null,
+                });
+            }
+        } else if (type === 'long-term') {
+            if (!SERVER_EXISTING) SERVER_EXISTING = {};
+            SERVER_EXISTING.status = 'draft';
+            SERVER_EXISTING.id = SERVER_EXISTING.id || {{ $identitas->id }};
+            SERVER_EXISTING.uji_kristal = $('#selectUjiKristal').val() || null;
+            SERVER_EXISTING.disposisi = $('#selectDisposisiLong').val() || null;
+        }
+
+        updateSetupBadges();
+        updateCategorySwitcherBadges();
+        updateDraftBadgeStatus();
+    }
+
     function saveDraft() {
         if (!currentType) return;
         const fields = {};
@@ -5603,6 +5727,9 @@
         // Save per category and to legacy key
         localStorage.setItem(getDraftKey(currentKategori), JSON.stringify(draftData));
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+
+        // Schedule background auto-save to database server
+        scheduleAutoSave();
     }
 
     function loadFieldsFromDraft(fields) {

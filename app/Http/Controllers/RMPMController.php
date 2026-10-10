@@ -115,9 +115,11 @@ class RMPMController extends Controller
 
                     if ($jenisUpper === 'GARAM') {
                         foreach ($item->analisaGaramGula as $analisa) {
-                            if ($analisa->disposisi) {
+                            if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                 $status = '✅ Selesai';
                                 break;
+                            } elseif ($analisa->status === 'draft') {
+                                $status = '⌛ Draft';
                             }
                         }
                     } else {
@@ -132,9 +134,11 @@ class RMPMController extends Controller
                         }
                         if ($status === '⌛ Proses') {
                             foreach ($item->analisaShortTerm as $analisa) {
-                                if (!empty($analisa->disposisi)) {
+                                if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                     $status = '✅ Selesai';
                                     break;
+                                } elseif ($analisa->status === 'draft') {
+                                    $status = '⌛ Draft';
                                 }
                             }
                         }
@@ -852,18 +856,21 @@ public function pmKartonBct(
             ]);
         }
 
-        // Record history log
-        AnalisaLongTermHistory::create([
-            'analisa_long_term_id' => $analisa->id,
-            'id_identitas' => $request->id_identitas,
-            'user_id' => auth()->id(),
-            'action' => $isDraft ? 'Simpan Sementara' : 'Simpan Final',
-            'uji_kristal' => $ujiKristal,
-            'disposisi' => $disposisi,
-            'group' => $group,
-            'attachment' => $photoList,
-            'keterangan' => $request->keterangan,
-        ]);
+        // Record history log (only on manual save / final save, not on silent auto-saves)
+        $isAutoSave = $request->boolean('is_auto_save') || $request->input('is_auto_save') == '1';
+        if (!$isAutoSave) {
+            AnalisaLongTermHistory::create([
+                'analisa_long_term_id' => $analisa->id,
+                'id_identitas' => $request->id_identitas,
+                'user_id' => auth()->id(),
+                'action' => $isDraft ? 'Simpan Sementara' : 'Simpan Final',
+                'uji_kristal' => $ujiKristal,
+                'disposisi' => $disposisi,
+                'group' => $group,
+                'attachment' => $photoList,
+                'keterangan' => $request->keterangan,
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -1059,6 +1066,7 @@ public function pmKartonBct(
                     '%nacl'        => $this->nullableFloat($request['%nacl'][$i] ?? null),
                     'gross_weight' => $this->nullableFloat($request->gross_weight[$i] ?? null),
                     'disposisi'    => $request->disposisi,
+                    'status'       => $isDraft ? 'draft' : 'final',
                     'keterangan'   => $request->keterangan,
                     'created_by'   => auth()->id(),
                     'created_at'   => now(),
