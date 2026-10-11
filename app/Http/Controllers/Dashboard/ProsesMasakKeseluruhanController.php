@@ -10,6 +10,8 @@ use App\Models\Pelarutan2;
 use App\Models\BlendingAwal;
 use App\Models\MonitoringTurunBlending;
 use App\Models\MonitoringPasteurisasi;
+use App\Exports\ProsesMasakKeseluruhanExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -540,5 +542,30 @@ class ProsesMasakKeseluruhanController extends Controller
                 'organo_bloke' => $blendingReleaseOrganoBloke
             ]
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $month = $request->input('month');
+        $variant = $request->input('variant');
+        $formulasi = $request->input('formulasi');
+
+        $fileName = 'Laporan_Proses_Masak_Keseluruhan_' .
+            ($startDate ? $startDate : 'Awal') . '_sd_' .
+            ($endDate ? $endDate : 'Akhir') . '_' .
+            now()->timestamp . '.xlsx';
+
+        return Excel::download(
+            new ProsesMasakKeseluruhanExport(
+                $startDate,
+                $endDate,
+                $month,
+                $variant,
+                $formulasi
+            ),
+            $fileName
+        );
     }
 }

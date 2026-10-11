@@ -124,6 +124,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/proses-masak', [App\Http\Controllers\Dashboard\ProsesMasakController::class, 'index'])->name('dashboard.proses-masak.index');
         Route::get('/dashboard/proses-masak-keseluruhan', [App\Http\Controllers\Dashboard\ProsesMasakKeseluruhanController::class, 'index'])->name('dashboard.proses-masak-keseluruhan.index');
         Route::get('/dashboard/proses-masak-keseluruhan/get-data', [App\Http\Controllers\Dashboard\ProsesMasakKeseluruhanController::class, 'getData'])->name('dashboard.proses-masak-keseluruhan.get-data');
+        Route::get('/dashboard/proses-masak-keseluruhan/export', [App\Http\Controllers\Dashboard\ProsesMasakKeseluruhanController::class, 'exportExcel'])->name('dashboard.proses-masak-keseluruhan.export');
 
         // Dashboard - Monitoring On Going Mikro
         Route::get('/dashboard/monitoring-on-going-mikro', [App\Http\Controllers\Dashboard\MonitoringOnGoingMikroController::class, 'index'])->name('dashboard.monitoring-on-going-mikro.index');
