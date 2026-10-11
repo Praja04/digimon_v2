@@ -316,11 +316,14 @@
                         <label><i class="ri-calendar-2-line me-1"></i> Tanggal Selesai</label>
                         <input type="date" name="end_date" id="endDateInput" class="form-control form-control-modern">
                     </div>
-                    <div class="col-lg-2 col-md-4 d-flex gap-2">
-                        <button type="button" id="filterBtn" class="btn btn-primary w-100 fw-semibold" style="border-radius: 8px;">
+                    <div class="col-lg-2 col-md-4 d-flex gap-1">
+                        <button type="button" id="filterBtn" class="btn btn-primary w-100 fw-semibold px-2" style="border-radius: 8px;">
                             <i class="ri-filter-3-line me-1"></i> Filter
                         </button>
-                        <button type="button" id="resetBtn" class="btn btn-light w-100 fw-semibold" style="border-radius: 8px;">
+                        <button type="button" id="exportBtn" class="btn btn-success w-100 fw-semibold px-2" style="border-radius: 8px;" title="Export Data ke Excel Format Ke Samping">
+                            <i class="ri-file-excel-2-line me-1"></i> Export
+                        </button>
+                        <button type="button" id="resetBtn" class="btn btn-light w-100 fw-semibold px-2" style="border-radius: 8px;">
                             <i class="ri-refresh-line me-1"></i> Reset
                         </button>
                     </div>
@@ -1134,6 +1137,11 @@
             // Event Listeners
             $('#filterBtn').on('click', function() {
                 loadDashboardData();
+            });
+
+            $('#exportBtn').on('click', function() {
+                const params = $('#filterForm').serialize();
+                window.location.href = "{{ route('dashboard.proses-masak-keseluruhan.export') }}?" + params;
             });
 
             $('#resetBtn').on('click', function() {
