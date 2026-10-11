@@ -101,7 +101,7 @@ class ProsesMasakKeseluruhanController extends Controller
         $batches = $query->orderBy('date', 'asc')->get();
 
         // 1. Overall Metrics
-        $totalBatchCount = $batches->count();
+        $totalBatchCount = 0;
 
         $blendingAwalItems = collect();
         $blendingReleaseItems = collect();
@@ -125,6 +125,26 @@ class ProsesMasakKeseluruhanController extends Controller
 
         foreach ($batches as $batch) {
             $batchDateLabel = $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : 'N/A';
+
+            // Hitung Qty Batch: validasi batch dari batch_range yang ada di Pelarutan 1
+            // Jika ada revisi / adjustment, batch_number tetap dihitung 1 (distinct)
+            $p1DistinctBatches = $batch->pelarutan_1
+                ->pluck('batch_number')
+                ->filter(fn($n) => !is_null($n) && trim($n) !== '')
+                ->map(fn($n) => (string)trim($n))
+                ->unique();
+
+            if (!empty($batch->batch_range) && preg_match('/^(\d+)\s*-\s*(\d+)$/', (string)$batch->batch_range, $matches)) {
+                $start = (int)$matches[1];
+                $end = (int)$matches[2];
+                $expectedRange = [];
+                for ($i = $start; $i <= $end; $i++) {
+                    $expectedRange[] = (string)$i;
+                }
+                $totalBatchCount += $p1DistinctBatches->intersect($expectedRange)->count();
+            } else {
+                $totalBatchCount += $p1DistinctBatches->count();
+            }
 
             // 1. Blending Awal: Sample pertama blending yang revisinya masih NULL
             $firstBlending = $batch->BlendingAwal
