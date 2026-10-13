@@ -114,11 +114,20 @@
 
     @foreach($sheets as $sIdx => $sheet)
     <div class="sheet-page">
+        <!-- Notes Resmi (Sesuai Google Spreadsheet FRM/QLB/04/104/011-00) -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
+            <div style="border: 1px solid #000; padding: 2px 8px; font-size: 7pt; line-height: 1.25; text-align: left; background: #fff;">
+                <span style="font-weight: bold;">Notes:</span><br>
+                • 1 lembar : 1 batch (Dissolver) atau 1 pasangan batch (Blending)<br>
+                • 1 lembar untuk 3x adjustment
+            </div>
+        </div>
+
         <!-- Header Dokumen (FRM/QLB/04/104/011-00) -->
         <table class="w-100 mb-2 border" style="border-collapse: collapse;">
             <tr>
                 <td width="20%" class="align-middle p-2 border-end text-center">
-                    <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 42px; object-fit: contain;">
+                    <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 40px; object-fit: contain;">
                 </td>
                 <td width="55%" class="align-middle text-center border-end">
                     <div class="doc-title">FORM ADJUSTMENT</div>
@@ -138,7 +147,7 @@
             </tr>
         </table>
 
-        <!-- Metadata Informasi (3 Baris) -->
+        <!-- Metadata Informasi (3 Baris Rapi) -->
         <table class="w-100 meta-table mb-2">
             <tr>
                 <td width="15%" class="fw-bold">Proses</td>
@@ -160,7 +169,7 @@
             </tr>
         </table>
 
-        <!-- Tabel Utama Bahan & Adjustment -->
+        <!-- Tabel Utama Bahan, Adjusment, Disposisi & Tanda Tangan (SATU TABEL SOLID TUNGGAL) -->
         @php
             $rawRows = $sheet['bahan_rows'] ?? [];
             $bMap = [];
@@ -169,6 +178,36 @@
                     $bMap[$r['bahan']] = $r;
                 }
             }
+
+            // Siapkan 9 baris bahan: 7 standar + 2 baris tambahan sesuai Google Spreadsheet resmi
+            $all9Rows = [];
+            foreach ($defaultBahans as $idxB => $bName) {
+                $rData = $bMap[$bName] ?? ($rawRows[$idxB] ?? []);
+                $all9Rows[] = [
+                    'bahan' => $bName,
+                    'isCustom' => false,
+                    'adj1' => $rData['adj1'] ?? '',
+                    'adj2' => $rData['adj2'] ?? '',
+                    'adj3' => $rData['adj3'] ?? '',
+                ];
+            }
+
+            $extra1 = $rawRows[7] ?? [];
+            $extra2 = $rawRows[8] ?? [];
+            $all9Rows[] = [
+                'bahan' => $extra1['bahan'] ?? '',
+                'isCustom' => true,
+                'adj1' => $extra1['adj1'] ?? '',
+                'adj2' => $extra1['adj2'] ?? '',
+                'adj3' => $extra1['adj3'] ?? '',
+            ];
+            $all9Rows[] = [
+                'bahan' => $extra2['bahan'] ?? '',
+                'isCustom' => true,
+                'adj1' => $extra2['adj1'] ?? '',
+                'adj2' => $extra2['adj2'] ?? '',
+                'adj3' => $extra2['adj3'] ?? '',
+            ];
         @endphp
         <table class="table-doc">
             <thead>
@@ -181,73 +220,70 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($defaultBahans as $idxB => $bName)
-                    @php
-                        $rData = $bMap[$bName] ?? ($rawRows[$idxB] ?? []);
-                    @endphp
+                <!-- Baris 1 s/d 9: 7 Bahan Standar + 2 Baris Tambahan (DISPOSISI Rowspan 11) -->
+                @foreach($all9Rows as $idxB => $rData)
                     <tr>
-                        <td class="text-start ps-2">{{ $bName }}</td>
-                        <td>{{ $rData['adj1'] ?? '' }}</td>
-                        <td>{{ $rData['adj2'] ?? '' }}</td>
-                        <td>{{ $rData['adj3'] ?? '' }}</td>
+                        <td class="text-start ps-2 {{ !$rData['isCustom'] ? 'fw-bold' : '' }}">
+                            {{ $rData['bahan'] ?: ($rData['isCustom'] ? '-' : '') }}
+                        </td>
+                        <td>{{ $rData['adj1'] ?: '' }}</td>
+                        <td>{{ $rData['adj2'] ?: '' }}</td>
+                        <td>{{ $rData['adj3'] ?: '' }}</td>
                         @if($loop->first)
-                            <td rowspan="7" class="fw-bold fs-12 align-middle text-center bg-white" style="border: 1px solid #000;">
+                            <td rowspan="11" class="fw-bold fs-12 align-middle text-center bg-white" style="border: 1px solid #000;">
                                 {{ $sheet['disposisi'] ?? 'Release' }}
                             </td>
                         @endif
                     </tr>
                 @endforeach
+
+                <!-- Baris 10: Keterangan (dimulai di kolom 1, rowspan 5) & Jam Pemberian Adj (kolom 2, 3, 4) -->
+                <tr>
+                    <td rowspan="5" class="align-top text-start p-2" style="border: 1px solid #000;">
+                        <span class="fw-bold">Keterangan :</span>
+                        <div style="min-height: 75px; font-size: 8pt; white-space: pre-wrap;" class="mt-1">
+                            {{ $sheet['keterangan'] ?: '-' }}
+                        </div>
+                    </td>
+                    <td class="text-start ps-2">Jam : {{ $sheet['adj1_jam'] ?? '' }}</td>
+                    <td class="text-start ps-2">Jam : {{ $sheet['adj2_jam'] ?? '' }}</td>
+                    <td class="text-start ps-2">Jam : {{ $sheet['adj3_jam'] ?? '' }}</td>
+                </tr>
+
+                <!-- Baris 11: Status (kolom 2, 3, 4) -->
+                <tr>
+                    <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj1_status'] ?? 'Sudah dilakukan/belum' }}</td>
+                    <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj2_status'] ?? 'Sudah dilakukan/belum' }}</td>
+                    <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj3_status'] ?? 'Sudah dilakukan/belum' }}</td>
+                </tr>
+
+                <!-- Baris 12: Header Tanda Tangan (Semua 4 Kolom Sejajar) -->
+                <tr>
+                    <td>Tanda Tangan,</td>
+                    <td>Tanda Tangan,</td>
+                    <td>Tanda Tangan,</td>
+                    <td>Tanda Tangan,</td>
+                </tr>
+
+                <!-- Baris 13: Ruang Tanda Tangan (Semua 4 Kolom Sejajar) -->
+                <tr>
+                    <td><div class="sign-space"></div></td>
+                    <td><div class="sign-space"></div></td>
+                    <td><div class="sign-space"></div></td>
+                    <td><div class="sign-space"></div></td>
+                </tr>
+
+                <!-- Baris 14: Nama Tanda Tangan (Semua 4 Kolom Sejajar) -->
+                <tr>
+                    <td class="fw-semibold">( {{ $sheet['adj1_petugas'] ?: 'Petugas Produksi' }} )</td>
+                    <td class="fw-semibold">( {{ $sheet['adj2_petugas'] ?: 'Petugas Produksi' }} )</td>
+                    <td class="fw-semibold">( {{ $sheet['adj3_petugas'] ?: 'Petugas Produksi' }} )</td>
+                    <td class="fw-semibold">( {{ $sheet['qc_analis'] ?: ($data['qc_analis'] ?: 'Analis QC') }} )</td>
+                </tr>
             </tbody>
         </table>
 
-        <!-- Keterangan & Tanda Tangan Sesuai Format -->
-        <table class="table-doc" style="margin-top: -9px;">
-            <tr>
-                <!-- Kotak Keterangan di Kiri -->
-                <td rowspan="5" class="align-top text-start p-2" style="width: 28%; border: 1px solid #000;">
-                    <span class="fw-bold">Keterangan :</span>
-                    <div style="min-height: 80px; font-size: 8pt; white-space: pre-wrap;" class="mt-1">
-                        {{ $sheet['keterangan'] ?: '-' }}
-                    </div>
-                </td>
-                <!-- Baris Jam -->
-                <td style="width: 18%;" class="text-start ps-2">Jam : {{ $sheet['adj1_jam'] ?? '' }}</td>
-                <td style="width: 18%;" class="text-start ps-2">Jam : {{ $sheet['adj2_jam'] ?? '' }}</td>
-                <td style="width: 18%;" class="text-start ps-2">Jam : {{ $sheet['adj3_jam'] ?? '' }}</td>
-                <!-- Header Tanda Tangan Disposisi -->
-                <td rowspan="2" style="width: 18%; vertical-align: middle;">Tanda Tangan,</td>
-            </tr>
-            <tr>
-                <!-- Baris Status -->
-                <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj1_status'] ?? 'Sudah dilakukan/belum' }}</td>
-                <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj2_status'] ?? 'Sudah dilakukan/belum' }}</td>
-                <td class="text-start ps-2" style="font-size: 7.5pt;">Status : {{ $sheet['adj3_status'] ?? 'Sudah dilakukan/belum' }}</td>
-            </tr>
-            <tr>
-                <!-- Baris Header Tanda Tangan -->
-                <td>Tanda Tangan,</td>
-                <td>Tanda Tangan,</td>
-                <td>Tanda Tangan,</td>
-                <td rowspan="2" class="align-middle">
-                    <div class="sign-space"></div>
-                </td>
-            </tr>
-            <tr>
-                <!-- Space Tanda Tangan -->
-                <td><div class="sign-space"></div></td>
-                <td><div class="sign-space"></div></td>
-                <td><div class="sign-space"></div></td>
-            </tr>
-            <tr>
-                <!-- Nama Tanda Tangan -->
-                <td class="fw-semibold">( {{ $sheet['adj1_petugas'] ?: 'Petugas Produksi' }} )</td>
-                <td class="fw-semibold">( {{ $sheet['adj2_petugas'] ?: 'Petugas Produksi' }} )</td>
-                <td class="fw-semibold">( {{ $sheet['adj3_petugas'] ?: 'Petugas Produksi' }} )</td>
-                <td class="fw-semibold">( {{ $sheet['qc_analis'] ?: ($data['qc_analis'] ?: 'Analis QC') }} )</td>
-            </tr>
-        </table>
-
-        <!-- Kode Dokumen -->
+        <!-- Kode Dokumen Resmi -->
         <div class="text-end pe-1" style="font-size: 7.5pt; font-style: italic;">
             FRM/QLB/04/104/011-00
         </div>

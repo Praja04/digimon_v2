@@ -188,7 +188,13 @@ class SingleDocAdjustmentSheetExport implements WithEvents, WithTitle
                 for ($r = 1; $r <= 4; $r++) {
                     $sheet->getRowDimension($r)->setRowHeight(16);
                 }
-                $sheet->getRowDimension(5)->setRowHeight(8);
+                
+                // Notes kanan atas (Baris 5) Sesuai Google Spreadsheet Resmi
+                $sheet->mergeCells('K5:P5');
+                $sheet->setCellValue('K5', "Notes:\n1 lembar : 1 batch (Dissolver) atau 1 pasangan batch (Blending)\n1 lembar untuk 3x adjustment");
+                $sheet->getStyle('K5')->getFont()->setSize(7.5)->setItalic(true);
+                $sheet->getStyle('K5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+                $sheet->getRowDimension(5)->setRowHeight(24);
 
                 // ==========================================
                 // 2. METADATA INFORMASI (Rows 6-8)
@@ -277,7 +283,7 @@ class SingleDocAdjustmentSheetExport implements WithEvents, WithTitle
                 $sheet->getStyle('A10:P10')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF2F2F2');
                 $sheet->getStyle('A10:P10')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 7 Standar Bahan Resmi
+                // 9 Baris Bahan Resmi (7 Standar + 2 Tambahan/Kosong)
                 $defaultBahans = [
                     'Gula Kelapa',
                     'Gula Tebu',
@@ -286,6 +292,8 @@ class SingleDocAdjustmentSheetExport implements WithEvents, WithTitle
                     'Air',
                     'Garam Halus',
                     'Karamel (Jenis)',
+                    '',
+                    '',
                 ];
 
                 $bahanRows = !empty($this->sheetData['bahan_rows']) ? $this->sheetData['bahan_rows'] : [];
@@ -297,14 +305,22 @@ class SingleDocAdjustmentSheetExport implements WithEvents, WithTitle
                 }
 
                 $startRow = 11;
-                $endRow = $startRow + count($defaultBahans) - 1; // 17
+                $endBahanRow = 19; // 9 baris bahan (11 - 19)
 
-                foreach ($defaultBahans as $i => $bName) {
+                for ($i = 0; $i < 9; $i++) {
                     $r = $startRow + $i;
-                    $bData = $bahanMap[$bName] ?? ($bahanRows[$i] ?? []);
-                    $adj1 = $bData['adj1'] ?? '';
-                    $adj2 = $bData['adj2'] ?? '';
-                    $adj3 = $bData['adj3'] ?? '';
+                    $defaultName = $defaultBahans[$i] ?? '';
+                    $bData = [];
+                    if (!empty($bahanRows[$i])) {
+                        $bData = $bahanRows[$i];
+                    } elseif ($defaultName && isset($bahanMap[$defaultName])) {
+                        $bData = $bahanMap[$defaultName];
+                    }
+
+                    $bName = !empty($bData['bahan']) ? $bData['bahan'] : $defaultName;
+                    $adj1 = $this->formatVal($bData['adj1'] ?? '');
+                    $adj2 = $this->formatVal($bData['adj2'] ?? '');
+                    $adj3 = $this->formatVal($bData['adj3'] ?? '');
 
                     $sheet->getRowDimension($r)->setRowHeight(20);
 
@@ -331,112 +347,116 @@ class SingleDocAdjustmentSheetExport implements WithEvents, WithTitle
                     $sheet->getStyle("A{$r}:M{$r}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
 
-                // Kotak DISPOSISI (Merged N11:P17)
-                $sheet->mergeCells("N{$startRow}:P{$endRow}");
+                // ==========================================
+                // 4. BOTTOM SECTION: KETERANGAN, JAM, STATUS, SIGNATURES
+                // ==========================================
+                // DISPOSISI mencakup baris 11 s/d 21 (9 bahan + Jam + Status)
+                $disposisiEndRow = 21;
+                $sheet->mergeCells("N{$startRow}:P{$disposisiEndRow}");
                 $sheet->setCellValue("N{$startRow}", (string)($this->sheetData['disposisi'] ?? 'Release'));
                 $sheet->getStyle("N{$startRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
-                $sheet->getStyle("N{$startRow}")->getFont()->setBold(true);
-                $sheet->getStyle("N{$startRow}:P{$endRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("N{$startRow}")->getFont()->setBold(true)->setSize(11);
+                $sheet->getStyle("N{$startRow}:P{$disposisiEndRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // ==========================================
-                // 4. KETERANGAN & TANDA TANGAN (Rows 18-23)
-                // ==========================================
-                $kStart = 18;
-                $kStatusRow = 19;
-                $kSignHeaderRow = 20;
-                $kSignSpace1 = 21;
-                $kSignSpace2 = 22;
-                $kNameRow = 23;
+                // Kotak Keterangan (Baris 20-26 di kolom A..D)
+                $sheet->mergeCells("A20:D26");
+                $sheet->setCellValue("A20", "Keterangan :\n" . ($this->sheetData['keterangan'] ?? ''));
+                $sheet->getStyle("A20")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true)->setIndent(1);
+                $sheet->getStyle("A20:D26")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // Kotak KETERANGAN di Kiri (Merged A18:D23)
-                $sheet->mergeCells("A{$kStart}:D{$kNameRow}");
-                $sheet->setCellValue("A{$kStart}", "Keterangan :\n" . ($this->sheetData['keterangan'] ?? ''));
-                $sheet->getStyle("A{$kStart}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true)->setIndent(1);
-                $sheet->getStyle("A{$kStart}:D{$kNameRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                // Row 20: Baris Jam
+                $sheet->getRowDimension(20)->setRowHeight(19);
+                $sheet->mergeCells("E20:G20");
+                $sheet->setCellValue("E20", "Jam : " . ($this->sheetData['adj1_jam'] ?? ''));
+                $sheet->mergeCells("H20:J20");
+                $sheet->setCellValue("H20", "Jam : " . ($this->sheetData['adj2_jam'] ?? ''));
+                $sheet->mergeCells("K20:M20");
+                $sheet->setCellValue("K20", "Jam : " . ($this->sheetData['adj3_jam'] ?? ''));
+                $sheet->getStyle("E20:M20")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);
+                $sheet->getStyle("E20:M20")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 1. Baris Jam (Row 18)
-                $sheet->getRowDimension($kStart)->setRowHeight(18);
-                $sheet->mergeCells("E{$kStart}:G{$kStart}");
-                $sheet->setCellValue("E{$kStart}", "Jam : " . ($this->sheetData['adj1_jam'] ?? ''));
-                $sheet->mergeCells("H{$kStart}:J{$kStart}");
-                $sheet->setCellValue("H{$kStart}", "Jam : " . ($this->sheetData['adj2_jam'] ?? ''));
-                $sheet->mergeCells("K{$kStart}:M{$kStart}");
-                $sheet->setCellValue("K{$kStart}", "Jam : " . ($this->sheetData['adj3_jam'] ?? ''));
-                $sheet->getStyle("E{$kStart}:M{$kStart}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);
-                $sheet->getStyle("E{$kStart}:M{$kStart}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                // Row 21: Baris Status
+                $sheet->getRowDimension(21)->setRowHeight(19);
+                $sheet->mergeCells("E21:G21");
+                $sheet->setCellValue("E21", "Status : " . ($this->sheetData['adj1_status'] ?? 'Sudah dilakukan/belum'));
+                $sheet->mergeCells("H21:J21");
+                $sheet->setCellValue("H21", "Status : " . ($this->sheetData['adj2_status'] ?? 'Sudah dilakukan/belum'));
+                $sheet->mergeCells("K21:M21");
+                $sheet->setCellValue("K21", "Status : " . ($this->sheetData['adj3_status'] ?? 'Sudah dilakukan/belum'));
+                $sheet->getStyle("E21:M21")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);
+                $sheet->getStyle("E21:M21")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 2. Baris Status (Row 19)
-                $sheet->getRowDimension($kStatusRow)->setRowHeight(18);
-                $sheet->mergeCells("E{$kStatusRow}:G{$kStatusRow}");
-                $sheet->setCellValue("E{$kStatusRow}", "Status : " . ($this->sheetData['adj1_status'] ?? 'Sudah dilakukan/belum'));
-                $sheet->mergeCells("H{$kStatusRow}:J{$kStatusRow}");
-                $sheet->setCellValue("H{$kStatusRow}", "Status : " . ($this->sheetData['adj2_status'] ?? 'Sudah dilakukan/belum'));
-                $sheet->mergeCells("K{$kStatusRow}:M{$kStatusRow}");
-                $sheet->setCellValue("K{$kStatusRow}", "Status : " . ($this->sheetData['adj3_status'] ?? 'Sudah dilakukan/belum'));
-                $sheet->getStyle("E{$kStatusRow}:M{$kStatusRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER)->setIndent(1);
-                $sheet->getStyle("E{$kStatusRow}:M{$kStatusRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                // Row 22: Baris Header Tanda Tangan (Adj 1, 2, 3, dan Disposisi)
+                $sheet->getRowDimension(22)->setRowHeight(18);
+                $sheet->mergeCells("E22:G22");
+                $sheet->setCellValue("E22", "Tanda Tangan,");
+                $sheet->mergeCells("H22:J22");
+                $sheet->setCellValue("H22", "Tanda Tangan,");
+                $sheet->mergeCells("K22:M22");
+                $sheet->setCellValue("K22", "Tanda Tangan,");
+                $sheet->mergeCells("N22:P22");
+                $sheet->setCellValue("N22", "Tanda Tangan,");
 
-                // 3. Baris Header Tanda Tangan (Row 20)
-                $sheet->getRowDimension($kSignHeaderRow)->setRowHeight(18);
-                $sheet->mergeCells("E{$kSignHeaderRow}:G{$kSignHeaderRow}");
-                $sheet->setCellValue("E{$kSignHeaderRow}", "Tanda Tangan,");
-                $sheet->mergeCells("H{$kSignHeaderRow}:J{$kSignHeaderRow}");
-                $sheet->setCellValue("H{$kSignHeaderRow}", "Tanda Tangan,");
-                $sheet->mergeCells("K{$kSignHeaderRow}:M{$kSignHeaderRow}");
-                $sheet->setCellValue("K{$kSignHeaderRow}", "Tanda Tangan,");
+                $sheet->getStyle("E22:P22")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle("E22:P22")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                $sheet->mergeCells("N{$kStart}:P{$kSignHeaderRow}");
-                $sheet->setCellValue("N{$kStart}", "Tanda Tangan,");
-                $sheet->getStyle("E{$kSignHeaderRow}:M{$kSignHeaderRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle("N{$kStart}:P{$kSignHeaderRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle("E{$kSignHeaderRow}:M{$kSignHeaderRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                $sheet->getStyle("N{$kStart}:P{$kSignHeaderRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                // Row 23-25: Ruang Tanda Tangan
+                for ($sr = 23; $sr <= 25; $sr++) {
+                    $sheet->getRowDimension($sr)->setRowHeight(16);
+                }
+                $sheet->mergeCells("E23:G25");
+                $sheet->mergeCells("H23:J25");
+                $sheet->mergeCells("K23:M25");
+                $sheet->mergeCells("N23:P25");
+                $sheet->getStyle("E23:P25")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                // 4. Space Tanda Tangan (Rows 21-22)
-                $sheet->getRowDimension($kSignSpace1)->setRowHeight(16);
-                $sheet->getRowDimension($kSignSpace2)->setRowHeight(16);
-                $sheet->mergeCells("E{$kSignSpace1}:G{$kSignSpace2}");
-                $sheet->mergeCells("H{$kSignSpace1}:J{$kSignSpace2}");
-                $sheet->mergeCells("K{$kSignSpace1}:M{$kSignSpace2}");
-                $sheet->mergeCells("N{$kSignSpace1}:P{$kSignSpace2}");
-                $sheet->getStyle("E{$kSignSpace1}:P{$kSignSpace2}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-
-                // 5. Nama Tanda Tangan (Row 23)
-                $sheet->getRowDimension($kNameRow)->setRowHeight(18);
+                // Row 26: Baris Nama / Jabatan Penandatangan
+                $sheet->getRowDimension(26)->setRowHeight(19);
                 $petugas1 = !empty($this->sheetData['adj1_petugas']) ? $this->sheetData['adj1_petugas'] : 'Petugas Produksi';
                 $petugas2 = !empty($this->sheetData['adj2_petugas']) ? $this->sheetData['adj2_petugas'] : 'Petugas Produksi';
                 $petugas3 = !empty($this->sheetData['adj3_petugas']) ? $this->sheetData['adj3_petugas'] : 'Petugas Produksi';
                 $analisQc = !empty($this->sheetData['qc_analis']) ? $this->sheetData['qc_analis'] : (!empty($this->docData['qc_analis']) ? $this->docData['qc_analis'] : 'Analis QC');
 
-                $sheet->mergeCells("E{$kNameRow}:G{$kNameRow}");
-                $sheet->setCellValue("E{$kNameRow}", "( {$petugas1} )");
+                $sheet->mergeCells("E26:G26");
+                $sheet->setCellValue("E26", "( {$petugas1} )");
+                $sheet->mergeCells("H26:J26");
+                $sheet->setCellValue("H26", "( {$petugas2} )");
+                $sheet->mergeCells("K26:M26");
+                $sheet->setCellValue("K26", "( {$petugas3} )");
+                $sheet->mergeCells("N26:P26");
+                $sheet->setCellValue("N26", "( {$analisQc} )");
 
-                $sheet->mergeCells("H{$kNameRow}:J{$kNameRow}");
-                $sheet->setCellValue("H{$kNameRow}", "( {$petugas2} )");
+                $sheet->getStyle("E26:P26")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle("E26:P26")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-                $sheet->mergeCells("K{$kNameRow}:M{$kNameRow}");
-                $sheet->setCellValue("K{$kNameRow}", "( {$petugas3} )");
+                // Row 27: Spacer Row
+                $sheet->getRowDimension(27)->setRowHeight(8);
 
-                $sheet->mergeCells("N{$kNameRow}:P{$kNameRow}");
-                $sheet->setCellValue("N{$kNameRow}", "( {$analisQc} )");
+                // Row 28: Kode Dokumen Resmi FRM/QLB/04/104/011-00 di kanan bawah
+                $sheet->mergeCells("N28:P28");
+                $sheet->setCellValue("N28", 'FRM/QLB/04/104/011-00');
+                $sheet->getStyle("N28")->getFont()->setSize(8)->setItalic(true);
+                $sheet->getStyle("N28")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getRowDimension(28)->setRowHeight(16);
 
-                $sheet->getStyle("E{$kNameRow}:P{$kNameRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle("E{$kNameRow}:P{$kNameRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-
-                // ==========================================
-                // 5. KODE DOKUMEN RESMI (FRM/QLB/04/104/011-00)
-                // ==========================================
-                $docCodeRow = $kNameRow + 1; // 24
-                $sheet->mergeCells("N{$docCodeRow}:P{$docCodeRow}");
-                $sheet->setCellValue("N{$docCodeRow}", 'FRM/QLB/04/104/011-00');
-                $sheet->getStyle("N{$docCodeRow}")->getFont()->setSize(8)->setItalic(true);
-                $sheet->getStyle("N{$docCodeRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                $sheet->getRowDimension($docCodeRow)->setRowHeight(16);
-
-                // Master Left & Right Border (No gaps/bolong)
-                $sheet->getStyle("A1:A{$docCodeRow}")->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
-                $sheet->getStyle("P1:P{$docCodeRow}")->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
+                // Master Left & Right Border sepanjang tabel (Row 1-26)
+                $sheet->getStyle("A1:A26")->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("P1:P26")->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
             }
         ];
+    }
+
+    /**
+     * Format nilai analisis: jika 0, 0.0, null, '-', atau kosong jadikan blank
+     */
+    private function formatVal($val): string
+    {
+        if ($val === null || $val === '' || $val === 'null' || $val === '-' || $val === '0' || $val === 0 || $val === 0.0 || $val === '0.0' || $val === '0.00') {
+            return '';
+        }
+        if (is_numeric($val) && floatval($val) == 0) {
+            return '';
+        }
+        return (string)$val;
     }
 }

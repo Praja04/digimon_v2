@@ -25,9 +25,34 @@
         gap: 6px;
     }
 
+    /* Horizontal Scrollbar Styling Resmi */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #f1f5f9;
+        padding-bottom: 6px;
+    }
+    .table-responsive::-webkit-scrollbar {
+        height: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 6px;
+        border: 2px solid #f1f5f9;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
     /* Unified Official Document Tables */
     .doc-unified-table {
         width: 100%;
+        min-width: 960px;
         border-collapse: collapse;
         font-size: 0.83rem;
         margin-bottom: 0;
@@ -138,6 +163,23 @@
 
     .sign-space-cell {
         height: 40px;
+    }
+
+    .doc-notes-box {
+        border: 1px solid #1e293b;
+        background: #f8fafc;
+        padding: 6px 12px;
+        font-size: 0.78rem;
+        line-height: 1.35;
+        color: #1e293b;
+        border-radius: 4px;
+    }
+
+    .clean-cell-input::placeholder {
+        color: #94a3b8;
+        font-size: 0.75rem;
+        font-weight: normal;
+        font-style: italic;
     }
 </style>
 @endsection
@@ -308,6 +350,9 @@
                     adj3: ''
                 });
             });
+            // 2 baris tambahan sesuai format spreadsheet resmi FRM/QLB/04/104/011-00
+            bRows.push({ bahan: '', adj1: '', adj2: '', adj3: '' });
+            bRows.push({ bahan: '', adj1: '', adj2: '', adj3: '' });
 
             var newSheet = {
                 proses: 'Blending',
@@ -405,14 +450,45 @@
             var rawRows = sheet.bahan_rows || [];
             var bMap = {};
             rawRows.forEach(function(r) {
-                if (r.bahan) bMap[r.bahan] = r;
+                if (r && r.bahan) bMap[r.bahan] = r;
+            });
+
+            // Siapkan 9 baris bahan: 7 standar + 2 baris tambahan sesuai Google Spreadsheet resmi
+            var all9Rows = [];
+            for (var i = 0; i < defaultBahans.length; i++) {
+                var bName = defaultBahans[i];
+                var rData = bMap[bName] || rawRows[i] || {};
+                all9Rows.push({
+                    bahan: bName,
+                    isCustom: false,
+                    adj1: rData.adj1 || '',
+                    adj2: rData.adj2 || '',
+                    adj3: rData.adj3 || ''
+                });
+            }
+
+            var extra1 = rawRows[7] || {};
+            var extra2 = rawRows[8] || {};
+            all9Rows.push({
+                bahan: extra1.bahan || '',
+                isCustom: true,
+                adj1: extra1.adj1 || '',
+                adj2: extra1.adj2 || '',
+                adj3: extra1.adj3 || ''
+            });
+            all9Rows.push({
+                bahan: extra2.bahan || '',
+                isCustom: true,
+                adj1: extra2.adj1 || '',
+                adj2: extra2.adj2 || '',
+                adj3: extra2.adj3 || ''
             });
 
             var sheetHtml = `
             <div class="lembar-sheet-card" data-sheet-index="${sIdx}">
                 <!-- Top Header Info Bar -->
-                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                    <div class="d-flex align-items-center gap-2">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span class="lembar-header-badge">
                             <i class="ri-file-edit-line"></i> LEMBAR FORM ADJUSTMENT #${sIdx + 1}
                         </span>
@@ -432,16 +508,25 @@
                     </div>
                 </div>
 
+                <!-- Notes Resmi Sesuai Google Spreadsheet (FRM/QLB/04/104/011-00) -->
+                <div class="d-flex justify-content-end mb-2">
+                    <div class="doc-notes-box text-start">
+                        <div class="fw-bold"><i class="ri-information-line me-1 text-primary"></i> Notes :</div>
+                        <div>• 1 lembar : 1 batch (Dissolver) atau 1 pasangan batch (Blending)</div>
+                        <div>• 1 lembar untuk 3x adjustment</div>
+                    </div>
+                </div>
+
                 <!-- 1. Header Dokumen Resmi (Format Solid Terpadu) -->
                 <table class="doc-unified-table mb-0" style="border-bottom: none;">
                     <tr>
                         <td style="width: 22%; text-align: center; vertical-align: middle; padding: 6px; border-right: 1px solid #000;">
                             <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 38px; object-fit: contain;">
                         </td>
-                        <td style="width: 53%; text-align: center; vertical-align: middle; padding: 8px; border-right: 1px solid #000;">
-                            <div class="fw-bold text-dark mb-0" style="font-size: 1.22rem; letter-spacing: 0.8px;">FORM ADJUSTMENT</div>
+                        <td style="width: 50%; text-align: center; vertical-align: middle; padding: 8px; border-right: 1px solid #000;">
+                            <div class="fw-bold text-dark mb-0" style="font-size: 1.25rem; letter-spacing: 0.8px;">FORM ADJUSTMENT</div>
                         </td>
-                        <td style="width: 25%; padding: 0; vertical-align: middle;">
+                        <td style="width: 28%; padding: 0; vertical-align: middle;">
                             <table class="w-100 h-100" style="border-collapse: collapse; font-size: 0.80rem;">
                                 <tr style="border-bottom: 1px solid #000;">
                                     <td class="px-2 py-1 bg-light fw-bold text-start" style="width: 55%; border: none; border-right: 1px solid #000;">Tanggal Record Doc</td>
@@ -456,21 +541,24 @@
                     </tr>
                 </table>
 
-                <!-- 2. Metadata Informasi (3 Baris Rapi) -->
+                <!-- 2. Metadata Informasi (3 Baris Rapi Sesuai Spreadsheet) -->
                 <table class="doc-unified-table mb-0" style="border-bottom: none;">
                     <tr>
                         <td style="width: 14%; font-weight: 700; background: #fafafa;">Proses</td>
                         <td style="width: 36%;">
                             <div class="d-flex align-items-center">
                                 <span class="me-1 fw-bold">:</span>
-                                <input type="text" class="clean-meta-input sheet-meta-proses" value="${escapeHtml(sheet.proses || 'Blending')}">
+                                <select class="clean-cell-select sheet-meta-proses">
+                                    <option value="Blending" ${sheet.proses === 'Blending' ? 'selected' : ''}>Blending</option>
+                                    <option value="Pelarutan" ${sheet.proses === 'Pelarutan' ? 'selected' : ''}>Pelarutan</option>
+                                </select>
                             </div>
                         </td>
                         <td style="width: 15%; font-weight: 700; background: #fafafa;">Jenis Kecap</td>
                         <td style="width: 35%;">
                             <div class="d-flex align-items-center">
                                 <span class="me-1 fw-bold">:</span>
-                                <input type="text" class="clean-meta-input sheet-meta-jenis" value="${escapeHtml(sheet.jenis_kecap || '')}">
+                                <input type="text" class="clean-meta-input sheet-meta-jenis" placeholder="(Varian)" value="${escapeHtml(sheet.jenis_kecap || '')}">
                             </div>
                         </td>
                     </tr>
@@ -479,7 +567,7 @@
                         <td>
                             <div class="d-flex align-items-center">
                                 <span class="me-1 fw-bold">:</span>
-                                <input type="text" class="clean-meta-input sheet-meta-batch" value="${escapeHtml(sheet.no_batch || '')}">
+                                <input type="text" class="clean-meta-input sheet-meta-batch" placeholder="(Batch/Pasangan Batch yang di adjust)" value="${escapeHtml(sheet.no_batch || '')}">
                             </div>
                         </td>
                         <td style="font-weight: 700; background: #fafafa;">Tanggal Produksi</td>
@@ -495,20 +583,23 @@
                         <td>
                             <div class="d-flex align-items-center">
                                 <span class="me-1 fw-bold">:</span>
-                                <input type="text" class="clean-meta-input sheet-meta-volume" value="${escapeHtml(sheet.volume_batch || '')}">
+                                <input type="text" class="clean-meta-input sheet-meta-volume" placeholder="(Volume Before Adjustment)" value="${escapeHtml(sheet.volume_batch || '')}">
                             </div>
                         </td>
                         <td style="font-weight: 700; background: #fafafa;">Shift</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <span class="me-1 fw-bold">:</span>
-                                <input type="text" class="clean-meta-input sheet-meta-shift" value="${escapeHtml(sheet.shift || 'Shift 1 / Grup A')}">
+                                <input type="text" class="clean-meta-input sheet-meta-shift" placeholder="(Shift/Grup)" value="${escapeHtml(sheet.shift || 'Shift 1 / Grup A')}">
                             </div>
                         </td>
                     </tr>
                 </table>
 
-                <!-- 3. Tabel Utama 7 Bahan & Adjustment -->
+                <!-- 3. Tabel Utama Bahan, Adjusment, Disposisi & Tanda Tangan (SATU TABEL SOLID TUNGGAL) -->
+                <div class="d-flex justify-content-between align-items-center mb-1 text-muted fs-11">
+                    <span class="badge bg-light text-secondary border"><i class="ri-arrow-left-right-line me-1"></i> Geser horizontal untuk melihat seluruh kolom</span>
+                </div>
                 <div class="table-responsive">
                     <table class="doc-unified-table mb-0">
                         <thead>
@@ -521,125 +612,121 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${defaultBahans.map(function(bName, idx) {
-                                var rowData = bMap[bName] || rawRows[idx] || {};
-                                var adj1 = rowData.adj1 || '';
-                                var adj2 = rowData.adj2 || '';
-                                var adj3 = rowData.adj3 || '';
-
+                            <!-- Baris 1 s/d 9: 7 Bahan Standar + 2 Baris Tambahan (DISPOSISI Rowspan 11) -->
+                            ${all9Rows.map(function(r, idx) {
                                 return `
-                                <tr class="bahan-row" data-bahan="${escapeHtml(bName)}">
-                                    <td class="text-start ps-3 fw-bold bg-white">${escapeHtml(bName)}</td>
-                                    <td><input type="text" class="clean-cell-input r-adj1" placeholder="-" value="${escapeHtml(adj1)}"></td>
-                                    <td><input type="text" class="clean-cell-input r-adj2" placeholder="-" value="${escapeHtml(adj2)}"></td>
-                                    <td><input type="text" class="clean-cell-input r-adj3" placeholder="-" value="${escapeHtml(adj3)}"></td>
+                                <tr class="bahan-row" data-row-index="${idx}">
+                                    <td class="text-start ps-3 ${!r.isCustom ? 'fw-bold bg-white' : 'p-1 bg-white'}">
+                                        ${!r.isCustom ? escapeHtml(r.bahan) : `
+                                        <input type="text" class="clean-cell-input text-start ps-1 r-bahan-custom" placeholder="(Bahan Tambahan ${idx - 6})" value="${escapeHtml(r.bahan)}">
+                                        `}
+                                    </td>
+                                    <td><input type="text" class="clean-cell-input r-adj1" placeholder="(Qty Adj Rekom QC)" value="${escapeHtml(r.adj1)}"></td>
+                                    <td><input type="text" class="clean-cell-input r-adj2" placeholder="(Qty Adj Rekom QC)" value="${escapeHtml(r.adj2)}"></td>
+                                    <td><input type="text" class="clean-cell-input r-adj3" placeholder="(Qty Adj Rekom QC)" value="${escapeHtml(r.adj3)}"></td>
                                     ${idx === 0 ? `
-                                    <td rowspan="7" class="align-middle text-center bg-white p-2">
-                                        <textarea class="clean-textarea text-center fw-bold fs-13 sheet-disposisi" style="height: 160px; line-height: 1.5;" placeholder="Disposisi QC">${escapeHtml(sheet.disposisi || 'Release')}</textarea>
+                                    <td rowspan="11" class="align-middle text-center bg-white p-2">
+                                        <div class="fw-bold text-muted fs-11 mb-2">DISPOSISI</div>
+                                        <textarea class="clean-textarea text-center fw-bold fs-13 sheet-disposisi" style="height: 250px; line-height: 1.5;" placeholder="Disposisi QC">${escapeHtml(sheet.disposisi || 'Release')}</textarea>
                                     </td>
                                     ` : ''}
                                 </tr>
                                 `;
                             }).join('')}
-                        </tbody>
-                    </table>
 
-                    <!-- 4. Keterangan & Tanda Tangan (Format Rapi Presisi) -->
-                    <table class="doc-unified-table" style="border-top: none;">
-                        <tr>
-                            <!-- Kotak Keterangan di Kiri -->
-                            <td rowspan="5" class="align-top text-start p-2" style="width: 28%; border-top: none;">
-                                <div class="fw-bold fs-12 mb-1 text-dark">Keterangan :</div>
-                                <textarea class="clean-textarea sheet-keterangan" style="height: 110px;" placeholder="Ketik keterangan adjustment di sini...">${escapeHtml(sheet.keterangan || '')}</textarea>
-                            </td>
-                            <!-- Baris Jam -->
-                            <td style="width: 18%; border-top: none;">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-nowrap fs-11 me-1">Jam :</span>
-                                    <input type="text" class="clean-cell-input sheet-adj1-jam text-start ps-1" placeholder="HH:mm" value="${escapeHtml(sheet.adj1_jam || '')}">
-                                </div>
-                            </td>
-                            <td style="width: 18%; border-top: none;">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-nowrap fs-11 me-1">Jam :</span>
-                                    <input type="text" class="clean-cell-input sheet-adj2-jam text-start ps-1" placeholder="HH:mm" value="${escapeHtml(sheet.adj2_jam || '')}">
-                                </div>
-                            </td>
-                            <td style="width: 18%; border-top: none;">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-nowrap fs-11 me-1">Jam :</span>
-                                    <input type="text" class="clean-cell-input sheet-adj3-jam text-start ps-1" placeholder="HH:mm" value="${escapeHtml(sheet.adj3_jam || '')}">
-                                </div>
-                            </td>
-                            <!-- Header Tanda Tangan Disposisi -->
-                            <td rowspan="2" style="width: 18%; border-top: none; vertical-align: middle; background: #f8f9fa;" class="fw-bold fs-11 text-center">
-                                Tanda Tangan,
-                            </td>
-                        </tr>
-                        <tr>
-                            <!-- Baris Status -->
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-nowrap fs-11 me-1">Status :</span>
-                                    <select class="clean-cell-select sheet-adj1-status">
-                                        <option value="Sudah dilakukan" ${sheet.adj1_status === 'Sudah dilakukan' ? 'selected' : ''}>Sudah dilakukan</option>
-                                        <option value="Belum dilakukan" ${sheet.adj1_status === 'Belum dilakukan' ? 'selected' : ''}>Belum dilakukan</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-nowrap fs-11 me-1">Status :</span>
-                                    <select class="clean-cell-select sheet-adj2-status">
-                                        <option value="Sudah dilakukan" ${sheet.adj2_status === 'Sudah dilakukan' ? 'selected' : ''}>Sudah dilakukan</option>
-                                        <option value="Belum dilakukan" ${sheet.adj2_status === 'Belum dilakukan' ? 'selected' : ''}>Belum dilakukan</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-nowrap fs-11 me-1">Status :</span>
-                                    <select class="clean-cell-select sheet-adj3-status">
-                                        <option value="Sudah dilakukan" ${sheet.adj3_status === 'Sudah dilakukan' ? 'selected' : ''}>Sudah dilakukan</option>
-                                        <option value="Belum dilakukan" ${sheet.adj3_status === 'Belum dilakukan' ? 'selected' : ''}>Belum dilakukan</option>
-                                    </select>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <!-- Header Tanda Tangan Produksi -->
-                            <td class="fw-bold fs-11 text-center" style="background: #f8f9fa;">Tanda Tangan,</td>
-                            <td class="fw-bold fs-11 text-center" style="background: #f8f9fa;">Tanda Tangan,</td>
-                            <td class="fw-bold fs-11 text-center" style="background: #f8f9fa;">Tanda Tangan,</td>
-                            <td rowspan="2" class="align-middle">
-                                <div class="sign-space-cell"></div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <!-- Ruang Tanda Tangan -->
-                            <td><div class="sign-space-cell"></div></td>
-                            <td><div class="sign-space-cell"></div></td>
-                            <td><div class="sign-space-cell"></div></td>
-                        </tr>
-                        <tr>
-                            <!-- Nama Penandatangan -->
-                            <td class="p-1 text-center">
-                                <input type="text" class="clean-sign-input sheet-adj1-petugas" placeholder="Petugas Produksi" value="${escapeHtml(sheet.adj1_petugas || '')}">
-                            </td>
-                            <td class="p-1 text-center">
-                                <input type="text" class="clean-sign-input sheet-adj2-petugas" placeholder="Petugas Produksi" value="${escapeHtml(sheet.adj2_petugas || '')}">
-                            </td>
-                            <td class="p-1 text-center">
-                                <input type="text" class="clean-sign-input sheet-adj3-petugas" placeholder="Petugas Produksi" value="${escapeHtml(sheet.adj3_petugas || '')}">
-                            </td>
-                            <td class="p-1 text-center">
-                                <input type="text" class="clean-sign-input sheet-qc-analis" placeholder="Analis QC" value="${escapeHtml(sheet.qc_analis || '')}">
-                            </td>
-                        </tr>
+                            <!-- Baris 10: Keterangan (dimulai di kolom 1, rowspan 5) & Jam Pemberian Adj (kolom 2, 3, 4) -->
+                            <tr>
+                                <td rowspan="5" class="align-top text-start p-2 bg-white">
+                                    <div class="fw-bold fs-12 mb-1 text-dark">Keterangan :</div>
+                                    <textarea class="clean-textarea sheet-keterangan" style="height: 120px;" placeholder="Ketik keterangan adjustment di sini...">${escapeHtml(sheet.keterangan || '')}</textarea>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-nowrap fs-11 me-1" title="Jam Pemberian Adj">Jam :</span>
+                                        <input type="text" class="clean-cell-input sheet-adj1-jam text-start ps-1" placeholder="(Jam Pemberian Adj)" value="${escapeHtml(sheet.adj1_jam || '')}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-nowrap fs-11 me-1" title="Jam Pemberian Adj">Jam :</span>
+                                        <input type="text" class="clean-cell-input sheet-adj2-jam text-start ps-1" placeholder="(Jam Pemberian Adj)" value="${escapeHtml(sheet.adj2_jam || '')}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-nowrap fs-11 me-1" title="Jam Pemberian Adj">Jam :</span>
+                                        <input type="text" class="clean-cell-input sheet-adj3-jam text-start ps-1" placeholder="(Jam Pemberian Adj)" value="${escapeHtml(sheet.adj3_jam || '')}">
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Baris 11: Status (kolom 2, 3, 4) -->
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-nowrap fs-11 me-1">Status :</span>
+                                        <select class="clean-cell-select sheet-adj1-status">
+                                            <option value="Sudah dilakukan" ${sheet.adj1_status === 'Sudah dilakukan' ? 'selected' : ''}>Sudah dilakukan</option>
+                                            <option value="Belum dilakukan" ${sheet.adj1_status === 'Belum dilakukan' ? 'selected' : ''}>Belum dilakukan</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-nowrap fs-11 me-1">Status :</span>
+                                        <select class="clean-cell-select sheet-adj2-status">
+                                            <option value="Sudah dilakukan" ${sheet.adj2_status === 'Sudah dilakukan' ? 'selected' : ''}>Sudah dilakukan</option>
+                                            <option value="Belum dilakukan" ${sheet.adj2_status === 'Belum dilakukan' ? 'selected' : ''}>Belum dilakukan</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-nowrap fs-11 me-1">Status :</span>
+                                        <select class="clean-cell-select sheet-adj3-status">
+                                            <option value="Sudah dilakukan" ${sheet.adj3_status === 'Sudah dilakukan' ? 'selected' : ''}>Sudah dilakukan</option>
+                                            <option value="Belum dilakukan" ${sheet.adj3_status === 'Belum dilakukan' ? 'selected' : ''}>Belum dilakukan</option>
+                                        </select>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Baris 12: Header Tanda Tangan (Semua 4 Kolom Sejajar Sesuai Spreadsheet) -->
+                            <tr>
+                                <td class="fw-bold fs-11 text-center bg-light">Tanda Tangan,</td>
+                                <td class="fw-bold fs-11 text-center bg-light">Tanda Tangan,</td>
+                                <td class="fw-bold fs-11 text-center bg-light">Tanda Tangan,</td>
+                                <td class="fw-bold fs-11 text-center bg-light">Tanda Tangan,</td>
+                            </tr>
+
+                            <!-- Baris 13: Ruang Tanda Tangan (Semua 4 Kolom Sejajar) -->
+                            <tr>
+                                <td><div class="sign-space-cell"></div></td>
+                                <td><div class="sign-space-cell"></div></td>
+                                <td><div class="sign-space-cell"></div></td>
+                                <td><div class="sign-space-cell"></div></td>
+                            </tr>
+
+                            <!-- Baris 14: Nama Tanda Tangan (Semua 4 Kolom Sejajar) -->
+                            <tr>
+                                <td class="p-1 text-center">
+                                    <input type="text" class="clean-sign-input sheet-adj1-petugas" placeholder="( Petugas Produksi )" value="${escapeHtml(sheet.adj1_petugas || '')}">
+                                </td>
+                                <td class="p-1 text-center">
+                                    <input type="text" class="clean-sign-input sheet-adj2-petugas" placeholder="( Petugas Produksi )" value="${escapeHtml(sheet.adj2_petugas || '')}">
+                                </td>
+                                <td class="p-1 text-center">
+                                    <input type="text" class="clean-sign-input sheet-adj3-petugas" placeholder="( Petugas Produksi )" value="${escapeHtml(sheet.adj3_petugas || '')}">
+                                </td>
+                                <td class="p-1 text-center">
+                                    <input type="text" class="clean-sign-input sheet-qc-analis" placeholder="( Analis QC )" value="${escapeHtml(sheet.qc_analis || '')}">
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
 
-                <!-- 5. Kode Dokumen Resmi -->
+                <!-- 4. Kode Dokumen Resmi -->
                 <div class="text-end mt-2 pe-1">
                     <span class="fs-11 fw-semibold text-muted fst-italic">FRM/QLB/04/104/011-00</span>
                 </div>
@@ -701,8 +788,10 @@
 
             card.find('.bahan-row').each(function() {
                 var row = $(this);
+                var customInput = row.find('.r-bahan-custom');
+                var bName = customInput.length ? customInput.val().trim() : row.find('td:first').text().trim();
                 sheetObj.bahan_rows.push({
-                    bahan: row.data('bahan') || row.find('td:first').text().trim(),
+                    bahan: bName,
                     adj1: row.find('.r-adj1').val() || '',
                     adj2: row.find('.r-adj2').val() || '',
                     adj3: row.find('.r-adj3').val() || ''

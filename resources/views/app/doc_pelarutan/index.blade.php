@@ -5,16 +5,16 @@
 <style>
     .lembar-sheet-card {
         background: #ffffff;
-        border: 2px solid #343a40;
+        border: 2px solid #1e293b;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        border-radius: 6px;
+        border-radius: 8px;
         padding: 24px;
         position: relative;
         margin-bottom: 35px;
     }
 
     .lembar-header-badge {
-        background: #1e293b;
+        background: #0f172a;
         color: #ffffff;
         padding: 6px 14px;
         border-radius: 4px;
@@ -42,49 +42,210 @@
         text-align: center;
     }
 
+    /* Horizontal Scrollbar Styling Resmi */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #f1f5f9;
+        padding-bottom: 6px;
+    }
+    .table-responsive::-webkit-scrollbar {
+        height: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 6px;
+        border: 2px solid #f1f5f9;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    /* Table Pelarutan */
     .table-pelarutan {
         width: 100%;
+        min-width: 1600px;
         border-collapse: collapse;
-        font-size: 0.78rem;
-        margin-bottom: 10px;
+        font-size: 0.82rem;
+        margin-bottom: 8px;
+        table-layout: fixed;
+        background: #ffffff;
     }
 
     .table-pelarutan th, .table-pelarutan td {
-        border: 1px solid #000000;
+        border: 1px solid #334155;
         padding: 3px 2px;
         text-align: center;
         vertical-align: middle;
+        position: relative;
     }
 
     .table-pelarutan th {
-        background-color: #f2f2f2;
+        background-color: #f1f5f9;
         font-weight: 700;
-        color: #000;
+        color: #0f172a;
+        font-size: 0.82rem;
+        padding: 6px 3px;
     }
 
+    .table-pelarutan th.th-samp {
+        width: 85px !important;
+        min-width: 85px !important;
+        white-space: nowrap;
+        font-size: 0.80rem;
+        line-height: 1.25;
+        padding: 5px 4px;
+    }
+
+    .table-pelarutan th.th-gga {
+        background-color: #eff6ff !important;
+        color: #1e3a8a !important;
+        border-bottom: 2px solid #3b82f6 !important;
+    }
+
+    .table-pelarutan th.th-ggas {
+        background-color: #f0fdf4 !important;
+        color: #14532d !important;
+        border-bottom: 2px solid #22c55e !important;
+    }
+
+    /* Row Hover & Focus-within Active Row Highlight (Mata user langsung tahu baris mana yang aktif) */
+    .table-pelarutan tbody tr.data-row {
+        transition: background-color 0.12s ease;
+    }
+
+    .table-pelarutan tbody tr.data-row:hover {
+        background-color: #f8fafc;
+    }
+
+    .table-pelarutan tbody tr.data-row:focus-within {
+        background-color: #e0f2fe !important;
+    }
+
+    .table-pelarutan tbody tr.data-row:focus-within td {
+        background-color: #e0f2fe !important;
+    }
+
+    /* Table Input Fields */
     .table-pelarutan .table-input {
         width: 100%;
-        border: 1px solid transparent;
-        background: transparent;
+        height: 32px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
         text-align: center;
-        font-size: 0.78rem;
-        padding: 2px 2px;
-        border-radius: 2px;
+        font-size: 0.84rem;
+        font-weight: 500;
+        padding: 3px 4px;
+        border-radius: 4px;
+        color: #0f172a;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
 
-    .table-pelarutan .table-input:focus, .table-pelarutan .table-input:hover {
-        border-color: #405189;
+    .table-pelarutan .table-input:hover {
+        border-color: #64748b;
+        background: #f8fafc;
+    }
+
+    .table-pelarutan .table-input:focus {
+        border: 2px solid #2563eb !important;
+        background: #ffffff !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28) !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        z-index: 10;
+        position: relative;
+    }
+
+    /* Table Textarea Fields (Multiline Jam Disposisi & Rekomendasi Adj) */
+    .table-pelarutan .table-textarea {
+        width: 100%;
+        height: 42px;
+        min-height: 42px;
+        border: 1px solid #cbd5e1;
         background: #ffffff;
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(64, 81, 137, 0.2);
+        text-align: center;
+        font-size: 0.79rem;
+        font-weight: 500;
+        padding: 3px 4px;
+        border-radius: 4px;
+        resize: none;
+        line-height: 1.25;
+        color: #0f172a;
+        white-space: pre-wrap;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .table-pelarutan .table-textarea:hover {
+        border-color: #64748b;
+        background: #f8fafc;
+    }
+
+    .table-pelarutan .table-textarea:focus {
+        border: 2px solid #2563eb !important;
+        background: #ffffff !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28) !important;
+        font-weight: 600 !important;
+        color: #0f172a !important;
+        z-index: 10;
+        position: relative;
+    }
+
+    /* Sequence number columns (Sampling ke-) */
+    .table-pelarutan .table-input.r-p1-sampling-ke,
+    .table-pelarutan .table-input.r-p2-sampling-ke {
+        background-color: #f1f5f9;
+        font-weight: 700;
+        color: #475569;
+        border-color: #e2e8f0;
+        cursor: default;
+    }
+
+    /* Disposisi input */
+    .table-pelarutan .table-input.r-disposisi {
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    /* Soft, clear placeholders */
+    .table-pelarutan .table-input::placeholder,
+    .table-pelarutan .table-textarea::placeholder,
+    .meta-input-group input::placeholder,
+    .meta-input-group textarea::placeholder {
+        color: #94a3b8 !important;
+        font-style: italic !important;
+        font-weight: 400 !important;
+        font-size: 0.74rem !important;
+        opacity: 0.8 !important;
+    }
+
+    /* Scrollbar */
+    .table-responsive::-webkit-scrollbar {
+        height: 9px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 
     .batch-sub-card {
-        border: 1px solid #94a3b8;
-        background: #fafafa;
-        border-radius: 4px;
-        padding: 12px;
-        margin-bottom: 15px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .signature-container {
@@ -107,23 +268,31 @@
     }
 
     .meta-input-group td {
-        padding: 2px 4px;
+        padding: 4px 6px;
         font-size: 0.84rem;
     }
 
     .meta-input-group .form-control-sm {
-        border: none;
-        border-bottom: 1px dotted #888;
-        border-radius: 0;
-        padding: 2px 4px;
-        background: transparent;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 4px 8px;
+        background: #ffffff;
         font-size: 0.84rem;
+        font-weight: 500;
+        color: #0f172a;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .meta-input-group .form-control-sm:hover {
+        border-color: #64748b;
+        background: #f8fafc;
     }
 
     .meta-input-group .form-control-sm:focus {
-        border-bottom: 2px solid #405189;
-        box-shadow: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
         background: #ffffff;
+        font-weight: 600;
     }
 </style>
 @endsection
@@ -139,8 +308,8 @@
 
                     <div class="page-title-right">
                         <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="{{ route('analisa.pelarutan.index') }}">Menu</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('analisa.pelarutan.export.index') }}">Export & Cetak</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('pelarutan-1.menu') }}">Menu</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('pelarutan.export.index') }}">Export & Cetak</a></li>
                             <li class="breadcrumb-item active">Formulir Dokumen</li>
                         </ol>
                     </div>
@@ -174,7 +343,7 @@
                     </div>
 
                     <div class="col-lg-5 col-md-12 text-md-end text-start d-flex flex-wrap gap-2 justify-content-md-end justify-content-start align-items-end">
-                        <a href="{{ route('analisa.pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
                         <button type="button" id="btnSaveDoc" class="btn btn-primary btn-sm">
@@ -191,11 +360,21 @@
             </div>
         </div>
 
-        <!-- Alert Info Notes -->
-        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-3 py-2 px-3">
-            <i class="ri-information-line fs-18 me-2"></i>
-            <div class="fs-12">
-                <strong>Format Resmi Pelarutan:</strong> Formulir diatur dalam format <strong>1 Lembar = 2 Batch</strong>. Setiap lembar terdiri dari 2 blok batch pelarutan (Dissolver) dengan masing-masing 5 baris data sampling, serta footer catatan & tanda tangan di bagian bawah.
+        <!-- Banner Petunjuk Input Cepat (Keyboard & Tab Friendly) -->
+        <div class="alert border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between mb-3 py-2 px-3 bg-light border-start border-primary border-4">
+            <div class="d-flex align-items-center fs-12 text-dark">
+                <i class="ri-keyboard-line fs-18 me-2 text-primary"></i>
+                <div>
+                    <strong>Navigasi Cepat (Keyboard Friendly):</strong>
+                    Gunakan tombol <kbd class="bg-white text-primary border px-1 fw-bold">Tab</kbd> untuk pindah ke kolom berikutnya &bull;
+                    Tekan <kbd class="bg-white text-dark border px-1 fw-bold">Enter</kbd> atau <kbd class="bg-white text-dark border px-1 fw-bold">&darr;</kbd> untuk turun ke baris berikutnya &bull;
+                    Teks otomatis ter-blok saat sel aktif untuk kecepatan input data.
+                </div>
+            </div>
+            <div class="fs-11 text-muted fw-semibold mt-1 mt-md-0">
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
+                    <i class="ri-pages-line me-1"></i> 1 Lembar = 2 Batch
+                </span>
             </div>
         </div>
 
@@ -206,7 +385,7 @@
 
         <!-- Tombol Tambah Pasang Batch (Lembar Baru) -->
         <div class="text-center mb-5">
-            <button type="button" class="btn btn-outline-primary btn-md shadow-sm px-4" id="btnAddPairBatch">
+            <button type="button" class="btn btn-outline-primary btn-md shadow-sm px-4" id="btnAddPairBatch" tabindex="-1">
                 <i class="ri-add-circle-line me-1 fs-16 align-middle"></i> Tambah 1 Lembar Baru (2 Batch Pelarutan)
             </button>
         </div>
@@ -281,8 +460,8 @@
                 var newBlock = {
                     jenis_produk: variant,
                     tanggal_produksi: defaultDate,
-                    jam_produksi: '08:00',
-                    kode_shift_grup: 'Shift 1 / Grup A',
+                    jam_produksi: '06:00 - 14:00',
+                    kode_shift_grup: '',
                     batch: String(bNum),
                     no_dissolver: String(bNum),
                     volume: '',
@@ -362,6 +541,61 @@
                 }
             });
         });
+
+        // 1. Auto-select text on focus (Membuat input via Tab langsung mengganti isi tanpa perlu backspace)
+        $(document).on('focus', '.table-input, .table-textarea, .meta-input-group input, .signature-container input', function() {
+            var el = this;
+            setTimeout(function() {
+                if (typeof el.select === 'function') {
+                    el.select();
+                }
+            }, 30);
+        });
+
+        // 2. Keyboard Navigation: Enter (turun baris), Shift+Enter (naik baris), Panah Bawah/Atas (Excel Mode)
+        $(document).on('keydown', '.table-pelarutan .table-input', function(e) {
+            var $input = $(this);
+            var $td = $input.closest('td');
+            var colIdx = $td.index();
+            var $tr = $input.closest('tr.data-row');
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    // Shift + Enter: Move up 1 row in same column
+                    var $prevTr = $tr.prev('tr.data-row');
+                    if ($prevTr.length) {
+                        var $target = $prevTr.children('td').eq(colIdx).find('.table-input, .table-textarea');
+                        if ($target.length) $target.focus();
+                    }
+                } else {
+                    // Enter: Move down 1 row in same column
+                    var $nextTr = $tr.next('tr.data-row');
+                    if ($nextTr.length) {
+                        var $target = $nextTr.children('td').eq(colIdx).find('.table-input, .table-textarea');
+                        if ($target.length) $target.focus();
+                    }
+                }
+            } else if (e.key === 'ArrowDown') {
+                var $nextTr = $tr.next('tr.data-row');
+                if ($nextTr.length) {
+                    var $target = $nextTr.children('td').eq(colIdx).find('.table-input, .table-textarea');
+                    if ($target.length) {
+                        e.preventDefault();
+                        $target.focus();
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                var $prevTr = $tr.prev('tr.data-row');
+                if ($prevTr.length) {
+                    var $target = $prevTr.children('td').eq(colIdx).find('.table-input, .table-textarea');
+                    if ($target.length) {
+                        e.preventDefault();
+                        $target.focus();
+                    }
+                }
+            }
+        });
     });
 
     function updateActionLinks(poId) {
@@ -420,7 +654,7 @@
                     </div>
                     <div>
                         ${totalSheets > 1 ? `
-                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-delete-sheet" data-sheet-index="${pIdx}">
+                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-delete-sheet" data-sheet-index="${pIdx}" tabindex="-1">
                             <i class="ri-delete-bin-line me-1"></i> Hapus Lembar Ini
                         </button>
                         ` : ''}
@@ -440,7 +674,7 @@
                         <div class="doc-title-main">HASIL ANALISIS PROSES PELARUTAN</div>
                     </div>
                     <div class="col-3 text-end">
-                        <table class="float-end border" style="font-size: 0.80rem;">
+                        <table class="float-end border mb-1" style="font-size: 0.80rem;">
                             <tr>
                                 <td class="p-1 border-bottom text-start fw-bold bg-light">Tanggal Record Doc</td>
                                 <td class="p-1 border-bottom text-start doc-date-display">${globalDocDate}</td>
@@ -450,6 +684,8 @@
                                 <td class="p-1 text-start fw-semibold">${pIdx + 1} / ${totalSheets}</td>
                             </tr>
                         </table>
+                        <div class="clearfix"></div>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 2 batch</span>
                     </div>
                 </div>
 
@@ -531,14 +767,14 @@
                     <td width="35%">
                         <div class="d-flex align-items-center">
                             <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-jenis" value="${escapeHtml(block.jenis_produk || '')}">
+                            <input type="text" class="form-control form-control-sm block-meta-jenis" placeholder="${bIdx % 2 === 0 ? 'Varian Kecap (e.g. Kecap Manis)' : '(Varian) + (Formulasi)'}" value="${escapeHtml(block.jenis_produk || '')}">
                         </div>
                     </td>
                     <td width="15%" class="fw-bold">Batch</td>
                     <td width="35%">
                         <div class="d-flex align-items-center">
                             <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-batch" value="${escapeHtml(block.batch || '')}">
+                            <input type="text" class="form-control form-control-sm block-meta-batch" placeholder="${bIdx % 2 === 0 ? 'No Batch (Batch 1)' : 'No Batch Pasangan Blending (Batch 2)'}" value="${escapeHtml(block.batch || '')}">
                         </div>
                     </td>
                 </tr>
@@ -554,7 +790,7 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-no-dissolver" value="${escapeHtml(block.no_dissolver || String(bIdx + 1))}">
+                            <input type="text" class="form-control form-control-sm block-meta-no-dissolver" placeholder="Tangki Dissolver (e.g. 1)" value="${escapeHtml(block.no_dissolver || String(bIdx + 1))}">
                         </div>
                     </td>
                 </tr>
@@ -563,14 +799,14 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-jam" placeholder="HH:mm - HH:mm" value="${escapeHtml(block.jam_produksi || '')}">
+                            <input type="text" class="form-control form-control-sm block-meta-jam" placeholder="06:00 - 14:00 (Jam Shift)" value="${escapeHtml(block.jam_produksi || '')}">
                         </div>
                     </td>
                     <td class="fw-bold">Volume</td>
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-volume" value="${escapeHtml(block.volume || '')}">
+                            <input type="text" class="form-control form-control-sm block-meta-volume" placeholder="(Blank dulu)" value="${escapeHtml(block.volume || '')}">
                         </div>
                     </td>
                 </tr>
@@ -579,7 +815,7 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-shift" value="${escapeHtml(block.kode_shift_grup || 'Shift 1 / Grup A')}">
+                            <input type="text" class="form-control form-control-sm block-meta-shift" placeholder="3/C" value="${escapeHtml(block.kode_shift_grup || '')}">
                         </div>
                     </td>
                     <td colspan="2"></td>
@@ -587,33 +823,55 @@
             </table>
 
             <!-- Tabel Analisis Pelarutan (5 Baris Standar) -->
+            <div class="d-flex justify-content-between align-items-center mb-1 text-muted fs-11">
+                <span class="badge bg-light text-secondary border"><i class="ri-arrow-left-right-line me-1"></i> Geser horizontal untuk melihat seluruh kolom</span>
+            </div>
             <div class="table-responsive">
                 <table class="table-pelarutan">
+                    <colgroup>
+                        <col style="width: 85px;">
+                        <col style="width: 75px;">
+                        <col style="width: 130px;">
+                        <col style="width: 70px;">
+                        <col style="width: 70px;">
+                        <col style="width: 80px;">
+                        <col style="width: 70px;">
+                        <col style="width: 190px;">
+                        <col style="width: 85px;">
+                        <col style="width: 75px;">
+                        <col style="width: 130px;">
+                        <col style="width: 70px;">
+                        <col style="width: 70px;">
+                        <col style="width: 80px;">
+                        <col style="width: 70px;">
+                        <col style="width: 190px;">
+                        <col style="width: 95px;">
+                    </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 4%;">Sampling ke-</th>
-                            <th colspan="2" style="width: 10%;">Serah Terima</th>
-                            <th colspan="5" style="width: 36%;">Pelarutan I (GGA)</th>
-                            <th rowspan="2" style="width: 4%;">Sampling ke-</th>
-                            <th colspan="2" style="width: 10%;">Serah Terima</th>
-                            <th colspan="5" style="width: 36%;">Pelarutan II (GGAS)</th>
-                            <th rowspan="2" style="width: 8%;">Disposisi</th>
+                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 85px;">Sampling<br>ke-</th>
+                            <th colspan="2" style="width: 205px;" class="bg-light">Serah Terima</th>
+                            <th colspan="5" style="width: 480px;" class="th-gga">PELARUTAN I (GGA)</th>
+                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 85px;">Sampling<br>ke-</th>
+                            <th colspan="2" style="width: 205px;" class="bg-light">Serah Terima</th>
+                            <th colspan="5" style="width: 480px;" class="th-ggas">PELARUTAN II (GGAS)</th>
+                            <th rowspan="2" style="width: 95px;" class="bg-light">Disposisi</th>
                         </tr>
                         <tr>
-                            <th style="width: 4%;">Jam</th>
-                            <th style="width: 6%;">PIC</th>
-                            <th style="width: 5%;">Brix</th>
-                            <th style="width: 5%;">%NaCl</th>
-                            <th style="width: 6%;">Warna</th>
-                            <th style="width: 5%;">Organo</th>
-                            <th style="width: 15%;">Waktu & Adjustment</th>
-                            <th style="width: 4%;">Jam</th>
-                            <th style="width: 6%;">PIC</th>
-                            <th style="width: 5%;">Brix</th>
-                            <th style="width: 5%;">%NaCl</th>
-                            <th style="width: 6%;">Warna</th>
-                            <th style="width: 5%;">Organo</th>
-                            <th style="width: 15%;">Waktu & Adjustment</th>
+                            <th style="width: 75px;">Jam</th>
+                            <th style="width: 130px;">PIC</th>
+                            <th style="width: 70px;">Brix</th>
+                            <th style="width: 70px;">%NaCl</th>
+                            <th style="width: 80px;">Warna</th>
+                            <th style="width: 70px;">Organo</th>
+                            <th style="width: 190px;">Waktu & Adjustment</th>
+                            <th style="width: 75px;">Jam</th>
+                            <th style="width: 130px;">PIC</th>
+                            <th style="width: 70px;">Brix</th>
+                            <th style="width: 70px;">Visco</th>
+                            <th style="width: 80px;">Warna</th>
+                            <th style="width: 70px;">Organo</th>
+                            <th style="width: 190px;">Waktu & Adjustment</th>
                         </tr>
                     </thead>
                     <tbody class="block-table-body" data-block-index="${bIdx}">
@@ -623,10 +881,10 @@
             </div>
 
             <div class="d-flex gap-2 justify-content-end mt-1">
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-11 btn-add-row" data-block-index="${bIdx}">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-11 btn-add-row" data-block-index="${bIdx}" tabindex="-1">
                     <i class="ri-add-line"></i> Tambah Baris
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fs-11 btn-delete-row" data-block-index="${bIdx}">
+                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fs-11 btn-delete-row" data-block-index="${bIdx}" tabindex="-1">
                     <i class="ri-subtract-line"></i> Hapus Baris
                 </button>
             </div>
@@ -640,25 +898,29 @@
         rows.forEach(function(r, rIdx) {
             html += `
             <tr class="data-row" data-row-index="${rIdx}">
-                <td><input type="text" class="table-input r-p1-sampling-ke" value="${escapeHtml(r.p1_sampling_ke || String(rIdx + 1))}"></td>
-                <td><input type="text" class="table-input r-p1-jam" value="${escapeHtml(r.p1_jam || '')}"></td>
-                <td><input type="text" class="table-input r-p1-pic" value="${escapeHtml(r.p1_pic || '')}"></td>
-                <td><input type="text" class="table-input r-p1-brix" value="${escapeHtml(r.p1_brix || '')}"></td>
-                <td><input type="text" class="table-input r-p1-nacl" value="${escapeHtml(r.p1_nacl || '')}"></td>
-                <td><input type="text" class="table-input r-p1-warna" value="${escapeHtml(r.p1_warna || 'Standar')}"></td>
-                <td><input type="text" class="table-input r-p1-organo" value="${escapeHtml(r.p1_organo || 'OK')}"></td>
-                <td><input type="text" class="table-input r-p1-waktu-adj text-start px-1" value="${escapeHtml(r.p1_waktu_adjustment || '')}"></td>
+                <td><input type="text" class="table-input r-p1-sampling-ke text-center" value="${escapeHtml(r.p1_sampling_ke || String(rIdx + 1))}" tabindex="-1" title="Sampling ke-${rIdx + 1}" readonly></td>
+                <td><input type="text" class="table-input r-p1-jam text-center" placeholder="HH:mm" value="${escapeHtml(r.p1_jam || '')}"></td>
+                <td><input type="text" class="table-input r-p1-pic text-center" placeholder="OP PRD Sampler" value="${escapeHtml(r.p1_pic || '')}"></td>
+                <td><input type="text" class="table-input r-p1-brix text-center" placeholder="65.0" value="${escapeHtml(r.p1_brix || '')}"></td>
+                <td><input type="text" class="table-input r-p1-nacl text-center" placeholder="%NaCl" value="${escapeHtml(r.p1_nacl || '')}"></td>
+                <td><input type="text" class="table-input r-p1-warna text-center" placeholder="Standar" value="${escapeHtml(r.p1_warna || 'Standar')}"></td>
+                <td><input type="text" class="table-input r-p1-organo text-center" placeholder="OK" value="${escapeHtml(r.p1_organo || 'OK')}"></td>
+                <td style="padding: 2px 2px;">
+                    <textarea class="table-textarea r-p1-waktu-adj" rows="2" placeholder="Jam & Rekom Adj...">${escapeHtml(r.p1_waktu_adjustment || '')}</textarea>
+                </td>
 
-                <td><input type="text" class="table-input r-p2-sampling-ke" value="${escapeHtml(r.p2_sampling_ke || String(rIdx + 1))}"></td>
-                <td><input type="text" class="table-input r-p2-jam" value="${escapeHtml(r.p2_jam || '')}"></td>
-                <td><input type="text" class="table-input r-p2-pic" value="${escapeHtml(r.p2_pic || '')}"></td>
-                <td><input type="text" class="table-input r-p2-brix" value="${escapeHtml(r.p2_brix || '')}"></td>
-                <td><input type="text" class="table-input r-p2-nacl" value="${escapeHtml(r.p2_nacl || '')}"></td>
-                <td><input type="text" class="table-input r-p2-warna" value="${escapeHtml(r.p2_warna || 'Standar')}"></td>
-                <td><input type="text" class="table-input r-p2-organo" value="${escapeHtml(r.p2_organo || 'OK')}"></td>
-                <td><input type="text" class="table-input r-p2-waktu-adj text-start px-1" value="${escapeHtml(r.p2_waktu_adjustment || '')}"></td>
+                <td><input type="text" class="table-input r-p2-sampling-ke text-center" value="${escapeHtml(r.p2_sampling_ke || String(rIdx + 1))}" tabindex="-1" title="Sampling ke-${rIdx + 1}" readonly></td>
+                <td><input type="text" class="table-input r-p2-jam text-center" placeholder="HH:mm" value="${escapeHtml(r.p2_jam || '')}"></td>
+                <td><input type="text" class="table-input r-p2-pic text-center" placeholder="OP PRD Sampler" value="${escapeHtml(r.p2_pic || '')}"></td>
+                <td><input type="text" class="table-input r-p2-brix text-center" placeholder="65.0" value="${escapeHtml(r.p2_brix || '')}"></td>
+                <td><input type="text" class="table-input r-p2-visco r-p2-nacl text-center" placeholder="Visco" value="${escapeHtml(r.p2_visco !== undefined && r.p2_visco !== '' ? r.p2_visco : (r.p2_nacl || ''))}"></td>
+                <td><input type="text" class="table-input r-p2-warna text-center" placeholder="Standar" value="${escapeHtml(r.p2_warna || 'Standar')}"></td>
+                <td><input type="text" class="table-input r-p2-organo text-center" placeholder="OK" value="${escapeHtml(r.p2_organo || 'OK')}"></td>
+                <td style="padding: 2px 2px;">
+                    <textarea class="table-textarea r-p2-waktu-adj" rows="2" placeholder="Jam & Rekom Adj...">${escapeHtml(r.p2_waktu_adjustment || '')}</textarea>
+                </td>
 
-                <td><input type="text" class="table-input r-disposisi fw-semibold" value="${escapeHtml(r.disposisi || '')}"></td>
+                <td><input type="text" class="table-input r-disposisi fw-semibold text-center" placeholder="Release / Hold" value="${escapeHtml(r.disposisi || '')}"></td>
             </tr>
             `;
         });
@@ -793,8 +1055,8 @@
         return {
             jenis_produk: 'Kecap Manis',
             tanggal_produksi: $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}',
-            jam_produksi: '08:00',
-            kode_shift_grup: 'Shift 1 / Grup A',
+            jam_produksi: '06:00 - 14:00',
+            kode_shift_grup: '',
             batch: String(batchNum),
             no_dissolver: String(batchNum),
             volume: '',

@@ -8,6 +8,7 @@ use App\Models\DocAdjustment;
 use App\Models\ProductionBatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DocAdjustmentController extends Controller
@@ -96,8 +97,8 @@ class DocAdjustmentController extends Controller
                         'jenis_kecap' => $savedDoc->jenis_kecap ?: ($batch->variant ?: 'Kecap Sedap'),
                         'no_batch' => $savedDoc->no_batch ?: ($batch->batch_range ?: '1'),
                         'tanggal_produksi' => $savedDoc->tanggal_produksi ? $savedDoc->tanggal_produksi->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                        'volume_batch' => $savedDoc->volume_batch ?: '5000 L',
-                        'shift' => $savedDoc->shift ?: 'Shift 1 / Grup A',
+                        'volume_batch' => $savedDoc->volume_batch ?: '10000 L',
+                        'shift' => ($savedDoc->shift && $savedDoc->shift !== 'Shift 1 / Grup A' && !str_starts_with($savedDoc->shift, 'Shift ')) ? $savedDoc->shift : $this->resolveShiftGroup($batch, $savedDoc->no_batch),
                         'bahan_rows' => is_array($rawBahan) ? $rawBahan : [],
                         'disposisi' => $savedDoc->disposisi ?: 'Release',
                         'keterangan' => $savedDoc->keterangan ?: '',
@@ -114,6 +115,27 @@ class DocAdjustmentController extends Controller
                     ]
                 ];
             }
+
+            // Pastikan setiap lembar memiliki minimal 9 baris bahan (7 standar + 2 baris tambahan sesuai form resmi)
+            foreach ($sheets as &$sh) {
+                if (empty($sh['shift']) || $sh['shift'] === 'Shift 1 / Grup A' || str_starts_with($sh['shift'], 'Shift ')) {
+                    $sh['shift'] = $this->resolveShiftGroup($batch, $sh['no_batch'] ?? null);
+                }
+                if (!isset($sh['bahan_rows']) || !is_array($sh['bahan_rows'])) {
+                    $sh['bahan_rows'] = [];
+                }
+                foreach ($sh['bahan_rows'] as &$bRow) {
+                    if (isset($bRow['adj1'])) $bRow['adj1'] = $this->formatBlankIfZero($bRow['adj1']);
+                    if (isset($bRow['adj2'])) $bRow['adj2'] = $this->formatBlankIfZero($bRow['adj2']);
+                    if (isset($bRow['adj3'])) $bRow['adj3'] = $this->formatBlankIfZero($bRow['adj3']);
+                }
+                unset($bRow);
+
+                while (count($sh['bahan_rows']) < 9) {
+                    $sh['bahan_rows'][] = ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''];
+                }
+            }
+            unset($sh);
 
             return [
                 'is_saved' => true,
@@ -199,14 +221,15 @@ class DocAdjustmentController extends Controller
                     $hasAdj = ($item->adjustment_qty_air || $item->adjustment_qty_garam || $item->adjustment_qty_caramel || !empty($item->adjustment_qty_gula) || !empty($item->adjustment_qty_gula_kelapa) || !empty($item->adjustment_qty_gula_tebu) || strtolower((string)$item->disposition) === 'adjustment');
                     if ($hasAdj) {
                         $adjCount++;
-                        $jamStr = $item->created_at ? $item->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+                        $scanTime = $item->scanned_at ?: $item->created_at;
+                        $jamStr = $scanTime ? Carbon::parse($scanTime)->setTimezone('Asia/Jakarta')->format('H:i') : '';
                         $curValues = [];
-                        if ($item->adjustment_qty_air) $curValues['Air'] = $item->adjustment_qty_air . ' L';
-                        if ($item->adjustment_qty_garam) $curValues['Garam Kasar'] = $item->adjustment_qty_garam . ' kg';
-                        if ($item->adjustment_qty_caramel) $curValues['Karamel (Jenis)'] = $item->adjustment_qty_caramel . ' kg';
-                        if (!empty($item->adjustment_qty_gula_kelapa)) $curValues['Gula Kelapa'] = $item->adjustment_qty_gula_kelapa . ' kg';
-                        if (!empty($item->adjustment_qty_gula_tebu)) $curValues['Gula Tebu'] = $item->adjustment_qty_gula_tebu . ' kg';
-                        if (!empty($item->adjustment_qty_gula) && empty($curValues['Gula Kelapa']) && empty($curValues['Karamel (Jenis)'])) {
+                        if ($item->adjustment_qty_air && floatval($item->adjustment_qty_air) > 0) $curValues['Air'] = $item->adjustment_qty_air . ' L';
+                        if ($item->adjustment_qty_garam && floatval($item->adjustment_qty_garam) > 0) $curValues['Garam Kasar'] = $item->adjustment_qty_garam . ' kg';
+                        if ($item->adjustment_qty_caramel && floatval($item->adjustment_qty_caramel) > 0) $curValues['Karamel (Jenis)'] = $item->adjustment_qty_caramel . ' kg';
+                        if (!empty($item->adjustment_qty_gula_kelapa) && floatval($item->adjustment_qty_gula_kelapa) > 0) $curValues['Gula Kelapa'] = $item->adjustment_qty_gula_kelapa . ' kg';
+                        if (!empty($item->adjustment_qty_gula_tebu) && floatval($item->adjustment_qty_gula_tebu) > 0) $curValues['Gula Tebu'] = $item->adjustment_qty_gula_tebu . ' kg';
+                        if (!empty($item->adjustment_qty_gula) && floatval($item->adjustment_qty_gula) > 0 && empty($curValues['Gula Kelapa']) && empty($curValues['Karamel (Jenis)'])) {
                             $curValues['Gula Kelapa'] = $item->adjustment_qty_gula . ' kg';
                         }
 
@@ -232,6 +255,9 @@ class DocAdjustmentController extends Controller
                         'adj3' => $adj3Values[$bName] ?? '',
                     ];
                 }
+                // 2 baris tambahan sesuai format spreadsheet resmi FRM/QLB/04/104/011-00
+                $bahanRows[] = ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''];
+                $bahanRows[] = ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''];
 
                 $adjustmentSheets[] = [
                     'proses' => 'Blending',
@@ -239,7 +265,7 @@ class DocAdjustmentController extends Controller
                     'no_batch' => (string)($first->batch_range ?: ($cIdx + 1)),
                     'tanggal_produksi' => $first->created_at ? $first->created_at->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
                     'volume_batch' => $first->volume ? ($first->volume . ' L') : '10000 L',
-                    'shift' => 'Shift 1 / Grup A',
+                    'shift' => $this->resolveShiftGroup($batch, (string)($first->batch_range ?: ($cIdx + 1))),
                     'bahan_rows' => $bahanRows,
                     'disposisi' => $last->disposition ?: 'Release',
                     'keterangan' => '',
@@ -266,6 +292,9 @@ class DocAdjustmentController extends Controller
                     'adj3' => '',
                 ];
             }
+            // 2 baris tambahan sesuai format spreadsheet resmi FRM/QLB/04/104/011-00
+            $bahanRows[] = ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''];
+            $bahanRows[] = ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''];
 
             $adjustmentSheets[] = [
                 'proses' => 'Blending',
@@ -273,7 +302,7 @@ class DocAdjustmentController extends Controller
                 'no_batch' => (string)($batch->batch_range ?: '1'),
                 'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
                 'volume_batch' => '10000 L',
-                'shift' => 'Shift 1 / Grup A',
+                'shift' => $this->resolveShiftGroup($batch, (string)($batch->batch_range ?: '1')),
                 'bahan_rows' => $bahanRows,
                 'disposisi' => 'Release',
                 'keterangan' => '',
@@ -394,5 +423,60 @@ class DocAdjustmentController extends Controller
         return view('app.doc_adjustment.print', [
             'data' => $docData
         ]);
+    }
+
+    /**
+     * Format nilai analisis: jika 0, 0.0, null, '-', atau kosong maka dijadikan blank
+     */
+    private function formatBlankIfZero($val): string
+    {
+        if ($val === null || $val === '' || $val === 'null' || $val === '-' || $val === '0' || $val === 0 || $val === 0.0 || $val === '0.0' || $val === '0.00') {
+            return '';
+        }
+        if (is_numeric($val) && floatval($val) == 0) {
+            return '';
+        }
+        return (string)$val;
+    }
+
+    /**
+     * Lookup Shift & Grup dinamis dari production.blending_awal (e.g. 1/A atau 3/C)
+     */
+    private function resolveShiftGroup($batch, $batchRange = null): string
+    {
+        try {
+            $prodBatch = DB::table('production.production_batches')
+                ->where('po_number', $batch->po_number)
+                ->orWhere('po_number', 'LIKE', '%' . $batch->po_number . '%')
+                ->first();
+            $pBatchId = $prodBatch ? $prodBatch->id : $batch->id;
+
+            $blRow = DB::table('production.blending_awal')
+                ->where(function($q) use ($pBatchId, $batch) {
+                    $q->where('production_batch_id', $pBatchId)
+                      ->orWhere('production_batch_id', $batch->id);
+                })
+                ->when($batchRange, fn($q) => $q->where('batch_range', $batchRange))
+                ->first();
+
+            if (!$blRow) {
+                $blRow = DB::table('production.monitoring_turun_blending')
+                    ->where(function($q) use ($pBatchId, $batch) {
+                        $q->where('production_batch_id', $pBatchId)
+                          ->orWhere('production_batch_id', $batch->id);
+                    })
+                    ->when($batchRange, fn($q) => $q->where('batch_range', $batchRange))
+                    ->first();
+            }
+
+            if ($blRow) {
+                $s = $blRow->shift ? (string)$blRow->shift : '';
+                $g = $blRow->group ? (string)$blRow->group : '';
+                if ($s !== '' && $g !== '') return "{$s}/{$g}";
+                if ($s !== '') return $s;
+                if ($g !== '') return $g;
+            }
+        } catch (\Throwable $e) {}
+        return '';
     }
 }
