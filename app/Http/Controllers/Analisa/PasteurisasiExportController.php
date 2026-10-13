@@ -22,7 +22,7 @@ class PasteurisasiExportController extends Controller
                 'monitoringTurunBlending.user',
                 'monitoringPasteurisasi.user',
                 'monitoringStorageKimia.user',
-                'monitoringStorageMikro.user'
+                'monitoringStorageMikro'
             ])
             ->where(function ($q) {
                 $q->has('monitoringPasteurisasi')
@@ -150,7 +150,7 @@ class PasteurisasiExportController extends Controller
             'monitoringPasteurisasi.color',
             'monitoringStorageKimia.user',
             'monitoringStorageKimia.color',
-            'monitoringStorageMikro.user'
+            'monitoringStorageMikro'
         ])->findOrFail($id);
 
         return view('app.analisa.monitoring_turun_blending.trace', compact('productionBatch'));

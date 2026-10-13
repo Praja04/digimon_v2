@@ -102,6 +102,7 @@
             var table = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
+                order: [[2, 'desc']],
                 ajax: {
                     url: "{{ route('analisa.monitoring-turun-blending.export.index') }}",
                     data: function(d) {
