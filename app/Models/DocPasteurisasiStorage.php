@@ -16,6 +16,7 @@ class DocPasteurisasiStorage extends Model
         'tanggal_record_doc' => 'date',
         'pasteurisasi_rows' => 'array',
         'storage_rows' => 'array',
+        'batch_blocks' => 'array',
     ];
 
     public function productionBatch()

@@ -8,6 +8,7 @@ use App\Models\DocPasteurisasiStorage;
 use App\Models\ProductionBatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DocPasteurisasiStorageController extends Controller
@@ -59,6 +60,7 @@ class DocPasteurisasiStorageController extends Controller
 
     /**
      * Helper untuk mengambil data dokumen tersimpan atau auto-generate dari database
+     * 1 Lembar = 1 Blending / Pasangan Batch
      */
     public function getDocumentData($poId)
     {
@@ -75,161 +77,251 @@ class DocPasteurisasiStorageController extends Controller
 
         $savedDoc = DocPasteurisasiStorage::where('production_batch_id', $poId)->first();
 
-        if ($savedDoc) {
+        $detectedShift = '';
+        $detectedAnalis = '';
+        $jamStart = '';
+        $jamEnd = '';
+        $detectedSt = 'ST 01';
+
+        try {
+            $prodBatch = DB::table('production.production_batches')->where('po_number', $batch->po_number)->first();
+            $pBatchId = $prodBatch ? $prodBatch->id : $batch->id;
+            $mpRow = DB::table('production.monitoring_pasteurisasi')
+                ->where('production_batch_id', $pBatchId)
+                ->first();
+            if (!$mpRow && $pBatchId != $batch->id) {
+                $mpRow = DB::table('production.monitoring_pasteurisasi')
+                    ->where('production_batch_id', $batch->id)
+                    ->first();
+            }
+            if ($mpRow) {
+                $s = $mpRow->shift ? (string)$mpRow->shift : '';
+                $g = $mpRow->group ? (string)$mpRow->group : '';
+                if ($s !== '' && $g !== '') {
+                    $detectedShift = "{$s}/{$g}";
+                } elseif ($s !== '') {
+                    $detectedShift = $s;
+                } elseif ($g !== '') {
+                    $detectedShift = $g;
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        if ($batch->monitoringPasteurisasi && $batch->monitoringPasteurisasi->count() > 0) {
+            $firstMp = $batch->monitoringPasteurisasi->first();
+            if (!$detectedShift && $firstMp && $firstMp->shift) $detectedShift = (string)$firstMp->shift;
+            if ($firstMp && $firstMp->user) $detectedAnalis = $firstMp->user->name;
+            $jamStart = $firstMp && $firstMp->created_at ? $firstMp->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+            $lastMp = $batch->monitoringPasteurisasi->last();
+            $jamEnd = $lastMp && $lastMp->created_at ? $lastMp->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+        }
+
+        if ($batch->monitoringStorageKimia && $batch->monitoringStorageKimia->count() > 0) {
+            $firstMsk = $batch->monitoringStorageKimia->first();
+            if ($firstMsk && $firstMsk->storage) $detectedSt = $firstMsk->storage;
+        }
+
+        if ($savedDoc && !request()->has('force_db')) {
+            $pastRows = $savedDoc->pasteurisasi_rows ?: [];
+            $stRows = $savedDoc->storage_rows ?: [];
+
+            // Jika sebelumnya tersimpan di batch_blocks, ambil barisnya
+            if (empty($pastRows) && !empty($savedDoc->batch_blocks)) {
+                foreach ($savedDoc->batch_blocks as $blk) {
+                    if (!empty($blk['pasteurisasi_rows'])) {
+                        $pastRows = array_merge($pastRows, $blk['pasteurisasi_rows']);
+                    }
+                    if (!empty($blk['storage_rows'])) {
+                        $stRows = array_merge($stRows, $blk['storage_rows']);
+                    }
+                }
+            }
+
+            // Sanitasi nilai 0 / kosong jadi blank pada baris tersimpan
+            foreach ($pastRows as &$pr) {
+                if (isset($pr['bj'])) $pr['bj'] = $this->formatBlankIfZero($pr['bj']);
+                if (isset($pr['brix'])) $pr['brix'] = $this->formatBlankIfZero($pr['brix']);
+                if (isset($pr['ph'])) $pr['ph'] = $this->formatBlankIfZero($pr['ph']);
+                if (isset($pr['aw'])) $pr['aw'] = $this->formatBlankIfZero($pr['aw']);
+                if (isset($pr['viskositas'])) $pr['viskositas'] = $this->formatBlankIfZero($pr['viskositas']);
+                if (isset($pr['buih'])) $pr['buih'] = $this->formatBlankIfZero($pr['buih']);
+            }
+            unset($pr);
+
+            foreach ($stRows as &$sr) {
+                if (isset($sr['bj'])) $sr['bj'] = $this->formatBlankIfZero($sr['bj']);
+                if (isset($sr['brix'])) $sr['brix'] = $this->formatBlankIfZero($sr['brix']);
+                if (isset($sr['ph'])) $sr['ph'] = $this->formatBlankIfZero($sr['ph']);
+                if (isset($sr['nacl'])) $sr['nacl'] = $this->formatBlankIfZero($sr['nacl']);
+                if (isset($sr['viskositas'])) $sr['viskositas'] = $this->formatBlankIfZero($sr['viskositas']);
+                if (isset($sr['buih'])) $sr['buih'] = $this->formatBlankIfZero($sr['buih']);
+                if (isset($sr['aw'])) $sr['aw'] = $this->formatBlankIfZero($sr['aw']);
+            }
+            unset($sr);
+
+            // Minimal rows
+            while (count($pastRows) < 6) {
+                $pIdx = count($pastRows);
+                $pastRows[] = [
+                    'sampling' => ($pIdx === 0) ? 'Tengah' : '',
+                    'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
+                    'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => ''
+                ];
+            }
+            while (count($stRows) < 5) {
+                $sIdx = count($stRows);
+                $stRows[] = [
+                    'sampling' => ($sIdx === 0) ? 'Awal' : (($sIdx === 1) ? 'Outlet' : ''),
+                    'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'nacl' => '',
+                    'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'kristal' => '', 'aw' => '', 'disposisi' => ''
+                ];
+            }
+
+            $singleBlock = [
+                'block_index' => 0,
+                'halaman' => $savedDoc->halaman ?: '1 / 1',
+                'batch' => $savedDoc->batch ?: ($savedDoc->batch_range ?: ($batch->batch_range ?: '')),
+                'kode_st' => $savedDoc->kode_st ?: $detectedSt,
+                'jenis_produk' => $savedDoc->jenis_produk ?: ($batch->variant ?: ''),
+                'tanggal_produksi' => $savedDoc->tanggal_produksi ? $savedDoc->tanggal_produksi->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
+                'jam_produksi_start' => $savedDoc->jam_produksi_start ?: $jamStart,
+                'jam_produksi_end' => $savedDoc->jam_produksi_end ?: $jamEnd,
+                'kode_shift_grup' => ($savedDoc->kode_shift_grup && $savedDoc->kode_shift_grup !== 'Shift 1 / Grup A' && !str_starts_with($savedDoc->kode_shift_grup, 'Shift ')) ? $savedDoc->kode_shift_grup : ($detectedShift ?: $savedDoc->kode_shift_grup),
+                'pasteurisasi_rows' => $pastRows,
+                'storage_rows' => $stRows,
+                'catatan' => $savedDoc->catatan ?: '',
+                'pic_sampling_1' => $savedDoc->pic_sampling ?: '',
+                'pic_sampling_2' => $savedDoc->pic_serah_terima ?: '',
+                'pic_analis' => $savedDoc->pic_analis ?: ($detectedAnalis ?: (auth()->user()->name ?? '')),
+                'pic_checker' => $savedDoc->pic_checker ?: '',
+            ];
+
             return [
                 'is_saved' => true,
                 'id' => $savedDoc->id,
                 'production_batch_id' => $savedDoc->production_batch_id,
                 'po_number' => $batch->po_number,
-                'variant' => $savedDoc->jenis_produk ?: ($batch->variant ?: ''),
-                'jenis_produk' => $savedDoc->jenis_produk ?: ($batch->variant ?: ''),
-                'tanggal_produksi' => $savedDoc->tanggal_produksi ? $savedDoc->tanggal_produksi->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : ''),
-                'jam_produksi_start' => $savedDoc->jam_produksi_start ?: '',
-                'jam_produksi_end' => $savedDoc->jam_produksi_end ?: '',
+                'variant' => $batch->variant,
+                'jenis_produk' => $singleBlock['jenis_produk'],
+                'tanggal_produksi' => $singleBlock['tanggal_produksi'],
+                'jam_produksi_start' => $singleBlock['jam_produksi_start'],
+                'jam_produksi_end' => $singleBlock['jam_produksi_end'],
+                'kode_shift_grup' => $singleBlock['kode_shift_grup'],
+                'batch' => $singleBlock['batch'],
+                'batch_range' => $singleBlock['batch'],
+                'kode_st' => $singleBlock['kode_st'],
                 'tanggal_record_doc' => $savedDoc->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                'halaman' => $savedDoc->halaman ?: '1',
-                'kode_shift_grup' => $savedDoc->kode_shift_grup ?: '',
-                'batch' => $savedDoc->batch ?: ($savedDoc->batch_range ?: ($batch->batch_range ?: '')),
-                'batch_range' => $savedDoc->batch ?: ($savedDoc->batch_range ?: ($batch->batch_range ?: '')),
-                'kode_st' => $savedDoc->kode_st ?: 'ST 01',
-                'pasteurisasi_rows' => $savedDoc->pasteurisasi_rows ?: [],
-                'storage_rows' => $savedDoc->storage_rows ?: [],
-                'catatan' => $savedDoc->catatan ?: '',
-                'pic_sampling' => $savedDoc->pic_sampling ?: '',
-                'pic_serah_terima' => $savedDoc->pic_serah_terima ?: '',
-                'pic_analis' => $savedDoc->pic_analis ?: '',
-                'pic_checker' => $savedDoc->pic_checker ?: '',
+                'halaman' => $singleBlock['halaman'],
+                'pasteurisasi_rows' => $pastRows,
+                'storage_rows' => $stRows,
+                'catatan' => $singleBlock['catatan'],
+                'pic_sampling_1' => $singleBlock['pic_sampling_1'],
+                'pic_sampling_2' => $singleBlock['pic_sampling_2'],
+                'pic_analis' => $singleBlock['pic_analis'],
+                'pic_checker' => $singleBlock['pic_checker'],
+                'batch_blocks' => [$singleBlock],
                 'doc_code' => $savedDoc->doc_code ?: 'FRM/QLB/04/104/006-01',
             ];
         }
 
-        // Auto-generate dari data monitoring yang ada di database
-        $pasteurisasiRows = [];
-        $detectedShift = '';
-        $detectedAnalis = '';
-        $jamStart = '';
-        $jamEnd = '';
-
+        // Auto-generate Fresh Data dari Database (1 Lembar Formulir Tunggal)
+        $pastRows = [];
         if ($batch->monitoringPasteurisasi && $batch->monitoringPasteurisasi->count() > 0) {
             foreach ($batch->monitoringPasteurisasi as $pIdx => $mp) {
-                if (!$detectedShift && $mp->shift) {
-                    $detectedShift = 'Shift ' . $mp->shift;
-                }
-                if (!$detectedAnalis && $mp->user) {
-                    $detectedAnalis = $mp->user->name;
-                }
-
-                $jamStr = $mp->created_at ? $mp->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
-                if (!$jamStart && $jamStr) $jamStart = $jamStr;
-                if ($jamStr) $jamEnd = $jamStr;
-
                 $disposisiFull = $mp->disposition ?: '';
                 if ($mp->disposition_remark) {
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
-
-                $samplingLabel = ($batch->monitoringPasteurisasi->count() === 1) ? 'Tengah' : ('Tengah ' . ($pIdx + 1));
-
-                $pasteurisasiRows[] = [
-                    'sampling' => $samplingLabel,
-                    'jam' => $jamStr,
+                $mpScan = $mp->scanned_at ?: $mp->created_at;
+                $pastRows[] = [
+                    'sampling' => 'Tengah',
+                    'jam' => $mpScan ? Carbon::parse($mpScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $mp->user->name ?? '',
-                    'bj' => $mp->bj !== null ? (string)$mp->bj : '',
-                    'brix' => $mp->brix !== null ? (string)$mp->brix : '',
-                    'ph' => $mp->ph !== null ? (string)$mp->ph : '',
-                    'aw' => $mp->aw !== null ? (string)$mp->aw : '',
-                    'viskositas' => $mp->visco !== null ? (string)$mp->visco : '',
+                    'bj' => $this->formatBlankIfZero($mp->bj),
+                    'brix' => $this->formatBlankIfZero($mp->brix),
+                    'ph' => $this->formatBlankIfZero($mp->ph),
+                    'aw' => $this->formatBlankIfZero($mp->aw),
+                    'viskositas' => $this->formatBlankIfZero($mp->visco),
                     'organo' => $mp->organo ?: '',
                     'aroma' => $mp->aroma ?? '',
                     'warna' => $mp->color ? $mp->color->name : '',
-                    'buih' => $mp->buih !== null ? (string)$mp->buih : '',
+                    'buih' => $this->formatBlankIfZero($mp->buih),
                     'endapan' => $mp->endapan ?: '',
                     'disposisi' => $disposisiFull ?: '',
                 ];
             }
         }
 
-        $storageRows = [];
-        $detectedSt = 'ST 01';
-        $storageDefaultStages = ['Awal', 'Tengah', 'Akhir', 'Outlet', 'Inlet'];
+        while (count($pastRows) < 6) {
+            $pIndex = count($pastRows);
+            $pastRows[] = [
+                'sampling' => ($pIndex === 0) ? 'Tengah' : '',
+                'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
+                'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => '',
+            ];
+        }
 
+        $storageRows = [];
         if ($batch->monitoringStorageKimia && $batch->monitoringStorageKimia->count() > 0) {
             foreach ($batch->monitoringStorageKimia as $sIdx => $msk) {
-                if ($msk->storage) {
-                    $detectedSt = $msk->storage;
-                }
-                if (!$detectedAnalis && $msk->user) {
-                    $detectedAnalis = $msk->user->name;
-                }
-
+                if ($msk->storage) $detectedSt = $msk->storage;
                 $disposisiFull = $msk->disposition ?: '';
                 if ($msk->disposition_remark) {
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $msk->disposition_remark;
                 }
-
-                $stLabel = $storageDefaultStages[$sIdx] ?? ('Sampling ' . ($sIdx + 1));
-
+                $mskScan = $msk->scanned_at ?: $msk->created_at;
                 $storageRows[] = [
-                    'sampling' => $stLabel,
-                    'jam' => $msk->created_at ? $msk->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '',
+                    'sampling' => $msk->stage ?: ($sIdx === 0 ? 'Awal' : ($sIdx === 1 ? 'Outlet' : 'Akhir')),
+                    'jam' => $mskScan ? Carbon::parse($mskScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $msk->user->name ?? '',
-                    'bj' => $msk->bj !== null ? (string)$msk->bj : '',
-                    'brix' => $msk->brix !== null ? (string)$msk->brix : '',
-                    'ph' => $msk->ph !== null ? (string)$msk->ph : '',
-                    'nacl' => $msk->nacl !== null ? (string)$msk->nacl : '',
-                    'viskositas' => $msk->visco !== null ? (string)$msk->visco : '',
+                    'bj' => $this->formatBlankIfZero($msk->bj),
+                    'brix' => $this->formatBlankIfZero($msk->brix),
+                    'ph' => $this->formatBlankIfZero($msk->ph),
+                    'nacl' => $this->formatBlankIfZero($msk->nacl),
+                    'viskositas' => $this->formatBlankIfZero($msk->visco),
                     'organo' => $msk->organo ?: '',
                     'aroma' => $msk->aroma ?? '',
                     'warna' => $msk->color ? $msk->color->name : '',
-                    'buih' => $msk->buih !== null ? (string)$msk->buih : '',
+                    'buih' => $this->formatBlankIfZero($msk->buih),
                     'endapan' => $msk->endapan ?: '',
                     'kristal' => $msk->kristal ?? '',
-                    'aw' => $msk->aw !== null ? (string)$msk->aw : '',
+                    'aw' => $this->formatBlankIfZero($msk->aw),
                     'disposisi' => $disposisiFull ?: '',
                 ];
             }
         }
 
-        // Jika baris masih kosong, buat minimal 1 baris kosong sebagai template
-        if (empty($pasteurisasiRows)) {
-            $pasteurisasiRows[] = [
-                'sampling' => 'Tengah',
-                'jam' => '',
-                'pic' => '',
-                'bj' => '',
-                'brix' => '',
-                'ph' => '',
-                'aw' => '',
-                'viskositas' => '',
-                'organo' => '',
-                'aroma' => '',
-                'warna' => '',
-                'buih' => '',
-                'endapan' => '',
-                'disposisi' => '',
+        while (count($storageRows) < 5) {
+            $sIndex = count($storageRows);
+            $defaultSamp = '';
+            if ($sIndex === 0) $defaultSamp = 'Awal';
+            elseif ($sIndex === 1) $defaultSamp = 'Outlet';
+
+            $storageRows[] = [
+                'sampling' => $defaultSamp,
+                'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'nacl' => '',
+                'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'kristal' => '', 'aw' => '', 'disposisi' => '',
             ];
         }
 
-        if (empty($storageRows)) {
-            $storageRows[] = [
-                'sampling' => 'Awal',
-                'jam' => '',
-                'pic' => '',
-                'bj' => '',
-                'brix' => '',
-                'ph' => '',
-                'nacl' => '',
-                'viskositas' => '',
-                'organo' => '',
-                'aroma' => '',
-                'warna' => '',
-                'buih' => '',
-                'endapan' => '',
-                'kristal' => '',
-                'aw' => '',
-                'disposisi' => '',
-            ];
-        }
+        $singleBlock = [
+            'block_index' => 0,
+            'halaman' => '1 / 1',
+            'batch' => $batch->batch_range ?: '',
+            'kode_st' => $detectedSt,
+            'jenis_produk' => $batch->variant ?: '',
+            'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
+            'jam_produksi_start' => $jamStart,
+            'jam_produksi_end' => $jamEnd,
+            'kode_shift_grup' => $detectedShift,
+            'pasteurisasi_rows' => $pastRows,
+            'storage_rows' => $storageRows,
+            'catatan' => '',
+            'pic_sampling_1' => '',
+            'pic_sampling_2' => '',
+            'pic_analis' => $detectedAnalis ?: (auth()->user()->name ?? ''),
+            'pic_checker' => '',
+        ];
 
         return [
             'is_saved' => false,
@@ -238,22 +330,23 @@ class DocPasteurisasiStorageController extends Controller
             'po_number' => $batch->po_number,
             'variant' => $batch->variant,
             'jenis_produk' => $batch->variant ?: '',
-            'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
+            'tanggal_produksi' => $singleBlock['tanggal_produksi'],
             'jam_produksi_start' => $jamStart,
             'jam_produksi_end' => $jamEnd,
-            'tanggal_record_doc' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
-            'halaman' => '1',
             'kode_shift_grup' => $detectedShift,
             'batch' => $batch->batch_range ?: '',
             'batch_range' => $batch->batch_range ?: '',
             'kode_st' => $detectedSt,
-            'pasteurisasi_rows' => $pasteurisasiRows,
+            'tanggal_record_doc' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
+            'halaman' => '1 / 1',
+            'pasteurisasi_rows' => $pastRows,
             'storage_rows' => $storageRows,
             'catatan' => '',
-            'pic_sampling' => '',
-            'pic_serah_terima' => '',
+            'pic_sampling_1' => '',
+            'pic_sampling_2' => '',
             'pic_analis' => $detectedAnalis ?: (auth()->user()->name ?? ''),
             'pic_checker' => '',
+            'batch_blocks' => [$singleBlock],
             'doc_code' => 'FRM/QLB/04/104/006-01',
         ];
     }
@@ -268,42 +361,30 @@ class DocPasteurisasiStorageController extends Controller
             'tanggal_record_doc' => 'nullable|date',
         ]);
 
-        $pasteurisasiRows = $request->input('pasteurisasi_rows', []);
-        $storageRows = $request->input('storage_rows', []);
-
-        // Filter baris kosong jika ada
-        if (is_array($pasteurisasiRows)) {
-            $pasteurisasiRows = array_values(array_filter($pasteurisasiRows, function ($row) {
-                return !empty(array_filter($row));
-            }));
-        }
-
-        if (is_array($storageRows)) {
-            $storageRows = array_values(array_filter($storageRows, function ($row) {
-                return !empty(array_filter($row));
-            }));
-        }
+        $batchBlocks = $request->input('batch_blocks', []);
+        $firstBlock = !empty($batchBlocks[0]) ? $batchBlocks[0] : [];
 
         $doc = DocPasteurisasiStorage::updateOrCreate(
             ['production_batch_id' => $request->input('production_batch_id')],
             [
-                'jenis_produk' => $request->input('jenis_produk'),
-                'tanggal_produksi' => $request->input('tanggal_produksi'),
-                'jam_produksi_start' => $request->input('jam_produksi_start'),
-                'jam_produksi_end' => $request->input('jam_produksi_end'),
+                'batch_blocks' => $batchBlocks,
+                'jenis_produk' => $firstBlock['jenis_produk'] ?? $request->input('jenis_produk'),
+                'tanggal_produksi' => $firstBlock['tanggal_produksi'] ?? $request->input('tanggal_produksi'),
+                'jam_produksi_start' => $firstBlock['jam_produksi_start'] ?? $request->input('jam_produksi_start'),
+                'jam_produksi_end' => $firstBlock['jam_produksi_end'] ?? $request->input('jam_produksi_end'),
                 'tanggal_record_doc' => $request->input('tanggal_record_doc'),
                 'halaman' => $request->input('halaman', '1'),
-                'kode_shift_grup' => $request->input('kode_shift_grup'),
-                'batch' => $request->input('batch') ?: $request->input('batch_range'),
-                'batch_range' => $request->input('batch') ?: $request->input('batch_range'),
-                'kode_st' => $request->input('kode_st'),
-                'pasteurisasi_rows' => $pasteurisasiRows,
-                'storage_rows' => $storageRows,
-                'catatan' => $request->input('catatan'),
-                'pic_sampling' => $request->input('pic_sampling'),
-                'pic_serah_terima' => $request->input('pic_serah_terima'),
-                'pic_analis' => $request->input('pic_analis'),
-                'pic_checker' => $request->input('pic_checker'),
+                'kode_shift_grup' => $firstBlock['kode_shift_grup'] ?? $request->input('kode_shift_grup'),
+                'batch' => $firstBlock['batch'] ?? $request->input('batch'),
+                'batch_range' => $firstBlock['batch'] ?? $request->input('batch_range'),
+                'kode_st' => $firstBlock['kode_st'] ?? $request->input('kode_st'),
+                'pasteurisasi_rows' => $firstBlock['pasteurisasi_rows'] ?? $request->input('pasteurisasi_rows', []),
+                'storage_rows' => $firstBlock['storage_rows'] ?? $request->input('storage_rows', []),
+                'catatan' => $firstBlock['catatan'] ?? $request->input('catatan'),
+                'pic_sampling' => $firstBlock['pic_sampling_1'] ?? $request->input('pic_sampling'),
+                'pic_serah_terima' => $firstBlock['pic_sampling_2'] ?? $request->input('pic_serah_terima'),
+                'pic_analis' => $firstBlock['pic_analis'] ?? $request->input('pic_analis'),
+                'pic_checker' => $firstBlock['pic_checker'] ?? $request->input('pic_checker'),
                 'doc_code' => $request->input('doc_code', 'FRM/QLB/04/104/006-01'),
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
@@ -354,5 +435,19 @@ class DocPasteurisasiStorageController extends Controller
         return view('app.doc_pasteurisasi_storage.print', [
             'data' => $docData
         ]);
+    }
+
+    /**
+     * Format nilai analisis: jika 0, 0.0, null, atau kosong maka dijadikan blank
+     */
+    private function formatBlankIfZero($val): string
+    {
+        if ($val === null || $val === '' || $val === 'null' || $val === '-' || $val === '0' || $val === 0 || $val === 0.0 || $val === '0.0' || $val === '0.00') {
+            return '';
+        }
+        if (is_numeric($val) && floatval($val) == 0) {
+            return '';
+        }
+        return (string)$val;
     }
 }
