@@ -82,110 +82,7 @@ class DocPelarutanController extends Controller
 
         $savedDoc = DocPelarutan::where('production_batch_id', $poId)->first();
 
-        if ($savedDoc) {
-            $blocks = $savedDoc->batch_blocks ?: [];
-            $totalSheets = max(1, (int)ceil(count($blocks) / 2));
-
-            // Pastikan setiap blok terisi 5 baris minimum & nilai 0 / kosong dijadikan blank
-            foreach ($blocks as &$blk) {
-                if (!isset($blk['rows'])) $blk['rows'] = [];
-                foreach ($blk['rows'] as &$r) {
-                    $r['p1_nacl'] = ''; // Revisi: NaCl Pelarutan 1 selalu blank
-                    $r['p1_brix'] = $this->formatBlankIfZero($r['p1_brix'] ?? '');
-                    $r['p2_brix'] = $this->formatBlankIfZero($r['p2_brix'] ?? '');
-                    if (isset($r['p2_visco'])) $r['p2_visco'] = $this->formatBlankIfZero($r['p2_visco']);
-                    if (isset($r['p2_nacl'])) $r['p2_nacl'] = $this->formatBlankIfZero($r['p2_nacl']);
-                }
-                unset($r);
-
-                // Perbaiki kode_shift_grup jika masih bernilai dummy atau kosong
-                if (empty($blk['kode_shift_grup']) || $blk['kode_shift_grup'] === 'Shift 1 / Grup A' || request()->has('force_db')) {
-                    try {
-                        $prodBatch = DB::table('production.production_batches')->where('po_number', $batch->po_number)->first();
-                        $pBatchId = $prodBatch ? $prodBatch->id : $batch->id;
-                        $bNumVal = $blk['batch'] ?? '1';
-                        $dRow = DB::table('production.dissolver')
-                            ->where('production_batch_id', $pBatchId)
-                            ->where('batch_number', (string)$bNumVal)
-                            ->first();
-                        if (!$dRow && $pBatchId != $batch->id) {
-                            $dRow = DB::table('production.dissolver')
-                                ->where('production_batch_id', $batch->id)
-                                ->where('batch_number', (string)$bNumVal)
-                                ->first();
-                        }
-                        if ($dRow) {
-                            $s = $dRow->shift ? (string)$dRow->shift : '';
-                            $g = $dRow->group ? (string)$dRow->group : '';
-                            if ($s !== '' && $g !== '') {
-                                $blk['kode_shift_grup'] = "{$s}/{$g}";
-                            } elseif ($s !== '') {
-                                $blk['kode_shift_grup'] = $s;
-                            } elseif ($g !== '') {
-                                $blk['kode_shift_grup'] = $g;
-                            } else {
-                                $blk['kode_shift_grup'] = '';
-                            }
-                            if (!empty($dRow->dissolver_number) && (empty($blk['no_dissolver']) || $blk['no_dissolver'] === $bNumVal)) {
-                                $blk['no_dissolver'] = $dRow->dissolver_number;
-                            }
-                        } else {
-                            $blk['kode_shift_grup'] = '';
-                        }
-                    } catch (\Throwable $e) {}
-                }
-
-                // Perbaiki jam_produksi sesuai jadwal shift berlangsung
-                if (empty($blk['jam_produksi']) || $blk['jam_produksi'] === '08:00' || request()->has('force_db')) {
-                    $sVal = $blk['kode_shift_grup'] ?? '';
-                    if (str_starts_with($sVal, '1')) $blk['jam_produksi'] = '06:00 - 14:00';
-                    elseif (str_starts_with($sVal, '2')) $blk['jam_produksi'] = '14:00 - 22:00';
-                    elseif (str_starts_with($sVal, '3')) $blk['jam_produksi'] = '22:00 - 06:00';
-                    else $blk['jam_produksi'] = '';
-                }
-
-                while (count($blk['rows']) < 5) {
-                    $nextSamp = count($blk['rows']) + 1;
-                    $blk['rows'][] = [
-                        'p1_sampling_ke' => (string)$nextSamp,
-                        'p1_jam' => '',
-                        'p1_pic' => '',
-                        'p1_brix' => '',
-                        'p1_nacl' => '',
-                        'p1_warna' => '',
-                        'p1_organo' => '',
-                        'p1_waktu_adjustment' => '',
-                        'p2_sampling_ke' => (string)$nextSamp,
-                        'p2_jam' => '',
-                        'p2_pic' => '',
-                        'p2_brix' => '',
-                        'p2_nacl' => '',
-                        'p2_warna' => '',
-                        'p2_organo' => '',
-                        'p2_waktu_adjustment' => '',
-                        'disposisi' => '',
-                    ];
-                }
-            }
-            unset($blk);
-
-            return [
-                'is_saved' => true,
-                'id' => $savedDoc->id,
-                'production_batch_id' => $savedDoc->production_batch_id,
-                'po_number' => $batch->po_number,
-                'variant' => $batch->variant,
-                'tanggal_record_doc' => $savedDoc->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                'halaman' => $savedDoc->halaman ?: "1 / {$totalSheets}",
-                'batch_blocks' => $blocks,
-                'catatan' => $savedDoc->catatan ?: '',
-                'pic_sampling' => $savedDoc->pic_sampling ?: '',
-                'pic_analis' => $savedDoc->pic_analis ?: '',
-                'pic_checker' => $savedDoc->pic_checker ?: '',
-            ];
-        }
-
-        // Auto-generate Batch Blocks dari data Pelarutan 1 & 2
+        // Auto-generate Batch Blocks secara LIVE langsung dari data Pelarutan 1 & 2 dan Database Produksi
         $p1Items = $batch->pelarutan_1 ? $batch->pelarutan_1->sortBy('id')->values() : collect();
         $p2Items = $batch->pelarutan_2 ? $batch->pelarutan_2->sortBy('id')->values() : collect();
 
@@ -212,64 +109,92 @@ class DocPelarutanController extends Controller
                 $maxRows = max(1, $p1ForBatch->count(), $p2ForBatch->count());
                 $rows = [];
 
-                // 1. Lookup production.dissolver
+                // 1. Lookup production.dissolver dengan multi-tier matching PO & batch number
                 $dissolverShiftGroup = '';
                 $dissolverName = (string)$dissolver;
+                $jamProduksiStr = '';
                 $dRow = null;
 
                 try {
-                    $prodBatch = DB::table('production.production_batches')->where('po_number', $batch->po_number)->first();
-                    $pBatchId = $prodBatch ? $prodBatch->id : $batch->id;
-                    $dRow = DB::table('production.dissolver')
-                        ->where('production_batch_id', $pBatchId)
-                        ->where('batch_number', (string)$bNum)
-                        ->first();
-                    if (!$dRow && $pBatchId != $batch->id) {
+                    $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
+                    $cleanBNum = preg_replace('/\D/', '', (string)$bNum);
+
+                    if ($pBatchId) {
                         $dRow = DB::table('production.dissolver')
-                            ->where('production_batch_id', $batch->id)
-                            ->where('batch_number', (string)$bNum)
+                            ->where('production_batch_id', $pBatchId)
+                            ->where(function($q) use ($bNum, $cleanBNum) {
+                                $q->where('batch_number', (string)$bNum);
+                                if ($cleanBNum !== '') {
+                                    $q->orWhere('batch_number', $cleanBNum);
+                                }
+                            })
                             ->first();
-                    }
-                    if ($dRow) {
-                        $s = $dRow->shift ? (string)$dRow->shift : '';
-                        $g = $dRow->group ? (string)$dRow->group : '';
-                        if ($s !== '' && $g !== '') {
-                            $dissolverShiftGroup = "{$s}/{$g}";
-                        } elseif ($s !== '') {
-                            $dissolverShiftGroup = $s;
-                        } elseif ($g !== '') {
-                            $dissolverShiftGroup = $g;
+
+                        if (!$dRow) {
+                            $dRow = DB::table('production.dissolver')
+                                ->where('production_batch_id', $pBatchId)
+                                ->orderBy('id')
+                                ->first();
                         }
+                    }
+
+                    if ($dRow) {
+                        $dissolverShiftGroup = $this->formatShiftGroup($dRow->shift, $dRow->group);
+
                         if (!empty($dRow->dissolver_number)) {
                             $dissolverName = $dRow->dissolver_number;
+                        }
+
+                        if (!empty($dRow->jam_mulai_proses)) {
+                            $jamStart = substr($dRow->jam_mulai_proses, 0, 5);
+                        } elseif (!empty($dRow->created_at)) {
+                            $jamStart = Carbon::parse($dRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
                         }
                     }
                 } catch (\Throwable $e) {}
 
-                // 2. Jam Produksi: jam shift berlangsung
-                // Shift 1 -> 06:00 - 14:00
-                // Shift 2 -> 14:00 - 22:00
-                // Shift 3 -> 22:00 - 06:00
-                $shiftScheduleMap = [
-                    1 => '06:00 - 14:00',
-                    2 => '14:00 - 22:00',
-                    3 => '22:00 - 06:00',
-                    '1' => '06:00 - 14:00',
-                    '2' => '14:00 - 22:00',
-                    '3' => '22:00 - 06:00',
-                ];
+                if (empty($jamStart) && $p1ForBatch->first() && $p1ForBatch->first()->created_at) {
+                    $jamStart = Carbon::parse($p1ForBatch->first()->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                }
 
-                $detectedShiftNum = $dRow->shift ?? null;
-                if (!$detectedShiftNum && $dissolverShiftGroup) {
-                    if (preg_match('/^(\d+)/', $dissolverShiftGroup, $m)) {
-                        $detectedShiftNum = $m[1];
+                $jamEnd = '';
+                if ($dRow && !empty($dRow->jam_selesai_proses)) {
+                    $jamEnd = substr($dRow->jam_selesai_proses, 0, 5);
+                } elseif ($dRow && !empty($dRow->updated_at) && $dRow->updated_at != $dRow->created_at) {
+                    $jamEnd = Carbon::parse($dRow->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                } else {
+                    $lastP2 = $p2ForBatch->last();
+                    if ($lastP2 && $lastP2->updated_at) {
+                        $jamEnd = Carbon::parse($lastP2->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                    } elseif ($p1ForBatch->last() && $p1ForBatch->last()->updated_at) {
+                        $jamEnd = Carbon::parse($p1ForBatch->last()->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
                     }
                 }
 
-                if ($detectedShiftNum && isset($shiftScheduleMap[$detectedShiftNum])) {
-                    $jamProduksiStr = $shiftScheduleMap[$detectedShiftNum];
+                if (!empty($jamStart) && !empty($jamEnd) && $jamEnd !== $jamStart) {
+                    $jamProduksiStr = "{$jamStart} - {$jamEnd}";
+                } elseif (!empty($jamStart)) {
+                    $jamProduksiStr = $jamStart;
                 } else {
-                    $jamProduksiStr = '';
+                    $jamProduksiStr = '-';
+                }
+
+                // Fallback Shift & Grup jika belum ada
+                if (empty($dissolverShiftGroup) && $p1ForBatch->first() && !empty($p1ForBatch->first()->shift)) {
+                    $dissolverShiftGroup = $this->formatShiftGroup($p1ForBatch->first()->shift, null);
+                }
+                if (empty($dissolverShiftGroup) && !empty($jamStart) && $jamStart !== '-') {
+                    $hour = (int)substr($jamStart, 0, 2);
+                    if ($hour >= 6 && $hour < 14) {
+                        $dissolverShiftGroup = 'Shift 1 - Grup A';
+                    } elseif ($hour >= 14 && $hour < 22) {
+                        $dissolverShiftGroup = 'Shift 2 - Grup A';
+                    } else {
+                        $dissolverShiftGroup = 'Shift 3 - Grup A';
+                    }
+                }
+                if (empty($dissolverShiftGroup)) {
+                    $dissolverShiftGroup = 'Shift 1 - Grup A';
                 }
 
                 // 3. Query production.pelarutan_1 dan pelarutan_2 untuk Jam Disposisi
@@ -331,7 +256,7 @@ class DocPelarutanController extends Controller
 
                     $disposisi = ($p2 && $p2->disposition) ? $p2->disposition : (($p1 && $p1->disposition) ? $p1->disposition : ($prodP2Row?->disposition ?: ($prodP1Row?->disposition ?: 'Release')));
 
-                    // Jam serah terima: HANYA jam scan oleh analis kimia (bukan jam tambah batch)
+                    // Jam serah terima: Jam scan analis kimia, fallback ke created_at waktu input
                     $p1ScanTime = $p1?->scanned_at;
                     if (!$p1ScanTime && $p1) {
                         $p1ScanTime = DB::table('qr_scan_logs')
@@ -339,12 +264,18 @@ class DocPelarutanController extends Controller
                             ->where('qc_id', $p1->id)
                             ->value('scanned_at');
                     }
+                    if (!$p1ScanTime && $p1) {
+                        $p1ScanTime = $p1->created_at;
+                    }
                     $p2ScanTime = $p2?->scanned_at;
                     if (!$p2ScanTime && $p2) {
                         $p2ScanTime = DB::table('qr_scan_logs')
                             ->where('qc_type', 'pelarutan_2')
                             ->where('qc_id', $p2->id)
                             ->value('scanned_at');
+                    }
+                    if (!$p2ScanTime && $p2) {
+                        $p2ScanTime = $p2->created_at;
                     }
 
                     $p2ViscoVal = ($p2 && $p2->visco !== null && $p2->visco !== '') ? (string)$p2->visco : (($p2 && $p2->nacl !== null && $p2->nacl !== '') ? (string)$p2->nacl : '');
@@ -489,18 +420,18 @@ class DocPelarutanController extends Controller
         $totalSheets = max(1, (int)ceil(count($batchBlocks) / 2));
 
         return [
-            'is_saved' => false,
-            'id' => null,
+            'is_saved' => $savedDoc ? true : false,
+            'id' => $savedDoc?->id,
             'production_batch_id' => $batch->id,
             'po_number' => $batch->po_number,
             'variant' => $batch->variant,
-            'tanggal_record_doc' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
-            'halaman' => "1 / {$totalSheets}",
+            'tanggal_record_doc' => $savedDoc?->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
+            'halaman' => $savedDoc?->halaman ?: "1 / {$totalSheets}",
             'batch_blocks' => $batchBlocks,
-            'catatan' => '',
-            'pic_sampling' => '',
-            'pic_analis' => $detectedAnalis ?: (auth()->user()->name ?? ''),
-            'pic_checker' => '',
+            'catatan' => $savedDoc?->catatan ?: '',
+            'pic_sampling' => $savedDoc?->pic_sampling ?: '',
+            'pic_analis' => $savedDoc?->pic_analis ?: ($detectedAnalis ?: (auth()->user()->name ?? '')),
+            'pic_checker' => $savedDoc?->pic_checker ?: '',
         ];
     }
 
@@ -544,6 +475,10 @@ class DocPelarutanController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $poId = $request->input('po_id');
         if (!$poId) {
             return redirect()->back()->with('error', 'Silakan pilih PO terlebih dahulu.');
@@ -568,6 +503,10 @@ class DocPelarutanController extends Controller
      */
     public function printView($id)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman.');
+        }
+
         $docData = $this->getDocumentData($id);
         if (!$docData) {
             abort(404, 'Dokumen tidak ditemukan.');
@@ -590,5 +529,57 @@ class DocPelarutanController extends Controller
             return '';
         }
         return (string)$val;
+    }
+
+    /**
+     * Cari ID production_batches di DB produksi secara akurat via PO number
+     */
+    private function resolveProductionBatchId($poNumber, $digimonBatchId = null)
+    {
+        if (empty($poNumber)) return null;
+
+        $pb = DB::table('production.production_batches')->where('po_number', $poNumber)->first();
+        if ($pb) return $pb->id;
+
+        $norm = trim(preg_replace('/^PO[\s\-_]*/i', '', $poNumber));
+        if (!empty($norm)) {
+            $pb = DB::table('production.production_batches')->where('po_number', $norm)->first();
+            if ($pb) return $pb->id;
+        }
+
+        $numeric = preg_replace('/\D/', '', $poNumber);
+        if (strlen($numeric) >= 6) {
+            $pb = DB::table('production.production_batches')
+                ->where('po_number', $numeric)
+                ->orWhere('po_number', 'LIKE', "%{$numeric}%")
+                ->first();
+            if ($pb) return $pb->id;
+        }
+
+        if ($digimonBatchId) {
+            $pb = DB::table('production.production_batches')->where('id', $digimonBatchId)->first();
+            if ($pb) return $pb->id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Format Shift & Grup standar: Shift 1 - Grup A
+     */
+    private function formatShiftGroup($shift, $group): string
+    {
+        $s = trim((string)$shift);
+        $g = trim((string)$group);
+        if ($s !== '' && $g !== '') {
+            return "Shift {$s} - Grup {$g}";
+        }
+        if ($s !== '') {
+            return "Shift {$s}";
+        }
+        if ($g !== '') {
+            return "Grup {$g}";
+        }
+        return '';
     }
 }

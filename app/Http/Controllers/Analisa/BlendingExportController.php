@@ -98,23 +98,31 @@ class BlendingExportController extends Controller
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
+                    $traceUrl = route('analisa.blending-awal.export.trace', ['id' => $data->id]);
+                    $isForeman = auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0;
+
                     $exportBlendingUrl = route('doc-blending-awal.index', ['po_id' => $data->id]);
                     $exportAdjustPoUrl = route('doc-adjustment.index', ['po_id' => $data->id]);
-                    $traceUrl = route('analisa.blending-awal.export.trace', ['id' => $data->id]);
 
-                    return '
-                        <div class="d-flex flex-wrap gap-1 text-nowrap">
+                    $buttons = '';
+                    if ($isForeman) {
+                        $buttons .= '
                             <a href="' . $exportBlendingUrl . '" class="btn btn-sm btn-success" title="Export Blending">
                                 <i class="ri-file-excel-2-line"></i> Export Blending
                             </a>
                             <a href="' . $exportAdjustPoUrl . '" class="btn btn-sm btn-warning text-white" title="Export Adjust Blending">
                                 <i class="ri-file-excel-line"></i> Export Adjust Blending
                             </a>
-                            <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace">
-                                <i class="ri-route-line"></i> Trace
-                            </a>
-                        </div>
+                        ';
+                    }
+
+                    $buttons .= '
+                        <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace">
+                            <i class="ri-route-line"></i> Trace
+                        </a>
                     ';
+
+                    return '<div class="d-flex flex-wrap gap-1 text-nowrap">' . $buttons . '</div>';
                 })
                 ->rawColumns([
                     'po_number',
@@ -147,6 +155,10 @@ class BlendingExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $status = $request->input('status');
@@ -164,6 +176,10 @@ class BlendingExportController extends Controller
      */
     public function exportAdjustExcel(Request $request)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $status = $request->input('status');
@@ -181,6 +197,10 @@ class BlendingExportController extends Controller
      */
     public function exportAdjustPoExcel($id)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $batch = ProductionBatch::findOrFail($id);
         $cleanPo = preg_replace('/[^A-Za-z0-9_\-]/', '_', $batch->po_number);
         $fileName = 'HASIL_ANALISIS_ADJUST_BLENDING_' . $cleanPo . '_' . now()->format('Ymd_His') . '.xlsx';
@@ -196,6 +216,10 @@ class BlendingExportController extends Controller
      */
     public function exportPoExcel($id)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $docController = new DocBlendingAwalController();
         $docData = $docController->getDocumentData($id);
 

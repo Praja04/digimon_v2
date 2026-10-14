@@ -98,19 +98,26 @@ class PelarutanExportController extends Controller
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
-                    $docPelarutanUrl = route('doc-pelarutan.index', ['po_id' => $data->id]);
                     $traceUrl = route('pelarutan.export.trace', ['id' => $data->id]);
+                    $isForeman = auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0;
 
-                    return '
-                        <div class="d-flex gap-1">
+                    $buttons = '';
+                    if ($isForeman) {
+                        $docPelarutanUrl = route('doc-pelarutan.index', ['po_id' => $data->id]);
+                        $buttons .= '
                             <a href="' . $docPelarutanUrl . '" class="btn btn-sm btn-success" title="Buka Formulir Dokumen HASIL ANALISIS PROSES PELARUTAN">
                                 <i class="ri-file-excel-2-line"></i> Export
                             </a>
-                            <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace Batching">
-                                <i class="ri-route-line"></i> Trace
-                            </a>
-                        </div>
+                        ';
+                    }
+
+                    $buttons .= '
+                        <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace Batching">
+                            <i class="ri-route-line"></i> Trace
+                        </a>
                     ';
+
+                    return '<div class="d-flex gap-1">' . $buttons . '</div>';
                 })
                 ->rawColumns([
                     'po_number',
@@ -143,6 +150,10 @@ class PelarutanExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $pelarutanType = $request->input('pelarutan_type', 'all');
@@ -170,6 +181,10 @@ class PelarutanExportController extends Controller
      */
     public function exportPoExcel($id)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $batch = ProductionBatch::findOrFail($id);
         $fileName = 'Export_Pelarutan_PO_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $batch->po_number) . '_' . now()->timestamp . '.xlsx';
 

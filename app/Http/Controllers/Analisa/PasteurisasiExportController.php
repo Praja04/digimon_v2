@@ -113,19 +113,26 @@ class PasteurisasiExportController extends Controller
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
-                    $exportPoUrl = route('doc-pasteurisasi-storage.index', ['po_id' => $data->id]);
                     $traceUrl = route('analisa.monitoring-turun-blending.export.trace', ['id' => $data->id]);
+                    $isForeman = auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0;
 
-                    return '
-                        <div class="d-flex gap-1">
+                    $buttons = '';
+                    if ($isForeman) {
+                        $exportPoUrl = route('doc-pasteurisasi-storage.index', ['po_id' => $data->id]);
+                        $buttons .= '
                             <a href="' . $exportPoUrl . '" class="btn btn-sm btn-success" title="Buka Formulir Dokumen FRM/QLB/04/104/006-01">
                                 <i class="ri-file-excel-2-line"></i> Export
                             </a>
-                            <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace Batching Pasteurisasi & Storage">
-                                <i class="ri-route-line"></i> Trace
-                            </a>
-                        </div>
+                        ';
+                    }
+
+                    $buttons .= '
+                        <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace Batching Pasteurisasi & Storage">
+                            <i class="ri-route-line"></i> Trace
+                        </a>
                     ';
+
+                    return '<div class="d-flex gap-1">' . $buttons . '</div>';
                 })
                 ->rawColumns([
                     'po_number',
@@ -161,6 +168,10 @@ class PasteurisasiExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $docController = new DocPasteurisasiStorageController();
 
         $query = ProductionBatch::where(function ($q) {
@@ -201,6 +212,10 @@ class PasteurisasiExportController extends Controller
      */
     public function exportPoExcel($id)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $docController = new DocPasteurisasiStorageController();
         $docData = $docController->getDocumentData($id);
 

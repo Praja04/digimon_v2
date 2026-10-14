@@ -146,10 +146,7 @@
                     </div>
                 @endif
 
-                @if (auth()->user()->role == 'Analis Kimia' ||
-                        auth()->user()->role == 'Analis Mikro' ||
-                        auth()->user()->role == 'Analis Field' ||
-                        auth()->user()->role == 'Foreman' || auth()->user()->role == 'Supervisor' || auth()->user()->role == 'Head Of Dapartement')
+                @if (auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0)
                     <!-- Dokumen Analisis Blending & Export Card -->
                     <div class="col-xl-4 col-lg-4 col-md-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">

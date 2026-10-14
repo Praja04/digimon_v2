@@ -203,7 +203,7 @@
                 <tr>
                     <td style="font-weight: bold; background: #fafafa;">Jam Produksi</td>
                     <td>
-                        : {{ ($block['jam_produksi_start'] ?? '') || ($block['jam_produksi_end'] ?? '') ? ($block['jam_produksi_start'] ?? '') . ' s/d ' . ($block['jam_produksi_end'] ?? '') : '_____ s/d _____' }}
+                        : {{ !empty($block['jam_produksi']) && $block['jam_produksi'] !== '-' ? $block['jam_produksi'] : ((($block['jam_produksi_start'] ?? '') || ($block['jam_produksi_end'] ?? '')) ? ($block['jam_produksi_start'] ?? '') . ' s/d ' . ($block['jam_produksi_end'] ?? '') : '_____ s/d _____') }}
                     </td>
                     <td style="font-weight: bold; background: #fafafa;">Batch</td>
                     <td>: {{ $block['batch'] ?? '-' }}</td>
@@ -220,7 +220,7 @@
                         <th rowspan="2" style="width: 12%;">Sampling</th>
                         <th colspan="2" style="width: 15%;">Serah Terima</th>
                         <th colspan="10" style="width: 55%;">Analisis</th>
-                        <th rowspan="2" style="width: 18%;">Disposisi /<br>Keterangan</th>
+                        <th rowspan="2" style="width: 18%;">Disposisi /<br>Keterangan<br><span style="font-size: 7pt; font-weight: normal;">(Disposisi After Cooling)</span></th>
                     </tr>
                     <tr>
                         <th style="width: 6%;">Jam</th>
@@ -241,7 +241,7 @@
                     @for($i = 0; $i < $totalPast; $i++)
                         @php $pRow = $pastRows[$i] ?? null; @endphp
                         <tr>
-                            <td>{{ $pRow['sampling'] ?? ($i === 0 ? 'Tengah' : '') }}</td>
+                            <td>{{ $pRow['sampling'] ?? '' }}</td>
                             <td>{{ $pRow['jam'] ?? '' }}</td>
                             <td>{{ $pRow['pic'] ?? '' }}</td>
                             <td>{{ $pRow['bj'] ?? '' }}</td>

@@ -206,7 +206,9 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                 $kodeShift = $this->block['kode_shift_grup'] ?? ($this->docData['kode_shift_grup'] ?? '-');
                 $jamStart = $this->block['jam_produksi_start'] ?? '';
                 $jamEnd = $this->block['jam_produksi_end'] ?? '';
-                $jamStr = ($jamStart || $jamEnd) ? "{$jamStart} s/d {$jamEnd}" : "_____ s/d _____";
+                $jamStr = !empty($this->block['jam_produksi']) && $this->block['jam_produksi'] !== '-'
+                    ? $this->block['jam_produksi']
+                    : (($jamStart || $jamEnd) ? "{$jamStart} s/d {$jamEnd}" : "_____ s/d _____");
                 $batchStr = $this->block['batch'] ?? '-';
 
                 // Baris 6: Jenis Produk
@@ -282,7 +284,7 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                 $sheet->mergeCells('D11:M11');
                 $sheet->setCellValue('D11', 'Analisis');
                 $sheet->mergeCells('N11:P12');
-                $sheet->setCellValue('N11', "Disposisi /\nKeterangan");
+                $sheet->setCellValue('N11', "Disposisi /\nKeterangan\n(Disposisi After Cooling)");
                 $sheet->getStyle('N11')->getAlignment()->setWrapText(true);
 
                 // Header Baris 2 (Row 12)
@@ -317,7 +319,7 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                     $sheet->mergeCells("N{$r}:P{$r}");
 
                     if ($row) {
-                        $sheet->setCellValue("A{$r}", $row['sampling'] ?? ($i === 0 ? 'Tengah' : ''));
+                        $sheet->setCellValue("A{$r}", $row['sampling'] ?? '');
                         $sheet->setCellValue("B{$r}", $row['jam'] ?? '');
                         $sheet->setCellValue("C{$r}", $row['pic'] ?? '');
                         $sheet->setCellValue("D{$r}", $this->formatVal($row['bj'] ?? ''));
@@ -332,7 +334,7 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                         $sheet->setCellValue("M{$r}", $row['endapan'] ?? '');
                         $sheet->setCellValue("N{$r}", $row['disposisi'] ?? '');
                     } else {
-                        $sheet->setCellValue("A{$r}", ($i === 0 ? 'Tengah' : ''));
+                        $sheet->setCellValue("A{$r}", '');
                     }
 
                     $sheet->getStyle("A{$r}:M{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

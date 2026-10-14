@@ -77,164 +77,199 @@ class DocPasteurisasiStorageController extends Controller
 
         $savedDoc = DocPasteurisasiStorage::where('production_batch_id', $poId)->first();
 
-        $detectedShift = '';
-        $detectedAnalis = '';
-        $jamStart = '';
-        $jamEnd = '';
-        $detectedSt = 'ST 01';
+        $pBatchId = null;
+        try {
+            $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
+        } catch (\Throwable $e) {}
+
+        // Ambil data Pasteurisasi dari QC
+        $pasteurisasiItems = $batch->monitoringPasteurisasi ? $batch->monitoringPasteurisasi->sortBy('id')->values() : collect();
+
+        // Ambil data Storage Kimia (direct, relation, & production fallback)
+        $storageItems = $batch->monitoringStorageKimia ? $batch->monitoringStorageKimia->sortBy('id')->values() : collect();
 
         try {
-            $prodBatch = DB::table('production.production_batches')->where('po_number', $batch->po_number)->first();
-            $pBatchId = $prodBatch ? $prodBatch->id : $batch->id;
-            $mpRow = DB::table('production.monitoring_pasteurisasi')
-                ->where('production_batch_id', $pBatchId)
-                ->first();
-            if (!$mpRow && $pBatchId != $batch->id) {
-                $mpRow = DB::table('production.monitoring_pasteurisasi')
-                    ->where('production_batch_id', $batch->id)
-                    ->first();
+            $relStorageIds = DB::table('monitoring_storage_kimia_relations')
+                ->where('production_batch_id', $batch->id)
+                ->pluck('monitoring_storage_kimia_id')
+                ->toArray();
+            if (!empty($relStorageIds)) {
+                $extraStorage = MonitoringStorageKimia::whereIn('id', $relStorageIds)->with(['color', 'user'])->get();
+                $storageItems = $storageItems->merge($extraStorage)->unique('id')->values();
             }
-            if ($mpRow) {
-                $s = $mpRow->shift ? (string)$mpRow->shift : '';
-                $g = $mpRow->group ? (string)$mpRow->group : '';
-                if ($s !== '' && $g !== '') {
-                    $detectedShift = "{$s}/{$g}";
-                } elseif ($s !== '') {
-                    $detectedShift = $s;
-                } elseif ($g !== '') {
-                    $detectedShift = $g;
+
+            if ($storageItems->isEmpty() && $pBatchId) {
+                $prodStorage = DB::table('production.monitoring_storage_kimia')
+                    ->where('production_batch_id', $pBatchId)
+                    ->orderBy('id')
+                    ->get();
+                if ($prodStorage->isNotEmpty()) {
+                    $storageItems = $prodStorage;
                 }
             }
         } catch (\Throwable $e) {}
 
-        if ($batch->monitoringPasteurisasi && $batch->monitoringPasteurisasi->count() > 0) {
-            $firstMp = $batch->monitoringPasteurisasi->first();
-            if (!$detectedShift && $firstMp && $firstMp->shift) $detectedShift = (string)$firstMp->shift;
-            if ($firstMp && $firstMp->user) $detectedAnalis = $firstMp->user->name;
-            $jamStart = $firstMp && $firstMp->created_at ? $firstMp->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
-            $lastMp = $batch->monitoringPasteurisasi->last();
-            $jamEnd = $lastMp && $lastMp->created_at ? $lastMp->created_at->setTimezone('Asia/Jakarta')->format('H:i') : '';
+        // Pengelompokan 1 Lembar = 1 Blending / Pasangan Batch (e.g. 1-2, 3-4, 5-6, ..., 23-24)
+        $groupedPast = collect();
+        if ($pasteurisasiItems->isNotEmpty()) {
+            $currentPairIdx = 0;
+            foreach ($pasteurisasiItems as $pIdx => $item) {
+                $bRange = trim((string)($item->batch_range ?? ''));
+                if (preg_match('/^(\d+)\s*-\s*(\d+)$/', $bRange, $m) && ((int)$m[2] - (int)$m[1] <= 2)) {
+                    $key = $bRange;
+                } elseif (preg_match('/^(\d+)$/', $bRange, $m)) {
+                    $bNum = (int)$m[1];
+                    $pairNum = (int)ceil($bNum / 2);
+                    $key = (($pairNum - 1) * 2 + 1) . '-' . ($pairNum * 2);
+                } else {
+                    $isRevisi = (!empty($item->revisi) || !empty($item->is_adjustment));
+                    if ($pIdx > 0 && !$isRevisi) {
+                        $currentPairIdx++;
+                    }
+                    $bStart = $currentPairIdx * 2 + 1;
+                    $bEnd = $bStart + 1;
+                    $key = "{$bStart}-{$bEnd}";
+                }
+                if (!$groupedPast->has($key)) {
+                    $groupedPast->put($key, collect());
+                }
+                $groupedPast[$key]->push($item);
+            }
+        } else {
+            // Fallback pasangan batch berdasarkan batch_range PO
+            $maxB = 2;
+            if (preg_match('/(\d+)\s*-\s*(\d+)/', (string)$batch->batch_range, $m)) {
+                $maxB = (int)$m[2];
+            } elseif (preg_match('/(\d+)/', (string)$batch->batch_range, $m)) {
+                $maxB = (int)$m[1];
+            }
+            $pairCount = max(1, (int)ceil($maxB / 2));
+            for ($p = 0; $p < $pairCount; $p++) {
+                $bStart = $p * 2 + 1;
+                $bEnd = $bStart + 1;
+                $groupedPast->put("{$bStart}-{$bEnd}", collect());
+            }
         }
 
-        if ($batch->monitoringStorageKimia && $batch->monitoringStorageKimia->count() > 0) {
-            $firstMsk = $batch->monitoringStorageKimia->first();
-            if ($firstMsk && $firstMsk->storage) $detectedSt = $firstMsk->storage;
-        }
+        $totalBlocks = $groupedPast->count();
+        $batchBlocks = [];
+        $cIdx = 0;
 
-        if ($savedDoc && !request()->has('force_db')) {
-            $pastRows = $savedDoc->pasteurisasi_rows ?: [];
-            $stRows = $savedDoc->storage_rows ?: [];
+        foreach ($groupedPast as $batchKey => $groupItems) {
+            $firstItem = $groupItems->first();
 
-            // Jika sebelumnya tersimpan di batch_blocks, ambil barisnya
-            if (empty($pastRows) && !empty($savedDoc->batch_blocks)) {
-                foreach ($savedDoc->batch_blocks as $blk) {
-                    if (!empty($blk['pasteurisasi_rows'])) {
-                        $pastRows = array_merge($pastRows, $blk['pasteurisasi_rows']);
+            // Nomor batch awal (e.g. "1-2" => 1, "7-8" => 7)
+            $bStart = 1;
+            if (preg_match('/^(\d+)/', $batchKey, $m)) {
+                $bStart = (int)$m[1];
+            }
+
+            // Kode ST (Storage tujuan transfer)
+            $blockKodeSt = '-';
+            if ($firstItem && !empty($firstItem->storage)) {
+                $blockKodeSt = $firstItem->storage;
+            }
+
+            // Jam Produksi & Shift Lookup
+            $jamStart = '';
+            $jamEnd = '';
+            $blockShift = '';
+
+            if ($pBatchId) {
+                try {
+                    $prodPast = DB::table('production.monitoring_pasteurisasi')
+                        ->where('production_batch_id', $pBatchId)
+                        ->where(function($q) use ($batchKey, $bStart) {
+                            $q->where('batch_range', $batchKey)
+                              ->orWhere('batch_range', 'LIKE', $bStart . '-%')
+                              ->orWhere('batch_range', (string)$bStart);
+                        })
+                        ->orderBy('id')
+                        ->first();
+
+                    if (!$prodPast) {
+                        $prodPast = DB::table('production.monitoring_pasteurisasi')
+                            ->where('production_batch_id', $pBatchId)
+                            ->skip($cIdx)
+                            ->first();
                     }
-                    if (!empty($blk['storage_rows'])) {
-                        $stRows = array_merge($stRows, $blk['storage_rows']);
+
+                    if ($prodPast) {
+                        if (!empty($prodPast->shift)) {
+                            $blockShift = $this->formatShiftGroup($prodPast->shift, $prodPast->group ?? null);
+                        }
+                        // 1. Jam Tambah Data (dari jam_mulai_pasteurisasi atau created_at produksi)
+                        if (!empty($prodPast->jam_mulai_pasteurisasi)) {
+                            $jamStart = substr($prodPast->jam_mulai_pasteurisasi, 0, 5);
+                        } elseif (!empty($prodPast->created_at)) {
+                            $jamStart = Carbon::parse($prodPast->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+
+                        // 2. Jam Selesai Pasteurisasi (dari jam_selesai_pasteurisasi atau updated_at)
+                        if (!empty($prodPast->jam_selesai_pasteurisasi)) {
+                            $jamEnd = substr($prodPast->jam_selesai_pasteurisasi, 0, 5);
+                        } elseif (!empty($prodPast->updated_at) && !empty($prodPast->status_pasteurisasi) && stripos($prodPast->status_pasteurisasi, 'selesai') !== false) {
+                            $jamEnd = Carbon::parse($prodPast->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+
+                        if (!empty($prodPast->storage)) {
+                            $blockKodeSt = $prodPast->storage;
+                        }
                     }
+                } catch (\Throwable $e) {}
+            }
+
+            // Fallback Jam & Shift dari QC Item Digimon jika di database produksi belum ada
+            if ($firstItem) {
+                if (empty($jamStart)) {
+                    // Jam Tambah Data dari waktu input/scan data di Digimon
+                    $scanTime = $firstItem->scanned_at ?: $firstItem->created_at;
+                    if ($scanTime) {
+                        $jamStart = Carbon::parse($scanTime)->setTimezone('Asia/Jakarta')->format('H:i');
+                    }
+                }
+                if (empty($jamEnd)) {
+                    // Jam Selesai Pasteurisasi dari data terakhir di kelompok sampling yang sama
+                    $lastItem = $groupItems->last();
+                    if ($lastItem && $lastItem !== $firstItem) {
+                        $endScan = $lastItem->scanned_at ?: $lastItem->created_at;
+                        if ($endScan) {
+                            $jamEnd = Carbon::parse($endScan)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+                    } elseif (!empty($firstItem->updated_at) && $firstItem->updated_at != $firstItem->created_at) {
+                        $jamEnd = Carbon::parse($firstItem->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                    }
+                }
+                if (empty($blockShift) && !empty($firstItem->shift)) {
+                    $blockShift = $this->formatShiftGroup($firstItem->shift, null);
                 }
             }
 
-            // Sanitasi nilai 0 / kosong jadi blank pada baris tersimpan
-            foreach ($pastRows as &$pr) {
-                if (isset($pr['bj'])) $pr['bj'] = $this->formatBlankIfZero($pr['bj']);
-                if (isset($pr['brix'])) $pr['brix'] = $this->formatBlankIfZero($pr['brix']);
-                if (isset($pr['ph'])) $pr['ph'] = $this->formatBlankIfZero($pr['ph']);
-                if (isset($pr['aw'])) $pr['aw'] = $this->formatBlankIfZero($pr['aw']);
-                if (isset($pr['viskositas'])) $pr['viskositas'] = $this->formatBlankIfZero($pr['viskositas']);
-                if (isset($pr['buih'])) $pr['buih'] = $this->formatBlankIfZero($pr['buih']);
+            // Fallback Shift berdasarkan Jam jika belum ada
+            if (empty($blockShift) && !empty($jamStart)) {
+                $hour = (int)substr($jamStart, 0, 2);
+                if ($hour >= 6 && $hour < 14) {
+                    $blockShift = 'Shift 1 - Grup A';
+                } elseif ($hour >= 14 && $hour < 22) {
+                    $blockShift = 'Shift 2 - Grup A';
+                } else {
+                    $blockShift = 'Shift 3 - Grup A';
+                }
             }
-            unset($pr);
-
-            foreach ($stRows as &$sr) {
-                if (isset($sr['bj'])) $sr['bj'] = $this->formatBlankIfZero($sr['bj']);
-                if (isset($sr['brix'])) $sr['brix'] = $this->formatBlankIfZero($sr['brix']);
-                if (isset($sr['ph'])) $sr['ph'] = $this->formatBlankIfZero($sr['ph']);
-                if (isset($sr['nacl'])) $sr['nacl'] = $this->formatBlankIfZero($sr['nacl']);
-                if (isset($sr['viskositas'])) $sr['viskositas'] = $this->formatBlankIfZero($sr['viskositas']);
-                if (isset($sr['buih'])) $sr['buih'] = $this->formatBlankIfZero($sr['buih']);
-                if (isset($sr['aw'])) $sr['aw'] = $this->formatBlankIfZero($sr['aw']);
-            }
-            unset($sr);
-
-            // Minimal rows
-            while (count($pastRows) < 6) {
-                $pIdx = count($pastRows);
-                $pastRows[] = [
-                    'sampling' => ($pIdx === 0) ? 'Tengah' : '',
-                    'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
-                    'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => ''
-                ];
-            }
-            while (count($stRows) < 5) {
-                $sIdx = count($stRows);
-                $stRows[] = [
-                    'sampling' => ($sIdx === 0) ? 'Awal' : (($sIdx === 1) ? 'Outlet' : ''),
-                    'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'nacl' => '',
-                    'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'kristal' => '', 'aw' => '', 'disposisi' => ''
-                ];
+            if (empty($blockShift)) {
+                $blockShift = 'Shift 1 - Grup A';
             }
 
-            $singleBlock = [
-                'block_index' => 0,
-                'halaman' => $savedDoc->halaman ?: '1 / 1',
-                'batch' => $savedDoc->batch ?: ($savedDoc->batch_range ?: ($batch->batch_range ?: '')),
-                'kode_st' => $savedDoc->kode_st ?: $detectedSt,
-                'jenis_produk' => $savedDoc->jenis_produk ?: ($batch->variant ?: ''),
-                'tanggal_produksi' => $savedDoc->tanggal_produksi ? $savedDoc->tanggal_produksi->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                'jam_produksi_start' => $savedDoc->jam_produksi_start ?: $jamStart,
-                'jam_produksi_end' => $savedDoc->jam_produksi_end ?: $jamEnd,
-                'kode_shift_grup' => ($savedDoc->kode_shift_grup && $savedDoc->kode_shift_grup !== 'Shift 1 / Grup A' && !str_starts_with($savedDoc->kode_shift_grup, 'Shift ')) ? $savedDoc->kode_shift_grup : ($detectedShift ?: $savedDoc->kode_shift_grup),
-                'pasteurisasi_rows' => $pastRows,
-                'storage_rows' => $stRows,
-                'catatan' => $savedDoc->catatan ?: '',
-                'pic_sampling_1' => $savedDoc->pic_sampling ?: '',
-                'pic_sampling_2' => $savedDoc->pic_serah_terima ?: '',
-                'pic_analis' => $savedDoc->pic_analis ?: ($detectedAnalis ?: (auth()->user()->name ?? '')),
-                'pic_checker' => $savedDoc->pic_checker ?: '',
-            ];
-
-            return [
-                'is_saved' => true,
-                'id' => $savedDoc->id,
-                'production_batch_id' => $savedDoc->production_batch_id,
-                'po_number' => $batch->po_number,
-                'variant' => $batch->variant,
-                'jenis_produk' => $singleBlock['jenis_produk'],
-                'tanggal_produksi' => $singleBlock['tanggal_produksi'],
-                'jam_produksi_start' => $singleBlock['jam_produksi_start'],
-                'jam_produksi_end' => $singleBlock['jam_produksi_end'],
-                'kode_shift_grup' => $singleBlock['kode_shift_grup'],
-                'batch' => $singleBlock['batch'],
-                'batch_range' => $singleBlock['batch'],
-                'kode_st' => $singleBlock['kode_st'],
-                'tanggal_record_doc' => $savedDoc->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                'halaman' => $singleBlock['halaman'],
-                'pasteurisasi_rows' => $pastRows,
-                'storage_rows' => $stRows,
-                'catatan' => $singleBlock['catatan'],
-                'pic_sampling_1' => $singleBlock['pic_sampling_1'],
-                'pic_sampling_2' => $singleBlock['pic_sampling_2'],
-                'pic_analis' => $singleBlock['pic_analis'],
-                'pic_checker' => $singleBlock['pic_checker'],
-                'batch_blocks' => [$singleBlock],
-                'doc_code' => $savedDoc->doc_code ?: 'FRM/QLB/04/104/006-01',
-            ];
-        }
-
-        // Auto-generate Fresh Data dari Database (1 Lembar Formulir Tunggal)
-        $pastRows = [];
-        if ($batch->monitoringPasteurisasi && $batch->monitoringPasteurisasi->count() > 0) {
-            foreach ($batch->monitoringPasteurisasi as $pIdx => $mp) {
+            // Build Pasteurisasi Rows (min 6 baris)
+            $pastRows = [];
+            foreach ($groupItems as $mp) {
                 $disposisiFull = $mp->disposition ?: '';
-                if ($mp->disposition_remark) {
+                if (!empty($mp->disposition_remark)) {
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
                 $mpScan = $mp->scanned_at ?: $mp->created_at;
                 $pastRows[] = [
-                    'sampling' => 'Tengah',
+                    'sampling' => !empty($mp->revisi) ? $mp->revisi : '',
                     'jam' => $mpScan ? Carbon::parse($mpScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $mp->user->name ?? '',
                     'bj' => $this->formatBlankIfZero($mp->bj),
@@ -250,103 +285,139 @@ class DocPasteurisasiStorageController extends Controller
                     'disposisi' => $disposisiFull ?: '',
                 ];
             }
-        }
+            while (count($pastRows) < 6) {
+                $pIndex = count($pastRows);
+                $pastRows[] = [
+                    'sampling' => '',
+                    'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
+                    'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => '',
+                ];
+            }
 
-        while (count($pastRows) < 6) {
-            $pIndex = count($pastRows);
-            $pastRows[] = [
-                'sampling' => ($pIndex === 0) ? 'Tengah' : '',
-                'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
-                'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => '',
-            ];
-        }
+            // Fallback disposisi after cooling dari production jika belum diisi di QC
+            if (empty($pastRows[0]['disposisi']) && !empty($prodPast?->disposition)) {
+                $pastDispo = $prodPast->disposition;
+                if (!empty($prodPast->disposition_remark) && $prodPast->disposition_remark !== '-') {
+                    $pastDispo .= ' - ' . $prodPast->disposition_remark;
+                }
+                $pastRows[0]['disposisi'] = $pastDispo;
+                if (empty($pastRows[0]['jam']) && !empty($jamStart)) {
+                    $pastRows[0]['jam'] = $jamStart;
+                }
+            }
 
-        $storageRows = [];
-        if ($batch->monitoringStorageKimia && $batch->monitoringStorageKimia->count() > 0) {
-            foreach ($batch->monitoringStorageKimia as $sIdx => $msk) {
-                if ($msk->storage) $detectedSt = $msk->storage;
+            // Build Storage Tank Rows (min 5 baris)
+            $matchedSt = $storageItems->filter(function($st) use ($batchKey, $bStart, $blockKodeSt) {
+                if (!empty($st->batch_range) && (strpos($st->batch_range, $batchKey) !== false || strpos($st->batch_range, (string)$bStart) !== false)) {
+                    return true;
+                }
+                if (!empty($st->storage) && strcasecmp($st->storage, $blockKodeSt) === 0) {
+                    return true;
+                }
+                return false;
+            });
+
+            if ($matchedSt->isEmpty() && $storageItems->isNotEmpty() && $storageItems->count() <= 3) {
+                $matchedSt = $storageItems;
+            }
+
+            $storageRows = [];
+            foreach ($matchedSt as $sIdx => $msk) {
+                if (!empty($msk->storage)) $blockKodeSt = $msk->storage;
                 $disposisiFull = $msk->disposition ?: '';
-                if ($msk->disposition_remark) {
+                if (!empty($msk->disposition_remark)) {
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $msk->disposition_remark;
                 }
-                $mskScan = $msk->scanned_at ?: $msk->created_at;
+                $mskScan = $msk->scanned_at ?? ($msk->created_at ?? null);
                 $storageRows[] = [
-                    'sampling' => $msk->stage ?: ($sIdx === 0 ? 'Awal' : ($sIdx === 1 ? 'Outlet' : 'Akhir')),
+                    'sampling' => $msk->stage ?? ($sIdx === 0 ? 'Awal' : ($sIdx === 1 ? 'Outlet' : 'Akhir')),
                     'jam' => $mskScan ? Carbon::parse($mskScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $msk->user->name ?? '',
-                    'bj' => $this->formatBlankIfZero($msk->bj),
-                    'brix' => $this->formatBlankIfZero($msk->brix),
-                    'ph' => $this->formatBlankIfZero($msk->ph),
-                    'nacl' => $this->formatBlankIfZero($msk->nacl),
-                    'viskositas' => $this->formatBlankIfZero($msk->visco),
-                    'organo' => $msk->organo ?: '',
+                    'bj' => $this->formatBlankIfZero($msk->bj ?? null),
+                    'brix' => $this->formatBlankIfZero($msk->brix ?? null),
+                    'ph' => $this->formatBlankIfZero($msk->ph ?? null),
+                    'nacl' => $this->formatBlankIfZero($msk->nacl ?? null),
+                    'viskositas' => $this->formatBlankIfZero($msk->visco ?? null),
+                    'organo' => $msk->organo ?? '',
                     'aroma' => $msk->aroma ?? '',
-                    'warna' => $msk->color ? $msk->color->name : '',
-                    'buih' => $this->formatBlankIfZero($msk->buih),
-                    'endapan' => $msk->endapan ?: '',
+                    'warna' => isset($msk->color) ? ($msk->color->name ?? '') : '',
+                    'buih' => $this->formatBlankIfZero($msk->buih ?? null),
+                    'endapan' => $msk->endapan ?? '',
                     'kristal' => $msk->kristal ?? '',
-                    'aw' => $this->formatBlankIfZero($msk->aw),
+                    'aw' => $this->formatBlankIfZero($msk->aw ?? null),
                     'disposisi' => $disposisiFull ?: '',
                 ];
             }
-        }
+            while (count($storageRows) < 5) {
+                $sIndex = count($storageRows);
+                $defaultSamp = '';
+                if ($sIndex === 0) $defaultSamp = 'Awal';
+                elseif ($sIndex === 1) $defaultSamp = 'Outlet';
 
-        while (count($storageRows) < 5) {
-            $sIndex = count($storageRows);
-            $defaultSamp = '';
-            if ($sIndex === 0) $defaultSamp = 'Awal';
-            elseif ($sIndex === 1) $defaultSamp = 'Outlet';
+                $storageRows[] = [
+                    'sampling' => $defaultSamp,
+                    'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'nacl' => '',
+                    'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'kristal' => '', 'aw' => '', 'disposisi' => '',
+                ];
+            }
 
-            $storageRows[] = [
-                'sampling' => $defaultSamp,
-                'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'nacl' => '',
-                'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'kristal' => '', 'aw' => '', 'disposisi' => '',
+            // Analis QC
+            $analisName = '';
+            if ($firstItem && !empty($firstItem->user)) {
+                $analisName = $firstItem->user->name;
+            } elseif (auth()->check()) {
+                $analisName = auth()->user()->name;
+            }
+
+            $batchBlocks[] = [
+                'block_index' => $cIdx,
+                'halaman' => ($cIdx + 1) . ' / ' . $totalBlocks,
+                'batch' => $batchKey,
+                'kode_st' => $blockKodeSt,
+                'jenis_produk' => $batch->variant ?: 'Kecap Sedap',
+                'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
+                'jam_produksi_start' => $jamStart,
+                'jam_produksi_end' => $jamEnd,
+                'jam_produksi' => ($jamStart || $jamEnd) ? ($jamStart . ($jamEnd ? ' s/d ' . $jamEnd : '')) : '-',
+                'kode_shift_grup' => $blockShift,
+                'pasteurisasi_rows' => $pastRows,
+                'storage_rows' => $storageRows,
+                'catatan' => $savedDoc?->catatan ?: '',
+                'pic_sampling_1' => $savedDoc?->pic_sampling ?: '',
+                'pic_sampling_2' => $savedDoc?->pic_serah_terima ?: '',
+                'pic_analis' => $analisName,
+                'pic_checker' => $savedDoc?->pic_checker ?: '',
             ];
+
+            $cIdx++;
         }
 
-        $singleBlock = [
-            'block_index' => 0,
-            'halaman' => '1 / 1',
-            'batch' => $batch->batch_range ?: '',
-            'kode_st' => $detectedSt,
-            'jenis_produk' => $batch->variant ?: '',
-            'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
-            'jam_produksi_start' => $jamStart,
-            'jam_produksi_end' => $jamEnd,
-            'kode_shift_grup' => $detectedShift,
-            'pasteurisasi_rows' => $pastRows,
-            'storage_rows' => $storageRows,
-            'catatan' => '',
-            'pic_sampling_1' => '',
-            'pic_sampling_2' => '',
-            'pic_analis' => $detectedAnalis ?: (auth()->user()->name ?? ''),
-            'pic_checker' => '',
-        ];
+        $firstBlock = $batchBlocks[0] ?? [];
 
         return [
-            'is_saved' => false,
-            'id' => null,
+            'is_saved' => $savedDoc ? true : false,
+            'id' => $savedDoc?->id,
             'production_batch_id' => $batch->id,
             'po_number' => $batch->po_number,
             'variant' => $batch->variant,
-            'jenis_produk' => $batch->variant ?: '',
-            'tanggal_produksi' => $singleBlock['tanggal_produksi'],
-            'jam_produksi_start' => $jamStart,
-            'jam_produksi_end' => $jamEnd,
-            'kode_shift_grup' => $detectedShift,
-            'batch' => $batch->batch_range ?: '',
+            'jenis_produk' => $firstBlock['jenis_produk'] ?? ($batch->variant ?: 'Kecap Sedap'),
+            'tanggal_produksi' => $firstBlock['tanggal_produksi'] ?? ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
+            'jam_produksi_start' => $firstBlock['jam_produksi_start'] ?? '',
+            'jam_produksi_end' => $firstBlock['jam_produksi_end'] ?? '',
+            'kode_shift_grup' => $firstBlock['kode_shift_grup'] ?? '',
+            'batch' => $firstBlock['batch'] ?? ($batch->batch_range ?: '1-2'),
             'batch_range' => $batch->batch_range ?: '',
-            'kode_st' => $detectedSt,
-            'tanggal_record_doc' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
-            'halaman' => '1 / 1',
-            'pasteurisasi_rows' => $pastRows,
-            'storage_rows' => $storageRows,
-            'catatan' => '',
-            'pic_sampling_1' => '',
-            'pic_sampling_2' => '',
-            'pic_analis' => $detectedAnalis ?: (auth()->user()->name ?? ''),
-            'pic_checker' => '',
-            'batch_blocks' => [$singleBlock],
+            'kode_st' => $firstBlock['kode_st'] ?? 'ST 01',
+            'tanggal_record_doc' => $savedDoc?->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
+            'halaman' => $firstBlock['halaman'] ?? '1 / 1',
+            'pasteurisasi_rows' => $firstBlock['pasteurisasi_rows'] ?? [],
+            'storage_rows' => $firstBlock['storage_rows'] ?? [],
+            'catatan' => $savedDoc?->catatan ?: '',
+            'pic_sampling_1' => $savedDoc?->pic_sampling ?: '',
+            'pic_sampling_2' => $savedDoc?->pic_serah_terima ?: '',
+            'pic_analis' => $firstBlock['pic_analis'] ?? '',
+            'pic_checker' => $savedDoc?->pic_checker ?: '',
+            'batch_blocks' => $batchBlocks,
             'doc_code' => 'FRM/QLB/04/104/006-01',
         ];
     }
@@ -403,6 +474,10 @@ class DocPasteurisasiStorageController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        }
+
         $poId = $request->input('po_id');
         if (!$poId) {
             return redirect()->back()->with('error', 'Silakan pilih PO terlebih dahulu.');
@@ -427,6 +502,10 @@ class DocPasteurisasiStorageController extends Controller
      */
     public function printView($id)
     {
+        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
+            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman.');
+        }
+
         $docData = $this->getDocumentData($id);
         if (!$docData) {
             abort(404, 'Dokumen tidak ditemukan.');
@@ -449,5 +528,57 @@ class DocPasteurisasiStorageController extends Controller
             return '';
         }
         return (string)$val;
+    }
+
+    /**
+     * Cari ID production_batches di DB produksi secara akurat via PO number
+     */
+    private function resolveProductionBatchId($poNumber, $digimonBatchId = null)
+    {
+        if (empty($poNumber)) return null;
+
+        $pb = DB::table('production.production_batches')->where('po_number', $poNumber)->first();
+        if ($pb) return $pb->id;
+
+        $norm = trim(preg_replace('/^PO[\s\-_]*/i', '', $poNumber));
+        if (!empty($norm)) {
+            $pb = DB::table('production.production_batches')->where('po_number', $norm)->first();
+            if ($pb) return $pb->id;
+        }
+
+        $numeric = preg_replace('/\D/', '', $poNumber);
+        if (strlen($numeric) >= 6) {
+            $pb = DB::table('production.production_batches')
+                ->where('po_number', $numeric)
+                ->orWhere('po_number', 'LIKE', "%{$numeric}%")
+                ->first();
+            if ($pb) return $pb->id;
+        }
+
+        if ($digimonBatchId) {
+            $pb = DB::table('production.production_batches')->where('id', $digimonBatchId)->first();
+            if ($pb) return $pb->id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Format Shift & Grup standar: Shift 1 - Grup A
+     */
+    private function formatShiftGroup($shift, $group): string
+    {
+        $s = trim((string)$shift);
+        $g = trim((string)$group);
+        if ($s !== '' && $g !== '') {
+            return "Shift {$s} - Grup {$g}";
+        }
+        if ($s !== '') {
+            return "Shift {$s}";
+        }
+        if ($g !== '') {
+            return "Grup {$g}";
+        }
+        return '';
     }
 }
