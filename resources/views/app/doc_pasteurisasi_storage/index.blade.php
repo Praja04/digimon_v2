@@ -384,7 +384,7 @@
             var pastCount = Math.max(6, pastRows.length);
             for (var i = 0; i < pastCount; i++) {
                 var row = pastRows[i] || {};
-                var sampVal = row.sampling ? String(row.sampling).trim() : (i === 0 ? 'Tengah' : '');
+                var sampVal = row.sampling ? String(row.sampling).trim() : '';
                 var dispColor = 'text-secondary';
                 var dispVal = (row.disposisi || '').trim();
                 if (dispVal.toLowerCase().includes('reject') || dispVal.toLowerCase().includes('not ok')) {

@@ -268,7 +268,7 @@ class DocPasteurisasiStorageController extends Controller
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
                 $mpScan = $mp->scanned_at ?: $mp->created_at;
-                $sampName = !empty($mp->revisi) ? $mp->revisi : ($mpIdx === 0 ? 'Tengah' : '');
+                $sampName = !empty($mp->revisi) ? $mp->revisi : '';
                 $pastRows[] = [
                     'sampling' => $sampName,
                     'jam' => $mpScan ? Carbon::parse($mpScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
@@ -287,9 +287,8 @@ class DocPasteurisasiStorageController extends Controller
                 ];
             }
             while (count($pastRows) < 6) {
-                $pIndex = count($pastRows);
                 $pastRows[] = [
-                    'sampling' => $pIndex === 0 ? 'Tengah' : '',
+                    'sampling' => '',
                     'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
                     'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => '',
                 ];
