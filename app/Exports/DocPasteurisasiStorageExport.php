@@ -319,7 +319,7 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                     $sheet->mergeCells("N{$r}:P{$r}");
 
                     if ($row) {
-                        $sheet->setCellValue("A{$r}", $row['sampling'] ?? '');
+                        $sheet->setCellValue("A{$r}", !empty($row['sampling']) ? $row['sampling'] : ($i === 0 ? 'Tengah' : ''));
                         $sheet->setCellValue("B{$r}", $row['jam'] ?? '');
                         $sheet->setCellValue("C{$r}", $row['pic'] ?? '');
                         $sheet->setCellValue("D{$r}", $this->formatVal($row['bj'] ?? ''));
@@ -334,7 +334,7 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                         $sheet->setCellValue("M{$r}", $row['endapan'] ?? '');
                         $sheet->setCellValue("N{$r}", $row['disposisi'] ?? '');
                     } else {
-                        $sheet->setCellValue("A{$r}", '');
+                        $sheet->setCellValue("A{$r}", $i === 0 ? 'Tengah' : '');
                     }
 
                     $sheet->getStyle("A{$r}:M{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

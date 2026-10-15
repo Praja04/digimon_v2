@@ -241,7 +241,7 @@
                     @for($i = 0; $i < $totalPast; $i++)
                         @php $pRow = $pastRows[$i] ?? null; @endphp
                         <tr>
-                            <td>{{ $pRow['sampling'] ?? '' }}</td>
+                            <td>{{ !empty($pRow['sampling']) ? $pRow['sampling'] : ($i === 0 ? 'Tengah' : '') }}</td>
                             <td>{{ $pRow['jam'] ?? '' }}</td>
                             <td>{{ $pRow['pic'] ?? '' }}</td>
                             <td>{{ $pRow['bj'] ?? '' }}</td>

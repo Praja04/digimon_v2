@@ -99,10 +99,10 @@ class PelarutanExportController extends Controller
                 })
                 ->addColumn('action', function ($data) {
                     $traceUrl = route('pelarutan.export.trace', ['id' => $data->id]);
-                    $isForeman = auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0;
+                    $canExport = auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
                     $buttons = '';
-                    if ($isForeman) {
+                    if ($canExport) {
                         $docPelarutanUrl = route('doc-pelarutan.index', ['po_id' => $data->id]);
                         $buttons .= '
                             <a href="' . $docPelarutanUrl . '" class="btn btn-sm btn-success" title="Buka Formulir Dokumen HASIL ANALISIS PROSES PELARUTAN">
@@ -150,8 +150,8 @@ class PelarutanExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $startDate = $request->input('start_date');
@@ -181,8 +181,8 @@ class PelarutanExportController extends Controller
      */
     public function exportPoExcel($id)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $batch = ProductionBatch::findOrFail($id);

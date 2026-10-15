@@ -99,13 +99,13 @@ class BlendingExportController extends Controller
                 })
                 ->addColumn('action', function ($data) {
                     $traceUrl = route('analisa.blending-awal.export.trace', ['id' => $data->id]);
-                    $isForeman = auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0;
+                    $canExport = auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
                     $exportBlendingUrl = route('doc-blending-awal.index', ['po_id' => $data->id]);
                     $exportAdjustPoUrl = route('doc-adjustment.index', ['po_id' => $data->id]);
 
                     $buttons = '';
-                    if ($isForeman) {
+                    if ($canExport) {
                         $buttons .= '
                             <a href="' . $exportBlendingUrl . '" class="btn btn-sm btn-success" title="Export Blending">
                                 <i class="ri-file-excel-2-line"></i> Export Blending
@@ -155,8 +155,8 @@ class BlendingExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $startDate = $request->input('start_date');
@@ -176,8 +176,8 @@ class BlendingExportController extends Controller
      */
     public function exportAdjustExcel(Request $request)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $startDate = $request->input('start_date');
@@ -197,8 +197,8 @@ class BlendingExportController extends Controller
      */
     public function exportAdjustPoExcel($id)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $batch = ProductionBatch::findOrFail($id);
@@ -216,8 +216,8 @@ class BlendingExportController extends Controller
      */
     public function exportPoExcel($id)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $docController = new DocBlendingAwalController();

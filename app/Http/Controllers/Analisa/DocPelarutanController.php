@@ -158,16 +158,41 @@ class DocPelarutanController extends Controller
                 }
 
                 $jamEnd = '';
-                if ($dRow && !empty($dRow->jam_selesai_proses)) {
-                    $jamEnd = substr($dRow->jam_selesai_proses, 0, 5);
-                } elseif ($dRow && !empty($dRow->updated_at) && $dRow->updated_at != $dRow->created_at) {
-                    $jamEnd = Carbon::parse($dRow->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                } else {
+                // 1. Cek jam selesai dari production.pelarutan_2 (Jam Disposisi Release Pelarutan 2)
+                if ($dRow) {
+                    try {
+                        $lastProdP2 = DB::table('production.pelarutan_2')
+                            ->where('dissolver_id', $dRow->id)
+                            ->whereNotNull('jam_selesai')
+                            ->orderByDesc('id')
+                            ->first();
+                        if ($lastProdP2 && !empty($lastProdP2->jam_selesai)) {
+                            $jamEnd = Carbon::parse($lastProdP2->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+                    } catch (\Throwable $e) {}
+                }
+                // 2. Fallback production.pelarutan_1 jika p2 belum ada
+                if (empty($jamEnd) && $dRow) {
+                    try {
+                        $lastProdP1 = DB::table('production.pelarutan_1')
+                            ->where('dissolver_id', $dRow->id)
+                            ->whereNotNull('jam_selesai')
+                            ->orderByDesc('id')
+                            ->first();
+                        if ($lastProdP1 && !empty($lastProdP1->jam_selesai)) {
+                            $jamEnd = Carbon::parse($lastProdP1->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+                    } catch (\Throwable $e) {}
+                }
+                // 3. Fallback ke QC pelarutan 2 / 1 updated_at (jam disposisi analis)
+                if (empty($jamEnd)) {
                     $lastP2 = $p2ForBatch->last();
                     if ($lastP2 && $lastP2->updated_at) {
                         $jamEnd = Carbon::parse($lastP2->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
                     } elseif ($p1ForBatch->last() && $p1ForBatch->last()->updated_at) {
                         $jamEnd = Carbon::parse($p1ForBatch->last()->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                    } elseif ($dRow && !empty($dRow->updated_at) && $dRow->updated_at != $dRow->created_at) {
+                        $jamEnd = Carbon::parse($dRow->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
                     }
                 }
 
@@ -278,14 +303,12 @@ class DocPelarutanController extends Controller
                         $p2ScanTime = $p2->created_at;
                     }
 
-                    $p2ViscoVal = ($p2 && $p2->visco !== null && $p2->visco !== '') ? (string)$p2->visco : (($p2 && $p2->nacl !== null && $p2->nacl !== '') ? (string)$p2->nacl : '');
-
                     $rows[] = [
                         'p1_sampling_ke' => (string)($i + 1),
                         'p1_jam' => $p1ScanTime ? Carbon::parse($p1ScanTime)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                         'p1_pic' => $p1 && $p1->user ? $p1->user->name : '',
                         'p1_brix' => $this->formatBlankIfZero($p1?->brix),
-                        'p1_nacl' => '', // Revisi resmi: NaCl Pelarutan 1 (GGA) selalu dibuat blank
+                        'p1_nacl' => $this->formatBlankIfZero($p1?->nacl),
                         'p1_warna' => 'Standar',
                         'p1_organo' => $p1 && $p1->organo ? $p1->organo : 'OK',
                         'p1_waktu_adjustment' => $p1AdjStr,
@@ -294,8 +317,8 @@ class DocPelarutanController extends Controller
                         'p2_jam' => $p2ScanTime ? Carbon::parse($p2ScanTime)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                         'p2_pic' => $p2 && $p2->user ? $p2->user->name : '',
                         'p2_brix' => $this->formatBlankIfZero($p2?->brix),
-                        'p2_visco' => $this->formatBlankIfZero($p2ViscoVal),
-                        'p2_nacl' => $this->formatBlankIfZero($p2ViscoVal),
+                        'p2_nacl' => $this->formatBlankIfZero($p2?->nacl),
+                        'p2_visco' => $this->formatBlankIfZero($p2?->visco),
                         'p2_warna' => 'Standar',
                         'p2_organo' => $p2 && $p2->organo ? $p2->organo : 'OK',
                         'p2_waktu_adjustment' => $p2AdjStr,
@@ -320,8 +343,8 @@ class DocPelarutanController extends Controller
                         'p2_jam' => '',
                         'p2_pic' => '',
                         'p2_brix' => '',
-                        'p2_visco' => '',
                         'p2_nacl' => '',
+                        'p2_visco' => '',
                         'p2_warna' => '',
                         'p2_organo' => '',
                         'p2_waktu_adjustment' => '',
@@ -360,6 +383,7 @@ class DocPelarutanController extends Controller
                         'p2_pic' => '',
                         'p2_brix' => '',
                         'p2_nacl' => '',
+                        'p2_visco' => '',
                         'p2_warna' => '',
                         'p2_organo' => '',
                         'p2_waktu_adjustment' => '',
@@ -397,6 +421,7 @@ class DocPelarutanController extends Controller
                         'p2_pic' => '',
                         'p2_brix' => '',
                         'p2_nacl' => '',
+                        'p2_visco' => '',
                         'p2_warna' => '',
                         'p2_organo' => '',
                         'p2_waktu_adjustment' => '',
@@ -475,8 +500,8 @@ class DocPelarutanController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $poId = $request->input('po_id');
@@ -503,8 +528,8 @@ class DocPelarutanController extends Controller
      */
     public function printView($id)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman, Supervisor, atau Head of Department.');
         }
 
         $docData = $this->getDocumentData($id);

@@ -262,14 +262,15 @@ class DocPasteurisasiStorageController extends Controller
 
             // Build Pasteurisasi Rows (min 6 baris)
             $pastRows = [];
-            foreach ($groupItems as $mp) {
+            foreach ($groupItems as $mpIdx => $mp) {
                 $disposisiFull = $mp->disposition ?: '';
                 if (!empty($mp->disposition_remark)) {
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
                 $mpScan = $mp->scanned_at ?: $mp->created_at;
+                $sampName = !empty($mp->revisi) ? $mp->revisi : ($mpIdx === 0 ? 'Tengah' : '');
                 $pastRows[] = [
-                    'sampling' => !empty($mp->revisi) ? $mp->revisi : '',
+                    'sampling' => $sampName,
                     'jam' => $mpScan ? Carbon::parse($mpScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $mp->user->name ?? '',
                     'bj' => $this->formatBlankIfZero($mp->bj),
@@ -288,7 +289,7 @@ class DocPasteurisasiStorageController extends Controller
             while (count($pastRows) < 6) {
                 $pIndex = count($pastRows);
                 $pastRows[] = [
-                    'sampling' => '',
+                    'sampling' => $pIndex === 0 ? 'Tengah' : '',
                     'jam' => '', 'pic' => '', 'bj' => '', 'brix' => '', 'ph' => '', 'aw' => '',
                     'viskositas' => '', 'organo' => '', 'aroma' => '', 'warna' => '', 'buih' => '', 'endapan' => '', 'disposisi' => '',
                 ];
@@ -474,8 +475,8 @@ class DocPasteurisasiStorageController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $poId = $request->input('po_id');
@@ -502,8 +503,8 @@ class DocPasteurisasiStorageController extends Controller
      */
     public function printView($id)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman, Supervisor, atau Head of Department.');
         }
 
         $docData = $this->getDocumentData($id);

@@ -30,7 +30,7 @@
                                 <a href="{{ route('doc-pasteurisasi-storage.index') }}" class="btn btn-primary btn-sm">
                                     <i class="ri-file-text-line me-1"></i> Form FRM/QLB/04/104/006-01
                                 </a>
-                                @if(auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0)
+                                @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                                 <button type="button" id="btnExportAll" class="btn btn-success btn-sm">
                                     <i class="ri-file-excel-2-line me-1"></i> Export Semua ke Excel
                                 </button>

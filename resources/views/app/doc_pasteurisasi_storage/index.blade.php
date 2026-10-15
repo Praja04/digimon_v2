@@ -231,7 +231,7 @@
                         <a href="{{ route('homepage.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
-                        @if(auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0)
+                        @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                         <a href="#" class="btn btn-success btn-sm" id="btnExportExcel">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </a>
@@ -384,7 +384,7 @@
             var pastCount = Math.max(6, pastRows.length);
             for (var i = 0; i < pastCount; i++) {
                 var row = pastRows[i] || {};
-                var sampVal = row.sampling ? String(row.sampling).trim() : '';
+                var sampVal = row.sampling ? String(row.sampling).trim() : (i === 0 ? 'Tengah' : '');
                 var dispColor = 'text-secondary';
                 var dispVal = (row.disposisi || '').trim();
                 if (dispVal.toLowerCase().includes('reject') || dispVal.toLowerCase().includes('not ok')) {

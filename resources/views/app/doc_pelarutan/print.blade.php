@@ -243,7 +243,7 @@
                             <td>{{ $r['p2_jam'] ?? '' }}</td>
                             <td>{{ $r['p2_pic'] ?? '' }}</td>
                             <td>{{ $r['p2_brix'] ?? '' }}</td>
-                            <td>{{ $r['p2_visco'] ?? ($r['p2_nacl'] ?? '') }}</td>
+                            <td>{{ $r['p2_visco'] ?? '' }}</td>
                             <td>{{ $r['p2_warna'] ?? '' }}</td>
                             <td>{{ $r['p2_organo'] ?? '' }}</td>
                             <td class="text-center" style="white-space: pre-line; line-height: 1.2;">{{ $r['p2_waktu_adjustment'] ?? '' }}</td>

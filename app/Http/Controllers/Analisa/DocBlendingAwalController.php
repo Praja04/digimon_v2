@@ -716,8 +716,8 @@ class DocBlendingAwalController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
         }
 
         $poId = $request->input('po_id');
@@ -744,8 +744,8 @@ class DocBlendingAwalController extends Controller
      */
     public function printView($id)
     {
-        if (!auth()->check() || strcasecmp(auth()->user()->role, 'Foreman') !== 0) {
-            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman.');
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman, Supervisor, atau Head of Department.');
         }
 
         $docData = $this->getDocumentData($id);

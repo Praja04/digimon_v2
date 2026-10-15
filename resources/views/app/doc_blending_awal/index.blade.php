@@ -336,7 +336,7 @@
                         <a href="{{ route('analisa.blending-awal.export.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
-                        @if(auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0)
+                        @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                         <a href="#" id="btnExportExcel" class="btn btn-success btn-sm">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </a>

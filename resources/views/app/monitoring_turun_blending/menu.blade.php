@@ -281,7 +281,7 @@
                     </div>
                 @endif
 
-                @if (auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0)
+                @if (auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                     <!-- Dokumen Analisis Pasteurisasi & Storage Card -->
                     <div class="col-xl-6 col-lg-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">

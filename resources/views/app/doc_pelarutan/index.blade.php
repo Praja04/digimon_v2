@@ -346,7 +346,7 @@
                         <a href="{{ route('pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
-                        @if(auth()->check() && strcasecmp(auth()->user()->role, 'Foreman') === 0)
+                        @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                         <a href="#" id="btnExportExcel" class="btn btn-success btn-sm">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </a>
@@ -738,7 +738,7 @@
                     <td width="15%" class="fw-bold">Jenis Produk</td>
                     <td width="35%">: <span class="fw-semibold">${escapeHtml(block.jenis_produk || '-')}</span></td>
                     <td width="15%" class="fw-bold">Batch</td>
-                    <td width="35%">: <span class="fw-bold text-primary">Batch ${escapeHtml(block.batch || String(bIdx + 1))}</span></td>
+                    <td width="35%">: <span class="fw-bold text-primary">${escapeHtml(block.batch || String(bIdx + 1))}</span></td>
                 </tr>
                 <tr>
                     <td class="fw-bold">Tanggal Produksi</td>
@@ -763,49 +763,49 @@
             <div class="table-responsive">
                 <table class="table-pelarutan">
                     <colgroup>
-                        <col style="width: 85px;">
+                        <col style="width: 80px;">
                         <col style="width: 75px;">
                         <col style="width: 130px;">
-                        <col style="width: 70px;">
-                        <col style="width: 70px;">
+                        <col style="width: 65px;">
+                        <col style="width: 65px;">
+                        <col style="width: 75px;">
+                        <col style="width: 65px;">
+                        <col style="width: 180px;">
                         <col style="width: 80px;">
-                        <col style="width: 70px;">
-                        <col style="width: 190px;">
-                        <col style="width: 85px;">
                         <col style="width: 75px;">
                         <col style="width: 130px;">
-                        <col style="width: 70px;">
-                        <col style="width: 70px;">
-                        <col style="width: 80px;">
-                        <col style="width: 70px;">
-                        <col style="width: 190px;">
-                        <col style="width: 95px;">
+                        <col style="width: 65px;">
+                        <col style="width: 65px;">
+                        <col style="width: 75px;">
+                        <col style="width: 65px;">
+                        <col style="width: 180px;">
+                        <col style="width: 90px;">
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 85px;">Sampling<br>ke-</th>
+                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 80px;">Sampling<br>ke-</th>
                             <th colspan="2" style="width: 205px;" class="bg-light">Serah Terima</th>
-                            <th colspan="5" style="width: 480px;" class="th-gga">PELARUTAN I (GGA)</th>
-                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 85px;">Sampling<br>ke-</th>
+                            <th colspan="5" style="width: 450px;" class="th-gga">PELARUTAN I (GGA)</th>
+                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 80px;">Sampling<br>ke-</th>
                             <th colspan="2" style="width: 205px;" class="bg-light">Serah Terima</th>
-                            <th colspan="5" style="width: 480px;" class="th-ggas">PELARUTAN II (GGAS)</th>
-                            <th rowspan="2" style="width: 95px;" class="bg-light">Disposisi</th>
+                            <th colspan="5" style="width: 450px;" class="th-ggas">PELARUTAN II (GGAS)</th>
+                            <th rowspan="2" style="width: 90px;" class="bg-light">Disposisi</th>
                         </tr>
                         <tr>
                             <th style="width: 75px;">Jam</th>
                             <th style="width: 130px;">PIC</th>
-                            <th style="width: 70px;">Brix</th>
-                            <th style="width: 70px;">%NaCl</th>
-                            <th style="width: 80px;">Warna</th>
-                            <th style="width: 70px;">Organo</th>
-                            <th style="width: 190px;">Waktu & Adjustment</th>
+                            <th style="width: 65px;">Brix</th>
+                            <th style="width: 65px;">%NaCl</th>
+                            <th style="width: 75px;">Warna</th>
+                            <th style="width: 65px;">Organo</th>
+                            <th style="width: 180px;">Waktu & Adjustment</th>
                             <th style="width: 75px;">Jam</th>
                             <th style="width: 130px;">PIC</th>
-                            <th style="width: 70px;">Brix</th>
-                            <th style="width: 70px;">Visco</th>
-                            <th style="width: 80px;">Warna</th>
-                            <th style="width: 70px;">Organo</th>
-                            <th style="width: 190px;">Waktu & Adjustment</th>
+                            <th style="width: 65px;">Brix</th>
+                            <th style="width: 65px;">Visco</th>
+                            <th style="width: 75px;">Warna</th>
+                            <th style="width: 65px;">Organo</th>
+                            <th style="width: 180px;">Waktu & Adjustment</th>
                         </tr>
                     </thead>
                     <tbody class="block-table-body" data-block-index="${bIdx}">
@@ -844,7 +844,7 @@
                 <td class="text-center py-2">${escapeHtml(r.p2_jam || '-')}</td>
                 <td class="text-center py-2">${escapeHtml(r.p2_pic || '-')}</td>
                 <td class="text-center py-2 fw-semibold">${escapeHtml(r.p2_brix || '-')}</td>
-                <td class="text-center py-2">${escapeHtml(r.p2_visco !== undefined && r.p2_visco !== '' ? r.p2_visco : (r.p2_nacl || '-'))}</td>
+                <td class="text-center py-2">${escapeHtml(r.p2_visco || '-')}</td>
                 <td class="text-center py-2">${escapeHtml(r.p2_warna || 'Standar')}</td>
                 <td class="text-center py-2">${escapeHtml(r.p2_organo || 'OK')}</td>
                 <td class="text-center py-2" style="white-space: pre-line; line-height: 1.2;">${escapeHtml(r.p2_waktu_adjustment || '-')}</td>
