@@ -147,6 +147,7 @@ class ScanKempuController extends Controller
 
         $totalPreCuciPending      = $data['total_pre_cuci_pending'] ?? 0;
         $totalAfterFillingPending = $data['total_after_filling_pending'] ?? 0;
+        $totalReturPending        = $data['total_retur_pending'] ?? 0;
         $rawCards                 = $data['cards'] ?? [];
 
         $cards = [
@@ -160,6 +161,11 @@ class ScanKempuController extends Controller
                 'badge_color' => 'success',
                 'icon'        => 'ri-flask-line',
             ]),
+            'qc-retur' => array_merge($rawCards['qc-retur'] ?? [], [
+                'route'       => route('scan-kempu.scan', 'qc-retur'),
+                'badge_color' => 'warning',
+                'icon'        => 'ri-reply-all-line',
+            ]),
         ];
 
         if ($this->canForceScan() && isset($rawCards['qc-force'])) {
@@ -170,7 +176,7 @@ class ScanKempuController extends Controller
             ]);
         }
 
-        return view('app.scan_kempu.proses.index', compact('cards', 'totalPreCuciPending', 'totalAfterFillingPending'));
+        return view('app.scan_kempu.proses.index', compact('cards', 'totalPreCuciPending', 'totalAfterFillingPending', 'totalReturPending'));
     }
 
     /**

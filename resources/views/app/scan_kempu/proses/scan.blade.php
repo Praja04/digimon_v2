@@ -333,6 +333,27 @@
                                 <strong>Repair (Kempu Reject ke Workshop)</strong>.
                             </div>
                         </div>
+                    @elseif ($card['key'] === 'qc-retur')
+                        <div id="boxReturControls">
+                            <div
+                                class="alert alert-warning py-2 px-3 mb-3 fs-12 d-flex align-items-start gap-2 border-warning-subtle bg-soft-warning text-warning-emphasis">
+                                <i class="ri-reply-all-line fs-18 flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong>Pemeriksaan Retur PAS (Cek Retur):</strong><br>
+                                    Kempu retur dari PAS yang diterima di WFG. Tentukan keputusan: <b>Repro</b> (Produk Reject dialirkan ke Produksi untuk dikosongkan) atau <b>Reject</b> (Kempu rusak dikirim ke Workshop Engineering).
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="modalReturTarget" class="form-label fs-12 fw-bold text-dark mb-1">
+                                    <i class="ri-git-branch-line me-1"></i> Pilihan Keputusan QC Retur:
+                                </label>
+                                <select class="form-select form-select-lg border-warning fw-semibold fs-14" id="modalReturTarget">
+                                    <option value="REPRO">&#x1F504; Repro (Produk Reject / Kirim ke Produksi)</option>
+                                    <option value="REJECT">&#x1F534; Reject (Kempu Rusak / Kirim ke Workshop Engineering)</option>
+                                </select>
+                            </div>
+                        </div>
                     @elseif (in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']))
                         <div id="boxForceControls">
                             <div
@@ -429,6 +450,21 @@
                                 id="btnDecisionForce">
                                 <i class="ri-shield-flash-line me-1"></i> Eksekusi Force Decision
                             </button>
+                        </div>
+                    @elseif ($card['key'] === 'qc-retur')
+                        <div class="row g-2 pt-2 border-top" id="boxReturButtons">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-warning btn-lg w-100 py-3 fw-bold fs-14 shadow-sm text-dark"
+                                    id="btnDecisionReturRepro" title="Produk Reject - Kirim ke Produksi untuk Repro">
+                                    <i class="ri-recycle-line me-1"></i> Repro (Produksi)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-danger btn-lg w-100 py-3 fw-bold fs-14 shadow-sm"
+                                    id="btnDecisionReturReject" title="Kempu Rusak - Kirim ke Workshop Engineering">
+                                    <i class="ri-close-circle-line me-1"></i> Reject (Workshop)
+                                </button>
+                            </div>
                         </div>
                     @elseif ($card['key'] === 'qc-after-filling')
                         <div class="pt-2 border-top" id="boxNormalButtons">
@@ -896,6 +932,16 @@
                     $('#boxMaxReusedScrapButton').addClass('d-none');
                 }
 
+                if (QC_TYPE === 'qc-retur') {
+                    if ($('#btnDecisionReturRepro').length) {
+                        $('#btnDecisionReturRepro').prop('disabled', false).html('<i class="ri-recycle-line me-1"></i> Repro (Produksi)');
+                    }
+                    if ($('#btnDecisionReturReject').length) {
+                        $('#btnDecisionReturReject').prop('disabled', false).html('<i class="ri-close-circle-line me-1"></i> Reject (Workshop)');
+                    }
+                    if ($('#modalReturTarget').length) $('#modalReturTarget').val('REPRO');
+                }
+
                 if ($('#btnDecisionScrapPreCuci').length) {
                     $('#btnDecisionScrapPreCuci').prop('disabled', false).html(
                         '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)'
@@ -1042,6 +1088,8 @@
                 const btnNotOk = $('#btnDecisionNotOk');
                 const btnForce = $('#btnDecisionForce');
                 const btnScrapPreCuci = $('#btnDecisionScrapPreCuci');
+                const btnReturRepro = $('#btnDecisionReturRepro');
+                const btnReturReject = $('#btnDecisionReturReject');
 
                 btnOk.prop('disabled', true);
                 if (btnHold.length) btnHold.prop('disabled', true);
@@ -1049,8 +1097,16 @@
                 btnNotOk.prop('disabled', true);
                 if (btnForce.length) btnForce.prop('disabled', true);
                 if (btnScrapPreCuci.length) btnScrapPreCuci.prop('disabled', true);
+                if (btnReturRepro.length) btnReturRepro.prop('disabled', true);
+                if (btnReturReject.length) btnReturReject.prop('disabled', true);
 
-                if (decision === 'FORCE') {
+                if (QC_TYPE === 'qc-retur') {
+                    if (decision === 'REPRO') {
+                        if (btnReturRepro.length) btnReturRepro.html('<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan Repro...');
+                    } else {
+                        if (btnReturReject.length) btnReturReject.html('<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan Reject...');
+                    }
+                } else if (decision === 'FORCE') {
                     if (btnForce.length) btnForce.html(
                         '<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan...');
                 } else if (decision === 'SCRAP') {
@@ -1072,10 +1128,11 @@
                     resolvedTarget = 'SCRAP';
                 }
 
+                const isReturScan = (QC_TYPE === 'qc-retur');
                 const postData = {
                     id_kempu: currentKempu.id_kempu,
                     qc_type: QC_TYPE,
-                    decision: (isForceScan ? (resolvedTarget || decision || 'OK') : decision),
+                    decision: (isForceScan || isReturScan ? (resolvedTarget || decision || (isReturScan ? $('#modalReturTarget').val() : 'OK')) : decision),
                     notes: $('#modalInputNotes').val().trim(),
                     user_id: "{{ auth()->id() }}",
                     operator_id: "{{ auth()->id() }}",
@@ -1086,8 +1143,8 @@
                     is_manual: (currentKempu && currentKempu.is_manual) ? 1 : 0
                 };
 
-                if (isForceScan) {
-                    postData.force_target = resolvedTarget || decision || 'OK';
+                if (isForceScan || isReturScan) {
+                    postData.force_target = resolvedTarget || decision || (isReturScan ? $('#modalReturTarget').val() : 'OK');
                 }
 
                 if ($('#checkManualReused').length && $('#checkManualReused').is(':checked')) {
@@ -1139,6 +1196,10 @@
                         if (btnScrapPreCuci.length) btnScrapPreCuci.prop('disabled', false).html(
                             '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)'
                             );
+                        if (btnReturRepro.length) btnReturRepro.prop('disabled', false).html(
+                            '<i class="ri-recycle-line me-1"></i> Repro (Produksi)');
+                        if (btnReturReject.length) btnReturReject.prop('disabled', false).html(
+                            '<i class="ri-close-circle-line me-1"></i> Reject (Workshop)');
 
                         if (res.status) {
                             decisionModal.hide();
@@ -1148,7 +1209,17 @@
                             let label = 'Release (OK)';
                             let iconType = 'success';
 
-                            if (isForceScan) {
+                            if (QC_TYPE === 'qc-retur') {
+                                if (decision === 'REPRO') {
+                                    badgeColor = 'warning text-dark';
+                                    label = 'REPRO (Kirim ke Produksi)';
+                                    iconType = 'warning';
+                                } else {
+                                    badgeColor = 'danger';
+                                    label = 'REJECT (Kirim Workshop)';
+                                    iconType = 'error';
+                                }
+                            } else if (isForceScan) {
                                 badgeColor = (res.data.new_status === 'SCRAPPED' ? 'dark' : 'primary');
                                 label = 'FORCE SCAN: ' + (res.data.new_status || 'Berhasil');
                                 iconType = (res.data.new_status === 'SCRAPPED' ? 'warning' : 'success');
@@ -1264,6 +1335,25 @@
                 }
                 const target = $('#modalForceTarget').val();
                 submitDecision('FORCE', target);
+            });
+
+            // Tombol Decision Cek Retur Repro
+            $('#btnDecisionReturRepro').on('click', function() {
+                submitDecision('REPRO');
+            });
+
+            // Tombol Decision Cek Retur Reject
+            $('#btnDecisionReturReject').on('click', function() {
+                submitDecision('REJECT');
+            });
+
+            $('#modalReturTarget').on('change', function() {
+                const val = $(this).val();
+                if (val === 'REPRO') {
+                    $('#btnDecisionReturRepro').focus();
+                } else {
+                    $('#btnDecisionReturReject').focus();
+                }
             });
 
             // Tombol Decision Scrap (Batas Maksimal Reused Pre-Cuci)
