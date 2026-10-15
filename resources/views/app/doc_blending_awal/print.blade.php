@@ -254,19 +254,19 @@
                         $isTurun = (strtolower(trim((string)$displayVol)) === 'awal');
                     @endphp
                     <tr class="{{ $isTurun ? 'row-turun-blending' : '' }}">
-                        <td class="fw-bold">{!! nl2br(e($displaySamp)) !!}</td>
+                        <td class="fw-bold">{!! $isTurun ? '' : nl2br(e($displaySamp)) !!}</td>
                         <td class="{{ $isTurun ? 'fw-bold' : '' }}">{{ $displayVol }}</td>
                         <td>{{ $row['serah_terima_jam'] ?? '' }}</td>
-                        <td>{{ $row['serah_terima_pic'] ?? '' }}</td>
-                        <td>{{ $row['bj'] ?? '' }}</td>
+                        <td>{{ $isTurun ? '' : ($row['serah_terima_pic'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['bj'] ?? '') }}</td>
                         <td>{{ $row['brix'] ?? '' }}</td>
-                        <td>{{ $row['ph'] ?? '' }}</td>
-                        <td>{{ $row['nacl'] ?? '' }}</td>
+                        <td>{{ $isTurun ? '' : ($row['ph'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['nacl'] ?? '') }}</td>
                         <td>{{ $row['visco'] ?? '' }}</td>
-                        <td>{{ $row['organo'] ?? '' }}</td>
-                        <td>{{ $row['aroma'] ?? '' }}</td>
-                        <td>{{ $row['warna'] ?? '' }}</td>
-                        <td style="line-height: 1.15; white-space: pre-line; font-size: 7.5pt;">{{ (isset($row['buih']) && (strtolower(trim($row['buih'])) === 'tidak ada' || strtolower(trim($row['buih'])) === "tidak\nada")) ? "Tidak\nAda" : ($row['buih'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['organo'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['aroma'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['warna'] ?? '') }}</td>
+                        <td style="line-height: 1.15; white-space: pre-line; font-size: 7.5pt;">{{ $isTurun ? '' : ((isset($row['buih']) && (strtolower(trim($row['buih'])) === 'tidak ada' || strtolower(trim($row['buih'])) === "tidak\nada")) ? "Tidak\nAda" : ($row['buih'] ?? '')) }}</td>
                         <td>{{ $row['aw'] ?? '' }}</td>
                         <td class="text-center" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayAdj }}</td>
                         <td class="fw-semibold text-center" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayDisp }}</td>

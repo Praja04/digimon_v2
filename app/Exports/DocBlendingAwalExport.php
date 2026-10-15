@@ -345,25 +345,26 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                             $rawBuih = "Tidak\nAda";
                         }
 
-                        $sheet->setCellValueExplicit("A{$dr}", $displaySamp, DataType::TYPE_STRING);
+                        $isTurun = (strtolower(trim($displayVol)) === 'awal');
+
+                        $sheet->setCellValueExplicit("A{$dr}", $isTurun ? '' : $displaySamp, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("B{$dr}", $displayVol, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("C{$dr}", (string)($row['serah_terima_jam'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("D{$dr}", (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("E{$dr}", $this->formatVal($row['bj'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("D{$dr}", $isTurun ? '' : (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("E{$dr}", $isTurun ? '' : $this->formatVal($row['bj'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("F{$dr}", $this->formatVal($row['brix'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("G{$dr}", $this->formatVal($row['ph'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("H{$dr}", $this->formatVal($row['nacl'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("G{$dr}", $isTurun ? '' : $this->formatVal($row['ph'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("H{$dr}", $isTurun ? '' : $this->formatVal($row['nacl'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("I{$dr}", $this->formatVal($row['visco'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("J{$dr}", (string)($row['organo'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("K{$dr}", (string)($row['aroma'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("L{$dr}", (string)($row['warna'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("M{$dr}", $rawBuih, DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("J{$dr}", $isTurun ? '' : (string)($row['organo'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("K{$dr}", $isTurun ? '' : (string)($row['aroma'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("L{$dr}", $isTurun ? '' : (string)($row['warna'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("M{$dr}", $isTurun ? '' : $rawBuih, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("N{$dr}", $this->formatVal($row['aw'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("O{$dr}", $displayAdj, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("P{$dr}", $displayDisp, DataType::TYPE_STRING);
 
                         // Highlight kuning untuk baris Turun Blending (vol_tangki === 'Awal')
-                        $isTurun = (strtolower(trim($displayVol)) === 'awal');
                         if ($isTurun) {
                             $sheet->getStyle("A{$dr}:P{$dr}")->getFill()
                                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)

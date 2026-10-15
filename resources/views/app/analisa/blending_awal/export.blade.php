@@ -34,12 +34,14 @@
                                 <a href="{{ route('doc-adjustment.index') }}" class="btn btn-warning btn-sm text-white">
                                     <i class="ri-file-settings-line me-1"></i> Form Adjustment
                                 </a>
+                                @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                                 <button type="button" id="btnExportBlending" class="btn btn-success btn-sm">
                                     <i class="ri-file-excel-2-line me-1"></i> Export Blending
                                 </button>
                                 <button type="button" id="btnExportAdjust" class="btn btn-soft-warning btn-sm">
                                     <i class="ri-file-excel-line me-1"></i> Export Rekap Adjust
                                 </button>
+                                @endif
                             </div>
                         </div>
                         <div class="card-body">

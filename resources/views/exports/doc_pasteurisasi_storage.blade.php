@@ -108,7 +108,7 @@
         <!-- TABEL 2: STORAGE TANK -->
         <tr>
             <td colspan="14" style="font-weight: bold; font-size: 10pt; background-color: #e2e8f0; color: #1e293b; border: 1px solid #000; padding: 4px 8px;">
-                Storage Tank (KODE ST : {{ $data['kode_st'] ?? 'ST 01' }})
+                Storage Tank (KODE ST : {{ $data['kode_st'] ?? '-' }})
             </td>
         </tr>
         <tr>

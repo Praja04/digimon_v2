@@ -346,48 +346,22 @@
                         <a href="{{ route('pelarutan.export.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
-                        <button type="button" id="btnSaveDoc" class="btn btn-primary btn-sm">
-                            <i class="ri-save-3-line me-1"></i> Simpan Dokumen
-                        </button>
+                        @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                         <a href="#" id="btnExportExcel" class="btn btn-success btn-sm">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </a>
                         <a href="#" id="btnPrintView" target="_blank" class="btn btn-info btn-sm text-white">
                             <i class="ri-printer-line me-1"></i> Cetak / Print
                         </a>
+                        @endif
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Banner Petunjuk Input Cepat (Keyboard & Tab Friendly) -->
-        <div class="alert border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between mb-3 py-2 px-3 bg-light border-start border-primary border-4">
-            <div class="d-flex align-items-center fs-12 text-dark">
-                <i class="ri-keyboard-line fs-18 me-2 text-primary"></i>
-                <div>
-                    <strong>Navigasi Cepat (Keyboard Friendly):</strong>
-                    Gunakan tombol <kbd class="bg-white text-primary border px-1 fw-bold">Tab</kbd> untuk pindah ke kolom berikutnya &bull;
-                    Tekan <kbd class="bg-white text-dark border px-1 fw-bold">Enter</kbd> atau <kbd class="bg-white text-dark border px-1 fw-bold">&darr;</kbd> untuk turun ke baris berikutnya &bull;
-                    Teks otomatis ter-blok saat sel aktif untuk kecepatan input data.
-                </div>
-            </div>
-            <div class="fs-11 text-muted fw-semibold mt-1 mt-md-0">
-                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
-                    <i class="ri-pages-line me-1"></i> 1 Lembar = 2 Batch
-                </span>
             </div>
         </div>
 
         <!-- Container Lembar Pelarutan -->
         <div id="lembarSheetsContainer">
             <!-- Di-render otomatis lewat JS per 2 Batch per Lembar -->
-        </div>
-
-        <!-- Tombol Tambah Pasang Batch (Lembar Baru) -->
-        <div class="text-center mb-5">
-            <button type="button" class="btn btn-outline-primary btn-md shadow-sm px-4" id="btnAddPairBatch" tabindex="-1">
-                <i class="ri-add-circle-line me-1 fs-16 align-middle"></i> Tambah 1 Lembar Baru (2 Batch Pelarutan)
-            </button>
         </div>
 
     </div>
@@ -653,11 +627,9 @@
                         </span>
                     </div>
                     <div>
-                        ${totalSheets > 1 ? `
-                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-delete-sheet" data-sheet-index="${pIdx}" tabindex="-1">
-                            <i class="ri-delete-bin-line me-1"></i> Hapus Lembar Ini
-                        </button>
-                        ` : ''}
+                        <span class="badge bg-light text-muted border fs-12">
+                            <i class="ri-lock-line me-1"></i> Data Otentik
+                        </span>
                     </div>
                 </div>
 
@@ -710,31 +682,31 @@
                     <div class="row g-0">
                         <div class="col-md-5 p-2 border-end">
                             <label class="fw-bold fs-12 mb-1">Catatan :</label>
-                            <textarea class="form-control form-control-sm" id="globalCatatan" rows="4" placeholder="Ketik catatan khusus proses pelarutan di sini...">${escapeHtml(catatanVal)}</textarea>
+                            <div class="p-2 text-muted fs-12 bg-light rounded border min-vh-25" style="min-height: 80px;">${escapeHtml(catatanVal || '-')}</div>
                         </div>
                         <div class="col-md-7">
                             <div class="row g-0 text-center h-100">
-                                <div class="col-4 sig-col d-flex flex-column justify-content-between">
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between p-2">
                                     <div class="fw-semibold fs-12">Disampling oleh,</div>
-                                    <div class="sig-space"></div>
+                                    <div class="sig-space" style="height: 40px;"></div>
                                     <div>
-                                        <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="globalPicSampling" placeholder="Nama PIC" value="${escapeHtml(picSamp)}">
+                                        <div class="fw-bold border-bottom pb-1">${escapeHtml(picSamp || '-')}</div>
                                         <small class="text-muted d-block mt-1">Produksi</small>
                                     </div>
                                 </div>
-                                <div class="col-4 sig-col d-flex flex-column justify-content-between">
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between p-2">
                                     <div class="fw-semibold fs-12">Dianalisis oleh,</div>
-                                    <div class="sig-space"></div>
+                                    <div class="sig-space" style="height: 40px;"></div>
                                     <div>
-                                        <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="globalPicAnalis" placeholder="Nama Analis" value="${escapeHtml(picAnalis)}">
+                                        <div class="fw-bold border-bottom pb-1">${escapeHtml(picAnalis || '-')}</div>
                                         <small class="text-muted d-block mt-1">QC Analis</small>
                                     </div>
                                 </div>
-                                <div class="col-4 sig-col d-flex flex-column justify-content-between">
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between p-2">
                                     <div class="fw-semibold fs-12">Dicek oleh,</div>
-                                    <div class="sig-space"></div>
+                                    <div class="sig-space" style="height: 40px;"></div>
                                     <div>
-                                        <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="globalPicChecker" placeholder="Nama SPV/MNG" value="${escapeHtml(picCheck)}">
+                                        <div class="fw-bold border-bottom pb-1">${escapeHtml(picCheck || '-')}</div>
                                         <small class="text-muted d-block mt-1">Staff/SPV/MNG QC</small>
                                     </div>
                                 </div>
@@ -760,133 +732,86 @@
         var globalDocDate = $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}';
         return `
         <div class="batch-block-data" data-block-index="${bIdx}">
-            <!-- Meta Table -->
-            <table class="w-100 meta-input-group mb-2">
+            <!-- Meta Table (Read-Only Authentic) -->
+            <table class="w-100 meta-table mb-2">
                 <tr>
                     <td width="15%" class="fw-bold">Jenis Produk</td>
-                    <td width="35%">
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-jenis" placeholder="${bIdx % 2 === 0 ? 'Varian Kecap (e.g. Kecap Manis)' : '(Varian) + (Formulasi)'}" value="${escapeHtml(block.jenis_produk || '')}">
-                        </div>
-                    </td>
+                    <td width="35%">: <span class="fw-semibold">${escapeHtml(block.jenis_produk || '-')}</span></td>
                     <td width="15%" class="fw-bold">Batch</td>
-                    <td width="35%">
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-batch" placeholder="${bIdx % 2 === 0 ? 'No Batch (Batch 1)' : 'No Batch Pasangan Blending (Batch 2)'}" value="${escapeHtml(block.batch || '')}">
-                        </div>
-                    </td>
+                    <td width="35%">: <span class="fw-bold text-primary">${escapeHtml(block.batch || String(bIdx + 1))}</span></td>
                 </tr>
                 <tr>
                     <td class="fw-bold">Tanggal Produksi</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="date" class="form-control form-control-sm block-meta-tanggal" value="${escapeHtml(block.tanggal_produksi || globalDocDate)}">
-                        </div>
-                    </td>
+                    <td>: <span>${escapeHtml(block.tanggal_produksi || globalDocDate)}</span></td>
                     <td class="fw-bold">No. Dissolver</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-no-dissolver" placeholder="Tangki Dissolver (e.g. 1)" value="${escapeHtml(block.no_dissolver || String(bIdx + 1))}">
-                        </div>
-                    </td>
+                    <td>: <span class="fw-semibold">${escapeHtml(block.no_dissolver || '-')}</span></td>
                 </tr>
                 <tr>
                     <td class="fw-bold">Jam Produksi</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-jam" placeholder="06:00 - 14:00 (Jam Shift)" value="${escapeHtml(block.jam_produksi || '')}">
-                        </div>
-                    </td>
+                    <td>: <span>${escapeHtml(block.jam_produksi || '-')}</span></td>
                     <td class="fw-bold">Volume</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-volume" placeholder="(Blank dulu)" value="${escapeHtml(block.volume || '')}">
-                        </div>
-                    </td>
+                    <td>: <span>${escapeHtml(block.volume || '-')}</span></td>
                 </tr>
                 <tr>
                     <td class="fw-bold">Kode Shift & Grup</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">:</span>
-                            <input type="text" class="form-control form-control-sm block-meta-shift" placeholder="3/C" value="${escapeHtml(block.kode_shift_grup || '')}">
-                        </div>
-                    </td>
+                    <td>: <span class="badge bg-light text-dark border fs-12">${escapeHtml(block.kode_shift_grup || '-')}</span></td>
                     <td colspan="2"></td>
                 </tr>
             </table>
 
             <!-- Tabel Analisis Pelarutan (5 Baris Standar) -->
-            <div class="d-flex justify-content-between align-items-center mb-1 text-muted fs-11">
-                <span class="badge bg-light text-secondary border"><i class="ri-arrow-left-right-line me-1"></i> Geser horizontal untuk melihat seluruh kolom</span>
-            </div>
             <div class="table-responsive">
                 <table class="table-pelarutan">
                     <colgroup>
-                        <col style="width: 85px;">
+                        <col style="width: 80px;">
                         <col style="width: 75px;">
                         <col style="width: 130px;">
-                        <col style="width: 70px;">
-                        <col style="width: 70px;">
+                        <col style="width: 65px;">
+                        <col style="width: 65px;">
+                        <col style="width: 75px;">
+                        <col style="width: 65px;">
+                        <col style="width: 180px;">
                         <col style="width: 80px;">
-                        <col style="width: 70px;">
-                        <col style="width: 190px;">
-                        <col style="width: 85px;">
                         <col style="width: 75px;">
                         <col style="width: 130px;">
-                        <col style="width: 70px;">
-                        <col style="width: 70px;">
-                        <col style="width: 80px;">
-                        <col style="width: 70px;">
-                        <col style="width: 190px;">
-                        <col style="width: 95px;">
+                        <col style="width: 65px;">
+                        <col style="width: 65px;">
+                        <col style="width: 75px;">
+                        <col style="width: 65px;">
+                        <col style="width: 180px;">
+                        <col style="width: 90px;">
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 85px;">Sampling<br>ke-</th>
+                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 80px;">Sampling<br>ke-</th>
                             <th colspan="2" style="width: 205px;" class="bg-light">Serah Terima</th>
-                            <th colspan="5" style="width: 480px;" class="th-gga">PELARUTAN I (GGA)</th>
-                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 85px;">Sampling<br>ke-</th>
+                            <th colspan="5" style="width: 450px;" class="th-gga">PELARUTAN I (GGA)</th>
+                            <th rowspan="2" class="bg-light text-muted th-samp" style="width: 80px;">Sampling<br>ke-</th>
                             <th colspan="2" style="width: 205px;" class="bg-light">Serah Terima</th>
-                            <th colspan="5" style="width: 480px;" class="th-ggas">PELARUTAN II (GGAS)</th>
-                            <th rowspan="2" style="width: 95px;" class="bg-light">Disposisi</th>
+                            <th colspan="5" style="width: 450px;" class="th-ggas">PELARUTAN II (GGAS)</th>
+                            <th rowspan="2" style="width: 90px;" class="bg-light">Disposisi</th>
                         </tr>
                         <tr>
                             <th style="width: 75px;">Jam</th>
                             <th style="width: 130px;">PIC</th>
-                            <th style="width: 70px;">Brix</th>
-                            <th style="width: 70px;">%NaCl</th>
-                            <th style="width: 80px;">Warna</th>
-                            <th style="width: 70px;">Organo</th>
-                            <th style="width: 190px;">Waktu & Adjustment</th>
+                            <th style="width: 65px;">Brix</th>
+                            <th style="width: 65px;">%NaCl</th>
+                            <th style="width: 75px;">Warna</th>
+                            <th style="width: 65px;">Organo</th>
+                            <th style="width: 180px;">Waktu & Adjustment</th>
                             <th style="width: 75px;">Jam</th>
                             <th style="width: 130px;">PIC</th>
-                            <th style="width: 70px;">Brix</th>
-                            <th style="width: 70px;">Visco</th>
-                            <th style="width: 80px;">Warna</th>
-                            <th style="width: 70px;">Organo</th>
-                            <th style="width: 190px;">Waktu & Adjustment</th>
+                            <th style="width: 65px;">Brix</th>
+                            <th style="width: 65px;">Visco</th>
+                            <th style="width: 75px;">Warna</th>
+                            <th style="width: 65px;">Organo</th>
+                            <th style="width: 180px;">Waktu & Adjustment</th>
                         </tr>
                     </thead>
                     <tbody class="block-table-body" data-block-index="${bIdx}">
                         ${renderBlockRows(block.rows || [], bIdx)}
                     </tbody>
                 </table>
-            </div>
-
-            <div class="d-flex gap-2 justify-content-end mt-1">
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-11 btn-add-row" data-block-index="${bIdx}" tabindex="-1">
-                    <i class="ri-add-line"></i> Tambah Baris
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fs-11 btn-delete-row" data-block-index="${bIdx}" tabindex="-1">
-                    <i class="ri-subtract-line"></i> Hapus Baris
-                </button>
             </div>
         </div>
         `;
@@ -896,31 +821,35 @@
         if (!rows || rows.length === 0) return '';
         var html = '';
         rows.forEach(function(r, rIdx) {
+            var dispColor = 'text-secondary';
+            var dispVal = (r.disposisi || '').trim();
+            if (dispVal.toLowerCase().includes('reject') || dispVal.toLowerCase().includes('not ok')) {
+                dispColor = 'text-danger fw-bold';
+            } else if (dispVal.toLowerCase().includes('release') || dispVal.toLowerCase().includes('ok')) {
+                dispColor = 'text-success fw-bold';
+            }
+
             html += `
             <tr class="data-row" data-row-index="${rIdx}">
-                <td><input type="text" class="table-input r-p1-sampling-ke text-center" value="${escapeHtml(r.p1_sampling_ke || String(rIdx + 1))}" tabindex="-1" title="Sampling ke-${rIdx + 1}" readonly></td>
-                <td><input type="text" class="table-input r-p1-jam text-center" placeholder="HH:mm" value="${escapeHtml(r.p1_jam || '')}"></td>
-                <td><input type="text" class="table-input r-p1-pic text-center" placeholder="OP PRD Sampler" value="${escapeHtml(r.p1_pic || '')}"></td>
-                <td><input type="text" class="table-input r-p1-brix text-center" placeholder="65.0" value="${escapeHtml(r.p1_brix || '')}"></td>
-                <td><input type="text" class="table-input r-p1-nacl text-center" placeholder="%NaCl" value="${escapeHtml(r.p1_nacl || '')}"></td>
-                <td><input type="text" class="table-input r-p1-warna text-center" placeholder="Standar" value="${escapeHtml(r.p1_warna || 'Standar')}"></td>
-                <td><input type="text" class="table-input r-p1-organo text-center" placeholder="OK" value="${escapeHtml(r.p1_organo || 'OK')}"></td>
-                <td style="padding: 2px 2px;">
-                    <textarea class="table-textarea r-p1-waktu-adj" rows="2" placeholder="Jam & Rekom Adj...">${escapeHtml(r.p1_waktu_adjustment || '')}</textarea>
-                </td>
+                <td class="text-center py-2 bg-light fw-semibold">${escapeHtml(r.p1_sampling_ke || String(rIdx + 1))}</td>
+                <td class="text-center py-2">${escapeHtml(r.p1_jam || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p1_pic || '-')}</td>
+                <td class="text-center py-2 fw-semibold">${escapeHtml(r.p1_brix || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p1_nacl || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p1_warna || 'Standar')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p1_organo || 'OK')}</td>
+                <td class="text-center py-2" style="white-space: pre-line; line-height: 1.2;">${escapeHtml(r.p1_waktu_adjustment || '-')}</td>
 
-                <td><input type="text" class="table-input r-p2-sampling-ke text-center" value="${escapeHtml(r.p2_sampling_ke || String(rIdx + 1))}" tabindex="-1" title="Sampling ke-${rIdx + 1}" readonly></td>
-                <td><input type="text" class="table-input r-p2-jam text-center" placeholder="HH:mm" value="${escapeHtml(r.p2_jam || '')}"></td>
-                <td><input type="text" class="table-input r-p2-pic text-center" placeholder="OP PRD Sampler" value="${escapeHtml(r.p2_pic || '')}"></td>
-                <td><input type="text" class="table-input r-p2-brix text-center" placeholder="65.0" value="${escapeHtml(r.p2_brix || '')}"></td>
-                <td><input type="text" class="table-input r-p2-visco r-p2-nacl text-center" placeholder="Visco" value="${escapeHtml(r.p2_visco !== undefined && r.p2_visco !== '' ? r.p2_visco : (r.p2_nacl || ''))}"></td>
-                <td><input type="text" class="table-input r-p2-warna text-center" placeholder="Standar" value="${escapeHtml(r.p2_warna || 'Standar')}"></td>
-                <td><input type="text" class="table-input r-p2-organo text-center" placeholder="OK" value="${escapeHtml(r.p2_organo || 'OK')}"></td>
-                <td style="padding: 2px 2px;">
-                    <textarea class="table-textarea r-p2-waktu-adj" rows="2" placeholder="Jam & Rekom Adj...">${escapeHtml(r.p2_waktu_adjustment || '')}</textarea>
-                </td>
+                <td class="text-center py-2 bg-light fw-semibold">${escapeHtml(r.p2_sampling_ke || String(rIdx + 1))}</td>
+                <td class="text-center py-2">${escapeHtml(r.p2_jam || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p2_pic || '-')}</td>
+                <td class="text-center py-2 fw-semibold">${escapeHtml(r.p2_brix || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p2_visco || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p2_warna || 'Standar')}</td>
+                <td class="text-center py-2">${escapeHtml(r.p2_organo || 'OK')}</td>
+                <td class="text-center py-2" style="white-space: pre-line; line-height: 1.2;">${escapeHtml(r.p2_waktu_adjustment || '-')}</td>
 
-                <td><input type="text" class="table-input r-disposisi fw-semibold text-center" placeholder="Release / Hold" value="${escapeHtml(r.disposisi || '')}"></td>
+                <td class="text-center py-2 ${dispColor}">${escapeHtml(dispVal || '-')}</td>
             </tr>
             `;
         });
@@ -928,62 +857,7 @@
     }
 
     function attachSheetEvents() {
-        $('.btn-delete-sheet').off('click').on('click', function() {
-            var sIdx = $(this).data('sheet-index');
-            Swal.fire({
-                title: 'Hapus Lembar Ini?',
-                text: 'Lembar Pelarutan #' + (sIdx + 1) + ' (2 Batch) akan dihapus.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var currentBlocks = collectBatchBlocksFromDOM();
-                    currentBlocks.splice(sIdx * 2, 2);
-                    renderLembarSheets(currentBlocks);
-                }
-            });
-        });
-
-        $('.btn-add-row').off('click').on('click', function() {
-            var bIdx = $(this).data('block-index');
-            var currentBlocks = collectBatchBlocksFromDOM();
-            var nextSamp = (currentBlocks[bIdx].rows.length || 0) + 1;
-            currentBlocks[bIdx].rows.push({
-                p1_sampling_ke: String(nextSamp),
-                p1_jam: '',
-                p1_pic: '',
-                p1_brix: '',
-                p1_nacl: '',
-                p1_warna: 'Standar',
-                p1_organo: 'OK',
-                p1_waktu_adjustment: '',
-                p2_sampling_ke: String(nextSamp),
-                p2_jam: '',
-                p2_pic: '',
-                p2_brix: '',
-                p2_nacl: '',
-                p2_warna: 'Standar',
-                p2_organo: 'OK',
-                p2_waktu_adjustment: '',
-                disposisi: ''
-            });
-            renderLembarSheets(currentBlocks);
-        });
-
-        $('.btn-delete-row').off('click').on('click', function() {
-            var bIdx = $(this).data('block-index');
-            var currentBlocks = collectBatchBlocksFromDOM();
-            if (currentBlocks[bIdx].rows.length > 1) {
-                currentBlocks[bIdx].rows.pop();
-                renderLembarSheets(currentBlocks);
-            } else {
-                Swal.fire('Info', 'Minimal satu baris tersisa pada tabel ini.', 'info');
-            }
-        });
+        // Mode Otentik: Tidak ada manipulasi tambah/hapus baris atau lembar
     }
 
     function collectBatchBlocksFromDOM() {

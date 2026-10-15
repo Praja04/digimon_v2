@@ -83,73 +83,6 @@ class DocAdjustmentController extends Controller
 
         $savedDoc = DocAdjustment::where('production_batch_id', $poId)->first();
 
-        if ($savedDoc) {
-            $rawBahan = $savedDoc->bahan_rows;
-            $sheets = [];
-
-            // Cek apakah bahan_rows menyimpan array multi-sheet atau baris tunggal
-            if (is_array($rawBahan) && isset($rawBahan[0]) && isset($rawBahan[0]['bahan_rows'])) {
-                $sheets = $rawBahan;
-            } else {
-                $sheets = [
-                    [
-                        'proses' => $savedDoc->proses ?: 'Blending',
-                        'jenis_kecap' => $savedDoc->jenis_kecap ?: ($batch->variant ?: 'Kecap Sedap'),
-                        'no_batch' => $savedDoc->no_batch ?: ($batch->batch_range ?: '1'),
-                        'tanggal_produksi' => $savedDoc->tanggal_produksi ? $savedDoc->tanggal_produksi->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                        'volume_batch' => $savedDoc->volume_batch ?: '10000 L',
-                        'shift' => ($savedDoc->shift && $savedDoc->shift !== 'Shift 1 / Grup A' && !str_starts_with($savedDoc->shift, 'Shift ')) ? $savedDoc->shift : $this->resolveShiftGroup($batch, $savedDoc->no_batch),
-                        'bahan_rows' => is_array($rawBahan) ? $rawBahan : [],
-                        'disposisi' => $savedDoc->disposisi ?: 'Release',
-                        'keterangan' => $savedDoc->keterangan ?: '',
-                        'adj1_jam' => $savedDoc->adj1_jam ?: '',
-                        'adj1_status' => $savedDoc->adj1_status ?: 'Sudah dilakukan',
-                        'adj1_petugas' => $savedDoc->adj1_petugas ?: '',
-                        'adj2_jam' => $savedDoc->adj2_jam ?: '',
-                        'adj2_status' => $savedDoc->adj2_status ?: 'Sudah dilakukan',
-                        'adj2_petugas' => $savedDoc->adj2_petugas ?: '',
-                        'adj3_jam' => $savedDoc->adj3_jam ?: '',
-                        'adj3_status' => $savedDoc->adj3_status ?: 'Sudah dilakukan',
-                        'adj3_petugas' => $savedDoc->adj3_petugas ?: '',
-                        'qc_analis' => $savedDoc->qc_analis ?: '',
-                    ]
-                ];
-            }
-
-            // Pastikan setiap lembar memiliki minimal 9 baris bahan (7 standar + 2 baris tambahan sesuai form resmi)
-            foreach ($sheets as &$sh) {
-                if (empty($sh['shift']) || $sh['shift'] === 'Shift 1 / Grup A' || str_starts_with($sh['shift'], 'Shift ')) {
-                    $sh['shift'] = $this->resolveShiftGroup($batch, $sh['no_batch'] ?? null);
-                }
-                if (!isset($sh['bahan_rows']) || !is_array($sh['bahan_rows'])) {
-                    $sh['bahan_rows'] = [];
-                }
-                foreach ($sh['bahan_rows'] as &$bRow) {
-                    if (isset($bRow['adj1'])) $bRow['adj1'] = $this->formatBlankIfZero($bRow['adj1']);
-                    if (isset($bRow['adj2'])) $bRow['adj2'] = $this->formatBlankIfZero($bRow['adj2']);
-                    if (isset($bRow['adj3'])) $bRow['adj3'] = $this->formatBlankIfZero($bRow['adj3']);
-                }
-                unset($bRow);
-
-                while (count($sh['bahan_rows']) < 9) {
-                    $sh['bahan_rows'][] = ['bahan' => '', 'adj1' => '', 'adj2' => '', 'adj3' => ''];
-                }
-            }
-            unset($sh);
-
-            return [
-                'is_saved' => true,
-                'id' => $savedDoc->id,
-                'production_batch_id' => $savedDoc->production_batch_id,
-                'po_number' => $batch->po_number,
-                'variant' => $batch->variant,
-                'tanggal_record_doc' => $savedDoc->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
-                'halaman' => $savedDoc->halaman ?: '1 / ' . count($sheets),
-                'adjustment_sheets' => $sheets,
-                'qc_analis' => $savedDoc->qc_analis ?: '',
-                'doc_code' => $savedDoc->doc_code ?: 'FRM/QLB/04/104/011-00',
-            ];
-        }
 
         // Auto-generate Adjustment Sheets dari data Blending Awal
         $defaultBahans = [
@@ -319,18 +252,18 @@ class DocAdjustmentController extends Controller
             ];
         }
 
-        $totalSheets = count($adjustmentSheets);
+        $totalSheets = max(1, count($adjustmentSheets));
 
         return [
-            'is_saved' => false,
-            'id' => null,
+            'is_saved' => $savedDoc ? true : false,
+            'id' => $savedDoc?->id,
             'production_batch_id' => $batch->id,
             'po_number' => $batch->po_number,
             'variant' => $batch->variant,
-            'tanggal_record_doc' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
+            'tanggal_record_doc' => $savedDoc?->tanggal_record_doc ? $savedDoc->tanggal_record_doc->format('Y-m-d') : ($batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d')),
             'halaman' => "1 / {$totalSheets}",
             'adjustment_sheets' => $adjustmentSheets,
-            'qc_analis' => $detectedAnalis ?: (auth()->user()->name ?? ''),
+            'qc_analis' => $detectedAnalis ?: ($savedDoc?->qc_analis ?: (auth()->user()->name ?? '')),
             'doc_code' => 'FRM/QLB/04/104/011-00',
         ];
     }
@@ -391,6 +324,10 @@ class DocAdjustmentController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
+        }
+
         $poId = $request->input('po_id');
         if (!$poId) {
             return redirect()->back()->with('error', 'Silakan pilih PO terlebih dahulu.');
@@ -415,6 +352,10 @@ class DocAdjustmentController extends Controller
      */
     public function printView($id)
     {
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur cetak/print hanya dapat diakses oleh role Foreman, Supervisor, atau Head of Department.');
+        }
+
         $docData = $this->getDocumentData($id);
         if (!$docData) {
             abort(404, 'Dokumen tidak ditemukan.');
@@ -440,43 +381,108 @@ class DocAdjustmentController extends Controller
     }
 
     /**
-     * Lookup Shift & Grup dinamis dari production.blending_awal (e.g. 1/A atau 3/C)
+     * Lookup Shift & Grup dinamis dari production.blending_awal (e.g. Shift 1 - Grup A)
      */
     private function resolveShiftGroup($batch, $batchRange = null): string
     {
         try {
-            $prodBatch = DB::table('production.production_batches')
-                ->where('po_number', $batch->po_number)
-                ->orWhere('po_number', 'LIKE', '%' . $batch->po_number . '%')
-                ->first();
-            $pBatchId = $prodBatch ? $prodBatch->id : $batch->id;
+            $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
 
-            $blRow = DB::table('production.blending_awal')
-                ->where(function($q) use ($pBatchId, $batch) {
-                    $q->where('production_batch_id', $pBatchId)
-                      ->orWhere('production_batch_id', $batch->id);
-                })
-                ->when($batchRange, fn($q) => $q->where('batch_range', $batchRange))
-                ->first();
-
-            if (!$blRow) {
-                $blRow = DB::table('production.monitoring_turun_blending')
-                    ->where(function($q) use ($pBatchId, $batch) {
-                        $q->where('production_batch_id', $pBatchId)
-                          ->orWhere('production_batch_id', $batch->id);
-                    })
+            $blRow = null;
+            if ($pBatchId) {
+                $blRow = DB::table('production.blending_awal')
+                    ->where('production_batch_id', $pBatchId)
                     ->when($batchRange, fn($q) => $q->where('batch_range', $batchRange))
                     ->first();
+
+                if (!$blRow) {
+                    $blRow = DB::table('production.monitoring_turun_blending')
+                        ->where('production_batch_id', $pBatchId)
+                        ->when($batchRange, fn($q) => $q->where('batch_range', $batchRange))
+                        ->first();
+                }
+
+                if (!$blRow) {
+                    $blRow = DB::table('production.blending_awal')
+                        ->where('production_batch_id', $pBatchId)
+                        ->first();
+                }
+
+                if (!$blRow) {
+                    $blRow = DB::table('production.dissolver')
+                        ->where('production_batch_id', $pBatchId)
+                        ->first();
+                }
             }
 
             if ($blRow) {
-                $s = $blRow->shift ? (string)$blRow->shift : '';
-                $g = $blRow->group ? (string)$blRow->group : '';
-                if ($s !== '' && $g !== '') return "{$s}/{$g}";
-                if ($s !== '') return $s;
-                if ($g !== '') return $g;
+                $res = $this->formatShiftGroup($blRow->shift ?? null, $blRow->group ?? null);
+                if (!empty($res)) return $res;
             }
         } catch (\Throwable $e) {}
+
+        $hour = 8;
+        if (!empty($batch->created_at)) {
+            $hour = (int)$batch->created_at->setTimezone('Asia/Jakarta')->format('H');
+        }
+        if ($hour >= 6 && $hour < 14) {
+            return 'Shift 1 - Grup A';
+        } elseif ($hour >= 14 && $hour < 22) {
+            return 'Shift 2 - Grup A';
+        } else {
+            return 'Shift 3 - Grup A';
+        }
+    }
+
+    /**
+     * Cari ID production_batches di DB produksi secara akurat via PO number
+     */
+    private function resolveProductionBatchId($poNumber, $digimonBatchId = null)
+    {
+        if (empty($poNumber)) return null;
+
+        $pb = DB::table('production.production_batches')->where('po_number', $poNumber)->first();
+        if ($pb) return $pb->id;
+
+        $norm = trim(preg_replace('/^PO[\s\-_]*/i', '', $poNumber));
+        if (!empty($norm)) {
+            $pb = DB::table('production.production_batches')->where('po_number', $norm)->first();
+            if ($pb) return $pb->id;
+        }
+
+        $numeric = preg_replace('/\D/', '', $poNumber);
+        if (strlen($numeric) >= 6) {
+            $pb = DB::table('production.production_batches')
+                ->where('po_number', $numeric)
+                ->orWhere('po_number', 'LIKE', "%{$numeric}%")
+                ->first();
+            if ($pb) return $pb->id;
+        }
+
+        if ($digimonBatchId) {
+            $pb = DB::table('production.production_batches')->where('id', $digimonBatchId)->first();
+            if ($pb) return $pb->id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Format Shift & Grup standar: Shift 1 - Grup A
+     */
+    private function formatShiftGroup($shift, $group): string
+    {
+        $s = trim((string)$shift);
+        $g = trim((string)$group);
+        if ($s !== '' && $g !== '') {
+            return "Shift {$s} - Grup {$g}";
+        }
+        if ($s !== '') {
+            return "Shift {$s}";
+        }
+        if ($g !== '') {
+            return "Grup {$g}";
+        }
         return '';
     }
 }

@@ -87,6 +87,7 @@ class DocPelarutanExport implements WithMultipleSheets
                 'p2_pic' => '',
                 'p2_brix' => '',
                 'p2_nacl' => '',
+                'p2_visco' => '',
                 'p2_warna' => '',
                 'p2_organo' => '',
                 'p2_waktu_adjustment' => '',
@@ -166,7 +167,7 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                     'J' => 8,  // Jam P2
                     'K' => 13, // PIC P2
                     'L' => 9,  // Brix P2
-                    'M' => 9,  // %NaCl P2
+                    'M' => 9,  // Visco P2 (Revisi kolom %NaCl -> Visco)
                     'N' => 10, // Warna P2
                     'O' => 9,  // Organo P2
                     'P' => 25, // Waktu & Adj P2
@@ -468,7 +469,7 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                 $sheet->setCellValueExplicit("B{$dr}", (string)($row['p1_jam'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("C{$dr}", (string)($row['p1_pic'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("D{$dr}", $this->formatVal($row['p1_brix'] ?? ''), DataType::TYPE_STRING);
-                $sheet->setCellValueExplicit("E{$dr}", '', DataType::TYPE_STRING); // NaCl Pelarutan 1 selalu blank sesuai revisi
+                $sheet->setCellValueExplicit("E{$dr}", $this->formatVal($row['p1_nacl'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("F{$dr}", (string)($row['p1_warna'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("G{$dr}", (string)($row['p1_organo'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("H{$dr}", (string)($row['p1_waktu_adjustment'] ?? ''), DataType::TYPE_STRING);

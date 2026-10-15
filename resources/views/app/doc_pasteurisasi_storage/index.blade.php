@@ -14,6 +14,18 @@
         max-width: 100%;
     }
 
+    .lembar-header-badge {
+        background: #0f172a;
+        color: #ffffff;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
     .doc-logo-box {
         border: 2px solid #2d3748;
         padding: 4px 8px;
@@ -92,7 +104,7 @@
 
     .table-qc-data th, .table-qc-data td {
         border: 1px solid #64748b;
-        padding: 0 !important;
+        padding: 5px 3px !important;
         text-align: center;
         vertical-align: middle;
         position: relative;
@@ -104,7 +116,7 @@
         color: #14532d !important;
         font-weight: 700;
         font-size: 0.80rem;
-        padding: 5px 3px !important;
+        padding: 6px 3px !important;
         border-color: #475569;
         line-height: 1.25;
     }
@@ -114,7 +126,7 @@
         color: #0369a1 !important;
         font-weight: 700;
         font-size: 0.80rem;
-        padding: 5px 3px !important;
+        padding: 6px 3px !important;
         border-color: #475569;
         line-height: 1.25;
     }
@@ -130,73 +142,13 @@
         vertical-align: middle;
     }
 
-    /* Row Hover & Focus Highlight */
+    /* Row Hover */
     .table-qc-data tbody tr.data-row {
         transition: background-color 0.12s ease;
     }
 
     .table-qc-data tbody tr.data-row:hover td {
         background-color: #f8fafc;
-    }
-
-    .table-qc-data tbody tr.data-row:focus-within td {
-        background-color: #eff6ff !important;
-    }
-
-    /* Clean Spreadsheet Cells (No Box in Box, Excel Feel) */
-    .clean-cell-input {
-        width: 100%;
-        height: 100%;
-        min-height: 34px;
-        border: none !important;
-        background: transparent !important;
-        text-align: center;
-        font-size: 0.83rem;
-        font-weight: 500;
-        padding: 4px 3px;
-        border-radius: 0 !important;
-        color: #0f172a;
-        outline: none;
-        box-shadow: none !important;
-        box-sizing: border-box;
-        display: block;
-        transition: background-color 0.15s ease;
-    }
-
-    .clean-cell-input:focus {
-        background: #ffffff !important;
-        box-shadow: inset 0 0 0 2px #2563eb !important;
-        font-weight: 700 !important;
-        color: #0f172a !important;
-        z-index: 5;
-    }
-
-    .clean-cell-textarea {
-        width: 100%;
-        min-height: 44px;
-        height: auto;
-        border: none !important;
-        background: transparent !important;
-        text-align: left;
-        font-size: 0.77rem;
-        font-weight: 500;
-        padding: 4px 6px;
-        border-radius: 0 !important;
-        resize: none;
-        line-height: 1.25;
-        color: #0f172a;
-        outline: none;
-        box-shadow: none !important;
-        box-sizing: border-box;
-        display: block;
-    }
-
-    .clean-cell-textarea:focus {
-        background: #ffffff !important;
-        box-shadow: inset 0 0 0 2px #2563eb !important;
-        font-weight: 600 !important;
-        color: #0f172a !important;
-        z-index: 5;
     }
 
     /* Footer: Signature Container */
@@ -218,7 +170,7 @@
     }
 
     .sig-space {
-        height: 48px;
+        height: 38px;
     }
 
     /* Scrollbar */
@@ -279,319 +231,22 @@
                         <a href="{{ route('homepage.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnFetchDb">
-                            <i class="ri-refresh-line me-1"></i> Tarik Data DB
-                        </button>
-                        <button type="button" class="btn btn-primary btn-sm" id="btnSaveDoc">
-                            <i class="ri-save-3-line me-1"></i> Simpan Dokumen
-                        </button>
+                        @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                         <a href="#" class="btn btn-success btn-sm" id="btnExportExcel">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </a>
                         <a href="#" target="_blank" class="btn btn-info btn-sm text-white" id="btnPrintView">
                             <i class="ri-printer-line me-1"></i> Cetak / Print
                         </a>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Navigation Banner (Keyboard Friendly) -->
-        <div class="alert border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between mb-3 py-2 px-3 bg-light border-start border-primary border-4">
-            <div class="d-flex align-items-center fs-12 text-dark">
-                <i class="ri-keyboard-line fs-18 me-2 text-primary"></i>
-                <div>
-                    <strong>Navigasi Cepat (Excel Friendly):</strong>
-                    Gunakan tombol <kbd class="bg-white text-primary border px-1 fw-bold">Tab</kbd> untuk geser kolom &bull;
-                    Tekan <kbd class="bg-white text-dark border px-1 fw-bold">Enter</kbd> atau <kbd class="bg-white text-dark border px-1 fw-bold">&darr;</kbd> untuk turun ke baris berikutnya &bull;
-                    Teks otomatis ter-blok saat sel aktif.
-                </div>
-            </div>
-            <div class="fs-11 text-muted fw-semibold mt-1 mt-md-0">
-                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
-                    <i class="ri-pages-line me-1"></i> 1 Lembar = 1 Blending (1 Pasangan Batch)
-                </span>
-            </div>
-        </div>
-
-        <!-- Lembar Formulir Dokumen Resmi (Paper Canvas) -->
-        <div class="lembar-sheet-card">
-            <!-- 1. Header Dokumen Resmi Responsive Grid -->
-            <div class="row align-items-center mb-3 pb-2 border-bottom">
-                <div class="col-md-3 col-sm-4">
-                    <div class="doc-logo-box p-1">
-                        <div class="d-flex align-items-center">
-                            <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 40px; object-fit: contain;">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-sm-4 text-center">
-                    <div class="doc-title-main">HASIL ANALISIS PASTEURISASI DAN STORAGE TANK</div>
-                </div>
-                <div class="col-md-3 col-sm-4 text-end">
-                    <table class="float-end border mb-1" style="font-size: 0.80rem;">
-                        <tr>
-                            <td class="p-1 border-bottom text-start fw-bold bg-light">Tanggal Record Doc</td>
-                            <td class="p-1 border-bottom text-start">
-                                <input type="date" class="border-0 bg-transparent p-0 doc-tgl-record" id="doc_tgl_record" style="font-size: 0.82rem;" value="{{ $initialData['tanggal_record_doc'] ?? date('Y-m-d') }}">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="p-1 text-start fw-bold bg-light">Halaman</td>
-                            <td class="p-1 text-start fw-semibold">
-                                <input type="text" class="border-0 bg-transparent p-0 doc-halaman" id="doc_halaman" style="font-size: 0.82rem; max-width: 65px;" value="{{ $initialData['halaman'] ?? '1 / 1' }}">
-                            </td>
-                        </tr>
-                    </table>
-                    <div class="clearfix"></div>
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
-                </div>
-            </div>
-
-            <!-- 2. Metadata Grid -->
-            <table class="w-100 meta-input-group mb-3">
-                <tr>
-                    <td width="14%" class="fw-bold bg-light">Jenis Produk</td>
-                    <td width="36%">
-                        <div class="d-flex align-items-center">
-                            <span class="me-1 fw-bold">:</span>
-                            <input type="text" class="form-control form-control-sm" id="meta_jenis_produk" value="{{ $initialData['jenis_produk'] ?? '' }}">
-                        </div>
-                    </td>
-                    <td width="14%" class="fw-bold bg-light">Kode Shift & Grup</td>
-                    <td width="36%">
-                        <div class="d-flex align-items-center">
-                            <span class="me-1 fw-bold">:</span>
-                            <input type="text" class="form-control form-control-sm" id="meta_kode_shift" placeholder="3/C" value="{{ $initialData['kode_shift_grup'] ?? '' }}">
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="fw-bold bg-light">Tanggal Produksi</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1 fw-bold">:</span>
-                            <input type="date" class="form-control form-control-sm" id="meta_tanggal_produksi" value="{{ $initialData['tanggal_produksi'] ?? date('Y-m-d') }}">
-                        </div>
-                    </td>
-                    <td class="fw-bold bg-light">Batch</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1 fw-bold">:</span>
-                            <input type="text" class="form-control form-control-sm" id="meta_batch" placeholder="1-4" value="{{ $initialData['batch'] ?? '' }}">
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="fw-bold bg-light">Jam Produksi</td>
-                    <td colspan="3">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="fw-bold">:</span>
-                            <input type="text" class="form-control form-control-sm text-center" id="meta_jam_start" placeholder="00:00" style="max-width: 75px;" value="{{ $initialData['jam_produksi_start'] ?? '' }}">
-                            <span class="small fw-bold text-muted">s/d</span>
-                            <input type="text" class="form-control form-control-sm text-center" id="meta_jam_end" placeholder="00:00" style="max-width: 75px;" value="{{ $initialData['jam_produksi_end'] ?? '' }}">
-                        </div>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- 3. Tabel 1: PASTEURISASI (Integrated Header Bar, 1040px Proportional Grid) -->
-            <div class="d-flex justify-content-between align-items-center mb-1 text-muted fs-11">
-                <span class="badge bg-light text-secondary border"><i class="ri-arrow-left-right-line me-1"></i> Geser horizontal untuk melihat seluruh kolom</span>
-            </div>
-            <div class="table-responsive mb-4">
-                <table class="table-qc-data" id="tablePasteurisasi" style="min-width: 1040px;">
-                    <colgroup>
-                        <col style="width: 85px;">  <!-- Sampling -->
-                        <col style="width: 55px;">  <!-- Jam -->
-                        <col style="width: 80px;">  <!-- PIC -->
-                        <col style="width: 65px;">  <!-- BJ (g/mL) -->
-                        <col style="width: 55px;">  <!-- Brix -->
-                        <col style="width: 50px;">  <!-- pH -->
-                        <col style="width: 55px;">  <!-- Aw -->
-                        <col style="width: 75px;">  <!-- Viskositas (ps) -->
-                        <col style="width: 60px;">  <!-- Organo -->
-                        <col style="width: 60px;">  <!-- Aroma -->
-                        <col style="width: 65px;">  <!-- Warna -->
-                        <col style="width: 55px;">  <!-- Buih -->
-                        <col style="width: 60px;">  <!-- Endapan -->
-                        <col style="width: 220px;"> <!-- Disposisi / Keterangan -->
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th colspan="14" class="text-start px-3 py-2" style="background-color: #dcfce7; border: 1.5px solid #166534;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="ri-temp-hot-line text-success fs-5"></i>
-                                        <span class="fw-bold text-success fs-13" style="letter-spacing: 0.5px;">PASTEURISASI</span>
-                                    </div>
-                                    <div class="d-flex gap-1 no-print">
-                                        <button type="button" class="btn btn-xs btn-outline-success py-1 px-2 bg-white" id="btnAddPastRow">
-                                            <i class="ri-add-line me-1"></i> Tambah Baris
-                                        </button>
-                                        <button type="button" class="btn btn-xs btn-outline-danger py-1 px-2 bg-white" id="btnDelPastRow">
-                                            <i class="ri-subtract-line me-1"></i> Hapus Baris
-                                        </button>
-                                    </div>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr>
-                            <th rowspan="2" class="th-past-main">Sampling</th>
-                            <th colspan="2" class="th-past-main">Serah Terima</th>
-                            <th colspan="10" class="th-past-main">Analisis</th>
-                            <th rowspan="2" class="th-past-main">Disposisi /<br>Keterangan</th>
-                        </tr>
-                        <tr>
-                            <th class="th-sub">Jam</th>
-                            <th class="th-sub">PIC</th>
-                            <th class="th-sub">BJ<br>(g/mL)</th>
-                            <th class="th-sub">Brix</th>
-                            <th class="th-sub">pH</th>
-                            <th class="th-sub">Aw</th>
-                            <th class="th-sub">Viskositas<br>(ps)</th>
-                            <th class="th-sub">Organo</th>
-                            <th class="th-sub">Aroma</th>
-                            <th class="th-sub">Warna</th>
-                            <th class="th-sub">Buih</th>
-                            <th class="th-sub">Endapan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pasteurisasiTbody">
-                        <!-- Baris Pasteurisasi Di-render JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 4. Tabel 2: STORAGE TANK (Integrated Header Bar, 1040px Proportional Grid) -->
-            <div class="d-flex justify-content-between align-items-center mb-1 text-muted fs-11">
-                <span class="badge bg-light text-secondary border"><i class="ri-arrow-left-right-line me-1"></i> Geser horizontal untuk melihat seluruh kolom</span>
-            </div>
-            <div class="table-responsive mb-4">
-                <table class="table-qc-data" id="tableStorage" style="min-width: 1040px;">
-                    <colgroup>
-                        <col style="width: 80px;">  <!-- Sampling -->
-                        <col style="width: 55px;">  <!-- Jam -->
-                        <col style="width: 80px;">  <!-- PIC -->
-                        <col style="width: 55px;">  <!-- BJ -->
-                        <col style="width: 50px;">  <!-- Brix -->
-                        <col style="width: 45px;">  <!-- pH -->
-                        <col style="width: 55px;">  <!-- % NaCl -->
-                        <col style="width: 70px;">  <!-- Viskositas (ps) -->
-                        <col style="width: 55px;">  <!-- Organo -->
-                        <col style="width: 55px;">  <!-- Aroma -->
-                        <col style="width: 55px;">  <!-- Warna -->
-                        <col style="width: 50px;">  <!-- Buih -->
-                        <col style="width: 55px;">  <!-- Endapan -->
-                        <col style="width: 55px;">  <!-- Kristal -->
-                        <col style="width: 50px;">  <!-- Aw -->
-                        <col style="width: 185px;"> <!-- Disposisi / Keterangan -->
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th colspan="16" class="text-start px-3 py-2" style="background-color: #e0f2fe; border: 1.5px solid #0369a1;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="ri-inbox-line text-primary fs-5"></i>
-                                            <span class="fw-bold text-primary fs-13" style="letter-spacing: 0.5px;">STORAGE TANK</span>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-1 ms-2">
-                                            <span class="fw-bold small text-dark">KODE ST :</span>
-                                            <input type="text" class="form-control form-control-sm text-center fw-bold text-primary bg-white border" id="meta_kode_st" style="width: 85px; height: 26px; padding: 2px 4px;" placeholder="ST 01" value="{{ $initialData['kode_st'] ?? 'ST 01' }}">
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-1 no-print">
-                                        <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 bg-white" id="btnAddStRow">
-                                            <i class="ri-add-line me-1"></i> Tambah Baris
-                                        </button>
-                                        <button type="button" class="btn btn-xs btn-outline-danger py-1 px-2 bg-white" id="btnDelStRow">
-                                            <i class="ri-subtract-line me-1"></i> Hapus Baris
-                                        </button>
-                                    </div>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr>
-                            <th rowspan="2" class="th-storage-main">Sampling</th>
-                            <th colspan="2" class="th-storage-main">Serah Terima</th>
-                            <th colspan="12" class="th-storage-main">Analisis</th>
-                            <th rowspan="2" class="th-storage-main">Disposisi /<br>Keterangan</th>
-                        </tr>
-                        <tr>
-                            <th class="th-sub">Jam</th>
-                            <th class="th-sub">PIC</th>
-                            <th class="th-sub">BJ</th>
-                            <th class="th-sub">Brix</th>
-                            <th class="th-sub">pH</th>
-                            <th class="th-sub">% NaCl</th>
-                            <th class="th-sub">Viskositas<br>(ps)</th>
-                            <th class="th-sub">Organo</th>
-                            <th class="th-sub">Aroma</th>
-                            <th class="th-sub">Warna</th>
-                            <th class="th-sub">Buih</th>
-                            <th class="th-sub">Endapan</th>
-                            <th class="th-sub">Kristal</th>
-                            <th class="th-sub">Aw</th>
-                        </tr>
-                    </thead>
-                    <tbody id="storageTbody">
-                        <!-- Baris Storage Tank Di-render JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 5. Footer: Catatan & Tanda Tangan Resmi Sesuai Google Sheets -->
-            <div class="signature-container mt-3">
-                <div class="row g-0">
-                    <div class="col-md-4 p-2 border-end">
-                        <strong class="d-block mb-1 fs-12 text-dark">Catatan :</strong>
-                        <textarea class="form-control form-control-sm border-0 bg-transparent p-0 text-dark" id="doc_catatan" rows="4" placeholder="Ketik catatan khusus proses di sini...">{{ $initialData['catatan'] ?? '' }}</textarea>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="row g-0 text-center h-100">
-                            <div class="col-3 sig-col d-flex flex-column justify-content-between">
-                                <div class="fw-semibold fs-12">Disampling oleh,</div>
-                                <div class="sig-space"></div>
-                                <div>
-                                    <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="sig_pic_samp_1" placeholder="( ____________ )" value="{{ $initialData['pic_sampling_1'] ?? '' }}">
-                                    <small class="text-muted d-block mt-1">Produksi</small>
-                                </div>
-                            </div>
-                            <div class="col-3 sig-col d-flex flex-column justify-content-between">
-                                <div class="fw-semibold fs-12">Disampling oleh,</div>
-                                <div class="sig-space"></div>
-                                <div>
-                                    <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="sig_pic_samp_2" placeholder="( ____________ )" value="{{ $initialData['pic_sampling_2'] ?? '' }}">
-                                    <small class="text-muted d-block mt-1">Produksi</small>
-                                </div>
-                            </div>
-                            <div class="col-3 sig-col d-flex flex-column justify-content-between">
-                                <div class="fw-semibold fs-12">Dianalisis oleh,</div>
-                                <div class="sig-space"></div>
-                                <div>
-                                    <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="sig_pic_analis" placeholder="( ____________ )" value="{{ $initialData['pic_analis'] ?? '' }}">
-                                    <small class="text-muted d-block mt-1">QC Analis</small>
-                                </div>
-                            </div>
-                            <div class="col-3 sig-col d-flex flex-column justify-content-between">
-                                <div class="fw-semibold fs-12">Dicek oleh,</div>
-                                <div class="sig-space"></div>
-                                <div>
-                                    <input type="text" class="form-control form-control-sm text-center border-0 border-bottom" id="sig_pic_checker" placeholder="( ____________ )" value="{{ $initialData['pic_checker'] ?? '' }}">
-                                    <small class="text-muted d-block mt-1">SPV/MNG QC</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row g-0 border-top bg-light">
-                    <div class="col-12 text-end px-3 py-1">
-                        <span class="fs-11 fw-bold text-muted fst-italic">FRM/QLB/04/104/006-01</span>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Container Lembar-Lembar Dokumen Resmi Dinamis (1 Lembar = 1 Blending / Pasangan Batch) -->
+        <div id="batchBlocksContainer">
+            <!-- Di-render dinamis per Pasangan Batch lewat JavaScript renderBatchBlocks() -->
         </div>
     </div>
 </div>
@@ -610,8 +265,8 @@
             }
         });
 
-        // Inisialisasi Tampilan Baris Tabel & Link Aksi
-        renderDocumentTables();
+        // Inisialisasi Tampilan Seluruh Lembar Batch & Link Aksi
+        renderBatchBlocks(currentDocData ? (currentDocData.batch_blocks || []) : []);
 
         function updateActionLinks(poId) {
             if (!poId) return;
@@ -633,108 +288,12 @@
             }
         });
 
-        // Tarik Data Ulang dari Database
-        $('#btnFetchDb').on('click', function() {
-            var poId = $('#po_selector').val();
-            if (!poId) {
-                Swal.fire('Perhatian', 'Pilih nomor PO terlebih dahulu.', 'warning');
-                return;
-            }
-            Swal.fire({
-                title: 'Tarik Ulang Data?',
-                text: 'Data monitoring terbaru di database akan dimuat ulang ke formulir.',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Tarik Data',
-                cancelButtonText: 'Batal'
-            }).then((res) => {
-                if (res.isConfirmed) {
-                    loadDataByPo(poId, true);
-                }
-            });
-        });
-
-        // Simpan Dokumen
-        $('#btnSaveDoc').on('click', function() {
-            saveDocumentData();
-        });
-
         // Validasi tombol Export Excel & Cetak / Print jika PO belum dipilih
         $('#btnPrintView, #btnExportExcel').on('click', function(e) {
             var poId = $('#po_selector').val();
             if (!poId) {
                 e.preventDefault();
                 Swal.fire('Perhatian', 'Pilih nomor PO terlebih dahulu.', 'warning');
-            }
-        });
-
-        // Tombol Tambah / Hapus Baris Pasteurisasi
-        $('#btnAddPastRow').on('click', function() {
-            addPasteurisasiRow();
-        });
-        $('#btnDelPastRow').on('click', function() {
-            deleteLastPasteurisasiRow();
-        });
-
-        // Tombol Tambah / Hapus Baris Storage Tank
-        $('#btnAddStRow').on('click', function() {
-            addStorageRow();
-        });
-        $('#btnDelStRow').on('click', function() {
-            deleteLastStorageRow();
-        });
-
-        // 1. Auto-select text on focus
-        $(document).on('focus', '.clean-cell-input, .clean-cell-textarea, .meta-input-group input, .signature-container input', function() {
-            var el = this;
-            setTimeout(function() {
-                if (typeof el.select === 'function') {
-                    el.select();
-                }
-            }, 30);
-        });
-
-        // 2. Keyboard Navigation (Excel Enter / Shift+Enter / Arrow Up & Down)
-        $(document).on('keydown', '.table-qc-data input, .table-qc-data textarea', function(e) {
-            var $input = $(this);
-            var $td = $input.closest('td');
-            var colIdx = $td.index();
-            var $tr = $input.closest('tr.data-row');
-
-            if (e.key === 'Enter') {
-                if ($input.is('textarea') && e.ctrlKey) return; // Allow Ctrl+Enter for newline
-                e.preventDefault();
-                if (e.shiftKey) {
-                    var $prevTr = $tr.prev('tr.data-row');
-                    if ($prevTr.length) {
-                        var $target = $prevTr.children('td').eq(colIdx).find('.clean-cell-input, .clean-cell-textarea');
-                        if ($target.length) $target.focus();
-                    }
-                } else {
-                    var $nextTr = $tr.next('tr.data-row');
-                    if ($nextTr.length) {
-                        var $target = $nextTr.children('td').eq(colIdx).find('.clean-cell-input, .clean-cell-textarea');
-                        if ($target.length) $target.focus();
-                    }
-                }
-            } else if (e.key === 'ArrowDown') {
-                var $nextTr = $tr.next('tr.data-row');
-                if ($nextTr.length) {
-                    var $target = $nextTr.children('td').eq(colIdx).find('.clean-cell-input, .clean-cell-textarea');
-                    if ($target.length) {
-                        e.preventDefault();
-                        $target.focus();
-                    }
-                }
-            } else if (e.key === 'ArrowUp') {
-                var $prevTr = $tr.prev('tr.data-row');
-                if ($prevTr.length) {
-                    var $target = $prevTr.children('td').eq(colIdx).find('.clean-cell-input, .clean-cell-textarea');
-                    if ($target.length) {
-                        e.preventDefault();
-                        $target.focus();
-                    }
-                }
             }
         });
     });
@@ -755,10 +314,9 @@
             type: 'GET',
             success: function(res) {
                 Swal.close();
-                if (res.status === 'success') {
+                if (res.status === 'success' && res.data) {
                     currentDocData = res.data;
-                    updateFormFieldsFromData();
-                    renderDocumentTables();
+                    renderBatchBlocks(currentDocData.batch_blocks || []);
                     Swal.fire({
                         icon: 'success',
                         title: 'Data Berhasil Dimuat',
@@ -774,290 +332,384 @@
         });
     }
 
-    // Update Header & Metadata Inputs
-    function updateFormFieldsFromData() {
-        if (!currentDocData) return;
-        $('#doc_tgl_record').val(currentDocData.tanggal_record_doc || '');
-        $('#doc_halaman').val(currentDocData.halaman || '1 / 1');
-        $('#meta_jenis_produk').val(currentDocData.jenis_produk || currentDocData.variant || '');
-        $('#meta_tanggal_produksi').val(currentDocData.tanggal_produksi || currentDocData.tanggal_record_doc || '');
-        $('#meta_kode_shift').val(currentDocData.kode_shift_grup || '');
-        $('#meta_jam_start').val(currentDocData.jam_produksi_start || '');
-        $('#meta_jam_end').val(currentDocData.jam_produksi_end || '');
-        $('#meta_batch').val(currentDocData.batch || currentDocData.batch_range || '');
-        $('#meta_kode_st').val(currentDocData.kode_st || 'ST 01');
-        $('#doc_catatan').val(currentDocData.catatan || '');
-        $('#sig_pic_samp_1').val(currentDocData.pic_sampling_1 || '');
-        $('#sig_pic_samp_2').val(currentDocData.pic_sampling_2 || '');
-        $('#sig_pic_analis').val(currentDocData.pic_analis || '');
-        $('#sig_pic_checker').val(currentDocData.pic_checker || '');
-    }
+    // Render Seluruh Lembar Pasteurisasi & Storage Tank Per Pasangan Batch (Mirip Blending)
+    function renderBatchBlocks(blocks) {
+        var container = $('#batchBlocksContainer');
+        container.empty();
 
-    // Render Tabel Pasteurisasi & Storage Tank
-    function renderDocumentTables() {
-        if (!currentDocData) return;
-
-        // 1. Render Pasteurisasi (Default min 6 baris)
-        var pastRows = currentDocData.pasteurisasi_rows || [];
-        var pastHtml = '';
-        var pastCount = Math.max(6, pastRows.length);
-        for (var i = 0; i < pastCount; i++) {
-            var row = pastRows[i] || {};
-            var sampVal = (i === 0 && !row.sampling) ? 'Tengah' : (row.sampling || '');
-            pastHtml += `
-                <tr class="data-row past-tr">
-                    <td><input type="text" class="clean-cell-input p-samp" value="${escapeHtml(sampVal)}"></td>
-                    <td><input type="text" class="clean-cell-input p-jam" value="${escapeHtml(row.jam || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-pic" value="${escapeHtml(row.pic || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-bj" value="${escapeHtml(row.bj || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-brix" value="${escapeHtml(row.brix || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-ph" value="${escapeHtml(row.ph || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-aw" value="${escapeHtml(row.aw || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-visko" value="${escapeHtml(row.viskositas || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-organo" value="${escapeHtml(row.organo || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-aroma" value="${escapeHtml(row.aroma || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-warna" value="${escapeHtml(row.warna || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-buih" value="${escapeHtml(row.buih || '')}"></td>
-                    <td><input type="text" class="clean-cell-input p-endapan" value="${escapeHtml(row.endapan || '')}"></td>
-                    <td><textarea class="clean-cell-textarea p-disposisi">${escapeHtml(row.disposisi || '')}</textarea></td>
-                </tr>
-            `;
-        }
-        $('#pasteurisasiTbody').html(pastHtml);
-
-        // 2. Render Storage Tank (Default min 5 baris)
-        var stRows = currentDocData.storage_rows || [];
-        var stHtml = '';
-        var stCount = Math.max(5, stRows.length);
-        for (var j = 0; j < stCount; j++) {
-            var sRow = stRows[j] || {};
-            var sampSt = sRow.sampling || '';
-            if (!sampSt) {
-                if (j === 0) sampSt = 'Awal';
-                else if (j === 1) sampSt = 'Outlet';
+        if (!blocks || blocks.length === 0) {
+            if (currentDocData && (currentDocData.pasteurisasi_rows || currentDocData.storage_rows)) {
+                blocks = [{
+                    block_index: 0,
+                    halaman: currentDocData.halaman || '1 / 1',
+                    batch: currentDocData.batch || currentDocData.batch_range || '-',
+                    kode_st: currentDocData.kode_st || 'ST 01',
+                    jenis_produk: currentDocData.jenis_produk || currentDocData.variant || '-',
+                    tanggal_produksi: currentDocData.tanggal_produksi || currentDocData.tanggal_record_doc || '-',
+                    jam_produksi_start: currentDocData.jam_produksi_start || '',
+                    jam_produksi_end: currentDocData.jam_produksi_end || '',
+                    jam_produksi: currentDocData.jam_produksi || '-',
+                    kode_shift_grup: currentDocData.kode_shift_grup || '-',
+                    pasteurisasi_rows: currentDocData.pasteurisasi_rows || [],
+                    storage_rows: currentDocData.storage_rows || [],
+                    catatan: currentDocData.catatan || '',
+                    pic_sampling_1: currentDocData.pic_sampling_1 || '',
+                    pic_sampling_2: currentDocData.pic_sampling_2 || '',
+                    pic_analis: currentDocData.pic_analis || '',
+                    pic_checker: currentDocData.pic_checker || ''
+                }];
+            } else {
+                container.html('<div class="text-center py-5 text-muted border border-dashed rounded bg-white mb-4">Belum ada data lembar siklus pasteurisasi & storage tank.</div>');
+                return;
             }
-            stHtml += `
-                <tr class="data-row st-tr">
-                    <td><input type="text" class="clean-cell-input s-samp" value="${escapeHtml(sampSt)}"></td>
-                    <td><input type="text" class="clean-cell-input s-jam" value="${escapeHtml(sRow.jam || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-pic" value="${escapeHtml(sRow.pic || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-bj" value="${escapeHtml(sRow.bj || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-brix" value="${escapeHtml(sRow.brix || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-ph" value="${escapeHtml(sRow.ph || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-nacl" value="${escapeHtml(sRow.nacl || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-visko" value="${escapeHtml(sRow.viskositas || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-organo" value="${escapeHtml(sRow.organo || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-aroma" value="${escapeHtml(sRow.aroma || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-warna" value="${escapeHtml(sRow.warna || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-buih" value="${escapeHtml(sRow.buih || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-endapan" value="${escapeHtml(sRow.endapan || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-kristal" value="${escapeHtml(sRow.kristal || '')}"></td>
-                    <td><input type="text" class="clean-cell-input s-aw" value="${escapeHtml(sRow.aw || '')}"></td>
-                    <td><textarea class="clean-cell-textarea s-disposisi">${escapeHtml(sRow.disposisi || '')}</textarea></td>
-                </tr>
-            `;
-        }
-        $('#storageTbody').html(stHtml);
-    }
-
-    // Tambah Baris Pasteurisasi
-    function addPasteurisasiRow() {
-        var count = $('#pasteurisasiTbody tr').length + 1;
-        var trHtml = `
-            <tr class="data-row past-tr">
-                <td><input type="text" class="clean-cell-input p-samp" value="Tengah ${count}"></td>
-                <td><input type="text" class="clean-cell-input p-jam"></td>
-                <td><input type="text" class="clean-cell-input p-pic"></td>
-                <td><input type="text" class="clean-cell-input p-bj"></td>
-                <td><input type="text" class="clean-cell-input p-brix"></td>
-                <td><input type="text" class="clean-cell-input p-ph"></td>
-                <td><input type="text" class="clean-cell-input p-aw"></td>
-                <td><input type="text" class="clean-cell-input p-visko"></td>
-                <td><input type="text" class="clean-cell-input p-organo"></td>
-                <td><input type="text" class="clean-cell-input p-aroma"></td>
-                <td><input type="text" class="clean-cell-input p-warna"></td>
-                <td><input type="text" class="clean-cell-input p-buih"></td>
-                <td><input type="text" class="clean-cell-input p-endapan"></td>
-                <td><textarea class="clean-cell-textarea p-disposisi"></textarea></td>
-            </tr>
-        `;
-        $('#pasteurisasiTbody').append(trHtml);
-    }
-
-    // Hapus Baris Terakhir Pasteurisasi
-    function deleteLastPasteurisasiRow() {
-        var $rows = $('#pasteurisasiTbody tr');
-        if ($rows.length > 1) {
-            $rows.last().remove();
-        } else {
-            Swal.fire('Info', 'Minimal harus ada 1 baris Pasteurisasi.', 'info');
-        }
-    }
-
-    // Tambah Baris Storage Tank
-    function addStorageRow() {
-        var count = $('#storageTbody tr').length + 1;
-        var trHtml = `
-            <tr class="data-row st-tr">
-                <td><input type="text" class="clean-cell-input s-samp" value="Sampling ${count}"></td>
-                <td><input type="text" class="clean-cell-input s-jam"></td>
-                <td><input type="text" class="clean-cell-input s-pic"></td>
-                <td><input type="text" class="clean-cell-input s-bj"></td>
-                <td><input type="text" class="clean-cell-input s-brix"></td>
-                <td><input type="text" class="clean-cell-input s-ph"></td>
-                <td><input type="text" class="clean-cell-input s-nacl"></td>
-                <td><input type="text" class="clean-cell-input s-visko"></td>
-                <td><input type="text" class="clean-cell-input s-organo"></td>
-                <td><input type="text" class="clean-cell-input s-aroma"></td>
-                <td><input type="text" class="clean-cell-input s-warna"></td>
-                <td><input type="text" class="clean-cell-input s-buih"></td>
-                <td><input type="text" class="clean-cell-input s-endapan"></td>
-                <td><input type="text" class="clean-cell-input s-kristal"></td>
-                <td><input type="text" class="clean-cell-input s-aw"></td>
-                <td><textarea class="clean-cell-textarea s-disposisi"></textarea></td>
-            </tr>
-        `;
-        $('#storageTbody').append(trHtml);
-    }
-
-    // Hapus Baris Terakhir Storage Tank
-    function deleteLastStorageRow() {
-        var $rows = $('#storageTbody tr');
-        if ($rows.length > 1) {
-            $rows.last().remove();
-        } else {
-            Swal.fire('Info', 'Minimal harus ada 1 baris Storage Tank.', 'info');
-        }
-    }
-
-    // Kumpulkan Seluruh Data Form ke Objek
-    function collectFormData() {
-        var pastRows = [];
-        $('#pasteurisasiTbody tr.past-tr').each(function() {
-            var $tr = $(this);
-            pastRows.push({
-                sampling: $tr.find('.p-samp').val() || '',
-                jam: $tr.find('.p-jam').val() || '',
-                pic: $tr.find('.p-pic').val() || '',
-                bj: $tr.find('.p-bj').val() || '',
-                brix: $tr.find('.p-brix').val() || '',
-                ph: $tr.find('.p-ph').val() || '',
-                aw: $tr.find('.p-aw').val() || '',
-                viskositas: $tr.find('.p-visko').val() || '',
-                organo: $tr.find('.p-organo').val() || '',
-                aroma: $tr.find('.p-aroma').val() || '',
-                warna: $tr.find('.p-warna').val() || '',
-                buih: $tr.find('.p-buih').val() || '',
-                endapan: $tr.find('.p-endapan').val() || '',
-                disposisi: $tr.find('.p-disposisi').val() || ''
-            });
-        });
-
-        var stRows = [];
-        $('#storageTbody tr.st-tr').each(function() {
-            var $tr = $(this);
-            stRows.push({
-                sampling: $tr.find('.s-samp').val() || '',
-                jam: $tr.find('.s-jam').val() || '',
-                pic: $tr.find('.s-pic').val() || '',
-                bj: $tr.find('.s-bj').val() || '',
-                brix: $tr.find('.s-brix').val() || '',
-                ph: $tr.find('.s-ph').val() || '',
-                nacl: $tr.find('.s-nacl').val() || '',
-                viskositas: $tr.find('.s-visko').val() || '',
-                organo: $tr.find('.s-organo').val() || '',
-                aroma: $tr.find('.s-aroma').val() || '',
-                warna: $tr.find('.s-warna').val() || '',
-                buih: $tr.find('.s-buih').val() || '',
-                endapan: $tr.find('.s-endapan').val() || '',
-                kristal: $tr.find('.s-kristal').val() || '',
-                aw: $tr.find('.s-aw').val() || '',
-                disposisi: $tr.find('.s-disposisi').val() || ''
-            });
-        });
-
-        var singleBlock = {
-            block_index: 0,
-            halaman: $('#doc_halaman').val() || '1 / 1',
-            batch: $('#meta_batch').val() || '',
-            kode_st: $('#meta_kode_st').val() || 'ST 01',
-            jenis_produk: $('#meta_jenis_produk').val() || '',
-            tanggal_produksi: $('#meta_tanggal_produksi').val() || '',
-            jam_produksi_start: $('#meta_jam_start').val() || '',
-            jam_produksi_end: $('#meta_jam_end').val() || '',
-            kode_shift_grup: $('#meta_kode_shift').val() || '',
-            pasteurisasi_rows: pastRows,
-            storage_rows: stRows,
-            catatan: $('#doc_catatan').val() || '',
-            pic_sampling_1: $('#sig_pic_samp_1').val() || '',
-            pic_sampling_2: $('#sig_pic_samp_2').val() || '',
-            pic_analis: $('#sig_pic_analis').val() || '',
-            pic_checker: $('#sig_pic_checker').val() || ''
-        };
-
-        return {
-            production_batch_id: $('#po_selector').val(),
-            tanggal_record_doc: $('#doc_tgl_record').val() || '',
-            halaman: $('#doc_halaman').val() || '1 / 1',
-            jenis_produk: $('#meta_jenis_produk').val() || '',
-            tanggal_produksi: $('#meta_tanggal_produksi').val() || '',
-            jam_produksi_start: $('#meta_jam_start').val() || '',
-            jam_produksi_end: $('#meta_jam_end').val() || '',
-            kode_shift_grup: $('#meta_kode_shift').val() || '',
-            batch: $('#meta_batch').val() || '',
-            kode_st: $('#meta_kode_st').val() || 'ST 01',
-            pasteurisasi_rows: pastRows,
-            storage_rows: stRows,
-            catatan: $('#doc_catatan').val() || '',
-            pic_sampling: $('#sig_pic_samp_1').val() || '',
-            pic_serah_terima: $('#sig_pic_samp_2').val() || '',
-            pic_analis: $('#sig_pic_analis').val() || '',
-            pic_checker: $('#sig_pic_checker').val() || '',
-            batch_blocks: [singleBlock],
-            doc_code: 'FRM/QLB/04/104/006-01'
-        };
-    }
-
-    // Simpan ke Database
-    function saveDocumentData() {
-        var poId = $('#po_selector').val();
-        if (!poId) {
-            Swal.fire('Perhatian', 'Pilih nomor PO terlebih dahulu.', 'warning');
-            return;
         }
 
-        var payload = collectFormData();
+        var totalBlocks = blocks.length;
+        var globalDocDate = (currentDocData && currentDocData.tanggal_record_doc) ? currentDocData.tanggal_record_doc : '{{ date("Y-m-d") }}';
 
-        Swal.fire({
-            title: 'Menyimpan Dokumen...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
+        blocks.forEach(function(block, bIdx) {
+            var halamanStr = block.halaman || ((bIdx + 1) + ' / ' + totalBlocks);
+            var jamRange = '-';
+            if (block.jam_produksi && block.jam_produksi !== '-') {
+                jamRange = block.jam_produksi;
+            } else if (block.jam_produksi_start) {
+                jamRange = block.jam_produksi_start + (block.jam_produksi_end ? ' s/d ' + block.jam_produksi_end : '');
+            } else if (currentDocData && currentDocData.jam_produksi_start) {
+                jamRange = currentDocData.jam_produksi_start + (currentDocData.jam_produksi_end ? ' s/d ' + currentDocData.jam_produksi_end : '');
+            }
 
-        $.ajax({
-            url: "{{ route('doc-pasteurisasi-storage.store') }}",
-            type: 'POST',
-            data: payload,
-            success: function(res) {
-                Swal.close();
-                if (res.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil Disimpan!',
-                        text: res.message || 'Formulir Dokumen FRM/QLB/04/104/006-01 berhasil disimpan.',
-                        timer: 1600,
-                        showConfirmButton: false
-                    });
-                } else {
-                    Swal.fire('Error', res.message || 'Gagal menyimpan dokumen.', 'error');
+            // 1. Render Baris Pasteurisasi (Default min 6 baris)
+            var pastRows = block.pasteurisasi_rows || [];
+            var pastHtml = '';
+            var pastCount = Math.max(6, pastRows.length);
+            for (var i = 0; i < pastCount; i++) {
+                var row = pastRows[i] || {};
+                var sampVal = row.sampling ? String(row.sampling).trim() : (i === 0 ? 'Tengah' : '');
+                var dispColor = 'text-secondary';
+                var dispVal = (row.disposisi || '').trim();
+                if (dispVal.toLowerCase().includes('reject') || dispVal.toLowerCase().includes('not ok')) {
+                    dispColor = 'text-danger fw-bold';
+                } else if (dispVal.toLowerCase().includes('release') || dispVal.toLowerCase().includes('ok')) {
+                    dispColor = 'text-success fw-bold';
                 }
-            },
-            error: function(xhr) {
-                Swal.close();
-                var msg = 'Gagal menyimpan dokumen.';
-                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                Swal.fire('Error', msg, 'error');
+
+                pastHtml += `
+                    <tr class="data-row past-tr">
+                        <td class="fw-semibold bg-light">${escapeHtml(sampVal)}</td>
+                        <td>${escapeHtml(row.jam || '-')}</td>
+                        <td>${escapeHtml(row.pic || '-')}</td>
+                        <td class="fw-semibold">${escapeHtml(row.bj || '-')}</td>
+                        <td class="fw-semibold">${escapeHtml(row.brix || '-')}</td>
+                        <td>${escapeHtml(row.ph || '-')}</td>
+                        <td>${escapeHtml(row.aw || '-')}</td>
+                        <td>${escapeHtml(row.viskositas || '-')}</td>
+                        <td>${escapeHtml(row.organo || '-')}</td>
+                        <td>${escapeHtml(row.aroma || '-')}</td>
+                        <td>${escapeHtml(row.warna || '-')}</td>
+                        <td>${escapeHtml(row.buih || '-')}</td>
+                        <td>${escapeHtml(row.endapan || '-')}</td>
+                        <td class="${dispColor} text-start px-2" style="white-space: pre-line;">${escapeHtml(dispVal || '-')}</td>
+                    </tr>
+                `;
             }
+
+            // 2. Render Baris Storage Tank (Default min 5 baris)
+            var stRows = block.storage_rows || [];
+            var stHtml = '';
+            var stCount = Math.max(5, stRows.length);
+            for (var j = 0; j < stCount; j++) {
+                var sRow = stRows[j] || {};
+                var sampSt = sRow.sampling || '';
+                if (!sampSt) {
+                    if (j === 0) sampSt = 'Awal';
+                    else if (j === 1) sampSt = 'Outlet';
+                    else if (j < stRows.length) sampSt = 'Akhir';
+                    else sampSt = '-';
+                }
+                var dispStColor = 'text-secondary';
+                var dispStVal = (sRow.disposisi || '').trim();
+                if (dispStVal.toLowerCase().includes('reject') || dispStVal.toLowerCase().includes('not ok')) {
+                    dispStColor = 'text-danger fw-bold';
+                } else if (dispStVal.toLowerCase().includes('release') || dispStVal.toLowerCase().includes('ok')) {
+                    dispStColor = 'text-success fw-bold';
+                }
+
+                stHtml += `
+                    <tr class="data-row st-tr">
+                        <td class="fw-semibold bg-light">${escapeHtml(sampSt)}</td>
+                        <td>${escapeHtml(sRow.jam || '-')}</td>
+                        <td>${escapeHtml(sRow.pic || '-')}</td>
+                        <td class="fw-semibold">${escapeHtml(sRow.bj || '-')}</td>
+                        <td class="fw-semibold">${escapeHtml(sRow.brix || '-')}</td>
+                        <td>${escapeHtml(sRow.ph || '-')}</td>
+                        <td>${escapeHtml(sRow.nacl || '-')}</td>
+                        <td>${escapeHtml(sRow.viskositas || '-')}</td>
+                        <td>${escapeHtml(sRow.organo || '-')}</td>
+                        <td>${escapeHtml(sRow.aroma || '-')}</td>
+                        <td>${escapeHtml(sRow.warna || '-')}</td>
+                        <td>${escapeHtml(sRow.buih || '-')}</td>
+                        <td>${escapeHtml(sRow.endapan || '-')}</td>
+                        <td>${escapeHtml(sRow.kristal || '-')}</td>
+                        <td>${escapeHtml(sRow.aw || '-')}</td>
+                        <td class="${dispStColor} text-start px-2" style="white-space: pre-line;">${escapeHtml(dispStVal || '-')}</td>
+                    </tr>
+                `;
+            }
+
+            var blockCardHtml = `
+            <div class="lembar-sheet-card" data-block-index="${bIdx}">
+                <!-- Top Header Action Bar -->
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="lembar-header-badge">
+                            <i class="ri-pages-line"></i> LEMBAR PASTEURISASI & STORAGE #${bIdx + 1}
+                        </span>
+                        <span class="badge bg-light text-dark border">
+                            Pasangan Batch ${escapeHtml(block.batch || '-')}
+                        </span>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                            1 Halaman = 1 Blending (1 Pasangan Batch)
+                        </span>
+                    </div>
+                    <div>
+                        <span class="badge bg-light text-muted border fs-12">
+                            <i class="ri-lock-line me-1"></i> Data Otentik
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 1. Header Dokumen Resmi Responsive Grid -->
+                <div class="row align-items-center mb-3 pb-2 border-bottom">
+                    <div class="col-md-3 col-sm-4">
+                        <div class="doc-logo-box p-1">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 40px; object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-4 text-center">
+                        <div class="doc-title-main">HASIL ANALISIS PASTEURISASI DAN STORAGE TANK</div>
+                    </div>
+                    <div class="col-md-3 col-sm-4 text-end">
+                        <table class="float-end border mb-1" style="font-size: 0.80rem;">
+                            <tr>
+                                <td class="p-1 border-bottom text-start fw-bold bg-light">Tanggal Record Doc</td>
+                                <td class="p-1 border-bottom text-start fw-semibold">: ${escapeHtml(globalDocDate)}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-start fw-bold bg-light">Halaman</td>
+                                <td class="p-1 text-start fw-semibold">: ${escapeHtml(halamanStr)}</td>
+                            </tr>
+                        </table>
+                        <div class="clearfix"></div>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
+                    </div>
+                </div>
+
+                <!-- 2. Metadata Grid (Clean Presentation) -->
+                <table class="w-100 meta-input-group mb-3">
+                    <tr>
+                        <td width="14%" class="fw-bold bg-light">Jenis Produk</td>
+                        <td width="36%">: <span class="fw-bold text-dark fs-13">${escapeHtml(block.jenis_produk || (currentDocData ? (currentDocData.jenis_produk || currentDocData.variant) : '') || '-')}</span></td>
+                        <td width="14%" class="fw-bold bg-light">Kode Shift & Grup</td>
+                        <td width="36%">: <span class="fw-bold text-primary fs-13">${escapeHtml(block.kode_shift_grup || (currentDocData ? currentDocData.kode_shift_grup : '') || '-')}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">Tanggal Produksi</td>
+                        <td>: <span class="fw-semibold text-dark fs-13">${escapeHtml(block.tanggal_produksi || (currentDocData ? currentDocData.tanggal_produksi : '') || globalDocDate)}</span></td>
+                        <td class="fw-bold bg-light">Batch</td>
+                        <td>: <span class="fw-bold text-dark fs-13">${escapeHtml(block.batch || '-')}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">Jam Produksi</td>
+                        <td colspan="3">: <span class="fw-semibold text-dark fs-13">${escapeHtml(jamRange)}</span></td>
+                    </tr>
+                </table>
+
+                <!-- 3. Tabel 1: PASTEURISASI (Integrated Header Bar, 1040px Proportional Grid) -->
+                <div class="table-responsive mb-4">
+                    <table class="table-qc-data" style="min-width: 1040px;">
+                        <colgroup>
+                            <col style="width: 85px;">  <!-- Sampling -->
+                            <col style="width: 55px;">  <!-- Jam -->
+                            <col style="width: 80px;">  <!-- PIC -->
+                            <col style="width: 65px;">  <!-- BJ (g/mL) -->
+                            <col style="width: 55px;">  <!-- Brix -->
+                            <col style="width: 50px;">  <!-- pH -->
+                            <col style="width: 55px;">  <!-- Aw -->
+                            <col style="width: 75px;">  <!-- Viskositas (ps) -->
+                            <col style="width: 60px;">  <!-- Organo -->
+                            <col style="width: 60px;">  <!-- Aroma -->
+                            <col style="width: 65px;">  <!-- Warna -->
+                            <col style="width: 55px;">  <!-- Buih -->
+                            <col style="width: 60px;">  <!-- Endapan -->
+                            <col style="width: 220px;"> <!-- Disposisi / Keterangan -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th colspan="14" class="text-start px-3 py-2" style="background-color: #dcfce7; border: 1.5px solid #166534;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="ri-temp-hot-line text-success fs-5"></i>
+                                        <span class="fw-bold text-success fs-13" style="letter-spacing: 0.5px;">PASTEURISASI</span>
+                                    </div>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th rowspan="2" class="th-past-main">Sampling</th>
+                                <th colspan="2" class="th-past-main">Serah Terima</th>
+                                <th colspan="10" class="th-past-main">Analisis</th>
+                                <th rowspan="2" class="th-past-main">Disposisi /<br>Keterangan<br><small class="d-block fw-normal text-muted" style="font-size: 0.68rem;">(Disposisi After Cooling)</small></th>
+                            </tr>
+                            <tr>
+                                <th class="th-sub">Jam</th>
+                                <th class="th-sub">PIC</th>
+                                <th class="th-sub">BJ<br>(g/mL)</th>
+                                <th class="th-sub">Brix</th>
+                                <th class="th-sub">pH</th>
+                                <th class="th-sub">Aw</th>
+                                <th class="th-sub">Viskositas<br>(ps)</th>
+                                <th class="th-sub">Organo</th>
+                                <th class="th-sub">Aroma</th>
+                                <th class="th-sub">Warna</th>
+                                <th class="th-sub">Buih</th>
+                                <th class="th-sub">Endapan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pastHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. Tabel 2: STORAGE TANK (Integrated Header Bar, 1040px Proportional Grid) -->
+                <div class="table-responsive mb-4">
+                    <table class="table-qc-data" style="min-width: 1040px;">
+                        <colgroup>
+                            <col style="width: 80px;">  <!-- Sampling -->
+                            <col style="width: 55px;">  <!-- Jam -->
+                            <col style="width: 80px;">  <!-- PIC -->
+                            <col style="width: 55px;">  <!-- BJ -->
+                            <col style="width: 50px;">  <!-- Brix -->
+                            <col style="width: 45px;">  <!-- pH -->
+                            <col style="width: 55px;">  <!-- % NaCl -->
+                            <col style="width: 70px;">  <!-- Viskositas (ps) -->
+                            <col style="width: 55px;">  <!-- Organo -->
+                            <col style="width: 55px;">  <!-- Aroma -->
+                            <col style="width: 55px;">  <!-- Warna -->
+                            <col style="width: 50px;">  <!-- Buih -->
+                            <col style="width: 55px;">  <!-- Endapan -->
+                            <col style="width: 55px;">  <!-- Kristal -->
+                            <col style="width: 50px;">  <!-- Aw -->
+                            <col style="width: 185px;"> <!-- Disposisi / Keterangan -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th colspan="16" class="text-start px-3 py-2" style="background-color: #e0f2fe; border: 1.5px solid #0369a1;">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="ri-inbox-line text-primary fs-5"></i>
+                                            <span class="fw-bold text-primary fs-13" style="letter-spacing: 0.5px;">STORAGE TANK</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 ms-2">
+                                            <span class="fw-bold small text-dark">KODE ST :</span>
+                                            <span class="badge bg-white text-primary border border-primary px-2 py-1 fw-bold fs-12">${escapeHtml(block.kode_st || (currentDocData ? currentDocData.kode_st : '') || '-')}</span>
+                                        </div>
+                                    </div>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th rowspan="2" class="th-storage-main">Sampling</th>
+                                <th colspan="2" class="th-storage-main">Serah Terima</th>
+                                <th colspan="12" class="th-storage-main">Analisis</th>
+                                <th rowspan="2" class="th-storage-main">Disposisi /<br>Keterangan</th>
+                            </tr>
+                            <tr>
+                                <th class="th-sub">Jam</th>
+                                <th class="th-sub">PIC</th>
+                                <th class="th-sub">BJ</th>
+                                <th class="th-sub">Brix</th>
+                                <th class="th-sub">pH</th>
+                                <th class="th-sub">% NaCl</th>
+                                <th class="th-sub">Viskositas<br>(ps)</th>
+                                <th class="th-sub">Organo</th>
+                                <th class="th-sub">Aroma</th>
+                                <th class="th-sub">Warna</th>
+                                <th class="th-sub">Buih</th>
+                                <th class="th-sub">Endapan</th>
+                                <th class="th-sub">Kristal</th>
+                                <th class="th-sub">Aw</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${stHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 5. Footer: Catatan & Tanda Tangan Resmi Sesuai Google Sheets -->
+                <div class="signature-container mt-3">
+                    <div class="row g-0">
+                        <div class="col-md-4 p-2 border-end">
+                            <strong class="d-block mb-1 fs-12 text-dark">Catatan :</strong>
+                            <div class="text-dark fs-12 fst-italic p-1" style="min-height: 48px;">
+                                ${escapeHtml(block.catatan || (currentDocData ? currentDocData.catatan : '') || '-')}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row g-0 text-center h-100">
+                                <div class="col-3 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Disampling oleh,</div>
+                                    <div class="sig-space" style="height: 38px;"></div>
+                                    <div>
+                                        <div class="fw-bold text-dark border-bottom border-dark pb-1 mx-2 text-truncate">
+                                            ${(block.pic_sampling_1 || (currentDocData ? currentDocData.pic_sampling_1 : '')) ? escapeHtml(block.pic_sampling_1 || currentDocData.pic_sampling_1) : '(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)'}
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Produksi</small>
+                                    </div>
+                                </div>
+                                <div class="col-3 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Disampling oleh,</div>
+                                    <div class="sig-space" style="height: 38px;"></div>
+                                    <div>
+                                        <div class="fw-bold text-dark border-bottom border-dark pb-1 mx-2 text-truncate">
+                                            ${(block.pic_sampling_2 || (currentDocData ? currentDocData.pic_sampling_2 : '')) ? escapeHtml(block.pic_sampling_2 || currentDocData.pic_sampling_2) : '(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)'}
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Produksi</small>
+                                    </div>
+                                </div>
+                                <div class="col-3 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Dianalisis oleh,</div>
+                                    <div class="sig-space" style="height: 38px;"></div>
+                                    <div>
+                                        <div class="fw-bold text-dark border-bottom border-dark pb-1 mx-2 text-truncate">
+                                            ${(block.pic_analis || (currentDocData ? currentDocData.pic_analis : '')) ? escapeHtml(block.pic_analis || currentDocData.pic_analis) : '(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)'}
+                                        </div>
+                                        <small class="text-muted d-block mt-1">QC Analis</small>
+                                    </div>
+                                </div>
+                                <div class="col-3 sig-col d-flex flex-column justify-content-between">
+                                    <div class="fw-semibold fs-12">Dicek oleh,</div>
+                                    <div class="sig-space" style="height: 38px;"></div>
+                                    <div>
+                                        <div class="fw-bold text-dark border-bottom border-dark pb-1 mx-2 text-truncate">
+                                            ${(block.pic_checker || (currentDocData ? currentDocData.pic_checker : '')) ? escapeHtml(block.pic_checker || currentDocData.pic_checker) : '(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)'}
+                                        </div>
+                                        <small class="text-muted d-block mt-1">SPV/MNG QC</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-0 border-top bg-light">
+                        <div class="col-12 text-end px-3 py-1">
+                            <span class="fs-11 fw-bold text-muted fst-italic">FRM/QLB/04/104/006-01</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            `;
+            container.append(blockCardHtml);
         });
     }
 
