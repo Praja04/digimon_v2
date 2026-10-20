@@ -833,7 +833,7 @@
                                 // playBeep('error');
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Alur Status Tidak Sesuai',
+                                    title: 'Flow Salah!',
                                     html: k.flow_error,
                                     confirmButtonText: 'Tutup & Scan Lain'
                                 }).then(() => {
