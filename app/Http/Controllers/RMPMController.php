@@ -9,6 +9,10 @@ use App\Models\AnalisaLongTermHistory;
 use App\Models\AnalisaShortTerm;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
+use App\Models\MasterGlassware;
+use App\Models\MasterJenisBahan;
+use App\Models\MasterParameterRm;
+use App\Models\MasterStandarRm;
 use App\Models\PackagingIncoming;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -94,7 +98,10 @@ class RMPMController extends Controller
                 })
 
                 ->addColumn('action', function ($data) {
-                    return '
+                    $userRole = strtolower(trim(auth()->user()->role ?? ''));
+                    $isSupervisor = in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
+
+                    $btn = '
                         <a
                             class="btn btn-sm btn-info me-1"
                             href="' . route('rmpm.show', $data->id) . '"
@@ -103,6 +110,23 @@ class RMPMController extends Controller
                             Lihat
                         </a>
                     ';
+
+                    if ($isSupervisor) {
+                        $btn .= '
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-danger btnDelete"
+                                data-id="' . $data->id . '"
+                                data-spb="' . htmlspecialchars($data->no_spb ?? '-', ENT_QUOTES) . '"
+                                title="Hapus Data"
+                            >
+                                <span class="mdi mdi-delete"></span>
+                                Hapus
+                            </button>
+                        ';
+                    }
+
+                    return $btn;
                 })
 
                 ->addColumn('status', function ($item) {
@@ -111,9 +135,11 @@ class RMPMController extends Controller
 
                     if ($jenisUpper === 'GARAM') {
                         foreach ($item->analisaGaramGula as $analisa) {
-                            if ($analisa->disposisi) {
+                            if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                 $status = '✅ Selesai';
                                 break;
+                            } elseif ($analisa->status === 'draft') {
+                                $status = '⌛ Draft';
                             }
                         }
                     } else {
@@ -128,9 +154,11 @@ class RMPMController extends Controller
                         }
                         if ($status === '⌛ Proses') {
                             foreach ($item->analisaShortTerm as $analisa) {
-                                if (!empty($analisa->disposisi)) {
+                                if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                     $status = '✅ Selesai';
                                     break;
+                                } elseif ($analisa->status === 'draft') {
+                                    $status = '⌛ Draft';
                                 }
                             }
                         }
@@ -152,6 +180,47 @@ class RMPMController extends Controller
         $masterAsalBahans = \App\Models\MasterAsalBahan::where('status', true)->select('asal_bahan')->distinct()->orderBy('asal_bahan')->get();
 
         return view('app.rmpm.rm', compact('masterJenisBahans', 'masterSuppliers', 'masterAsalBahans'));
+    }
+
+    /**
+     * Hapus data Raw Material (Identitas RM beserta seluruh relasi terkait).
+     * Hanya dapat diakses oleh role Supervisor dan Head of Department.
+     */
+    public function destroy($id)
+    {
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if (!in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akses ditolak. Fitur hapus data hanya dapat diakses oleh Supervisor.',
+            ], 403);
+        }
+
+        try {
+            $identitas = IdentitasRM::findOrFail($id);
+            $noSpb = $identitas->no_spb ?? ('#' . $id);
+
+            \DB::transaction(function () use ($identitas) {
+                // Hapus data Identitas RM (foreign keys cascade menghapus analisa & sampling terkait)
+                $identitas->delete();
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Data Raw Material dengan No SPB: {$noSpb} berhasil dihapus.",
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data Raw Material tidak ditemukan.',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Gagal menghapus data Raw Material: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /*
@@ -343,9 +412,174 @@ public function pmKartonBct(
         $existingGaramGula = $identitas->analisaGaramGula ?? collect();
         $histories = $identitas->analisaLongTermHistories;
 
+        // Preload Master Glassware Tare Weights & Quota
+        $glasswares = MasterGlassware::where('status', true)->get();
+        $beaker500 = [];
+        $beaker250 = [];
+        $cawan = [];
+
+        foreach ($glasswares as $gw) {
+            $jenisGw = strtoupper(trim($gw->jenis_glassware));
+            $nomor = (string) $gw->nomor_glassware;
+            $phys = trim(explode('.', (string)$gw->nomor_glassware)[0]);
+            $berat = $gw->berat_glassware !== null ? (float) $gw->berat_glassware : 0;
+
+            if (str_contains($jenisGw, '500')) {
+                $beaker500[$nomor] = $berat;
+                if ($phys !== '') {
+                    $beaker500[$phys] = $berat;
+                }
+            } elseif (str_contains($jenisGw, '250')) {
+                $beaker250[$nomor] = $berat;
+                if ($phys !== '') {
+                    $beaker250[$phys] = $berat;
+                }
+            } elseif (str_contains($jenisGw, 'CAWAN')) {
+                $cawan[$nomor] = $berat;
+                if ($phys !== '') {
+                    $cawan[$phys] = $berat;
+                }
+            }
+        }
+
+        $beakerQuery = DB::table('analisa_short_term')
+            ->whereDate('created_at', today())
+            ->whereNotNull('no_beaker')
+            ->where('no_beaker', '!=', '')
+            ->where('id_identitas', '!=', $id);
+
+        $cawanQuery = DB::table('analisa_short_term')
+            ->whereDate('created_at', today())
+            ->whereNotNull('no_cawan')
+            ->where('no_cawan', '!=', '')
+            ->where('id_identitas', '!=', $id);
+
+        $totalBeakerToday = (clone $beakerQuery)->count();
+        $totalCawanToday = (clone $cawanQuery)->count();
+
+        $beakerUsage = [];
+        $rawBeakerUsage = (clone $beakerQuery)
+            ->select('no_beaker', DB::raw('count(*) as count'))
+            ->groupBy('no_beaker')
+            ->pluck('count', 'no_beaker')
+            ->toArray();
+        foreach ($rawBeakerUsage as $code => $cnt) {
+            $phys = trim(explode('.', (string)$code)[0]);
+            if ($phys !== '') {
+                $beakerUsage[$phys] = ($beakerUsage[$phys] ?? 0) + $cnt;
+            }
+        }
+
+        $cawanUsage = [];
+        $rawCawanUsage = (clone $cawanQuery)
+            ->select('no_cawan', DB::raw('count(*) as count'))
+            ->groupBy('no_cawan')
+            ->pluck('count', 'no_cawan')
+            ->toArray();
+        foreach ($rawCawanUsage as $code => $cnt) {
+            $phys = trim(explode('.', (string)$code)[0]);
+            if ($phys !== '') {
+                $cawanUsage[$phys] = ($cawanUsage[$phys] ?? 0) + $cnt;
+            }
+        }
+
+        $initialGlassware = [
+            'status'     => true,
+            'beaker_500' => $beaker500,
+            'beaker_250' => $beaker250,
+            'cawan'      => $cawan,
+            'total_today'=> [
+                'beaker' => $totalBeakerToday,
+                'cawan'  => $totalCawanToday,
+            ],
+            'usage'      => [
+                'beaker' => $beakerUsage,
+                'cawan'  => $cawanUsage,
+            ],
+            'max_limits' => [
+                'beaker' => 8,
+                'cawan'  => 2,
+            ],
+        ];
+
+        // Preload Master Standards for this material
+        $cleanJenis = strtoupper(trim((string)$identitas->jenis));
+        $standards = MasterStandarRm::where('status', true)
+            ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
+                $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
+            })
+            ->get();
+
+        $standardsMap = [];
+        foreach ($standards as $s) {
+            $key = strtoupper(trim($s->parameter));
+            $standardsMap[$key] = [
+                'parameter'   => $s->parameter,
+                'min'         => $s->min_standar,
+                'max'         => $s->max_standar,
+                'target_text' => $s->target_text,
+                'uom'         => $s->uom,
+            ];
+        }
+
+        $initialStandards = [
+            'status'    => true,
+            'standards' => $standardsMap,
+        ];
+
+        // Preload Master Parameters (Warna, Aroma, Organo)
+        $jb = MasterJenisBahan::where('nama', 'LIKE', '%' . trim((string)$identitas->jenis) . '%')->first();
+        $paramQuery = MasterParameterRm::where('status', true);
+        if ($jb) {
+            $paramQuery->where(function ($q) use ($jb) {
+                $q->where('jenis_bahan_id', $jb->id)
+                  ->orWhereNull('jenis_bahan_id');
+            });
+        }
+        $paramList = $paramQuery->orderBy('urutan')->orderBy('id')->get();
+        $pWarna = [];
+        $pAroma = [];
+        $pOrgano = [];
+        foreach ($paramList as $p) {
+            $kat = strtolower($p->kategori);
+            $val = trim($p->nama_pilihan);
+            if ($kat === 'warna') {
+                if (!in_array($val, $pWarna)) {
+                    $pWarna[] = $val;
+                }
+            } elseif ($kat === 'aroma') {
+                if (!in_array($val, $pAroma)) {
+                    $pAroma[] = $val;
+                }
+            } elseif ($kat === 'organo') {
+                $pOrgano[] = [
+                    'label'    => $val,
+                    'value'    => $val,
+                    'isCustom' => (bool) $p->is_custom,
+                ];
+            }
+        }
+        $initialParameters = [
+            'status' => true,
+            'data'   => [
+                'warna'  => $pWarna,
+                'aroma'  => $pAroma,
+                'organo' => $pOrgano,
+            ],
+        ];
+
         return view(
             'app.rmpm.analisa',
-            compact('identitas', 'existingLongTerm', 'existingShortTerm', 'existingGaramGula', 'histories')
+            compact(
+                'identitas',
+                'existingLongTerm',
+                'existingShortTerm',
+                'existingGaramGula',
+                'histories',
+                'initialGlassware',
+                'initialStandards',
+                'initialParameters'
+            )
         );
     }
 
@@ -534,6 +768,15 @@ public function pmKartonBct(
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
 
+        // Check if existing record is already final (locked)
+        $existingLongTerm = AnalisaLongTerm::where('id_identitas', $request->id_identitas)->latest()->first();
+        if ($existingLongTerm && $existingLongTerm->status && $existingLongTerm->status !== 'draft') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data analisa Long Term sudah berstatus FINAL dan tidak dapat diubah lagi.',
+            ], 422);
+        }
+
         $rules = [
             'id_identitas' => [
                 'required',
@@ -683,18 +926,21 @@ public function pmKartonBct(
             ]);
         }
 
-        // Record history log
-        AnalisaLongTermHistory::create([
-            'analisa_long_term_id' => $analisa->id,
-            'id_identitas' => $request->id_identitas,
-            'user_id' => auth()->id(),
-            'action' => $isDraft ? 'Simpan Sementara' : 'Simpan Final',
-            'uji_kristal' => $ujiKristal,
-            'disposisi' => $disposisi,
-            'group' => $group,
-            'attachment' => $photoList,
-            'keterangan' => $request->keterangan,
-        ]);
+        // Record history log (only on manual save / final save, not on silent auto-saves)
+        $isAutoSave = $request->boolean('is_auto_save') || $request->input('is_auto_save') == '1';
+        if (!$isAutoSave) {
+            AnalisaLongTermHistory::create([
+                'analisa_long_term_id' => $analisa->id,
+                'id_identitas' => $request->id_identitas,
+                'user_id' => auth()->id(),
+                'action' => $isDraft ? 'Simpan Sementara' : 'Simpan Final',
+                'uji_kristal' => $ujiKristal,
+                'disposisi' => $disposisi,
+                'group' => $group,
+                'attachment' => $photoList,
+                'keterangan' => $request->keterangan,
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -720,6 +966,31 @@ public function pmKartonBct(
 
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
+
+        // Check if existing record for this kategori is already final (locked)
+        $existingShortTerm = AnalisaShortTerm::where('id_identitas', $request->id_identitas)
+            ->where(function ($q) use ($kategori) {
+                $q->where('kategori', $kategori)
+                  ->orWhere(function ($sub) use ($kategori) {
+                      if ($kategori === 'incoming') {
+                          $sub->whereNull('kategori');
+                      }
+                  });
+            })
+            ->first();
+
+        if ($existingShortTerm && $existingShortTerm->status && $existingShortTerm->status !== 'draft') {
+            $kategoriLabels = [
+                'incoming'   => 'Incoming',
+                'sta'        => 'STA (Short Term Analisa)',
+                'monitoring' => 'Monitoring',
+            ];
+            $label = $kategoriLabels[$kategori] ?? 'Analisa';
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Data analisa {$label} sudah berstatus FINAL dan tidak dapat diubah lagi.",
+            ], 422);
+        }
 
         $rules = [
             'id_identitas' => 'required|exists:identitas_rm,id',
@@ -847,6 +1118,15 @@ public function pmKartonBct(
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
 
+        // Check if existing record is already final (locked)
+        $existingGaramGula = AnalisaGaramGula::where('id_identitas', $request->id_identitas)->first();
+        if ($existingGaramGula && $existingGaramGula->status && $existingGaramGula->status !== 'draft') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data analisa sudah berstatus FINAL dan tidak dapat diubah lagi.',
+            ], 422);
+        }
+
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
             'fisik'        => $isDraft ? 'nullable|array' : 'required|array|min:1',
@@ -890,6 +1170,7 @@ public function pmKartonBct(
                     '%nacl'        => $this->nullableFloat($request['%nacl'][$i] ?? null),
                     'gross_weight' => $this->nullableFloat($request->gross_weight[$i] ?? null),
                     'disposisi'    => $request->disposisi,
+                    'status'       => $isDraft ? 'draft' : 'final',
                     'keterangan'   => $request->keterangan,
                     'created_by'   => auth()->id(),
                     'created_at'   => now(),

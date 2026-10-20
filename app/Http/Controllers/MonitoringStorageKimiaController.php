@@ -49,6 +49,9 @@ class MonitoringStorageKimiaController extends Controller
                 return ($batch->isMonitoringStorageKimiaComplete()) ? 1 : 0;
             })->values();
 
+            $userRole = strtolower(trim(auth()->user()->role ?? ''));
+            $canManage = in_array($userRole, ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
+
             return DataTables::of($monitoringStorageKimia)
                 ->addIndexColumn()
                 ->addColumn('status', function ($data) {
@@ -67,7 +70,11 @@ class MonitoringStorageKimiaController extends Controller
                     </a>
                 ';
                 })
-                ->addColumn('action', function ($data) {
+                ->addColumn('action', function ($data) use ($canManage) {
+                    if (!$canManage) {
+                        return '';
+                    }
+
                     return '
                     <button class="btn btn-sm btn-warning me-1" id="btnEdit" data-id="' . $data->id . '">
                        <span class="mdi mdi-pencil"></span> Edit
@@ -85,6 +92,14 @@ class MonitoringStorageKimiaController extends Controller
 
     public function edit($id)
     {
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if (!in_array($userRole, ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah data ini.',
+            ], 403);
+        }
+
         try {
             $data = ProductionBatch::find($id);
 
@@ -107,6 +122,14 @@ class MonitoringStorageKimiaController extends Controller
 
     public function update(ProductionBatchRequest $request)
     {
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if (!in_array($userRole, ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah data ini.',
+            ], 403);
+        }
+
         try {
             $data = [
                 'po_number' => $request->po_number,
@@ -136,6 +159,14 @@ class MonitoringStorageKimiaController extends Controller
 
     public function destroy(Request $request)
     {
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if (!in_array($userRole, ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda tidak memiliki hak akses untuk menghapus data ini.',
+            ], 403);
+        }
+
         try {
             $data = ProductionBatch::find($request->id);
 
@@ -226,9 +257,12 @@ class MonitoringStorageKimiaController extends Controller
             ];
         }
 
-        $usedMonitoringNumbers = [];
+        $allSampleTypes = ['Awal', 'Outlet', 'Tengah', 'Akhir', 'Inlet', 'After Drain'];
+
+        $numberSamplesMap = [];
         foreach ($productionBatch->MonitoringStorageKimia as $mEntry) {
-            $usedMonitoringNumbers = array_merge($usedMonitoringNumbers, $expandToNumbers($mEntry->batch_range));
+            $mNums = $expandToNumbers($mEntry->batch_range);
+            $sample = $mEntry->jenis_sampel;
 
             $mRelated = DB::table('monitoring_storage_kimia_relations')
                 ->where('monitoring_storage_kimia_id', $mEntry->id)
@@ -236,14 +270,34 @@ class MonitoringStorageKimiaController extends Controller
                 ->toArray();
 
             foreach ($mRelated as $mr) {
-                $usedMonitoringNumbers = array_merge($usedMonitoringNumbers, $expandToNumbers($mr));
+                $mNums = array_merge($mNums, $expandToNumbers($mr));
+            }
+
+            $mNums = array_unique($mNums);
+            foreach ($mNums as $num) {
+                if (!isset($numberSamplesMap[$num])) {
+                    $numberSamplesMap[$num] = [];
+                }
+                if ($sample) {
+                    $numberSamplesMap[$num][] = $sample;
+                } else {
+                    $numberSamplesMap[$num] = $allSampleTypes;
+                }
+            }
+        }
+
+        $usedMonitoringNumbers = [];
+        foreach ($numberSamplesMap as $num => $samples) {
+            $uniqueSamples = array_unique($samples);
+            if (count($uniqueSamples) >= count($allSampleTypes)) {
+                $usedMonitoringNumbers[] = $num;
             }
         }
         $usedMonitoringNumbers = array_values(array_unique($usedMonitoringNumbers));
 
         $candidates = array_filter($rawBatchGroups, function ($grp) use ($usedMonitoringNumbers) {
             if (empty($grp['numbers'])) return false;
-            return empty(array_intersect($grp['numbers'], $usedMonitoringNumbers));
+            return !empty(array_diff($grp['numbers'], $usedMonitoringNumbers));
         });
 
         $finalCandidates = [];
@@ -313,8 +367,16 @@ class MonitoringStorageKimiaController extends Controller
                 ], 404);
             }
 
+            $usedSamples = MonitoringStorageKimia::where('production_batch_id', $productionBatchId)
+                ->where('batch_range', $batchRangeRaw)
+                ->pluck('jenis_sampel')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
             try {
-                $response = Http::get(env('PRODUCTION_URL') . "api/monitoring-pasteurisasi/{$monitoringPasteurisasi->id}");
+                $response = Http::timeout(2)->get(rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/') . "/api/monitoring-pasteurisasi/{$monitoringPasteurisasi->id}");
 
                 if ($response->successful()) {
                     $apiData = $response->json();
@@ -326,43 +388,41 @@ class MonitoringStorageKimiaController extends Controller
                             'status' => 'success',
                             'message' => 'Data berhasil dimuat.',
                             'data' => [
-                                'nomor_blending' => $data['nomor_blending'] ?? null,
-                                'volume_after_cooling' => $data['volume_after_cooling'] ?? null,
-                                'storage' => $data['storage'] ?? null,
+                                'nomor_blending' => $data['nomor_blending'] ?? $monitoringPasteurisasi->nomor_blending ?? null,
+                                'volume_after_cooling' => $data['volume_after_cooling'] ?? $monitoringPasteurisasi->volume ?? null,
+                                'storage' => $data['storage'] ?? $monitoringPasteurisasi->storage ?? null,
                                 'batch_range' => $data['batch_range'] ?? $batchRange,
+                                'used_samples' => $usedSamples,
                             ]
                         ], 200);
                     }
                 }
 
-                // Handle error response dari API
-                $errorMessage = 'Gagal mengambil data dari Portal Produksi.';
-
-                if ($response->status() === 404) {
-                    $errorMessage = 'Data tidak ditemukan di Portal Produksi.';
-                } elseif ($response->status() === 401) {
-                    $errorMessage = 'Autentikasi gagal. Periksa API token.';
-                } elseif ($response->status() === 500) {
-                    $errorMessage = 'Portal Produksi mengalami kesalahan server.';
-                }
-
+                // Jika API tidak mengembalikan volume atau gagal, fallback ke data pasteurisasi lokal
                 return response()->json([
-                    'status' => 'error',
-                    'message' => $errorMessage,
-                    'api_status' => $response->status(),
-                ], 500);
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                    'status' => 'success',
+                    'message' => 'Data berhasil dimuat dari data pasteurisasi.',
+                    'data' => [
+                        'nomor_blending' => $monitoringPasteurisasi->nomor_blending ?? null,
+                        'volume_after_cooling' => $monitoringPasteurisasi->volume ?? null,
+                        'storage' => $monitoringPasteurisasi->storage ?? null,
+                        'batch_range' => $batchRange,
+                        'used_samples' => $usedSamples,
+                    ]
+                ], 200);
+            } catch (\Throwable $e) {
+                // Jika koneksi API gagal, fallback ke data pasteurisasi lokal
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Tidak dapat terhubung ke Portal Produksi. Periksa koneksi network.',
-                    'error' => $e->getMessage(),
-                ], 500);
-            } catch (\Illuminate\Http\Client\RequestException $e) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Kesalahan saat melakukan request ke Portal Produksi.',
-                    'error' => $e->getMessage(),
-                ], 500);
+                    'status' => 'success',
+                    'message' => 'Data berhasil dimuat dari data pasteurisasi.',
+                    'data' => [
+                        'nomor_blending' => $monitoringPasteurisasi->nomor_blending ?? null,
+                        'volume_after_cooling' => $monitoringPasteurisasi->volume ?? null,
+                        'storage' => $monitoringPasteurisasi->storage ?? null,
+                        'batch_range' => $batchRange,
+                        'used_samples' => $usedSamples,
+                    ]
+                ], 200);
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -383,29 +443,61 @@ class MonitoringStorageKimiaController extends Controller
         try {
             $exists = MonitoringStorageKimia::where('production_batch_id', $request->production_batch_id)
                 ->where('batch_range', $request->batch_range)
+                ->where('jenis_sampel', $request->jenis_sampel)
                 ->exists();
 
             if ($exists) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Batch range ini sudah digunakan untuk Production Batch yang sama.',
+                    'message' => 'Batch ' . $request->batch_range . ' dengan Jenis Sampel "' . $request->jenis_sampel . '" sudah digunakan untuk Production Batch ini.',
                 ], 409);
+            }
+
+            // Ambil volume dari request (hidden input), atau fallback otomatis dari volume Monitoring Pasteurisasi
+            $volume = $request->volume;
+            if (empty($volume)) {
+                $parts = array_filter(explode('-', $request->batch_range), 'is_numeric');
+                $batchRange = implode('-', array_slice($parts, 0, 2));
+
+                $pasteurisasi = MonitoringPasteurisasi::where('production_batch_id', $request->production_batch_id)
+                    ->where('batch_range', $batchRange)
+                    ->whereIn('disposition', ['Release', 'Release Bersyarat'])
+                    ->orderByDesc('revisi')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($pasteurisasi) {
+                    $volume = $pasteurisasi->volume;
+                    if (empty($volume)) {
+                        try {
+                            $res = Http::timeout(2)->get(rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/') . "/api/monitoring-pasteurisasi/{$pasteurisasi->id}");
+                            if ($res->successful()) {
+                                $apiData = $res->json();
+                                $volume = $apiData['data']['volume_after_cooling'] ?? null;
+                            }
+                        } catch (\Throwable $e) {
+                            // ignore network issues
+                        }
+                    }
+                }
             }
 
             MonitoringStorageKimia::create([
                 'production_batch_id' => $request->production_batch_id,
                 'batch_range' => $request->batch_range,
                 'nomor_blending' => $request->nomor_blending,
-                'volume' => $request->volume,
+                'volume' => $volume,
                 'storage' => $request->storage,
+                'jenis_sampel' => $request->jenis_sampel,
             ]);
 
             MonitoringStorageMikro::create([
                 'production_batch_id' => $request->production_batch_id,
                 'batch_range' => $request->batch_range,
                 'nomor_blending' => $request->nomor_blending,
-                'volume' => $request->volume,
+                'volume' => $volume,
                 'storage' => $request->storage,
+                'jenis_sampel' => $request->jenis_sampel,
             ]);
 
             return response()->json([
@@ -728,13 +820,16 @@ class MonitoringStorageKimiaController extends Controller
 
             $poLevelings = array_filter($poLevelingsRaw);
 
+            $volume = !empty($request->volume_revisi) ? $request->volume_revisi : $blending->volume;
+
             $base = [
                 'production_batch_id' => $request->id_productbatch_revisi_blending,
                 'batch_range' => $request->batch_number_blending,
                 'nomor_blending' => $request->no_blending_revisi,
-                'volume' => $request->volume_revisi,
+                'volume' => $volume,
                 'revisi' => $request->revisi_blending,
                 'storage' => $request->storage_revisi ?? null,
+                'jenis_sampel' => $blending->jenis_sampel,
                 'not_standard' => false,
             ];
 

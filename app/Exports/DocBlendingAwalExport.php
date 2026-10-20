@@ -32,7 +32,7 @@ class DocBlendingAwalExport implements WithMultipleSheets
                     'jenis_produk' => $this->data['variant'] ?? 'Kecap Sedap',
                     'tanggal_produksi' => $this->data['tanggal_record_doc'] ?? date('Y-m-d'),
                     'jam_produksi' => '08:00',
-                    'kode_shift_grup' => 'Shift 1 / Grup A',
+                    'kode_shift_grup' => '',
                     'batch' => '1',
                     'no_blending' => '1',
                     'volume_awal' => '10000 L',
@@ -51,7 +51,8 @@ class DocBlendingAwalExport implements WithMultipleSheets
         foreach ($blocks as $idx => $block) {
             $sheetNum = $idx + 1;
             $noBlending = !empty($block['no_blending']) ? $block['no_blending'] : $sheetNum;
-            $baseTitle = 'Blending ' . $noBlending;
+            $batchName = !empty($block['batch']) ? $block['batch'] : "Batch {$sheetNum}";
+            $baseTitle = "Blending {$noBlending} ({$batchName})";
 
             // Sheet title in Excel must be <= 31 chars and unique
             $sheetTitle = substr($baseTitle, 0, 28);
@@ -120,22 +121,22 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
 
                 // Setup 16 Columns Widths (A to P)
                 $widths = [
-                    'A' => 14, // Sampling ke-
-                    'B' => 15, // Vol Tangki (L)
+                    'A' => 12, // Sampling ke-
+                    'B' => 14, // Vol Tangki (L)
                     'C' => 9,  // Jam
-                    'D' => 15, // PIC
-                    'E' => 12, // BJ (g/mL)
-                    'F' => 10, // Brix
+                    'D' => 14, // PIC
+                    'E' => 11, // BJ (g/mL)
+                    'F' => 9,  // Brix
                     'G' => 8,  // pH
-                    'H' => 10, // % NaCl
-                    'I' => 15, // Viskositas (ps)
-                    'J' => 10, // Organo
-                    'K' => 10, // Aroma
-                    'L' => 12, // Warna
-                    'M' => 10, // Buih
+                    'H' => 9,  // % NaCl
+                    'I' => 13, // Viskositas (ps)
+                    'J' => 9,  // Organo
+                    'K' => 9,  // Aroma
+                    'L' => 10, // Warna
+                    'M' => 9,  // Buih
                     'N' => 8,  // Aw
-                    'O' => 32, // Waktu & Adjustment
-                    'P' => 20, // Disposisi/ Keterangan
+                    'O' => 26, // Waktu & Adjustment
+                    'P' => 24, // Disposisi/ Keterangan
                 ];
                 foreach ($widths as $col => $w) {
                     $sheet->getColumnDimension($col)->setWidth($w);
@@ -199,7 +200,13 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                 for ($r = 1; $r <= 4; $r++) {
                     $sheet->getRowDimension($r)->setRowHeight(16);
                 }
-                $sheet->getRowDimension(5)->setRowHeight(10);
+                
+                // Notes kanan atas (Baris 5)
+                $sheet->mergeCells('M5:P5');
+                $sheet->setCellValue('M5', "Notes:\n1 lembar: 1 blending (1 pasangan batch)");
+                $sheet->getStyle('M5')->getFont()->setSize(7.5)->setItalic(true);
+                $sheet->getStyle('M5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+                $sheet->getRowDimension(5)->setRowHeight(20);
 
                 // ==========================================
                 // 2. METADATA SIKLUS BLENDING (Baris 6 - 9)
@@ -328,51 +335,73 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                     $row = $rows[$i] ?? null;
 
                     if ($row) {
-                        $rawSamp = (string)($row['sampling_ke'] ?? ($i + 1));
-                        $rawVol = (string)($row['vol_tangki'] ?? '');
-                        $rawAdj = (string)($row['waktu_adjustment'] ?? '');
-
-                        $isAwal = (strtolower(trim($rawSamp)) === 'awal' || strtolower(trim($rawVol)) === 'awal');
-                        $displaySamp = $isAwal ? 'Awal' : $rawSamp;
-                        $displayVol = $isAwal ? '' : $rawVol;
-                        $displayAdj = ($isAwal && ($rawAdj === (string)($row['serah_terima_jam'] ?? '') || $rawAdj === '')) ? '-' : $rawAdj;
+                        $displaySamp = (string)($row['sampling_ke'] ?? '');
+                        $displayVol = (string)($row['vol_tangki'] ?? '');
+                        $displayAdj = (string)($row['waktu_adjustment'] ?? '');
+                        $displayDisp = (string)($row['disposisi'] ?? '');
 
                         $rawBuih = (string)($row['buih'] ?? '');
                         if (strtolower(trim($rawBuih)) === 'tidak ada' || strtolower(trim($rawBuih)) === "tidak\nada") {
                             $rawBuih = "Tidak\nAda";
                         }
 
-                        $sheet->setCellValueExplicit("A{$dr}", $displaySamp, DataType::TYPE_STRING);
+                        $isTurun = (strtolower(trim($displayVol)) === 'awal');
+
+                        $sheet->setCellValueExplicit("A{$dr}", $isTurun ? '' : $displaySamp, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("B{$dr}", $displayVol, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("C{$dr}", (string)($row['serah_terima_jam'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("D{$dr}", (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("E{$dr}", (string)($row['bj'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("F{$dr}", (string)($row['brix'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("G{$dr}", (string)($row['ph'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("H{$dr}", (string)($row['nacl'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("I{$dr}", (string)($row['visco'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("J{$dr}", (string)($row['organo'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("K{$dr}", (string)($row['aroma'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("L{$dr}", (string)($row['warna'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("M{$dr}", $rawBuih, DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("N{$dr}", (string)($row['aw'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("D{$dr}", $isTurun ? '' : (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("E{$dr}", $isTurun ? '' : $this->formatVal($row['bj'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("F{$dr}", $this->formatVal($row['brix'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("G{$dr}", $isTurun ? '' : $this->formatVal($row['ph'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("H{$dr}", $isTurun ? '' : $this->formatVal($row['nacl'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("I{$dr}", $this->formatVal($row['visco'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("J{$dr}", $isTurun ? '' : (string)($row['organo'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("K{$dr}", $isTurun ? '' : (string)($row['aroma'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("L{$dr}", $isTurun ? '' : (string)($row['warna'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("M{$dr}", $isTurun ? '' : $rawBuih, DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("N{$dr}", $this->formatVal($row['aw'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("O{$dr}", $displayAdj, DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("P{$dr}", (string)($row['disposisi'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("P{$dr}", $displayDisp, DataType::TYPE_STRING);
+
+                        // Highlight kuning untuk baris Turun Blending (vol_tangki === 'Awal')
+                        if ($isTurun) {
+                            $sheet->getStyle("A{$dr}:P{$dr}")->getFill()
+                                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                                ->getStartColor()->setARGB('FFFFF200');
+                            $sheet->getStyle("B{$dr}")->getFont()->setBold(true);
+                        }
                     }
 
-                    $sheet->getRowDimension($dr)->setRowHeight(24);
-                    $sheet->getStyle("A{$dr}:N{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("A{$dr}:P{$dr}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                    $linesA = !empty($displaySamp) ? substr_count($displaySamp, "\n") + 1 : 1;
+                    $linesO = !empty($displayAdj) ? substr_count($displayAdj, "\n") + 1 : 1;
+                    $linesP = !empty($displayDisp) ? substr_count($displayDisp, "\n") + 1 : 1;
+                    $maxLines = max($linesA, $linesO, $linesP, 1);
+                    $rowH = $maxLines > 1 ? max(28, $maxLines * 16) : 22;
+
+                    $sheet->getRowDimension($dr)->setRowHeight($rowH);
+                    $sheet->getStyle("A{$dr}:N{$dr}")->getFont()->setSize(8.5);
+                    $sheet->getStyle("O{$dr}:P{$dr}")->getFont()->setSize(8);
+                    $sheet->getStyle("A{$dr}:P{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                    $sheet->getStyle("A{$dr}")->getAlignment()->setWrapText(true);
                     $sheet->getStyle("M{$dr}")->getAlignment()->setWrapText(true);
-                    $sheet->getStyle("O{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-                    $sheet->getStyle("P{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("O{$dr}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("P{$dr}")->getAlignment()->setWrapText(true);
                     $sheet->getStyle("A{$dr}:P{$dr}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
+
+                // Catatan Nathan di bawah tabel (Baris penjelas data turun blending)
+                $noteRow = $dataStart + $totalRows;
+                $sheet->mergeCells("A{$noteRow}:P{$noteRow}");
+                $sheet->setCellValue("A{$noteRow}", "*Data turun blending diisi di area tengah/bawah form (di bawah sampling terakhir, kasih jarak beberapa baris kosong)");
+                $sheet->getStyle("A{$noteRow}")->getFont()->setSize(7.5)->setItalic(true);
+                $sheet->getStyle("A{$noteRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getRowDimension($noteRow)->setRowHeight(16);
 
                 // ==========================================
                 // 5. FOOTER (Catatan & Tanda Tangan)
                 // ==========================================
-                $fStart = $dataStart + $totalRows; // default: 24
+                $fStart = $noteRow + 1; // Mulai footer tepat setelah note baris turun blending
 
                 // Catatan di A..E
                 $catatanEnd = $fStart + 4; // 28
@@ -446,5 +475,19 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                 $sheet->getStyle("P1:P{$docCodeRow}")->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
             }
         ];
+    }
+
+    /**
+     * Format nilai analisis: jika 0, 0.0, null, '-', atau kosong jadikan blank
+     */
+    private function formatVal($val): string
+    {
+        if ($val === null || $val === '' || $val === 'null' || $val === '-' || $val === '0' || $val === 0 || $val === 0.0 || $val === '0.0' || $val === '0.00') {
+            return '';
+        }
+        if (is_numeric($val) && floatval($val) == 0) {
+            return '';
+        }
+        return (string)$val;
     }
 }

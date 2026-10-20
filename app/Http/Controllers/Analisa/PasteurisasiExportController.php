@@ -22,7 +22,7 @@ class PasteurisasiExportController extends Controller
                 'monitoringTurunBlending.user',
                 'monitoringPasteurisasi.user',
                 'monitoringStorageKimia.user',
-                'monitoringStorageMikro.user'
+                'monitoringStorageMikro'
             ])
             ->where(function ($q) {
                 $q->has('monitoringPasteurisasi')
@@ -113,19 +113,26 @@ class PasteurisasiExportController extends Controller
                     return '<span>' . $icon . ' ' . $text . '</span>';
                 })
                 ->addColumn('action', function ($data) {
-                    $exportPoUrl = route('doc-pasteurisasi-storage.index', ['po_id' => $data->id]);
                     $traceUrl = route('analisa.monitoring-turun-blending.export.trace', ['id' => $data->id]);
+                    $canExport = auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
-                    return '
-                        <div class="d-flex gap-1">
+                    $buttons = '';
+                    if ($canExport) {
+                        $exportPoUrl = route('doc-pasteurisasi-storage.index', ['po_id' => $data->id]);
+                        $buttons .= '
                             <a href="' . $exportPoUrl . '" class="btn btn-sm btn-success" title="Buka Formulir Dokumen FRM/QLB/04/104/006-01">
                                 <i class="ri-file-excel-2-line"></i> Export
                             </a>
-                            <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace Batching Pasteurisasi & Storage">
-                                <i class="ri-route-line"></i> Trace
-                            </a>
-                        </div>
+                        ';
+                    }
+
+                    $buttons .= '
+                        <a href="' . $traceUrl . '" class="btn btn-sm btn-info" title="Trace Batching Pasteurisasi & Storage">
+                            <i class="ri-route-line"></i> Trace
+                        </a>
                     ';
+
+                    return '<div class="d-flex gap-1">' . $buttons . '</div>';
                 })
                 ->rawColumns([
                     'po_number',
@@ -150,7 +157,7 @@ class PasteurisasiExportController extends Controller
             'monitoringPasteurisasi.color',
             'monitoringStorageKimia.user',
             'monitoringStorageKimia.color',
-            'monitoringStorageMikro.user'
+            'monitoringStorageMikro'
         ])->findOrFail($id);
 
         return view('app.analisa.monitoring_turun_blending.trace', compact('productionBatch'));
@@ -161,6 +168,10 @@ class PasteurisasiExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
+        }
+
         $docController = new DocPasteurisasiStorageController();
 
         $query = ProductionBatch::where(function ($q) {
@@ -201,6 +212,10 @@ class PasteurisasiExportController extends Controller
      */
     public function exportPoExcel($id)
     {
+        if (!auth()->check() || !in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            abort(403, 'Akses ditolak. Fitur export dokumen resmi hanya diperuntukkan bagi Foreman, Supervisor, atau Head of Department.');
+        }
+
         $docController = new DocPasteurisasiStorageController();
         $docData = $docController->getDocumentData($id);
 

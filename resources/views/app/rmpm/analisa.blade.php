@@ -116,7 +116,9 @@
                                     </button>
                                 </div>
                                 <div class="col-md-3">
-                                    <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light w-100">Kembali</a>
+                                    <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light w-100">
+                                        <i class="ri-arrow-left-line me-1"></i> Kembali
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -132,6 +134,9 @@
                             <div class="card bg-light border p-2 mb-3 rounded-3" id="categorySwitcherNav">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-1">
+                                        <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light btn-sm border me-1" title="Kembali ke Detail Identitas">
+                                            <i class="ri-arrow-left-line me-1"></i> Kembali
+                                        </a>
                                         <button type="button" class="btn btn-outline-secondary btn-sm me-2" id="btnBackToSetup" title="Kembali ke pemilihan kategori">
                                             <i class="ri-arrow-left-line me-1"></i> Pilih Kategori Lain
                                         </button>
@@ -170,10 +175,39 @@
                                     <span id="draftStatusBadge" class="badge bg-warning text-dark fs-6" style="display:none;">
                                         <i class="mdi mdi-file-document-edit-outline me-1"></i> Status: Tersimpan Sementara (Draft)
                                     </span>
+                                    <span id="finalStatusBadge" class="badge bg-success text-white fs-6" style="display:none;">
+                                        <i class="ri-lock-2-line me-1"></i> Status: Final (Terkunci)
+                                    </span>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-outline-danger" id="btnReset">
                                     <i class="ri-refresh-line me-1"></i> Reset
                                 </button>
+                            </div>
+
+                            {{-- Alert Banner for FINAL (LOCKED) --}}
+                            <div id="finalLockedAlert" class="alert alert-success border-success align-items-center mb-3" style="display:none;" role="alert">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="ri-lock-2-fill fs-4 text-success flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="fs-6">Data Analisa Sudah Final (Terkunci)</strong>
+                                        <div class="small mt-0.5 text-muted">
+                                            Data analisa ini sudah disimpan secara final dan tidak dapat diubah lagi. Anda tetap dapat melihat seluruh riwayat dan lembar hasil perhitungan.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Alert Banner for DRAFT (EDITABLE) --}}
+                            <div id="draftStatusAlert" class="alert alert-warning border-warning align-items-center mb-3" style="display:none;" role="alert">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="mdi mdi-file-document-edit fs-4 text-warning flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="fs-6">Status: Simpan Sementara (Draft)</strong>
+                                        <div class="small mt-0.5 text-muted">
+                                            Data analisa masih dalam tahapan simpan sementara. Anda masih dapat mengubah angka atau perhitungan, menyesuaikan sampel/tara, lalu menyimpannya kembali atau menyimpannya secara final.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- Edit jumlah inline --}}
@@ -205,7 +239,7 @@
 
                                 <div class="mt-4 d-flex gap-2 justify-content-end flex-wrap" id="mainFormActions">
                                     <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light">
-                                        <i class="ri-arrow-left-line me-1"></i> Batal
+                                        <i class="ri-arrow-left-line me-1"></i> Kembali
                                     </a>
                                     <button type="button" class="btn btn-warning px-3" id="btnSimpanDraft">
                                         <i class="mdi mdi-content-save-edit-outline me-1"></i> Simpan Sementara
@@ -917,6 +951,28 @@
     #formAnalisa:has(#paneKadarAir.active) #mainFormActions {
         display: none !important;
     }
+
+    /* Readonly / Disabled Styles for FINAL (LOCKED) State */
+    .form-control-readonly-locked {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+        cursor: default !important;
+        box-shadow: none !important;
+    }
+    .select-disabled-locked {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+        cursor: not-allowed !important;
+        opacity: 0.9 !important;
+        pointer-events: none !important;
+    }
+    .organo-locked {
+        opacity: 0.8 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+    }
 </style>
 @endsection
 
@@ -928,6 +984,9 @@
     const SERVER_EXISTING = @json($existingLongTerm ?? null);
     const SERVER_SHORT_TERM = @json($existingShortTerm ?? []);
     const SERVER_GARAM_GULA = @json($existingGaramGula ?? []);
+    const SERVER_INITIAL_GLASSWARE = @json($initialGlassware ?? null);
+    const SERVER_INITIAL_STANDARDS = @json($initialStandards ?? null);
+    const SERVER_INITIAL_PARAMETERS = @json($initialParameters ?? null);
 
     function isGulaKristalMaterial(jenisStr) {
         if (!jenisStr) return false;
@@ -939,14 +998,56 @@
     let currentType = null;
     let currentKategori = 'incoming';
     let currentJumlah = 0;
-    let globalSampleCount = 1;   // Persisted sample count across category switching and inline editing
+    // Independent sample count tracking per category
+    let categorySampleCounts = {
+        'incoming': 1,
+        'sta': 1,
+        'monitoring': 1,
+        'long-term': 1,
+        'garam-gula': 1
+    };
     let selectedFiles = [];       // array of File objects for newly added photos
     let existingPhotos = [];      // array of string filenames from server draft/record
     let parsedPasteData = [];     // parsed rows from excel paste modal
     let isBroadcastingSelection = false; // guard to prevent recursive change event loops on selection broadcast
 
-    // Master Glassware Active Data & Daily Quota Tracking State
-    let glasswareData = {
+    function getDraftKey(kategori = null) {
+        const cat = kategori || currentKategori || 'incoming';
+        return `rmpm_analisa_${IDENTITAS_ID}_${cat}`;
+    }
+
+    function initCategorySampleCounts() {
+        ['incoming', 'sta', 'monitoring'].forEach(cat => {
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === cat);
+            if (matching.length > 0) {
+                categorySampleCounts[cat] = matching.length;
+                return;
+            }
+
+            let draft;
+            try {
+                draft = JSON.parse(localStorage.getItem(getDraftKey(cat)));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.kategori === cat) draft = legacy;
+                }
+            } catch (e) {}
+
+            if (draft && draft.setup && draft.setup.jumlah) {
+                categorySampleCounts[cat] = parseInt(draft.setup.jumlah) || 1;
+                return;
+            }
+
+            categorySampleCounts[cat] = 1;
+        });
+
+        if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
+            categorySampleCounts['garam-gula'] = SERVER_GARAM_GULA.length;
+        }
+    }
+
+    // Master Glassware Active Data & Daily Quota Tracking State (Preloaded Server Fallback)
+    let glasswareData = (SERVER_INITIAL_GLASSWARE && SERVER_INITIAL_GLASSWARE.status) ? SERVER_INITIAL_GLASSWARE : {
         beaker_500: {},
         beaker_250: {},
         cawan: {},
@@ -960,9 +1061,30 @@
     // Master Standar Mutu RM Active Standards State (CRUD SPV Sync)
     let dynamicStandards = {
         kotoran: { max: 10.0, min: null, label: '10.0%' },
-        ka: { max: 3.0, min: null, label: '3.0%' },
+        ka: { max: (JENIS && JENIS.toLowerCase().includes('garam')) ? 8.0 : 3.0, min: null, label: (JENIS && JENIS.toLowerCase().includes('garam')) ? '8.0%' : '3.0%' },
         raw: {}
     };
+
+    if (SERVER_INITIAL_STANDARDS && SERVER_INITIAL_STANDARDS.status && SERVER_INITIAL_STANDARDS.standards) {
+        dynamicStandards.raw = SERVER_INITIAL_STANDARDS.standards;
+        for (const [key, std] of Object.entries(SERVER_INITIAL_STANDARDS.standards)) {
+            const upper = key.toUpperCase();
+            if (upper.includes('KOTORAN')) {
+                dynamicStandards.kotoran = {
+                    min: std.min !== null ? parseFloat(std.min) : null,
+                    max: std.max !== null ? parseFloat(std.max) : 10.0,
+                    label: std.max !== null ? `${std.max}%` : (std.target_text || '10.0%')
+                };
+            } else if (upper.includes('KADAR AIR') || upper === 'KA' || upper === '%KA') {
+                const defaultMaxKa = (JENIS && JENIS.toLowerCase().includes('garam')) ? 8.0 : 3.0;
+                dynamicStandards.ka = {
+                    min: std.min !== null ? parseFloat(std.min) : null,
+                    max: std.max !== null ? parseFloat(std.max) : defaultMaxKa,
+                    label: std.max !== null ? `${std.max}%` : (std.target_text || `${defaultMaxKa}%`)
+                };
+            }
+        }
+    }
 
     function updateGlasswareUsageDisplay() {
         const beakerUsed = glasswareData.total_today?.beaker || 0;
@@ -1000,6 +1122,14 @@
                         cawan_transactions: resp.cawan_transactions || []
                     };
                     updateGlasswareUsageDisplay();
+
+                    // Live re-sync tare labels and recalculate active rows
+                    if (currentType === 'short-term' && currentJumlah > 0) {
+                        for (let i = 0; i < currentJumlah; i++) {
+                            calculateRowKotoran(i);
+                            calculateRowKa(i);
+                        }
+                    }
                 }
                 if (typeof callback === 'function') callback();
             },
@@ -1311,6 +1441,42 @@
         }
     };
 
+    if (SERVER_INITIAL_PARAMETERS && SERVER_INITIAL_PARAMETERS.status && SERVER_INITIAL_PARAMETERS.data) {
+        const pData = SERVER_INITIAL_PARAMETERS.data;
+        if (pData.warna && pData.warna.length > 0) {
+            MASTER_DATA['default'].warna = pData.warna;
+            if (MASTER_DATA['Gula Kelapa']) MASTER_DATA['Gula Kelapa'].warna = pData.warna;
+            if (MASTER_DATA['Gula Tebu']) MASTER_DATA['Gula Tebu'].warna = pData.warna;
+        }
+        if (pData.aroma && pData.aroma.length > 0) {
+            MASTER_DATA['default'].aroma = pData.aroma;
+            if (MASTER_DATA['Gula Kelapa']) MASTER_DATA['Gula Kelapa'].aroma = pData.aroma;
+            if (MASTER_DATA['Gula Tebu']) MASTER_DATA['Gula Tebu'].aroma = pData.aroma;
+        }
+        if (pData.organo && pData.organo.length > 0) {
+            const rawJenis = (JENIS || '').trim().toUpperCase();
+            if (rawJenis.includes('KELAPA') && MASTER_DATA['Gula Kelapa']) {
+                MASTER_DATA['Gula Kelapa'].organo = pData.organo.map(o => ({
+                    label: o.label,
+                    value: o.value,
+                    isCustom: o.isCustom
+                }));
+            } else if (rawJenis.includes('TEBU') && MASTER_DATA['Gula Tebu']) {
+                MASTER_DATA['Gula Tebu'].organo = pData.organo.map(o => ({
+                    label: o.label,
+                    value: o.value,
+                    isCustom: o.isCustom
+                }));
+            } else {
+                MASTER_DATA['default'].organo = pData.organo.map(o => ({
+                    label: o.label,
+                    value: o.value,
+                    isCustom: o.isCustom
+                }));
+            }
+        }
+    }
+
     function getMasterOptions(fieldKey) {
         if (fieldKey === 'aroma_pengotor') {
             return ['OK', 'Bau Asam', 'Bau Sangit', 'Bau Apek', 'Bau Kimia', 'Lain-lain'];
@@ -1445,6 +1611,11 @@
 
     // Helper to update visibility of main submit buttons based on active tab
     function updateMainFormActionsVisibility(explicitTarget = null) {
+        if (isCurrentFinal()) {
+            $('#btnSimpan, #btnSimpanDraft').hide();
+            $('.btn-draft-worksheet, .btn-apply-worksheet').hide();
+            return;
+        }
         if (currentType === 'short-term') {
             const activeTab = explicitTarget || $('.nav-worksheet .nav-link.active').attr('data-bs-target') || ($('#paneRingkasan').hasClass('active') ? '#paneRingkasan' : ($('#paneKotoran').hasClass('active') ? '#paneKotoran' : '#paneKadarAir'));
             if (activeTab === '#paneKotoran' || activeTab === '#paneKadarAir') {
@@ -1464,13 +1635,14 @@
             }
         });
 
-        fetchGlasswareData(function() {
-            fetchMasterStandards(function() {
-                fetchMasterParameterOptions(function() {
-                    initFormData();
-                });
-            });
-        });
+        // Initialize form immediately with preloaded master data (instant response)
+        initFormData();
+        updateGlasswareUsageDisplay();
+
+        // Refresh master data & quota logs asynchronously in background
+        fetchGlasswareData();
+        fetchMasterStandards();
+        fetchMasterParameterOptions();
 
         // Tab switching handler for worksheet
         $(document).on('click', '.btn-switch-tab', function(e) {
@@ -1490,6 +1662,7 @@
         $(document).on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function(e) {
             const target = $(this).attr('data-bs-target') || $(this).data('bs-target');
             updateMainFormActionsVisibility(target);
+            applyFormLockState();
         });
 
         // Simpan Sementara from Worksheet Tab (Tab 2 & Tab 3)
@@ -1774,11 +1947,13 @@
         $('#btnReset').on('click', handleReset);
         $(document).on('click', '#btnBackToSetup', function(e) {
             e.preventDefault();
+            saveDraft();
             currentType = null;
             $('#analisaSection, #dividerForm').hide();
             updateSetupBadges();
             $('#setupSection').slideDown(150);
-            const showCount = (globalSampleCount > 0) ? globalSampleCount : (currentJumlah > 0 ? currentJumlah : 1);
+            const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
+            const showCount = categorySampleCounts[activeRadio] || 1;
             $('#jumlahData').val(showCount);
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('kategori');
@@ -2176,7 +2351,8 @@
         $(document).on('input change', '#jumlahData', function() {
             const val = parseInt($(this).val());
             if (val && val > 0) {
-                globalSampleCount = val;
+                const selectedCat = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
+                categorySampleCounts[selectedCat] = val;
             }
         });
 
@@ -2188,20 +2364,29 @@
             if (isLong) {
                 $('#jumlahData').val(1);
             } else {
-                $('#jumlahData').val(globalSampleCount || 1);
+                const countForCat = categorySampleCounts[val] || 1;
+                $('#jumlahData').val(countForCat);
             }
         });
 
         // Submit buttons
-        $('#btnSimpanDraft').on('click', function() {
+        $('#btnSimpanDraft, .btn-draft-worksheet').on('click', function() {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+            }
             $('#saveAction').val('draft');
-            submitForm('draft');
+            submitForm('draft', false);
         });
 
         $('#formAnalisa').on('submit', function(e) {
             e.preventDefault();
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+            }
             $('#saveAction').val('final');
-            submitForm('final');
+            submitForm('final', false);
         });
     });
 
@@ -2237,11 +2422,6 @@
 
         setTimeout(() => {
             if (SERVER_EXISTING) {
-                if (SERVER_EXISTING.status === 'draft') {
-                    $('#draftStatusBadge').show();
-                } else {
-                    $('#draftStatusBadge').hide();
-                }
                 if (SERVER_EXISTING.uji_kristal) {
                     $('#selectUjiKristal').val(SERVER_EXISTING.uji_kristal).trigger('change');
                 }
@@ -2256,26 +2436,125 @@
                 }
                 renderPhotoPreviews();
             }
+            applyFormLockState();
         }, 100);
         return true;
     }
 
-    function updateDraftBadgeStatus() {
-        let isDraft = false;
-        if (currentType === 'long-term') {
-            isDraft = (SERVER_EXISTING && SERVER_EXISTING.status === 'draft');
-        } else if (currentType === 'short-term') {
-            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (currentKategori || 'incoming'));
-            isDraft = (matching.length > 0 && matching[0].status === 'draft');
-        } else if (currentType === 'garam-gula') {
-            isDraft = (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 && SERVER_GARAM_GULA[0].status === 'draft');
-        }
+    function getAnalysisStatus(type = null, kategori = null) {
+        const t = type || currentType;
+        const k = kategori || currentKategori;
 
-        if (isDraft) {
+        if (t === 'long-term') {
+            if (!SERVER_EXISTING || !SERVER_EXISTING.id) return 'empty';
+            return (SERVER_EXISTING.status === 'draft') ? 'draft' : 'final';
+        }
+        if (t === 'garam-gula') {
+            if (!SERVER_GARAM_GULA || !SERVER_GARAM_GULA.length) return 'empty';
+            return SERVER_GARAM_GULA.some(item => item.status === 'draft') ? 'draft' : 'final';
+        }
+        if (t === 'short-term') {
+            const cat = k || 'incoming';
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming'));
+            if (!matching.length) return 'empty';
+            return matching.some(item => item.status === 'draft') ? 'draft' : 'final';
+        }
+        return 'empty';
+    }
+
+    function isCurrentFinal() {
+        return getAnalysisStatus() === 'final';
+    }
+
+    function isCurrentDraft() {
+        return getAnalysisStatus() === 'draft';
+    }
+
+    function applyFormLockState() {
+        const status = getAnalysisStatus();
+        const isLocked = (status === 'final');
+        const isDraft = (status === 'draft');
+
+        // 1. Alerts & Status Badges
+        if (isLocked) {
+            $('#finalLockedAlert').show();
+            $('#finalStatusBadge').show();
+            $('#draftStatusAlert').hide();
+            $('#draftStatusBadge').hide();
+        } else if (isDraft) {
+            $('#finalLockedAlert').hide();
+            $('#finalStatusBadge').hide();
+            $('#draftStatusAlert').show();
             $('#draftStatusBadge').show();
         } else {
+            $('#finalLockedAlert').hide();
+            $('#finalStatusBadge').hide();
+            $('#draftStatusAlert').hide();
             $('#draftStatusBadge').hide();
         }
+
+        // 2. Lock or unlock form fields
+        const $form = $('#formAnalisa');
+        if (isLocked) {
+            // Readonly for inputs & textareas
+            $form.find('input:not([type="hidden"]), textarea').each(function() {
+                $(this).prop('readonly', true).addClass('form-control-readonly-locked');
+                if ($(this).is(':checkbox, :radio, [type="file"]')) {
+                    $(this).prop('disabled', true);
+                }
+            });
+
+            // Disabled for select dropdowns
+            $form.find('select').each(function() {
+                $(this).prop('disabled', true).addClass('select-disabled-locked');
+            });
+
+            // Organoleptik cells
+            $('.organo-cell-container').addClass('organo-locked').css('pointer-events', 'none');
+
+            // Hide action buttons that allow modifications
+            $('#btnSimpan, #btnSimpanDraft, #btnReset, #btnEditJumlah').hide();
+            $('.btn-draft-worksheet, .btn-apply-worksheet').hide();
+            $('.btn-fill-down, .btn-fill-col-down, .btn-autofill-beaker, .btn-autofill-cawan, .btn-quota-glassware').hide();
+            $('#editJumlahWrapper').slideUp(100);
+
+            // Attachment upload controls in Long Term
+            $('#attachmentWrapper .input-group, #attachmentWrapper .form-text, #btnClearPhotos').hide();
+            $('.btn-remove-photo').hide();
+        } else {
+            // Unlock inputs & textareas
+            $form.find('input:not([type="hidden"]), textarea').each(function() {
+                $(this).prop('readonly', false).removeClass('form-control-readonly-locked');
+                if ($(this).is(':checkbox, :radio, [type="file"]')) {
+                    $(this).prop('disabled', false);
+                }
+            });
+
+            // Unlock select dropdowns
+            $form.find('select').each(function() {
+                $(this).prop('disabled', false).removeClass('select-disabled-locked');
+            });
+
+            // Organoleptik cells
+            $('.organo-cell-container').removeClass('organo-locked').css('pointer-events', '');
+
+            // Show action buttons
+            $('#btnSimpan, #btnSimpanDraft, #btnReset, #btnEditJumlah').show();
+            $('.btn-draft-worksheet, .btn-apply-worksheet').show();
+            $('.btn-fill-down, .btn-fill-col-down, .btn-autofill-beaker, .btn-autofill-cawan, .btn-quota-glassware').show();
+
+            // Attachment upload controls in Long Term
+            $('#attachmentWrapper .input-group, #attachmentWrapper .form-text, #btnClearPhotos').show();
+            $('.btn-remove-photo').show();
+        }
+
+        // Update category switcher and setup badges
+        updateCategorySwitcherBadges();
+        updateSetupBadges();
+    }
+
+    function updateDraftBadgeStatus() {
+        applyFormLockState();
     }
 
     function updateSetupBadges() {
@@ -2287,28 +2566,44 @@
 
         if (incoming.length > 0) {
             const isDraft = (incoming[0].status === 'draft');
-            $('#setupBadgeIncoming').text(isDraft ? `(Draft - ${incoming.length} Sampel)` : `(${incoming.length} Sampel)`).show();
+            if (isDraft) {
+                $('#setupBadgeIncoming').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + incoming.length + ')').removeClass('bg-primary bg-success').addClass('bg-warning text-dark').show();
+            } else {
+                $('#setupBadgeIncoming').html('<i class="ri-lock-2-line me-1"></i> Final (' + incoming.length + ')').removeClass('bg-primary bg-warning text-dark').addClass('bg-success text-white').show();
+            }
         } else {
             $('#setupBadgeIncoming').hide();
         }
 
         if (sta.length > 0) {
             const isDraft = (sta[0].status === 'draft');
-            $('#setupBadgeSta').text(isDraft ? `(Draft - ${sta.length} Sampel)` : `(${sta.length} Sampel)`).show();
+            if (isDraft) {
+                $('#setupBadgeSta').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + sta.length + ')').removeClass('bg-info bg-success').addClass('bg-warning text-dark').show();
+            } else {
+                $('#setupBadgeSta').html('<i class="ri-lock-2-line me-1"></i> Final (' + sta.length + ')').removeClass('bg-info bg-warning text-dark').addClass('bg-success text-white').show();
+            }
         } else {
             $('#setupBadgeSta').hide();
         }
 
         if (monitoring.length > 0) {
             const isDraft = (monitoring[0].status === 'draft');
-            $('#setupBadgeMonitoring').text(isDraft ? `(Draft - ${monitoring.length} Sampel)` : `(${monitoring.length} Sampel)`).show();
+            if (isDraft) {
+                $('#setupBadgeMonitoring').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + monitoring.length + ')').removeClass('bg-success text-white').addClass('bg-warning text-dark').show();
+            } else {
+                $('#setupBadgeMonitoring').html('<i class="ri-lock-2-line me-1"></i> Final (' + monitoring.length + ')').removeClass('bg-warning text-dark').addClass('bg-success text-white').show();
+            }
         } else {
             $('#setupBadgeMonitoring').hide();
         }
 
         if (hasLongTerm) {
             const isDraft = (SERVER_EXISTING.status === 'draft');
-            $('#setupBadgeLongTerm').html(isDraft ? '<i class="ri-file-edit-line"></i> Draft' : '<i class="ri-check-line"></i> Tersimpan').show();
+            if (isDraft) {
+                $('#setupBadgeLongTerm').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft').removeClass('bg-dark bg-success text-white').addClass('bg-warning text-dark').show();
+            } else {
+                $('#setupBadgeLongTerm').html('<i class="ri-lock-2-line me-1"></i> Final').removeClass('bg-dark bg-warning text-dark').addClass('bg-success text-white').show();
+            }
         } else {
             $('#setupBadgeLongTerm').hide();
         }
@@ -2319,11 +2614,11 @@
         const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming'));
         if (!matching.length) return false;
 
-        const count = (customJumlah && customJumlah > 0) ? customJumlah : (globalSampleCount > 0 ? globalSampleCount : (matching.length > 0 ? matching.length : 1));
+        const count = (customJumlah && customJumlah > 0) ? customJumlah : (categorySampleCounts[kategori] || (matching.length > 0 ? matching.length : 1));
+        categorySampleCounts[kategori] = count;
         currentType = 'short-term';
         currentKategori = kategori;
         currentJumlah = count;
-        globalSampleCount = count;
 
         if (isGulaKristalMaterial(JENIS)) {
             $(`input[name="analisa_type"][value="${kategori}"]`).prop('checked', true);
@@ -2352,12 +2647,13 @@
                 }
                 if (rec.no_beaker) {
                     $('select[name="no_beaker[]"]').eq(idx).html(getBeakerOptions(rec.no_beaker)).val(rec.no_beaker);
-                }
-                if (rec.berat_beaker_500 !== null && rec.berat_beaker_500 !== undefined) {
-                    $('input[name="berat_beaker_500[]"]').eq(idx).val(rec.berat_beaker_500);
-                }
-                if (rec.berat_beaker_250 !== null && rec.berat_beaker_250 !== undefined) {
-                    $('input[name="berat_beaker_250[]"]').eq(idx).val(rec.berat_beaker_250);
+                    const phys = getPhysicalNoFromCode(rec.no_beaker);
+                    const t500 = (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) ? glasswareData.beaker_500[phys] : rec.berat_beaker_500;
+                    const t250 = (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) ? glasswareData.beaker_250[phys] : rec.berat_beaker_250;
+                    $('input[name="berat_beaker_500[]"]').eq(idx).val(t500);
+                    $('input[name="berat_beaker_250[]"]').eq(idx).val(t250);
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
                 }
                 if (rec.timbang_a !== null && rec.timbang_a !== undefined) {
                     $('input[name="timbang_a[]"]').eq(idx).val(rec.timbang_a);
@@ -2376,9 +2672,10 @@
                 }
                 if (rec.no_cawan) {
                     $('select[name="no_cawan[]"]').eq(idx).html(getCawanOptions(rec.no_cawan)).val(rec.no_cawan);
-                }
-                if (rec.berat_cawan !== null && rec.berat_cawan !== undefined) {
-                    $('input[name="berat_cawan[]"]').eq(idx).val(rec.berat_cawan);
+                    const phys = getPhysicalNoFromCode(rec.no_cawan);
+                    const tCawan = (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) ? glasswareData.cawan[phys] : rec.berat_cawan;
+                    $('input[name="berat_cawan[]"]').eq(idx).val(tCawan);
+                    $('#tableLembarKa tbody tr').eq(idx).find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
                 }
                 if (rec.timbang_aa !== null && rec.timbang_aa !== undefined) {
                     $('input[name="timbang_aa[]"]').eq(idx).val(rec.timbang_aa);
@@ -2402,6 +2699,7 @@
             });
 
             calculateStatistics();
+            applyFormLockState();
         }, 100);
         return true;
     }
@@ -2446,11 +2744,13 @@
                 }
             });
             calculateStatistics();
+            applyFormLockState();
         }, 100);
         return true;
     }
 
     function initFormData() {
+        initCategorySampleCounts();
         updateSetupBadges();
 
         // If user already started a form before AJAX callbacks finished, don't reset!
@@ -2481,19 +2781,26 @@
                 }
 
                 let draft;
-                try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (e) {}
+                try {
+                    draft = JSON.parse(localStorage.getItem(getDraftKey(reqKategori)));
+                    if (!draft) {
+                        const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                        if (legacy && legacy.setup && legacy.setup.kategori === reqKategori) draft = legacy;
+                    }
+                } catch (e) {}
 
                 const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === reqKategori);
-                const draftCount = (draft && draft.setup && draft.setup.jumlah) ? draft.setup.jumlah : null;
-                const sampleCount = draftCount || (matching.length > 0 ? matching.length : 1);
+                const draftCount = (draft && draft.setup && draft.setup.jumlah) ? parseInt(draft.setup.jumlah) : null;
+                const sampleCount = draftCount || (matching.length > 0 ? matching.length : (categorySampleCounts[reqKategori] || 1));
 
+                categorySampleCounts[reqKategori] = sampleCount;
                 $('#jumlahData').val(sampleCount);
 
                 const hasDb = populateExistingShortTerm(reqKategori, sampleCount);
                 if (hasDb) return;
 
                 if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === reqKategori) {
-                    restoreFromDraft();
+                    restoreFromDraft(reqKategori);
                     return;
                 }
 
@@ -2516,7 +2823,8 @@
         // Always present the Setup Section so the user can choose category & input sample count freely!
         $('#setupSection').show();
         $('#dividerForm, #analisaSection').hide();
-        $('#jumlahData').val(1);
+        const activeRadio = $('input[name="analisa_type"]:checked').val() || 'incoming';
+        $('#jumlahData').val(categorySampleCounts[activeRadio] || 1);
     }
 
     function handleMulai(e) {
@@ -2531,10 +2839,8 @@
             });
         }
 
-        const inputJumlah = parseInt($('#jumlahData').val()) || globalSampleCount || 1;
-        if (selectedVal !== 'long-term') {
-            globalSampleCount = inputJumlah;
-        }
+        const inputJumlah = parseInt($('#jumlahData').val()) || categorySampleCounts[selectedVal] || 1;
+        categorySampleCounts[selectedVal] = inputJumlah;
 
         if (selectedVal === 'long-term') {
             if (SERVER_EXISTING && SERVER_EXISTING.id) {
@@ -2563,12 +2869,16 @@
             // Check draft for this category
             let draft;
             try {
-                draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                draft = JSON.parse(localStorage.getItem(getDraftKey(selectedVal)));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.kategori === selectedVal) draft = legacy;
+                }
             } catch (e) {}
 
             if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === selectedVal) {
                 draft.setup.jumlah = inputJumlah;
-                restoreFromDraft();
+                restoreFromDraft(selectedVal);
             } else {
                 startForm('short-term', inputJumlah, selectedVal);
             }
@@ -2576,6 +2886,13 @@
     }
 
     function handleApplyJumlah() {
+        if (isCurrentFinal()) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Data Terkunci',
+                text: 'Data analisa sudah berstatus FINAL dan jumlah sampel tidak dapat diubah lagi.'
+            });
+        }
         const newJumlah = parseInt($('#editJumlahInput').val());
         if (!newJumlah || newJumlah <= 0) {
             return Swal.fire({
@@ -2585,7 +2902,7 @@
         }
         const savedValues = collectArrayValues();
 
-        globalSampleCount = newJumlah;
+        categorySampleCounts[currentKategori] = newJumlah;
         currentJumlah = newJumlah;
         $('#jumlahData').val(newJumlah);
         renderAccordion(currentType, currentJumlah);
@@ -2606,7 +2923,7 @@
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: `Jumlah sampel diubah menjadi ${newJumlah}`,
+            title: `Jumlah sampel ${currentKategori.toUpperCase()} diubah menjadi ${newJumlah}`,
             showConfirmButton: false,
             timer: 1500
         });
@@ -2702,6 +3019,13 @@
 
     function handleReset(e) {
         if (e) e.preventDefault();
+        if (isCurrentFinal()) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Data Terkunci',
+                text: 'Data analisa sudah berstatus FINAL dan tidak dapat di-reset.'
+            });
+        }
         const targetType = currentType;
         const targetKategori = currentKategori;
 
@@ -2768,67 +3092,56 @@
             $('#summaryStatsBar').show();
             calculateStatistics();
         }
-        updateDraftBadgeStatus();
+        applyFormLockState();
         updateMainFormActionsVisibility();
-        saveDraft();
+        if (!isCurrentFinal()) {
+            saveDraft();
+        }
     }
 
     function updateCategorySwitcherBadges() {
         if (!isGulaKristalMaterial(JENIS)) return;
-        const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
-        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
-        const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
-        const hasLongTerm = (SERVER_EXISTING && SERVER_EXISTING.id);
 
-        if (incoming.length > 0) {
-            const isDraft = (incoming[0].status === 'draft');
-            if (isDraft) {
-                $('#badgeCatIncoming').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
-            } else {
-                $('#badgeCatIncoming').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
-            }
-        } else {
-            $('#badgeCatIncoming').hide();
-        }
+        const categories = [
+            { key: 'incoming', badgeId: '#badgeCatIncoming' },
+            { key: 'sta', badgeId: '#badgeCatSta' },
+            { key: 'monitoring', badgeId: '#badgeCatMonitoring' },
+            { key: 'long-term', badgeId: '#badgeCatLongTerm' },
+        ];
 
-        if (sta.length > 0) {
-            const isDraft = (sta[0].status === 'draft');
-            if (isDraft) {
-                $('#badgeCatSta').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
-            } else {
-                $('#badgeCatSta').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
-            }
-        } else {
-            $('#badgeCatSta').hide();
-        }
+        categories.forEach(cat => {
+            const status = (cat.key === 'long-term') 
+                ? getAnalysisStatus('long-term', 'long-term') 
+                : getAnalysisStatus('short-term', cat.key);
 
-        if (monitoring.length > 0) {
-            const isDraft = (monitoring[0].status === 'draft');
-            if (isDraft) {
-                $('#badgeCatMonitoring').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
+            if (status === 'final') {
+                $(cat.badgeId).html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-lock-2-line"></i> Final</span>').show();
+            } else if (status === 'draft') {
+                $(cat.badgeId).html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;"><i class="mdi mdi-file-document-edit-outline"></i> Draft</span>').show();
             } else {
-                $('#badgeCatMonitoring').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
+                $(cat.badgeId).hide();
             }
-        } else {
-            $('#badgeCatMonitoring').hide();
-        }
-
-        if (hasLongTerm) {
-            const isDraft = (SERVER_EXISTING.status === 'draft');
-            if (isDraft) {
-                $('#badgeCatLongTerm').html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;">Draft</span>').show();
-            } else {
-                $('#badgeCatLongTerm').html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>').show();
-            }
-        } else {
-            $('#badgeCatLongTerm').hide();
-        }
+        });
     }
 
     function switchCategoryDirectly(targetCat) {
         const activeKey = currentType === 'long-term' ? 'long-term' : (currentKategori || 'incoming');
         if (targetCat === activeKey) {
             return;
+        }
+
+        // Flush pending auto-save immediately before switching ONLY if not final
+        if (!isCurrentFinal()) {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+                executeAutoSave();
+            } else {
+                saveDraft();
+            }
+        } else if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
         }
 
         // Update URL query param quietly without full reload
@@ -2853,21 +3166,23 @@
             $(`input[name="analisa_type"][value="${targetCat}"]`).prop('checked', true);
         }
 
-        const keepJumlah = (globalSampleCount > 0) ? globalSampleCount : (currentJumlah > 0 ? currentJumlah : (parseInt($('#jumlahData').val()) || 1));
-        globalSampleCount = keepJumlah;
+        const targetJumlah = categorySampleCounts[targetCat] || 1;
 
-        const hasDb = populateExistingShortTerm(targetCat, keepJumlah);
+        const hasDb = populateExistingShortTerm(targetCat, targetJumlah);
         if (!hasDb) {
             let draft;
             try {
-                draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                draft = JSON.parse(localStorage.getItem(getDraftKey(targetCat)));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.kategori === targetCat) draft = legacy;
+                }
             } catch (e) {}
 
             if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === targetCat) {
-                draft.setup.jumlah = keepJumlah;
-                restoreFromDraft();
+                restoreFromDraft(targetCat);
             } else {
-                startForm('short-term', keepJumlah, targetCat);
+                startForm('short-term', targetJumlah, targetCat);
             }
         }
     }
@@ -3771,13 +4086,36 @@
         const $tabKotoranRow = $('#tableLembarKotoran tbody tr').eq(rowIdx);
         if (!$tabKotoranRow.length) return;
 
-        const tare500Str = $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val();
-        const tare250Str = $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val();
+        const selectedBeaker = $tabKotoranRow.find('.select-no-beaker').val();
+        let t500 = null;
+        let t250 = null;
+
+        if (selectedBeaker) {
+            const phys = getPhysicalNoFromCode(selectedBeaker);
+            if (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) {
+                t500 = parseFloat(glasswareData.beaker_500[phys]);
+                $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val(t500);
+                $tabKotoranRow.find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+            }
+            if (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) {
+                t250 = parseFloat(glasswareData.beaker_250[phys]);
+                $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val(t250);
+                $tabKotoranRow.find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
+            }
+        }
+
+        if (t500 === null || isNaN(t500)) {
+            const tare500Str = $tabKotoranRow.find('input[name="berat_beaker_500[]"]').val();
+            t500 = parseRapidNumericValue(tare500Str);
+        }
+        if (t250 === null || isNaN(t250)) {
+            const tare250Str = $tabKotoranRow.find('input[name="berat_beaker_250[]"]').val();
+            t250 = parseRapidNumericValue(tare250Str);
+        }
+
         const timbangAStr = $tabKotoranRow.find('input[name="timbang_a[]"]').val();
         const timbangBStr = $tabKotoranRow.find('input[name="timbang_b[]"]').val();
 
-        const t500 = parseRapidNumericValue(tare500Str);
-        const t250 = parseRapidNumericValue(tare250Str);
         const a = parseRapidNumericValue(timbangAStr);
         const b = parseRapidNumericValue(timbangBStr);
 
@@ -3834,10 +4172,24 @@
         const $tabKaRow = $('#tableLembarKa tbody tr').eq(rowIdx);
         if (!$tabKaRow.length) return;
 
-        const tareCawanStr = $tabKaRow.find('input[name="berat_cawan[]"]').val();
-        const timbangAaStr = $tabKaRow.find('input[name="timbang_aa[]"]').val();
+        const selectedCawan = $tabKaRow.find('.select-no-cawan').val();
+        let tCawan = null;
 
-        const tCawan = parseRapidNumericValue(tareCawanStr);
+        if (selectedCawan) {
+            const phys = getPhysicalNoFromCode(selectedCawan);
+            if (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) {
+                tCawan = parseFloat(glasswareData.cawan[phys]);
+                $tabKaRow.find('input[name="berat_cawan[]"]').val(tCawan);
+                $tabKaRow.find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
+            }
+        }
+
+        if (tCawan === null || isNaN(tCawan)) {
+            const tareCawanStr = $tabKaRow.find('input[name="berat_cawan[]"]').val();
+            tCawan = parseRapidNumericValue(tareCawanStr);
+        }
+
+        const timbangAaStr = $tabKaRow.find('input[name="timbang_aa[]"]').val();
         const aa = parseRapidNumericValue(timbangAaStr);
 
         const $badge = $tabKaRow.find('.badge-ka-calc');
@@ -4336,6 +4688,18 @@
         const row = coords ? coords.row : 0;
         const col = coords ? coords.col : 0;
 
+        // Block data modifying keys when form is FINAL (LOCKED)
+        if (isCurrentFinal()) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                return false;
+            }
+        }
+
         // 1. ENTER / TAB: Strictly Navigate Downwards (Shift: Upwards)
         if (e.key === 'Enter' || e.key === 'Tab') {
             e.preventDefault();
@@ -4734,6 +5098,11 @@
     // DIRECT TABLE CELL PASTE LISTENER (Ctrl+V)
     // ─────────────────────────────────────────────
     function handleDirectTablePaste(e) {
+        if (isCurrentFinal()) {
+            e.preventDefault();
+            return;
+        }
+
         if ($(e.target).is('textarea, #editJumlahInput, #jumlahData') && !$(e.target).closest('.analisa-table').length) {
             return;
         }
@@ -5136,12 +5505,27 @@
             container.append(html);
             currentIdx++;
         });
+
+        if (isCurrentFinal()) {
+            $('.btn-remove-photo').hide();
+            $('#attachmentWrapper .input-group, #attachmentWrapper .form-text, #btnClearPhotos').hide();
+        }
     }
 
     // ─────────────────────────────────────────────
-    // SUBMIT (FINAL vs DRAFT)
+    // SUBMIT (FINAL vs DRAFT vs AUTO-SAVE)
     // ─────────────────────────────────────────────
-    function submitForm(actionType) {
+    function submitForm(actionType, isAutoSave = false) {
+        if (isCurrentFinal()) {
+            if (!isAutoSave) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Terkunci',
+                    text: 'Data analisa sudah berstatus FINAL dan tidak dapat diubah lagi.'
+                });
+            }
+            return;
+        }
         const isDraft = (actionType === 'draft');
 
         if (!isDraft) {
@@ -5282,6 +5666,7 @@
 
         const formData = new FormData(document.getElementById('formAnalisa'));
         formData.set('save_action', actionType);
+        formData.set('is_auto_save', isAutoSave ? '1' : '0');
         formData.set('kategori', currentKategori);
 
         if (currentType === 'long-term') {
@@ -5317,12 +5702,14 @@
             'garam-gula': "{{ route('rmpm.store.garam-gula') }}",
         };
 
-        Swal.fire({
-            title: isDraft ? 'Menyimpan Sementara...' : 'Menyimpan Analisa...',
-            text: 'Mohon tunggu sebentar...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        if (!isAutoSave) {
+            Swal.fire({
+                title: isDraft ? 'Menyimpan Sementara...' : 'Menyimpan Analisa...',
+                text: 'Mohon tunggu sebentar...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        }
 
         function executeAjaxSubmit(isRetry) {
             const currentToken = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val();
@@ -5340,23 +5727,32 @@
                     'Accept': 'application/json'
                 },
                 success: function(resp) {
-                    clearDraft();
-                    if (isDraft) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Tersimpan Sementara',
-                            text: resp.message || 'Data analisa berhasil disimpan sementara (Draft).'
-                        }).then(() => {
-                            window.location.reload();
-                        });
+                    if (isAutoSave) {
+                        isAutoSaving = false;
+                        syncServerStateAfterDraftSave(currentType, currentKategori, currentJumlah);
+                        if (pendingAutoSave) {
+                            pendingAutoSave = false;
+                            scheduleAutoSave();
+                        }
                     } else {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: resp.message || 'Data analisa berhasil disimpan!'
-                        }).then(() => {
-                            window.location.href = "{{ route('rmpm.show', $identitas->id) }}";
-                        });
+                        clearDraft();
+                        if (isDraft) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Tersimpan Sementara',
+                                text: resp.message || 'Data analisa berhasil disimpan sementara (Draft).'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: resp.message || 'Data analisa berhasil disimpan!'
+                            }).then(() => {
+                                window.location.href = "{{ route('rmpm.show', $identitas->id) }}";
+                            });
+                        }
                     }
                 },
                 error: function(xhr) {
@@ -5375,14 +5771,26 @@
                                     executeAjaxSubmit(true);
                                     return;
                                 }
-                                handleAjaxError(xhr);
+                                if (isAutoSave) {
+                                    isAutoSaving = false;
+                                } else {
+                                    handleAjaxError(xhr);
+                                }
                             })
                             .fail(function() {
-                                handleAjaxError(xhr);
+                                if (isAutoSave) {
+                                    isAutoSaving = false;
+                                } else {
+                                    handleAjaxError(xhr);
+                                }
                             });
                         return;
                     }
-                    handleAjaxError(xhr);
+                    if (isAutoSave) {
+                        isAutoSaving = false;
+                    } else {
+                        handleAjaxError(xhr);
+                    }
                 },
             });
         }
@@ -5403,10 +5811,80 @@
     }
 
     // ─────────────────────────────────────────────
-    // LOCALSTORAGE DRAFT CACHE
+    // AUTO-SAVE & LOCALSTORAGE DRAFT CACHE
     // ─────────────────────────────────────────────
+    let autoSaveTimer = null;
+    let isAutoSaving = false;
+    let pendingAutoSave = false;
+
+    function scheduleAutoSave() {
+        if (isCurrentFinal() || !currentType || $('#analisaSection').is(':hidden')) return;
+
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+        }
+
+        autoSaveTimer = setTimeout(() => {
+            executeAutoSave();
+        }, 1800);
+    }
+
+    function executeAutoSave() {
+        if (isCurrentFinal() || !currentType || $('#analisaSection').is(':hidden')) return;
+        if (isAutoSaving) {
+            pendingAutoSave = true;
+            return;
+        }
+
+        isAutoSaving = true;
+        submitForm('draft', true);
+    }
+
+    function syncServerStateAfterDraftSave(type, kategori, jumlah) {
+        if (type === 'short-term') {
+            if (!Array.isArray(SERVER_SHORT_TERM)) {
+                SERVER_SHORT_TERM = [];
+            }
+            SERVER_SHORT_TERM = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') !== kategori);
+
+            for (let i = 0; i < jumlah; i++) {
+                SERVER_SHORT_TERM.push({
+                    kategori: kategori,
+                    status: 'draft',
+                    disposisi: $('select[name="disposisi"]').val() || null,
+                    keterangan: $('textarea[name="keterangan"]').val() || null,
+                    brix: $('input[name="brix[]"]').eq(i).val() || null,
+                    ph: $('input[name="ph[]"]').eq(i).val() || null,
+                });
+            }
+        } else if (type === 'garam-gula') {
+            if (!Array.isArray(SERVER_GARAM_GULA)) {
+                SERVER_GARAM_GULA = [];
+            }
+            SERVER_GARAM_GULA = [];
+            for (let i = 0; i < jumlah; i++) {
+                SERVER_GARAM_GULA.push({
+                    status: 'draft',
+                    disposisi: $('select[name="disposisi"]').val() || null,
+                    keterangan: $('textarea[name="keterangan"]').val() || null,
+                    fisik: $('input[name="fisik[]"]').eq(i).val() || null,
+                });
+            }
+        } else if (type === 'long-term') {
+            if (!SERVER_EXISTING) SERVER_EXISTING = {};
+            SERVER_EXISTING.status = 'draft';
+            SERVER_EXISTING.id = SERVER_EXISTING.id || {{ $identitas->id }};
+            SERVER_EXISTING.uji_kristal = $('#selectUjiKristal').val() || null;
+            SERVER_EXISTING.disposisi = $('#selectDisposisiLong').val() || null;
+        }
+
+        updateSetupBadges();
+        updateCategorySwitcherBadges();
+        updateDraftBadgeStatus();
+    }
+
     function saveDraft() {
-        if (!currentType) return;
+        if (isCurrentFinal() || !currentType) return;
         const fields = {};
 
         $('#formAnalisa').find('input:not([type=file]), select, textarea').each(function() {
@@ -5420,7 +5898,7 @@
             }
         });
 
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        const draftData = {
             setup: {
                 type: currentType,
                 kategori: currentKategori,
@@ -5428,13 +5906,20 @@
             },
             fields,
             existingPhotos: existingPhotos,
-        }));
+        };
+
+        // Save per category and to legacy key
+        localStorage.setItem(getDraftKey(currentKategori), JSON.stringify(draftData));
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+
+        // Schedule background auto-save to database server
+        scheduleAutoSave();
     }
 
     function loadFieldsFromDraft(fields) {
         setTimeout(() => {
             for (const [name, value] of Object.entries(fields)) {
-                if (['_token', 'id_identitas', 'jenis', 'analisa_type', 'kategori'].includes(name)) continue;
+                if (['_token', 'id_identitas', 'jenis', 'analisa_type', 'kategori', 'berat_beaker_500[]', 'berat_beaker_250[]', 'berat_cawan[]'].includes(name)) continue;
                 if (name === 'organo[]' && Array.isArray(value)) {
                     $('.organo-cell-container').each(function(i) {
                         if (value[i] !== undefined) {
@@ -5490,19 +5975,24 @@
         }, 150);
     }
 
-    function restoreFromDraft() {
+    function restoreFromDraft(targetCat = null) {
+        const cat = targetCat || currentKategori || 'incoming';
         let draft;
         try {
-            draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+            draft = JSON.parse(localStorage.getItem(getDraftKey(cat)));
+            if (!draft) {
+                const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                if (legacy && legacy.setup && legacy.setup.kategori === cat) draft = legacy;
+            }
         } catch (e) {
             return;
         }
         if (!draft?.setup?.type) return;
 
         currentType = draft.setup.type;
-        currentKategori = draft.setup.kategori || 'incoming';
-        currentJumlah = (globalSampleCount > 0) ? globalSampleCount : (draft.setup.jumlah || parseInt($('#jumlahData').val()) || 1);
-        globalSampleCount = currentJumlah;
+        currentKategori = draft.setup.kategori || cat;
+        currentJumlah = draft.setup.jumlah || categorySampleCounts[cat] || parseInt($('#jumlahData').val()) || 1;
+        categorySampleCounts[currentKategori] = currentJumlah;
 
         if (draft.existingPhotos && Array.isArray(draft.existingPhotos)) {
             existingPhotos = [...draft.existingPhotos];
@@ -5521,8 +6011,15 @@
         renderPhotoPreviews();
     }
 
-    function clearDraft() {
-        localStorage.removeItem(DRAFT_KEY);
+    function clearDraft(targetCat = null) {
+        if (targetCat) {
+            localStorage.removeItem(getDraftKey(targetCat));
+        } else {
+            localStorage.removeItem(DRAFT_KEY);
+            ['incoming', 'sta', 'monitoring', 'long-term', 'garam-gula'].forEach(cat => {
+                localStorage.removeItem(getDraftKey(cat));
+            });
+        }
     }
 </script>
 @endsection

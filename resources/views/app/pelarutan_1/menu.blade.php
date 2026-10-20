@@ -146,6 +146,7 @@
                 </div>
             </div>
 
+            @if (auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
             <!-- Dokumen Analisis Pelarutan & Export Card -->
             <div class="col-xl-4 col-lg-4 col-md-6">
                 <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">
@@ -178,6 +179,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
     </div>
 </div>

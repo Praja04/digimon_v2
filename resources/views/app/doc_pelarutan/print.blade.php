@@ -155,6 +155,7 @@
                             <td class="p-1 text-start">: {{ $pIdx + 1 }} / {{ $totalSheets }}</td>
                         </tr>
                     </table>
+                    <div class="text-end fst-italic text-muted px-1" style="font-size: 6.5pt;">Notes: 1 lembar: 2 batch</div>
                 </td>
             </tr>
         </table>
@@ -193,12 +194,12 @@
             <table class="table-doc">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width: 4%;">Sampling ke-</th>
+                        <th rowspan="2" style="width: 6%;">Sampling<br>ke-</th>
                         <th colspan="2" style="width: 10%;">Serah Terima</th>
-                        <th colspan="5" style="width: 36%;">Pelarutan I (GGA)</th>
-                        <th rowspan="2" style="width: 4%;">Sampling ke-</th>
+                        <th colspan="5" style="width: 34%;">Pelarutan I (GGA)</th>
+                        <th rowspan="2" style="width: 6%;">Sampling<br>ke-</th>
                         <th colspan="2" style="width: 10%;">Serah Terima</th>
-                        <th colspan="5" style="width: 36%;">Pelarutan II (GGAS)</th>
+                        <th colspan="5" style="width: 34%;">Pelarutan II (GGAS)</th>
                         <th rowspan="2" style="width: 8%;">Disposisi</th>
                     </tr>
                     <tr>
@@ -212,7 +213,7 @@
                         <th style="width: 4%;">Jam</th>
                         <th style="width: 6%;">PIC</th>
                         <th style="width: 5%;">Brix</th>
-                        <th style="width: 5%;">%NaCl</th>
+                        <th style="width: 5%;">Visco</th>
                         <th style="width: 6%;">Warna</th>
                         <th style="width: 5%;">Organo</th>
                         <th style="width: 15%;">Waktu & Adjustment</th>
@@ -236,16 +237,16 @@
                             <td>{{ $r['p1_nacl'] ?? '' }}</td>
                             <td>{{ $r['p1_warna'] ?? '' }}</td>
                             <td>{{ $r['p1_organo'] ?? '' }}</td>
-                            <td class="text-start" style="padding-left: 4px;">{{ $r['p1_waktu_adjustment'] ?? '' }}</td>
+                            <td class="text-center" style="white-space: pre-line; line-height: 1.2;">{{ $r['p1_waktu_adjustment'] ?? '' }}</td>
 
                             <td>{{ $r['p2_sampling_ke'] ?? ($i + 1) }}</td>
                             <td>{{ $r['p2_jam'] ?? '' }}</td>
                             <td>{{ $r['p2_pic'] ?? '' }}</td>
                             <td>{{ $r['p2_brix'] ?? '' }}</td>
-                            <td>{{ $r['p2_nacl'] ?? '' }}</td>
+                            <td>{{ $r['p2_visco'] ?? '' }}</td>
                             <td>{{ $r['p2_warna'] ?? '' }}</td>
                             <td>{{ $r['p2_organo'] ?? '' }}</td>
-                            <td class="text-start" style="padding-left: 4px;">{{ $r['p2_waktu_adjustment'] ?? '' }}</td>
+                            <td class="text-center" style="white-space: pre-line; line-height: 1.2;">{{ $r['p2_waktu_adjustment'] ?? '' }}</td>
 
                             <td>{{ $r['disposisi'] ?? '' }}</td>
                         </tr>

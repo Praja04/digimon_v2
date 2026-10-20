@@ -87,6 +87,7 @@ class DocPelarutanExport implements WithMultipleSheets
                 'p2_pic' => '',
                 'p2_brix' => '',
                 'p2_nacl' => '',
+                'p2_visco' => '',
                 'p2_warna' => '',
                 'p2_organo' => '',
                 'p2_waktu_adjustment' => '',
@@ -97,8 +98,8 @@ class DocPelarutanExport implements WithMultipleSheets
         return [
             'jenis_produk' => $this->data['variant'] ?? 'Kecap Manis',
             'tanggal_produksi' => $this->data['tanggal_record_doc'] ?? date('Y-m-d'),
-            'jam_produksi' => '08:00',
-            'kode_shift_grup' => 'Shift 1 / Grup A',
+            'jam_produksi' => '06:00 - 14:00',
+            'kode_shift_grup' => '',
             'batch' => $batchNum,
             'no_dissolver' => $dissolverNum,
             'volume' => '',
@@ -166,7 +167,7 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                     'J' => 8,  // Jam P2
                     'K' => 13, // PIC P2
                     'L' => 9,  // Brix P2
-                    'M' => 9,  // %NaCl P2
+                    'M' => 9,  // Visco P2 (Revisi kolom %NaCl -> Visco)
                     'N' => 10, // Warna P2
                     'O' => 9,  // Organo P2
                     'P' => 25, // Waktu & Adj P2
@@ -234,7 +235,13 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                 for ($r = 1; $r <= 4; $r++) {
                     $sheet->getRowDimension($r)->setRowHeight(15);
                 }
-                $sheet->getRowDimension(5)->setRowHeight(6);
+
+                // Notes resmi dari template acuan
+                $sheet->mergeCells('L5:Q5');
+                $sheet->setCellValue('L5', 'Notes: 1 lembar: 2 batch');
+                $sheet->getStyle('L5')->getFont()->setSize(7.5)->setItalic(true);
+                $sheet->getStyle('L5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getRowDimension(5)->setRowHeight(12);
 
                 // ==========================================
                 // 2. BLOK BATCH 1 (Baris 6 - 17)
@@ -434,7 +441,7 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
         $sheet->mergeCells("L{$th1}:P{$th1}");
         $sheet->setCellValue("L{$th1}", "Pelarutan II (GGAS)");
         $sheet->setCellValue("L{$th2}", "Brix");
-        $sheet->setCellValue("M{$th2}", "%NaCl");
+        $sheet->setCellValue("M{$th2}", "Visco");
         $sheet->setCellValue("N{$th2}", "Warna");
         $sheet->setCellValue("O{$th2}", "Organo");
         $sheet->setCellValue("P{$th2}", "Waktu & Adjustment");
@@ -461,8 +468,8 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                 $sheet->setCellValueExplicit("A{$dr}", (string)($row['p1_sampling_ke'] ?? ($i + 1)), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("B{$dr}", (string)($row['p1_jam'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("C{$dr}", (string)($row['p1_pic'] ?? ''), DataType::TYPE_STRING);
-                $sheet->setCellValueExplicit("D{$dr}", (string)($row['p1_brix'] ?? ''), DataType::TYPE_STRING);
-                $sheet->setCellValueExplicit("E{$dr}", (string)($row['p1_nacl'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("D{$dr}", $this->formatVal($row['p1_brix'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("E{$dr}", $this->formatVal($row['p1_nacl'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("F{$dr}", (string)($row['p1_warna'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("G{$dr}", (string)($row['p1_organo'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("H{$dr}", (string)($row['p1_waktu_adjustment'] ?? ''), DataType::TYPE_STRING);
@@ -470,8 +477,8 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                 $sheet->setCellValueExplicit("I{$dr}", (string)($row['p2_sampling_ke'] ?? ($i + 1)), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("J{$dr}", (string)($row['p2_jam'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("K{$dr}", (string)($row['p2_pic'] ?? ''), DataType::TYPE_STRING);
-                $sheet->setCellValueExplicit("L{$dr}", (string)($row['p2_brix'] ?? ''), DataType::TYPE_STRING);
-                $sheet->setCellValueExplicit("M{$dr}", (string)($row['p2_nacl'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("L{$dr}", $this->formatVal($row['p2_brix'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("M{$dr}", $this->formatVal($row['p2_visco'] ?? ($row['p2_nacl'] ?? '')), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("N{$dr}", (string)($row['p2_warna'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("O{$dr}", (string)($row['p2_organo'] ?? ''), DataType::TYPE_STRING);
                 $sheet->setCellValueExplicit("P{$dr}", (string)($row['p2_waktu_adjustment'] ?? ''), DataType::TYPE_STRING);
@@ -479,14 +486,35 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                 $sheet->setCellValueExplicit("Q{$dr}", (string)($row['disposisi'] ?? ''), DataType::TYPE_STRING);
             }
 
-            $sheet->getRowDimension($dr)->setRowHeight(18);
-            $sheet->getStyle("A{$dr}:G{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("H{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-            $sheet->getStyle("I{$dr}:O{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("P{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-            $sheet->getStyle("Q{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("A{$dr}:Q{$dr}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $p1Adj = (string)($row['p1_waktu_adjustment'] ?? '');
+            $p2Adj = (string)($row['p2_waktu_adjustment'] ?? '');
+            $linesH = !empty($p1Adj) ? substr_count($p1Adj, "\n") + 1 : 1;
+            $linesP = !empty($p2Adj) ? substr_count($p2Adj, "\n") + 1 : 1;
+            $maxLines = max($linesH, $linesP, 1);
+            $rowH = $maxLines > 1 ? max(28, $maxLines * 15) : 20;
+
+            $sheet->getRowDimension($dr)->setRowHeight($rowH);
+            $sheet->getStyle("A{$dr}:Q{$dr}")->getFont()->setSize(8.5);
+            $sheet->getStyle("H{$dr}")->getFont()->setSize(8);
+            $sheet->getStyle("P{$dr}")->getFont()->setSize(8);
+            $sheet->getStyle("A{$dr}:Q{$dr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("H{$dr}")->getAlignment()->setWrapText(true);
+            $sheet->getStyle("P{$dr}")->getAlignment()->setWrapText(true);
             $sheet->getStyle("A{$dr}:Q{$dr}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         }
+    }
+
+    /**
+     * Format nilai: jika 0, 0.0, null, '-', atau kosong jadikan blank
+     */
+    private function formatVal($val): string
+    {
+        if ($val === null || $val === '' || $val === 'null' || $val === '-' || $val === '0' || $val === 0 || $val === 0.0 || $val === '0.0' || $val === '0.00') {
+            return '';
+        }
+        if (is_numeric($val) && floatval($val) == 0) {
+            return '';
+        }
+        return (string)$val;
     }
 }

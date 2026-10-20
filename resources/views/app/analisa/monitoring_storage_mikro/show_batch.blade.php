@@ -123,6 +123,22 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-primary fs-24">
+                                                                <i class="ri-flask-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Jenis Sampel :</p>
+                                                            <h5 class="mb-0">{{ $monitoringStorageMikro->jenis_sampel ?? '-' }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <!-- end row -->
 

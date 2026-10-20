@@ -159,6 +159,24 @@
             $('#status_filter').on('change', function() {
                 table.ajax.reload();
             });
-        });
+
+            function formatDecimal(value) {
+                if (value === null || value === undefined || value === '') return '';
+                return String(value).replace(/\./g, ',');
+            }
+
+            function formatDateTime(dateString) {
+                const date = new Date(dateString);
+                const options = {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                return date.toLocaleDateString('id-ID', options);
+            }
+
+            });
     </script>
 @endsection

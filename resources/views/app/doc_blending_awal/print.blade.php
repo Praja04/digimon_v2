@@ -55,6 +55,12 @@
             print-color-adjust: exact;
         }
 
+        .row-turun-blending, .row-turun-blending td {
+            background-color: #fef08a !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
         .meta-table {
             width: 100%;
             border-collapse: collapse;
@@ -153,6 +159,9 @@
                             <td class="p-1 text-start fw-bold">: {{ $bIdx + 1 }} / {{ $totalBlocks }}</td>
                         </tr>
                     </table>
+                    <div class="text-end pe-1 pt-1" style="font-size: 7.5pt; font-style: italic;">
+                        <strong>Notes:</strong> 1 lembar: 1 pasangan batch blending (1-2, 3-4, 5-6, …)
+                    </div>
                 </td>
             </tr>
         </table>
@@ -185,30 +194,48 @@
 
         <!-- 3. Tabel Analisis Proses Blending (11 Baris Standar) -->
         <table class="table-doc">
+            <colgroup>
+                <col style="width: 8.5%;">  <!-- Sampling ke- -->
+                <col style="width: 6.5%;">  <!-- Vol Tangki (L) -->
+                <col style="width: 5%;">    <!-- Jam -->
+                <col style="width: 8%;">    <!-- PIC -->
+                <col style="width: 5%;">    <!-- BJ -->
+                <col style="width: 5%;">    <!-- Brix -->
+                <col style="width: 4.5%;">  <!-- pH -->
+                <col style="width: 5%;">    <!-- % NaCl -->
+                <col style="width: 6.5%;">  <!-- Viskositas -->
+                <col style="width: 5%;">    <!-- Organo -->
+                <col style="width: 5%;">    <!-- Aroma -->
+                <col style="width: 5%;">    <!-- Warna -->
+                <col style="width: 5.5%;">  <!-- Buih -->
+                <col style="width: 4.5%;">  <!-- Aw -->
+                <col style="width: 13.5%;"> <!-- Waktu & Adjustment -->
+                <col style="width: 12%;">   <!-- Disposisi/ Keterangan -->
+            </colgroup>
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 4.5%;">Sampling ke-</th>
-                    <th rowspan="2" style="width: 6%;">Vol Tangki (L)</th>
-                    <th colspan="2" style="width: 10%;">Serah Terima</th>
-                    <th colspan="10" style="width: 46.5%;">Analisis</th>
-                    <th rowspan="2" style="width: 24%;">Waktu & Adjustment</th>
-                    <th rowspan="2" style="width: 9%;">Disposisi/ Keterangan</th>
+                    <th rowspan="2">Sampling<br>ke-</th>
+                    <th rowspan="2">Vol Tangki<br>(L)</th>
+                    <th colspan="2">Serah Terima</th>
+                    <th colspan="10">Analisis</th>
+                    <th rowspan="2">Waktu &<br>Adjustment</th>
+                    <th rowspan="2">Disposisi/<br>Keterangan</th>
                 </tr>
                 <tr>
                     <!-- Serah Terima -->
-                    <th style="width: 4%;">Jam</th>
-                    <th style="width: 6%;">PIC</th>
+                    <th>Jam</th>
+                    <th>PIC</th>
                     <!-- Analisis 10 Parameter -->
-                    <th style="width: 5%;">BJ (g/mL)</th>
-                    <th style="width: 4.5%;">Brix</th>
-                    <th style="width: 4%;">pH</th>
-                    <th style="width: 4.5%;">% NaCl</th>
-                    <th style="width: 5.5%;">Viskositas (ps)</th>
-                    <th style="width: 4.5%;">Organo</th>
-                    <th style="width: 4.5%;">Aroma</th>
-                    <th style="width: 5%;">Warna</th>
-                    <th style="width: 4.5%;">Buih</th>
-                    <th style="width: 4.5%;">Aw</th>
+                    <th>BJ<br>(g/mL)</th>
+                    <th>Brix</th>
+                    <th>pH</th>
+                    <th>% NaCl</th>
+                    <th>Viskositas<br>(ps)</th>
+                    <th>Organo</th>
+                    <th>Aroma</th>
+                    <th>Warna</th>
+                    <th>Buih</th>
+                    <th>Aw</th>
                 </tr>
             </thead>
             <tbody>
@@ -220,36 +247,37 @@
                 @for($i = 0; $i < $totalRows; $i++)
                     @php
                         $row = $rows[$i] ?? null;
-                        $rawSamp = $row['sampling_ke'] ?? '';
-                        $rawVol = $row['vol_tangki'] ?? '';
-                        $rawAdj = $row['waktu_adjustment'] ?? '';
-
-                        $isAwal = (strtolower(trim((string)$rawSamp)) === 'awal' || strtolower(trim((string)$rawVol)) === 'awal');
-                        $displaySamp = $isAwal ? 'Awal' : ($rawSamp ?: ($row ? ($i + 1) : ''));
-                        $displayVol = $isAwal ? '' : $rawVol;
-                        $displayAdj = ($isAwal && ($rawAdj === ($row['serah_terima_jam'] ?? '') || $rawAdj === '')) ? '-' : $rawAdj;
+                        $displaySamp = $row['sampling_ke'] ?? '';
+                        $displayVol = $row['vol_tangki'] ?? '';
+                        $displayAdj = $row['waktu_adjustment'] ?? '';
+                        $displayDisp = $row['disposisi'] ?? '';
+                        $isTurun = (strtolower(trim((string)$displayVol)) === 'awal');
                     @endphp
-                    <tr>
-                        <td class="{{ $isAwal ? 'fw-bold' : '' }}">{{ $displaySamp }}</td>
-                        <td>{{ $displayVol }}</td>
+                    <tr class="{{ $isTurun ? 'row-turun-blending' : '' }}">
+                        <td class="fw-bold">{!! $isTurun ? '' : nl2br(e($displaySamp)) !!}</td>
+                        <td class="{{ $isTurun ? 'fw-bold' : '' }}">{{ $displayVol }}</td>
                         <td>{{ $row['serah_terima_jam'] ?? '' }}</td>
-                        <td>{{ $row['serah_terima_pic'] ?? '' }}</td>
-                        <td>{{ $row['bj'] ?? '' }}</td>
+                        <td>{{ $isTurun ? '' : ($row['serah_terima_pic'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['bj'] ?? '') }}</td>
                         <td>{{ $row['brix'] ?? '' }}</td>
-                        <td>{{ $row['ph'] ?? '' }}</td>
-                        <td>{{ $row['nacl'] ?? '' }}</td>
+                        <td>{{ $isTurun ? '' : ($row['ph'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['nacl'] ?? '') }}</td>
                         <td>{{ $row['visco'] ?? '' }}</td>
-                        <td>{{ $row['organo'] ?? '' }}</td>
-                        <td>{{ $row['aroma'] ?? '' }}</td>
-                        <td>{{ $row['warna'] ?? '' }}</td>
-                        <td style="line-height: 1.15; white-space: pre-line; font-size: 7.5pt;">{{ (isset($row['buih']) && (strtolower(trim($row['buih'])) === 'tidak ada' || strtolower(trim($row['buih'])) === "tidak\nada")) ? "Tidak\nAda" : ($row['buih'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['organo'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['aroma'] ?? '') }}</td>
+                        <td>{{ $isTurun ? '' : ($row['warna'] ?? '') }}</td>
+                        <td style="line-height: 1.15; white-space: pre-line; font-size: 7.5pt;">{{ $isTurun ? '' : ((isset($row['buih']) && (strtolower(trim($row['buih'])) === 'tidak ada' || strtolower(trim($row['buih'])) === "tidak\nada")) ? "Tidak\nAda" : ($row['buih'] ?? '')) }}</td>
                         <td>{{ $row['aw'] ?? '' }}</td>
-                        <td class="text-start" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayAdj }}</td>
-                        <td class="fw-semibold">{{ $row['disposisi'] ?? '' }}</td>
+                        <td class="text-center" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayAdj }}</td>
+                        <td class="fw-semibold text-center" style="padding: 2px 4px; word-break: break-word; white-space: pre-wrap; font-size: 7.5pt; line-height: 1.2;">{{ $displayDisp }}</td>
                     </tr>
                 @endfor
             </tbody>
         </table>
+
+        <div style="font-size: 7pt; font-style: italic; margin-top: 2px; margin-bottom: 4px;">
+            *Data turun blending diisi di area tengah/bawah form (di bawah sampling terakhir, kasih jarak beberapa baris kosong)
+        </div>
 
         <!-- 4. Footer Catatan & Tanda Tangan Per Lembar -->
         <table class="sign-container">

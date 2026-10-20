@@ -5,161 +5,284 @@
 <style>
     .lembar-sheet-card {
         background: #ffffff;
-        border: 1px solid #1e293b;
+        border: 2px solid #1e293b;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         border-radius: 8px;
         padding: 24px;
         position: relative;
         margin-bottom: 35px;
+        max-width: 100%;
     }
 
     .lembar-header-badge {
-        background: #1e293b;
+        background: #0f172a;
         color: #ffffff;
-        padding: 5px 12px;
+        padding: 6px 14px;
         border-radius: 4px;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         display: inline-flex;
         align-items: center;
         gap: 6px;
     }
 
     .doc-logo-box {
-        border: 1px solid #000000;
+        border: 2px solid #2d3748;
         padding: 4px 8px;
         display: inline-block;
-        background: #ffffff;
+        border-radius: 4px;
+        background: #f8fafc;
     }
 
     .doc-title-main {
         font-size: 1.25rem;
         font-weight: 800;
         letter-spacing: 0.5px;
-        color: #000000;
+        color: #1a202c;
         text-transform: uppercase;
         text-align: center;
     }
 
-    /* Unified Official Document Table */
-    .doc-unified-table {
+    /* Metadata Input Table (Fits 100% Card Width) */
+    .meta-input-group {
+        border: 1px solid #cbd5e1;
+        border-collapse: collapse;
+        border-radius: 4px;
         width: 100%;
+        background: #ffffff;
+    }
+
+    .meta-input-group td {
+        padding: 6px 10px;
+        font-size: 0.84rem;
+        vertical-align: middle;
+        border: 1px solid #e2e8f0;
+    }
+
+    .meta-input-group input.form-control-sm {
+        height: 31px;
+        font-size: 0.84rem;
+        font-weight: 500;
+    }
+
+    /* Horizontal Scrollbar Styling Resmi */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #f1f5f9;
+        padding-bottom: 6px;
+    }
+    .table-responsive::-webkit-scrollbar {
+        height: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 6px;
+        border: 2px solid #f1f5f9;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    /* Table Blending Data Grid (Only the wide data table in table-responsive) */
+    .table-blending-data {
+        width: 100%;
+        min-width: 1475px;
         border-collapse: collapse;
         font-size: 0.82rem;
         margin-bottom: 0;
-        color: #000000;
+        table-layout: fixed;
+        background: #ffffff;
     }
 
-    .doc-unified-table th, .doc-unified-table td {
-        border: 1px solid #000000;
-        padding: 3px 2px;
-        vertical-align: middle;
-    }
-
-    .doc-unified-table th {
-        background-color: #f2f2f2;
-        font-weight: 700;
+    .table-blending-data th, .table-blending-data td {
+        border: 1px solid #94a3b8;
+        padding: 0 !important;
         text-align: center;
-        color: #000000;
+        vertical-align: middle;
+        position: relative;
     }
 
-    /* Clean cell inputs */
+    .table-blending-data th {
+        background-color: #f1f5f9;
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 0.80rem;
+        padding: 6px 3px !important;
+        border-color: #64748b;
+    }
+
+    .table-blending-data th.th-samp {
+        width: 135px !important;
+        min-width: 135px !important;
+        white-space: nowrap;
+        font-size: 0.80rem;
+        line-height: 1.25;
+        padding: 5px 4px !important;
+    }
+
+    /* Row Hover & Active Row Highlight */
+    .table-blending-data tbody tr.data-row {
+        transition: background-color 0.12s ease;
+    }
+
+    .table-blending-data tbody tr.data-row:hover td {
+        background-color: #f8fafc;
+    }
+
+    .table-blending-data tbody tr.data-row:focus-within td {
+        background-color: #f0fdf4;
+    }
+
+    /* Khusus Baris Turun Blending (Kuning Lembut Sesuai Google Sheets) */
+    .table-blending-data tbody tr.data-row.row-turun-blending td {
+        background-color: #fef9c3 !important;
+    }
+
+    .table-blending-data tbody tr.data-row.row-turun-blending:hover td {
+        background-color: #fef08a !important;
+    }
+
+    /* Seamless Spreadsheet Cells - TANPA BORDER DI DALEM BORDER (NO BOX IN BOX) */
     .clean-cell-input {
         width: 100%;
-        border: 1px solid transparent;
-        background: transparent;
+        height: 100%;
+        min-height: 36px;
+        border: none !important;
+        background: transparent !important;
         text-align: center;
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         font-weight: 500;
-        padding: 2px 1px;
-        border-radius: 3px;
-        color: #000000;
-    }
-
-    .clean-cell-input:focus, .clean-cell-input:hover {
-        border-color: #405189;
-        background: #f8fafc;
+        padding: 6px 3px;
+        border-radius: 0 !important;
+        color: #0f172a;
         outline: none;
-        box-shadow: 0 0 0 2px rgba(64, 81, 137, 0.15);
+        box-shadow: none !important;
+        box-sizing: border-box;
+        display: block;
+        transition: background-color 0.15s ease;
     }
 
     .clean-cell-textarea {
         width: 100%;
-        border: 1px solid transparent;
-        background: transparent;
-        font-size: 0.80rem;
-        font-weight: 500;
-        line-height: 1.25;
-        padding: 3px 4px;
-        border-radius: 3px;
-        color: #000000;
-        resize: vertical;
-        min-height: 38px;
-        text-align: left;
-        word-break: break-word;
-        white-space: pre-wrap;
-    }
-
-    .clean-cell-textarea:focus, .clean-cell-textarea:hover {
-        border-color: #405189;
-        background: #f8fafc;
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(64, 81, 137, 0.15);
-    }
-
-    .clean-meta-input {
-        width: 100%;
-        border: 1px solid transparent;
-        background: transparent;
-        font-size: 0.84rem;
-        font-weight: 500;
-        padding: 2px 4px;
-        border-radius: 3px;
-        color: #000000;
-    }
-
-    .clean-meta-input:focus, .clean-meta-input:hover {
-        border-color: #405189;
-        background: #f8fafc;
-        outline: none;
-    }
-
-    .clean-sign-input {
-        width: 100%;
-        border: none;
-        border-bottom: 1px dashed #666;
-        background: transparent;
+        min-height: 48px;
+        height: auto;
+        border: none !important;
+        background: transparent !important;
         text-align: center;
-        font-size: 0.82rem;
-        font-weight: 600;
-        padding: 2px 4px;
-        border-radius: 0;
-        color: #000000;
-    }
-
-    .clean-sign-input:focus {
-        border-bottom: 2px solid #405189;
-        outline: none;
-        background: #f8fafc;
-    }
-
-    .clean-textarea {
-        width: 100%;
-        border: none;
-        background: transparent;
+        font-size: 0.77rem;
+        font-weight: 500;
+        padding: 6px 4px;
+        border-radius: 0 !important;
         resize: none;
-        font-size: 0.82rem;
-        padding: 4px;
-        color: #000000;
-    }
-
-    .clean-textarea:focus {
+        line-height: 1.25;
+        color: #0f172a;
+        white-space: pre-wrap;
+        overflow: hidden;
         outline: none;
-        background: #f8fafc;
+        box-shadow: none !important;
+        box-sizing: border-box;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        display: block;
+        transition: background-color 0.15s ease;
     }
 
-    .sign-space-cell {
-        height: 40px;
+    .clean-cell-input::-webkit-scrollbar,
+    .clean-cell-textarea::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    /* Saat Sel Aktif / Diklik (Persis Seleksi Sel Excel / Google Sheets) */
+    .clean-cell-input:focus,
+    .clean-cell-textarea:focus {
+        background-color: #ffffff !important;
+        outline: 2px solid #2563eb !important;
+        outline-offset: -2px !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        z-index: 10;
+        position: relative;
+    }
+
+    .table-blending-data tbody tr.data-row.row-turun-blending .clean-cell-input:focus,
+    .table-blending-data tbody tr.data-row.row-turun-blending .clean-cell-textarea:focus {
+        background-color: #ffffff !important;
+        outline: 2px solid #ca8a04 !important;
+        outline-offset: -2px !important;
+    }
+
+    /* Disposisi Color Themes */
+    .disp-release {
+        color: #15803d !important;
+        font-weight: 700 !important;
+    }
+    .disp-adjustment {
+        color: #b45309 !important;
+        font-weight: 700 !important;
+    }
+    .disp-resampling {
+        color: #0369a1 !important;
+        font-weight: 700 !important;
+    }
+    .disp-reject {
+        color: #b91c1c !important;
+        font-weight: 700 !important;
+    }
+
+    /* Signature & Notes Container */
+    .signature-container {
+        border: 1px solid #334155;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+        background: #ffffff;
+    }
+
+    .sig-col {
+        border-right: 1px solid #334155;
+        padding: 6px 10px;
+        text-align: center;
+    }
+
+    .sig-col:last-child {
+        border-right: none;
+    }
+
+    .sig-space {
+        height: 45px;
+    }
+
+    .clean-cell-input::placeholder,
+    .clean-cell-textarea::placeholder,
+    .meta-input-group input::placeholder,
+    .signature-container input::placeholder,
+    .signature-container textarea::placeholder {
+        color: #94a3b8 !important;
+        font-style: italic !important;
+        font-weight: 400 !important;
+        font-size: 0.74rem !important;
+        opacity: 0.8 !important;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        height: 9px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 </style>
 @endsection
@@ -213,38 +336,22 @@
                         <a href="{{ route('analisa.blending-awal.export.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="ri-arrow-left-line me-1"></i> Kembali
                         </a>
-                        <button type="button" id="btnSaveDoc" class="btn btn-primary btn-sm">
-                            <i class="ri-save-3-line me-1"></i> Simpan Dokumen
-                        </button>
+                        @if(auth()->check() && in_array(strtolower(trim(auth()->user()->role ?? '')), ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                         <a href="#" id="btnExportExcel" class="btn btn-success btn-sm">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </a>
                         <a href="#" id="btnPrintView" target="_blank" class="btn btn-info btn-sm text-white">
                             <i class="ri-printer-line me-1"></i> Cetak / Print
                         </a>
+                        @endif
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Alert Info Notes -->
-        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-3 py-2 px-3">
-            <i class="ri-information-line fs-18 me-2"></i>
-            <div class="fs-12">
-                <strong>Format Resmi QLB:</strong> Formulir dipisahkan menjadi <strong>Per Siklus Blending (1 Lembar = 1 Tangki / Blending)</strong>. Setiap lembar memiliki header, metadata tangki, tabel sampling (termasuk baris Turun Blending), dan tanda tangan masing-masing.
             </div>
         </div>
 
         <!-- Dokumen Sheet Container -->
         <div id="batchBlocksContainer">
             <!-- Di-render dinamis per Siklus Blending lewat JavaScript -->
-        </div>
-
-        <!-- Tombol Tambah Blok Tangki/Batch -->
-        <div class="text-center mb-5">
-            <button type="button" class="btn btn-outline-primary btn-md shadow-sm px-4" id="btnAddBatchBlock">
-                <i class="ri-add-circle-line me-1 fs-16 align-middle"></i> Tambah Lembar Siklus Blending (Tangki Baru)
-            </button>
         </div>
 
     </div>
@@ -305,96 +412,7 @@
             $('.doc-date-display').text(newDate);
         });
 
-        // Event Tambah Blok Batch Baru
-        $('#btnAddBatchBlock').on('click', function() {
-            var currentBlocks = collectBatchBlocksFromDOM();
-            var nextNum = currentBlocks.length + 1;
-            var defaultDate = $('#globalTanggalDoc').val() || '{{ date("Y-m-d") }}';
-
-            var newBlock = {
-                jenis_produk: (currentDocData && currentDocData.variant) ? currentDocData.variant : 'Kecap Sedap',
-                tanggal_produksi: defaultDate,
-                jam_produksi: '08:00',
-                kode_shift_grup: 'Shift 1 / Grup A',
-                batch: String(nextNum),
-                no_blending: String(nextNum),
-                volume_awal: '10000 L',
-                catatan: '',
-                pic_sampling: '',
-                pic_analis: (currentDocData && currentDocData.pic_analis) ? currentDocData.pic_analis : '',
-                pic_checker: '',
-                rows: []
-            };
-
-            for (var r = 1; r <= 4; r++) {
-                newBlock.rows.push({
-                    sampling_ke: String(r),
-                    vol_tangki: '',
-                    serah_terima_jam: '',
-                    serah_terima_pic: '',
-                    bj: '',
-                    brix: '',
-                    ph: '',
-                    nacl: '',
-                    visco: '',
-                    organo: '',
-                    aroma: '',
-                    warna: '',
-                    buih: '',
-                    aw: '',
-                    waktu_adjustment: '',
-                    disposisi: ''
-                });
-            }
-
-            currentBlocks.push(newBlock);
-            renderBatchBlocks(currentBlocks);
-        });
-
-        // Event Simpan Dokumen
-        $('#btnSaveDoc').on('click', function() {
-            var poId = $('#selectPo').val();
-            if (!poId) {
-                Swal.fire('Peringatan', 'Silakan pilih Nomor PO terlebih dahulu.', 'warning');
-                return;
-            }
-
-            var blocks = collectBatchBlocksFromDOM();
-            var payload = {
-                production_batch_id: poId,
-                tanggal_record_doc: $('#globalTanggalDoc').val(),
-                halaman: blocks.length > 0 ? ('1 / ' + blocks.length) : '1',
-                catatan: blocks.length > 0 ? (blocks[0].catatan || '') : '',
-                pic_sampling: blocks.length > 0 ? (blocks[0].pic_sampling || '') : '',
-                pic_analis: blocks.length > 0 ? (blocks[0].pic_analis || '') : '',
-                pic_checker: blocks.length > 0 ? (blocks[0].pic_checker || '') : '',
-                batch_blocks: blocks
-            };
-
-            Swal.fire({
-                title: 'Menyimpan Dokumen...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
-            $.ajax({
-                url: "{{ route('doc-blending-awal.store') }}",
-                type: 'POST',
-                data: payload,
-                success: function(res) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: res.message || 'Formulir Blending berhasil disimpan.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                },
-                error: function(xhr) {
-                    Swal.fire('Error', 'Terjadi kesalahan saat menyimpan formulir.', 'error');
-                }
-            });
-        });
+        $(window).on('resize', adjustAllTextareaHeights);
     });
 
     function updateActionLinks(poId) {
@@ -427,112 +445,119 @@
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <div>
                         <span class="lembar-header-badge">
-                            <i class="ri-pages-line"></i> LEMBAR SIKLUS BLENDING #${bIdx + 1}
+                            <i class="ri-pages-line"></i> LEMBAR BLENDING #${bIdx + 1}
                         </span>
                         <span class="badge bg-light text-dark border ms-2">
-                            Tangki / Blending No. ${escapeHtml(block.no_blending || String(bIdx + 1))}
+                            Pasangan Batch ${escapeHtml(block.batch || '')} (Tangki No. ${escapeHtml(block.no_blending || String(bIdx + 1))})
+                        </span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary ms-2">
+                            1 Halaman = 1 Pasangan Batch (1-2, 3-4, 5-6, …)
                         </span>
                     </div>
                     <div>
-                        ${totalBlocks > 1 ? `
-                        <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 btn-delete-block" data-block-index="${bIdx}">
-                            <i class="ri-delete-bin-line me-1"></i> Hapus Lembar Ini
-                        </button>
-                        ` : ''}
+                        <span class="badge bg-light text-muted border fs-12">
+                            <i class="ri-lock-line me-1"></i> Data Otentik
+                        </span>
                     </div>
                 </div>
 
-                <!-- 1. Header Dokumen Resmi Paper Grid -->
-                <table class="doc-unified-table mb-2">
-                    <tr>
-                        <td width="20%" class="text-center p-2" style="background: #ffffff;">
-                            <div class="doc-logo-box">
-                                <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 38px; object-fit: contain;">
+                <!-- 1. Header Dokumen Resmi Responsive Grid -->
+                <div class="row align-items-center mb-3 pb-2 border-bottom">
+                    <div class="col-md-3 col-sm-4">
+                        <div class="doc-logo-box p-1">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ asset('assets/images/logo-bas.png') }}" alt="BAS Logo" style="height: 40px; object-fit: contain;">
                             </div>
-                        </td>
-                        <td width="55%" class="text-center" style="background: #ffffff;">
-                            <div class="doc-title-main">HASIL ANALISIS PROSES BLENDING</div>
-                        </td>
-                        <td width="25%" class="p-0" style="background: #ffffff;">
-                            <table class="w-100" style="font-size: 0.80rem; border-collapse: collapse;">
-                                <tr>
-                                    <td class="p-1 border-bottom fw-bold bg-light" width="55%">Tanggal Record Doc</td>
-                                    <td class="p-1 border-bottom text-start doc-date-display" width="45%">: ${globalDocDate}</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-1 fw-bold bg-light">Halaman</td>
-                                    <td class="p-1 text-start fw-semibold">: ${bIdx + 1} / ${totalBlocks}</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-4 text-center">
+                        <div class="doc-title-main">HASIL ANALISIS PROSES BLENDING</div>
+                    </div>
+                    <div class="col-md-3 col-sm-4 text-end">
+                        <table class="float-end border mb-1" style="font-size: 0.80rem;">
+                            <tr>
+                                <td class="p-1 border-bottom text-start fw-bold bg-light">Tanggal Record Doc</td>
+                                <td class="p-1 border-bottom text-start doc-date-display">: ${globalDocDate}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-start fw-bold bg-light">Halaman</td>
+                                <td class="p-1 text-start fw-semibold">: ${bIdx + 1} / ${totalBlocks}</td>
+                            </tr>
+                        </table>
+                        <div class="clearfix"></div>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
+                    </div>
+                </div>
 
-                <!-- 2. Metadata Siklus Blending (Tangki) -->
-                <table class="doc-unified-table mb-2">
+                <!-- 2. Metadata Siklus Blending (Tangki) (Read-Only Authentic) -->
+                <table class="w-100 meta-table mb-3">
                     <tr>
-                        <td width="14%" class="fw-bold bg-light px-2">Jenis Produk</td>
-                        <td width="36%" class="p-1">
-                            <input type="text" class="clean-meta-input block-meta-jenis" value="${escapeHtml(block.jenis_produk || '')}">
-                        </td>
-                        <td width="14%" class="fw-bold bg-light px-2">Batch</td>
-                        <td width="36%" class="p-1">
-                            <input type="text" class="clean-meta-input block-meta-batch" value="${escapeHtml(block.batch || '')}">
-                        </td>
+                        <td width="14%" class="fw-bold bg-light">Jenis Produk</td>
+                        <td width="36%">: <span class="fw-semibold">${escapeHtml(block.jenis_produk || '-')}</span></td>
+                        <td width="14%" class="fw-bold bg-light">Batch</td>
+                        <td width="36%">: <span class="fw-bold text-primary">${escapeHtml(block.batch || '-')}</span></td>
                     </tr>
                     <tr>
-                        <td class="fw-bold bg-light px-2">Tanggal Produksi</td>
-                        <td class="p-1">
-                            <input type="date" class="clean-meta-input block-meta-tanggal" value="${escapeHtml(block.tanggal_produksi || globalDocDate)}">
-                        </td>
-                        <td class="fw-bold bg-light px-2">No. Blending</td>
-                        <td class="p-1">
-                            <input type="text" class="clean-meta-input block-meta-no-blending" value="${escapeHtml(block.no_blending || String(bIdx + 1))}">
-                        </td>
+                        <td class="fw-bold bg-light">Tanggal Produksi</td>
+                        <td>: <span>${escapeHtml(block.tanggal_produksi || globalDocDate)}</span></td>
+                        <td class="fw-bold bg-light">No. Blending</td>
+                        <td>: <span class="fw-semibold">${escapeHtml(block.no_blending || String(bIdx + 1))}</span></td>
                     </tr>
                     <tr>
-                        <td class="fw-bold bg-light px-2">Jam Produksi</td>
-                        <td class="p-1">
-                            <input type="text" class="clean-meta-input block-meta-jam" placeholder="HH:mm atau HH:mm - HH:mm" value="${escapeHtml(block.jam_produksi || '')}">
-                        </td>
-                        <td class="fw-bold bg-light px-2">Volume awal</td>
-                        <td class="p-1">
-                            <input type="text" class="clean-meta-input block-meta-volume" value="${escapeHtml(block.volume_awal || '')}">
-                        </td>
+                        <td class="fw-bold bg-light">Jam Produksi</td>
+                        <td>: <span>${escapeHtml(block.jam_produksi || '-')}</span></td>
+                        <td class="fw-bold bg-light">Volume awal</td>
+                        <td>: <span>${escapeHtml(block.volume_awal || '-')}</span></td>
                     </tr>
                     <tr>
-                        <td class="fw-bold bg-light px-2">Kode Shift & Grup</td>
-                        <td class="p-1" colspan="3">
-                            <input type="text" class="clean-meta-input block-meta-shift" value="${escapeHtml(block.kode_shift_grup || 'Shift 1 / Grup A')}">
-                        </td>
+                        <td class="fw-bold bg-light">Kode Shift & Grup</td>
+                        <td colspan="3">: <span class="badge bg-light text-dark border fs-12">${escapeHtml(block.kode_shift_grup || '-')}</span></td>
                     </tr>
                 </table>
 
                 <!-- 3. Tabel Analisis Proses Blending -->
                 <div class="table-responsive">
-                    <table class="doc-unified-table">
+                    <table class="table-blending-data">
+                        <colgroup>
+                            <col style="width: 135px;"> <!-- Sampling ke- -->
+                            <col style="width: 85px;">  <!-- Vol Tangki (L) -->
+                            <col style="width: 65px;">  <!-- Jam -->
+                            <col style="width: 90px;">  <!-- PIC -->
+                            <col style="width: 65px;">  <!-- BJ (g/mL) -->
+                            <col style="width: 65px;">  <!-- Brix -->
+                            <col style="width: 60px;">  <!-- pH -->
+                            <col style="width: 65px;">  <!-- % NaCl -->
+                            <col style="width: 80px;">  <!-- Viskositas (ps) -->
+                            <col style="width: 65px;">  <!-- Organo -->
+                            <col style="width: 65px;">  <!-- Aroma -->
+                            <col style="width: 70px;">  <!-- Warna -->
+                            <col style="width: 65px;">  <!-- Buih -->
+                            <col style="width: 60px;">  <!-- Aw -->
+                            <col style="width: 205px;"> <!-- Waktu & Adjustment -->
+                            <col style="width: 245px;"> <!-- Disposisi/ Keterangan -->
+                        </colgroup>
                         <thead>
                             <tr>
-                                <th rowspan="2" style="width: 4.5%;">Sampling ke-</th>
-                                <th rowspan="2" style="width: 6%;">Vol Tangki (L)</th>
-                                <th colspan="2" style="width: 10%;">Serah Terima</th>
-                                <th colspan="10" style="width: 46.5%;">Analisis</th>
-                                <th rowspan="2" style="width: 24%;">Waktu & Adjustment</th>
-                                <th rowspan="2" style="width: 9%;">Disposisi/ Keterangan</th>
+                                <th rowspan="2" class="th-samp">Sampling<br>ke-</th>
+                                <th rowspan="2">Vol Tangki<br>(L)</th>
+                                <th colspan="2">Serah Terima</th>
+                                <th colspan="10">Analisis</th>
+                                <th rowspan="2">Waktu &<br>Adjustment</th>
+                                <th rowspan="2">Disposisi/<br>Keterangan</th>
                             </tr>
                             <tr>
-                                <th style="width: 4%;">Jam</th>
-                                <th style="width: 6%;">PIC</th>
-                                <th style="width: 5%;">BJ (g/mL)</th>
-                                <th style="width: 4.5%;">Brix</th>
-                                <th style="width: 4%;">pH</th>
-                                <th style="width: 4.5%;">% NaCl</th>
-                                <th style="width: 5.5%;">Viskositas (ps)</th>
-                                <th style="width: 4.5%;">Organo</th>
-                                <th style="width: 4.5%;">Aroma</th>
-                                <th style="width: 5%;">Warna</th>
-                                <th style="width: 4.5%;">Buih</th>
-                                <th style="width: 4.5%;">Aw</th>
+                                <th>Jam</th>
+                                <th>PIC</th>
+                                <th>BJ<br>(g/mL)</th>
+                                <th>Brix</th>
+                                <th>pH</th>
+                                <th>% NaCl</th>
+                                <th>Viskositas<br>(ps)</th>
+                                <th>Organo</th>
+                                <th>Aroma</th>
+                                <th>Warna</th>
+                                <th>Buih</th>
+                                <th>Aw</th>
                             </tr>
                         </thead>
                         <tbody class="block-table-body" data-block-index="${bIdx}">
@@ -541,53 +566,54 @@
                     </table>
                 </div>
 
-                <div class="d-flex gap-2 justify-content-end mt-2 mb-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-add-row" data-block-index="${bIdx}">
-                        <i class="ri-add-line"></i> Tambah Baris
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-delete-row" data-block-index="${bIdx}">
-                        <i class="ri-subtract-line"></i> Hapus Baris Terakhir
-                    </button>
+                <div class="d-flex flex-wrap align-items-center justify-content-between mt-2 mb-2">
+                    <div class="text-muted fst-italic fs-11">
+                        <i class="ri-information-line text-warning me-1"></i> *Data turun blending diisi di baris berwarna kuning (Vol Tangki: Awal)
+                    </div>
                 </div>
 
                 <!-- 4. Footer: Catatan & Tanda Tangan Per Lembar -->
-                <table class="doc-unified-table mt-2">
-                    <tr>
-                        <td width="40%" class="p-2 align-top" rowspan="4">
-                            <strong class="d-block mb-1">Catatan :</strong>
-                            <textarea class="clean-textarea block-catatan" rows="4" placeholder="Ketik catatan khusus proses blending lembar ini...">${escapeHtml(block.catatan || '')}</textarea>
-                        </td>
-                        <td width="20%" class="text-center fw-semibold bg-light">Disampling oleh,</td>
-                        <td width="20%" class="text-center fw-semibold bg-light">Dianalisis oleh,</td>
-                        <td width="20%" class="text-center fw-semibold bg-light">Dicek oleh,</td>
-                    </tr>
-                    <tr>
-                        <td class="sign-space-cell"></td>
-                        <td class="sign-space-cell"></td>
-                        <td class="sign-space-cell"></td>
-                    </tr>
-                    <tr>
-                        <td class="text-center p-1">
-                            <input type="text" class="clean-sign-input block-pic-sampling" placeholder="Nama PIC" value="${escapeHtml(block.pic_sampling || '')}">
-                        </td>
-                        <td class="text-center p-1">
-                            <input type="text" class="clean-sign-input block-pic-analis" placeholder="Nama Analis" value="${escapeHtml(block.pic_analis || '')}">
-                        </td>
-                        <td class="text-center p-1">
-                            <input type="text" class="clean-sign-input block-pic-checker" placeholder="Nama SPV/MNG" value="${escapeHtml(block.pic_checker || '')}">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-center fw-bold fs-11 bg-light py-1">Produksi</td>
-                        <td class="text-center fw-bold fs-11 bg-light py-1">QC Analis</td>
-                        <td class="text-center fw-bold fs-11 bg-light py-1">Staff/SPV/MNG QC</td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" class="text-end px-3 py-1 bg-light">
+                <div class="signature-container mt-2">
+                    <div class="row g-0">
+                        <div class="col-md-5 p-2 border-end">
+                            <strong class="d-block mb-1 fs-12">Catatan :</strong>
+                            <div class="p-2 text-muted fs-12 bg-light rounded border" style="min-height: 80px;">${escapeHtml(block.catatan || '-')}</div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="row g-0 text-center h-100">
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between p-2">
+                                    <div class="fw-semibold fs-12">Disampling oleh,</div>
+                                    <div class="sig-space" style="height: 40px;"></div>
+                                    <div>
+                                        <div class="fw-bold border-bottom pb-1">${escapeHtml(block.pic_sampling || '-')}</div>
+                                        <small class="text-muted d-block mt-1">Produksi</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between p-2">
+                                    <div class="fw-semibold fs-12">Dianalisis oleh,</div>
+                                    <div class="sig-space" style="height: 40px;"></div>
+                                    <div>
+                                        <div class="fw-bold border-bottom pb-1">${escapeHtml(block.pic_analis || '-')}</div>
+                                        <small class="text-muted d-block mt-1">QC Analis</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 sig-col d-flex flex-column justify-content-between p-2">
+                                    <div class="fw-semibold fs-12">Dicek oleh,</div>
+                                    <div class="sig-space" style="height: 40px;"></div>
+                                    <div>
+                                        <div class="fw-bold border-bottom pb-1">${escapeHtml(block.pic_checker || '-')}</div>
+                                        <small class="text-muted d-block mt-1">Staff/SPV/MNG QC</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-0 border-top bg-light">
+                        <div class="col-12 text-end px-3 py-1">
                             <span class="fs-11 fw-bold text-muted fst-italic">FRM/QLB/04/104/005-01</span>
-                        </td>
-                    </tr>
-                </table>
+                        </div>
+                    </div>
+                </div>
 
             </div>
             `;
@@ -595,57 +621,81 @@
         });
 
         attachBlockEvents();
+        adjustAllTextareaHeights();
     }
 
     function renderBlockRows(rows, bIdx) {
         if (!rows || rows.length === 0) return '';
         var html = '';
         rows.forEach(function(row, rIdx) {
-            // Normalisasi data jika ada format lama
-            var rawSamp = row.sampling_ke ? String(row.sampling_ke).trim() : '';
-            var rawVol = row.vol_tangki ? String(row.vol_tangki).trim() : '';
-            var rawAdj = row.waktu_adjustment ? String(row.waktu_adjustment).trim() : '';
+            var sampValue = row.sampling_ke !== undefined && row.sampling_ke !== null ? String(row.sampling_ke).trim() : '';
 
-            var isAwalTurun = (rawSamp.toLowerCase() === 'awal' || rawVol.toLowerCase() === 'awal');
-            var sampValue = rawSamp;
-            var volValue = rawVol;
-            var adjValue = rawAdj;
-
-            if (isAwalTurun) {
-                sampValue = 'Awal';
-                if (volValue.toLowerCase() === 'awal') volValue = '';
-                if (adjValue === (row.serah_terima_jam || '') || adjValue === '') adjValue = '-';
-            } else if (!sampValue) {
-                sampValue = String(rIdx + 1);
+            // Otomatis enter ke bawah jika label After Adj / Resampling belum memiliki enter
+            if (sampValue === '*2 (BL After Adj/Resampling 1)' || sampValue.includes('*2 (BL After Adj/Resampling 1)')) {
+                sampValue = "*2 (BL After Adj/\nResampling 1)";
+            } else if (sampValue === '*3 (BL After Adj/Resampling 2)' || sampValue.includes('*3 (BL After Adj/Resampling 2)')) {
+                sampValue = "*3 (BL After Adj/\nResampling 2)";
+            } else if (sampValue.includes('(BL After Adj/Resampling') && !sampValue.includes("\n")) {
+                sampValue = sampValue.replace('(BL After Adj/Resampling', "(BL After Adj/\nResampling");
             }
 
-            var buihRaw = row.buih ? String(row.buih).trim() : 'Tidak Ada';
+            var volValue = row.vol_tangki !== undefined && row.vol_tangki !== null ? String(row.vol_tangki).trim() : '';
+            var serahJam = row.serah_terima_jam !== undefined && row.serah_terima_jam !== null ? String(row.serah_terima_jam).trim() : '';
+            var serahPic = row.serah_terima_pic !== undefined && row.serah_terima_pic !== null ? String(row.serah_terima_pic).trim() : '';
+            var bjVal = row.bj !== undefined && row.bj !== null ? String(row.bj).trim() : '';
+            var brixVal = row.brix !== undefined && row.brix !== null ? String(row.brix).trim() : '';
+            var phVal = row.ph !== undefined && row.ph !== null ? String(row.ph).trim() : '';
+            var naclVal = row.nacl !== undefined && row.nacl !== null ? String(row.nacl).trim() : '';
+            var viscoVal = row.visco !== undefined && row.visco !== null ? String(row.visco).trim() : '';
+            var organoVal = row.organo !== undefined && row.organo !== null ? String(row.organo).trim() : '';
+            var aromaVal = row.aroma !== undefined && row.aroma !== null ? String(row.aroma).trim() : '';
+            var warnaVal = row.warna !== undefined && row.warna !== null ? String(row.warna).trim() : '';
+            var awVal = row.aw !== undefined && row.aw !== null ? String(row.aw).trim() : '';
+            var adjValue = row.waktu_adjustment !== undefined && row.waktu_adjustment !== null ? String(row.waktu_adjustment).trim() : '';
+            var dispValue = row.disposisi !== undefined && row.disposisi !== null ? String(row.disposisi).trim() : '';
+
+            var isAwalTurun = (volValue.toLowerCase() === 'awal') || (sampValue.toLowerCase() === 'turun blending');
+
+            var buihRaw = row.buih ? String(row.buih).trim() : '';
             if (buihRaw.toLowerCase() === 'tidak ada' || buihRaw.toLowerCase() === 'tidak\nada') {
                 buihRaw = "Tidak\nAda";
             }
 
+            // Klasifikasi warna teks Disposisi
+            var dispClass = '';
+            if (dispValue) {
+                var dispLower = dispValue.toLowerCase();
+                if (dispLower.includes('reject')) {
+                    dispClass = 'text-danger fw-bold';
+                } else if (dispLower.includes('release')) {
+                    dispClass = 'text-success fw-bold';
+                } else if (dispLower.includes('adj') || dispLower.includes('adjustment')) {
+                    dispClass = 'text-warning fw-bold';
+                } else if (dispLower.includes('resampling') || dispLower.includes('hold')) {
+                    dispClass = 'text-info fw-bold';
+                } else {
+                    dispClass = 'fw-semibold text-dark';
+                }
+            }
+
             html += `
-            <tr class="data-row ${isAwalTurun ? 'bg-light' : ''}" data-row-index="${rIdx}">
-                <td><input type="text" class="clean-cell-input r-sampling-ke fw-bold ${isAwalTurun ? 'text-primary' : ''}" value="${escapeHtml(sampValue)}"></td>
-                <td><input type="text" class="clean-cell-input r-vol-tangki fw-semibold" value="${escapeHtml(volValue)}"></td>
-                <td><input type="text" class="clean-cell-input r-serah-jam" value="${escapeHtml(row.serah_terima_jam || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-serah-pic" value="${escapeHtml(row.serah_terima_pic || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-bj" value="${escapeHtml(row.bj || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-brix" value="${escapeHtml(row.brix || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-ph" value="${escapeHtml(row.ph || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-nacl" value="${escapeHtml(row.nacl || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-visco" value="${escapeHtml(row.visco || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-organo" value="${escapeHtml(row.organo || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-aroma" value="${escapeHtml(row.aroma || '')}"></td>
-                <td><input type="text" class="clean-cell-input r-warna" value="${escapeHtml(row.warna || '')}"></td>
-                <td style="padding: 1px 0;">
-                    <textarea class="clean-cell-input r-buih" rows="2" style="resize:none; padding:1px 0; line-height:1.15; font-size:0.75rem; height:34px; overflow:hidden; text-align:center; white-space:pre-wrap;">${escapeHtml(buihRaw)}</textarea>
-                </td>
-                <td><input type="text" class="clean-cell-input r-aw" value="${escapeHtml(row.aw || '')}"></td>
-                <td class="p-1">
-                    <textarea class="clean-cell-textarea r-waktu-adj" rows="2" placeholder="Catatan / Waktu & Adjustment...">${escapeHtml(adjValue)}</textarea>
-                </td>
-                <td><input type="text" class="clean-cell-input r-disposisi fw-semibold ${row.disposisi === 'Reject' ? 'text-danger' : 'text-success'}" value="${escapeHtml(row.disposisi || '')}"></td>
+            <tr class="data-row ${isAwalTurun ? 'row-turun-blending' : ''}" data-row-index="${rIdx}">
+                <td class="text-center py-2 fw-bold" style="white-space: pre-line;">${isAwalTurun ? '' : escapeHtml(sampValue || '-')}</td>
+                <td class="text-center py-2 ${isAwalTurun ? 'fw-bold text-dark' : 'fw-semibold'}">${escapeHtml(volValue || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(serahJam || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(serahPic || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(bjVal || '-')}</td>
+                <td class="text-center py-2 fw-semibold">${escapeHtml(brixVal || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(phVal || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(naclVal || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(viscoVal || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(organoVal || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(aromaVal || '-')}</td>
+                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(warnaVal || '-')}</td>
+                <td class="text-center py-2" style="white-space: pre-line;">${isAwalTurun ? '' : escapeHtml(buihRaw || '-')}</td>
+                <td class="text-center py-2">${escapeHtml(awVal || '-')}</td>
+                <td class="text-center py-2" style="white-space: pre-line; line-height: 1.2;">${escapeHtml(adjValue || '-')}</td>
+                <td class="text-center py-2 ${dispClass}" style="white-space: pre-line;">${escapeHtml(dispValue || '-')}</td>
             </tr>
             `;
         });
@@ -653,61 +703,7 @@
     }
 
     function attachBlockEvents() {
-        $('.btn-delete-block').off('click').on('click', function() {
-            var bIdx = $(this).data('block-index');
-            Swal.fire({
-                title: 'Hapus Lembar Ini?',
-                text: 'Lembar Siklus Blending #' + (bIdx + 1) + ' akan dihapus dari tampilan formulir.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var currentBlocks = collectBatchBlocksFromDOM();
-                    currentBlocks.splice(bIdx, 1);
-                    renderBatchBlocks(currentBlocks);
-                }
-            });
-        });
-
-        $('.btn-add-row').off('click').on('click', function() {
-            var bIdx = $(this).data('block-index');
-            var currentBlocks = collectBatchBlocksFromDOM();
-            var nextSamp = (currentBlocks[bIdx].rows.length || 0) + 1;
-            currentBlocks[bIdx].rows.push({
-                sampling_ke: String(nextSamp),
-                vol_tangki: '',
-                serah_terima_jam: '',
-                serah_terima_pic: '',
-                bj: '',
-                brix: '',
-                ph: '',
-                nacl: '',
-                visco: '',
-                organo: '',
-                aroma: '',
-                warna: '',
-                buih: '',
-                aw: '',
-                waktu_adjustment: '',
-                disposisi: ''
-            });
-            renderBatchBlocks(currentBlocks);
-        });
-
-        $('.btn-delete-row').off('click').on('click', function() {
-            var bIdx = $(this).data('block-index');
-            var currentBlocks = collectBatchBlocksFromDOM();
-            if (currentBlocks[bIdx].rows.length > 1) {
-                currentBlocks[bIdx].rows.pop();
-                renderBatchBlocks(currentBlocks);
-            } else {
-                Swal.fire('Info', 'Minimal satu baris tersisa pada lembar ini.', 'info');
-            }
-        });
+        // Mode Otentik: Tidak ada manipulasi tambah/hapus baris atau lembar
     }
 
     function collectBatchBlocksFromDOM() {
@@ -764,6 +760,20 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    function adjustAllTextareaHeights() {
+        setTimeout(function() {
+            $('.clean-cell-textarea').each(function() {
+                this.style.height = 'auto';
+                var scrollH = this.scrollHeight;
+                if (scrollH > 48) {
+                    this.style.height = (scrollH + 2) + 'px';
+                } else {
+                    this.style.height = '48px';
+                }
+            });
+        }, 15);
     }
 </script>
 @endsection
