@@ -118,6 +118,22 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-lg-6 col-sm-6 mt-3">
+                                                <div class="p-2 border border-dashed rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <div
+                                                                class="avatar-title rounded bg-transparent text-primary fs-24">
+                                                                <i class="ri-flask-line"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted mb-1">Jenis Sampel :</p>
+                                                            <h5 class="mb-0">{{ $blending->jenis_sampel ?? '-' }}</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <!-- end row -->
 
@@ -232,9 +248,6 @@
                                                 <option value="NOT OK"
                                                     {{ $blending->status == 'NOT OK' ? 'selected' : '' }}>NOT
                                                     OK</option>
-                                                <option value="Adjustment"
-                                                    {{ $blending->status == 'Adjustment' ? 'selected' : '' }}>
-                                                    Adjustment</option>
                                             </select>
                                             <small class="text-danger errorStatusDisposition"></small>
                                         </div>
@@ -254,23 +267,9 @@
                                                         {{ $blending->disposition == 'Resampling' ? 'selected' : '' }}>
                                                         Resampling
                                                     </option>
-                                                    <option value="Reject"
-                                                        {{ $blending->disposition == 'Reject' ? 'selected' : '' }}>Reject
-                                                    </option>
-                                                    <option value="Repro"
-                                                        {{ $blending->disposition == 'Repro' ? 'selected' : '' }}>Repro
-                                                    </option>
-                                                    </option>
-                                                    <option value="Repro"
-                                                        {{ $blending->disposition == 'Repro' ? 'selected' : '' }}>Repro
-                                                    </option>
-                                                    <option value="Jalan Bareng"
-                                                        {{ $blending->disposition == 'Jalan Bareng' ? 'selected' : '' }}>
-                                                        Jalan Bareng
-                                                    </option>
-                                                    <option value="Leveling"
-                                                        {{ $blending->disposition == 'Leveling' ? 'selected' : '' }}>
-                                                        Leveling
+                                                    <option value="Drain"
+                                                        {{ $blending->disposition == 'Drain' ? 'selected' : '' }}>
+                                                        Drain
                                                     </option>
                                                 </select>
                                             </div>

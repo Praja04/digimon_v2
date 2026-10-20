@@ -330,7 +330,7 @@ class DocPasteurisasiStorageController extends Controller
                 }
                 $mskScan = $msk->scanned_at ?? ($msk->created_at ?? null);
                 $storageRows[] = [
-                    'sampling' => $msk->stage ?? ($sIdx === 0 ? 'Awal' : ($sIdx === 1 ? 'Outlet' : 'Akhir')),
+                    'sampling' => !empty($msk->jenis_sampel) ? $msk->jenis_sampel : ($msk->stage ?? ($sIdx === 0 ? 'Awal' : ($sIdx === 1 ? 'Outlet' : 'Akhir'))),
                     'jam' => $mskScan ? Carbon::parse($mskScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
                     'pic' => $msk->user->name ?? '',
                     'bj' => $this->formatBlankIfZero($msk->bj ?? null),

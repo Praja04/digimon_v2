@@ -420,11 +420,15 @@
             for (var j = 0; j < stCount; j++) {
                 var sRow = stRows[j] || {};
                 var sampSt = sRow.sampling || '';
+                var hasStData = !!(sRow.jam || sRow.pic || sRow.bj || sRow.brix || sRow.ph || sRow.nacl || sRow.viskositas || sRow.organo || sRow.aroma || sRow.disposisi);
                 if (!sampSt) {
-                    if (j === 0) sampSt = 'Awal';
-                    else if (j === 1) sampSt = 'Outlet';
-                    else if (j < stRows.length) sampSt = 'Akhir';
-                    else sampSt = '-';
+                    if (hasStData) {
+                        if (j === 0) sampSt = 'Awal';
+                        else if (j === 1) sampSt = 'Outlet';
+                        else sampSt = 'Akhir';
+                    } else {
+                        sampSt = '-';
+                    }
                 }
                 var dispStColor = 'text-secondary';
                 var dispStVal = (sRow.disposisi || '').trim();
@@ -593,14 +597,14 @@
                             <col style="width: 45px;">  <!-- pH -->
                             <col style="width: 55px;">  <!-- % NaCl -->
                             <col style="width: 70px;">  <!-- Viskositas (ps) -->
-                            <col style="width: 55px;">  <!-- Organo -->
-                            <col style="width: 55px;">  <!-- Aroma -->
+                            <col style="width: 65px;">  <!-- Organo -->
+                            <col style="width: 65px;">  <!-- Aroma -->
                             <col style="width: 55px;">  <!-- Warna -->
                             <col style="width: 50px;">  <!-- Buih -->
                             <col style="width: 55px;">  <!-- Endapan -->
                             <col style="width: 55px;">  <!-- Kristal -->
                             <col style="width: 50px;">  <!-- Aw -->
-                            <col style="width: 185px;"> <!-- Disposisi / Keterangan -->
+                            <col style="width: 165px;"> <!-- Disposisi / Keterangan -->
                         </colgroup>
                         <thead>
                             <tr>

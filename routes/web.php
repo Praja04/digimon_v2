@@ -269,6 +269,11 @@ Route::middleware(['auth'])->group(function () {
             [App\Http\Controllers\RMPMController::class, 'rm']
         )->name('rmpm.rm');
 
+        Route::delete(
+            '/rmpm/rm/{id}',
+            [App\Http\Controllers\RMPMController::class, 'destroy']
+        )->name('rmpm.destroy');
+
         Route::get(
             '/rmpm/qrcode/{id}',
             [App\Http\Controllers\RMPMController::class, 'getQRCode']
@@ -603,12 +608,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/monitoring-storage-kimia/get-last-revisi', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getLastRevisi'])->name('monitoring-storage-kimia.getLastRevisi');
         Route::get('/monitoring-storage-kimia/get-available-additional-batch', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getAvailableAdditionalBatch'])->name('monitoring-storage-kimia.getAvailableAdditionalBatch');
         Route::get('/monitoring-storage-kimia/get-jalan-bareng', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'getJalanBareng'])->name('monitoring-storage-kimia.getJalanBareng');
-        Route::get('/monitoring-storage-kimia/edit/{id}', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'edit'])->name('monitoring-storage-kimia.edit');
-        Route::post('/monitoring-storage-kimia/update', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'update'])->name('monitoring-storage-kimia.update');
-        Route::delete('/monitoring-storage-kimia/{id}', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'destroy'])->name('monitoring-storage-kimia.destroy');
         Route::get('/monitoring-storage-kimia/{id}', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'show'])->name('monitoring-storage-kimia.show');
         Route::post('/monitoring-storage-kimia', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'store'])->name('monitoring-storage-kimia.store');
         Route::post('/monitoring-storage-kimia/revisi', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'storeRevisi'])->name('monitoring-storage-kimia.storeRevisi');
+
+        Route::middleware([
+            'user-access:Head Of Dapartement,Supervisor,Foreman',
+        ])->group(function (): void {
+            Route::get('/monitoring-storage-kimia/edit/{id}', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'edit'])->name('monitoring-storage-kimia.edit');
+            Route::post('/monitoring-storage-kimia/update', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'update'])->name('monitoring-storage-kimia.update');
+            Route::delete('/monitoring-storage-kimia/{id}', [App\Http\Controllers\MonitoringStorageKimiaController::class, 'destroy'])->name('monitoring-storage-kimia.destroy');
+        });
     });
 
     /*------------------------------------------
@@ -748,6 +758,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Analisa - Monitoring Storage Kimia
         Route::get('/analisa/monitoring-storage-kimia', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'index'])->name('analisa.monitoring-storage-kimia.index');
+        Route::get('/analisa/monitoring-storage-kimia/summary/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'summary'])->name('analisa.monitoring-storage-kimia.summary');
         Route::get('/analisa/monitoring-storage-kimia/edit/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'edit'])->name('analisa.monitoring-storage-kimia.edit');
         Route::get('/analisa/monitoring-storage-kimia/show/{id}', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'show'])->name('analisa.monitoring-storage-kimia.show');
         Route::post('/analisa/monitoring-storage-kimia/update', [App\Http\Controllers\Analisa\MonitoringStorageKimiaController::class, 'update'])->name('analisa.monitoring-storage-kimia.update');

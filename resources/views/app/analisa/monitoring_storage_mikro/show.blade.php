@@ -106,6 +106,7 @@
                                             <tr>
                                                 <th>Nomor PO</th>
                                                 <th>Batch Range</th>
+                                                <th>Jenis Sampel</th>
                                                 <th>No Blending</th>
                                                 <th>Volume</th>
                                                 <th>Nama Analis</th>
@@ -122,6 +123,9 @@
                                                 <tr>
                                                     <td>{{ $productionBatch->po_number }}</td>
                                                     <td>{{ $monitoringStorageMikro->batch_range }}</td>
+                                                    <td>
+                                                        <span class="badge bg-info">{{ $monitoringStorageMikro->jenis_sampel ?? '-' }}</span>
+                                                    </td>
                                                     <td>{{ $monitoringStorageMikro->nomor_blending }}</td>
                                                     <td>{{ $monitoringStorageMikro->volume }}</td>
                                                     <td>{{ $monitoringStorageMikro->nama_analis ?? '-' }}</td>

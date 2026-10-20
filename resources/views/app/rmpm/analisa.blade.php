@@ -116,7 +116,9 @@
                                     </button>
                                 </div>
                                 <div class="col-md-3">
-                                    <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light w-100">Kembali</a>
+                                    <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light w-100">
+                                        <i class="ri-arrow-left-line me-1"></i> Kembali
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -132,6 +134,9 @@
                             <div class="card bg-light border p-2 mb-3 rounded-3" id="categorySwitcherNav">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-1">
+                                        <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light btn-sm border me-1" title="Kembali ke Detail Identitas">
+                                            <i class="ri-arrow-left-line me-1"></i> Kembali
+                                        </a>
                                         <button type="button" class="btn btn-outline-secondary btn-sm me-2" id="btnBackToSetup" title="Kembali ke pemilihan kategori">
                                             <i class="ri-arrow-left-line me-1"></i> Pilih Kategori Lain
                                         </button>
@@ -170,10 +175,39 @@
                                     <span id="draftStatusBadge" class="badge bg-warning text-dark fs-6" style="display:none;">
                                         <i class="mdi mdi-file-document-edit-outline me-1"></i> Status: Tersimpan Sementara (Draft)
                                     </span>
+                                    <span id="finalStatusBadge" class="badge bg-success text-white fs-6" style="display:none;">
+                                        <i class="ri-lock-2-line me-1"></i> Status: Final (Terkunci)
+                                    </span>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-outline-danger" id="btnReset">
                                     <i class="ri-refresh-line me-1"></i> Reset
                                 </button>
+                            </div>
+
+                            {{-- Alert Banner for FINAL (LOCKED) --}}
+                            <div id="finalLockedAlert" class="alert alert-success border-success align-items-center mb-3" style="display:none;" role="alert">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="ri-lock-2-fill fs-4 text-success flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="fs-6">Data Analisa Sudah Final (Terkunci)</strong>
+                                        <div class="small mt-0.5 text-muted">
+                                            Data analisa ini sudah disimpan secara final dan tidak dapat diubah lagi. Anda tetap dapat melihat seluruh riwayat dan lembar hasil perhitungan.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Alert Banner for DRAFT (EDITABLE) --}}
+                            <div id="draftStatusAlert" class="alert alert-warning border-warning align-items-center mb-3" style="display:none;" role="alert">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="mdi mdi-file-document-edit fs-4 text-warning flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="fs-6">Status: Simpan Sementara (Draft)</strong>
+                                        <div class="small mt-0.5 text-muted">
+                                            Data analisa masih dalam tahapan simpan sementara. Anda masih dapat mengubah angka atau perhitungan, menyesuaikan sampel/tara, lalu menyimpannya kembali atau menyimpannya secara final.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- Edit jumlah inline --}}
@@ -205,7 +239,7 @@
 
                                 <div class="mt-4 d-flex gap-2 justify-content-end flex-wrap" id="mainFormActions">
                                     <a href="{{ route('rmpm.show', $identitas->id) }}" class="btn btn-light">
-                                        <i class="ri-arrow-left-line me-1"></i> Batal
+                                        <i class="ri-arrow-left-line me-1"></i> Kembali
                                     </a>
                                     <button type="button" class="btn btn-warning px-3" id="btnSimpanDraft">
                                         <i class="mdi mdi-content-save-edit-outline me-1"></i> Simpan Sementara
@@ -917,6 +951,28 @@
     #formAnalisa:has(#paneKadarAir.active) #mainFormActions {
         display: none !important;
     }
+
+    /* Readonly / Disabled Styles for FINAL (LOCKED) State */
+    .form-control-readonly-locked {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+        cursor: default !important;
+        box-shadow: none !important;
+    }
+    .select-disabled-locked {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+        cursor: not-allowed !important;
+        opacity: 0.9 !important;
+        pointer-events: none !important;
+    }
+    .organo-locked {
+        opacity: 0.8 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+    }
 </style>
 @endsection
 
@@ -1555,6 +1611,11 @@
 
     // Helper to update visibility of main submit buttons based on active tab
     function updateMainFormActionsVisibility(explicitTarget = null) {
+        if (isCurrentFinal()) {
+            $('#btnSimpan, #btnSimpanDraft').hide();
+            $('.btn-draft-worksheet, .btn-apply-worksheet').hide();
+            return;
+        }
         if (currentType === 'short-term') {
             const activeTab = explicitTarget || $('.nav-worksheet .nav-link.active').attr('data-bs-target') || ($('#paneRingkasan').hasClass('active') ? '#paneRingkasan' : ($('#paneKotoran').hasClass('active') ? '#paneKotoran' : '#paneKadarAir'));
             if (activeTab === '#paneKotoran' || activeTab === '#paneKadarAir') {
@@ -1601,6 +1662,7 @@
         $(document).on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function(e) {
             const target = $(this).attr('data-bs-target') || $(this).data('bs-target');
             updateMainFormActionsVisibility(target);
+            applyFormLockState();
         });
 
         // Simpan Sementara from Worksheet Tab (Tab 2 & Tab 3)
@@ -2360,11 +2422,6 @@
 
         setTimeout(() => {
             if (SERVER_EXISTING) {
-                if (SERVER_EXISTING.status === 'draft') {
-                    $('#draftStatusBadge').show();
-                } else {
-                    $('#draftStatusBadge').hide();
-                }
                 if (SERVER_EXISTING.uji_kristal) {
                     $('#selectUjiKristal').val(SERVER_EXISTING.uji_kristal).trigger('change');
                 }
@@ -2379,26 +2436,125 @@
                 }
                 renderPhotoPreviews();
             }
+            applyFormLockState();
         }, 100);
         return true;
     }
 
-    function updateDraftBadgeStatus() {
-        let isDraft = false;
-        if (currentType === 'long-term') {
-            isDraft = (SERVER_EXISTING && SERVER_EXISTING.status === 'draft');
-        } else if (currentType === 'short-term') {
-            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (currentKategori || 'incoming'));
-            isDraft = (matching.length > 0 && matching[0].status === 'draft');
-        } else if (currentType === 'garam-gula') {
-            isDraft = (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 && SERVER_GARAM_GULA[0].status === 'draft');
-        }
+    function getAnalysisStatus(type = null, kategori = null) {
+        const t = type || currentType;
+        const k = kategori || currentKategori;
 
-        if (isDraft) {
+        if (t === 'long-term') {
+            if (!SERVER_EXISTING || !SERVER_EXISTING.id) return 'empty';
+            return (SERVER_EXISTING.status === 'draft') ? 'draft' : 'final';
+        }
+        if (t === 'garam-gula') {
+            if (!SERVER_GARAM_GULA || !SERVER_GARAM_GULA.length) return 'empty';
+            return SERVER_GARAM_GULA.some(item => item.status === 'draft') ? 'draft' : 'final';
+        }
+        if (t === 'short-term') {
+            const cat = k || 'incoming';
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming'));
+            if (!matching.length) return 'empty';
+            return matching.some(item => item.status === 'draft') ? 'draft' : 'final';
+        }
+        return 'empty';
+    }
+
+    function isCurrentFinal() {
+        return getAnalysisStatus() === 'final';
+    }
+
+    function isCurrentDraft() {
+        return getAnalysisStatus() === 'draft';
+    }
+
+    function applyFormLockState() {
+        const status = getAnalysisStatus();
+        const isLocked = (status === 'final');
+        const isDraft = (status === 'draft');
+
+        // 1. Alerts & Status Badges
+        if (isLocked) {
+            $('#finalLockedAlert').show();
+            $('#finalStatusBadge').show();
+            $('#draftStatusAlert').hide();
+            $('#draftStatusBadge').hide();
+        } else if (isDraft) {
+            $('#finalLockedAlert').hide();
+            $('#finalStatusBadge').hide();
+            $('#draftStatusAlert').show();
             $('#draftStatusBadge').show();
         } else {
+            $('#finalLockedAlert').hide();
+            $('#finalStatusBadge').hide();
+            $('#draftStatusAlert').hide();
             $('#draftStatusBadge').hide();
         }
+
+        // 2. Lock or unlock form fields
+        const $form = $('#formAnalisa');
+        if (isLocked) {
+            // Readonly for inputs & textareas
+            $form.find('input:not([type="hidden"]), textarea').each(function() {
+                $(this).prop('readonly', true).addClass('form-control-readonly-locked');
+                if ($(this).is(':checkbox, :radio, [type="file"]')) {
+                    $(this).prop('disabled', true);
+                }
+            });
+
+            // Disabled for select dropdowns
+            $form.find('select').each(function() {
+                $(this).prop('disabled', true).addClass('select-disabled-locked');
+            });
+
+            // Organoleptik cells
+            $('.organo-cell-container').addClass('organo-locked').css('pointer-events', 'none');
+
+            // Hide action buttons that allow modifications
+            $('#btnSimpan, #btnSimpanDraft, #btnReset, #btnEditJumlah').hide();
+            $('.btn-draft-worksheet, .btn-apply-worksheet').hide();
+            $('.btn-fill-down, .btn-fill-col-down, .btn-autofill-beaker, .btn-autofill-cawan, .btn-quota-glassware').hide();
+            $('#editJumlahWrapper').slideUp(100);
+
+            // Attachment upload controls in Long Term
+            $('#attachmentWrapper .input-group, #attachmentWrapper .form-text, #btnClearPhotos').hide();
+            $('.btn-remove-photo').hide();
+        } else {
+            // Unlock inputs & textareas
+            $form.find('input:not([type="hidden"]), textarea').each(function() {
+                $(this).prop('readonly', false).removeClass('form-control-readonly-locked');
+                if ($(this).is(':checkbox, :radio, [type="file"]')) {
+                    $(this).prop('disabled', false);
+                }
+            });
+
+            // Unlock select dropdowns
+            $form.find('select').each(function() {
+                $(this).prop('disabled', false).removeClass('select-disabled-locked');
+            });
+
+            // Organoleptik cells
+            $('.organo-cell-container').removeClass('organo-locked').css('pointer-events', '');
+
+            // Show action buttons
+            $('#btnSimpan, #btnSimpanDraft, #btnReset, #btnEditJumlah').show();
+            $('.btn-draft-worksheet, .btn-apply-worksheet').show();
+            $('.btn-fill-down, .btn-fill-col-down, .btn-autofill-beaker, .btn-autofill-cawan, .btn-quota-glassware').show();
+
+            // Attachment upload controls in Long Term
+            $('#attachmentWrapper .input-group, #attachmentWrapper .form-text, #btnClearPhotos').show();
+            $('.btn-remove-photo').show();
+        }
+
+        // Update category switcher and setup badges
+        updateCategorySwitcherBadges();
+        updateSetupBadges();
+    }
+
+    function updateDraftBadgeStatus() {
+        applyFormLockState();
     }
 
     function updateSetupBadges() {
@@ -2411,9 +2567,9 @@
         if (incoming.length > 0) {
             const isDraft = (incoming[0].status === 'draft');
             if (isDraft) {
-                $('#setupBadgeIncoming').hide();
+                $('#setupBadgeIncoming').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + incoming.length + ')').removeClass('bg-primary bg-success').addClass('bg-warning text-dark').show();
             } else {
-                $('#setupBadgeIncoming').text(`(${incoming.length} Sampel)`).show();
+                $('#setupBadgeIncoming').html('<i class="ri-lock-2-line me-1"></i> Final (' + incoming.length + ')').removeClass('bg-primary bg-warning text-dark').addClass('bg-success text-white').show();
             }
         } else {
             $('#setupBadgeIncoming').hide();
@@ -2422,9 +2578,9 @@
         if (sta.length > 0) {
             const isDraft = (sta[0].status === 'draft');
             if (isDraft) {
-                $('#setupBadgeSta').hide();
+                $('#setupBadgeSta').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + sta.length + ')').removeClass('bg-info bg-success').addClass('bg-warning text-dark').show();
             } else {
-                $('#setupBadgeSta').text(`(${sta.length} Sampel)`).show();
+                $('#setupBadgeSta').html('<i class="ri-lock-2-line me-1"></i> Final (' + sta.length + ')').removeClass('bg-info bg-warning text-dark').addClass('bg-success text-white').show();
             }
         } else {
             $('#setupBadgeSta').hide();
@@ -2433,9 +2589,9 @@
         if (monitoring.length > 0) {
             const isDraft = (monitoring[0].status === 'draft');
             if (isDraft) {
-                $('#setupBadgeMonitoring').hide();
+                $('#setupBadgeMonitoring').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + monitoring.length + ')').removeClass('bg-success text-white').addClass('bg-warning text-dark').show();
             } else {
-                $('#setupBadgeMonitoring').text(`(${monitoring.length} Sampel)`).show();
+                $('#setupBadgeMonitoring').html('<i class="ri-lock-2-line me-1"></i> Final (' + monitoring.length + ')').removeClass('bg-warning text-dark').addClass('bg-success text-white').show();
             }
         } else {
             $('#setupBadgeMonitoring').hide();
@@ -2444,9 +2600,9 @@
         if (hasLongTerm) {
             const isDraft = (SERVER_EXISTING.status === 'draft');
             if (isDraft) {
-                $('#setupBadgeLongTerm').hide();
+                $('#setupBadgeLongTerm').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft').removeClass('bg-dark bg-success text-white').addClass('bg-warning text-dark').show();
             } else {
-                $('#setupBadgeLongTerm').html('<i class="ri-check-line"></i> Tersimpan').show();
+                $('#setupBadgeLongTerm').html('<i class="ri-lock-2-line me-1"></i> Final').removeClass('bg-dark bg-warning text-dark').addClass('bg-success text-white').show();
             }
         } else {
             $('#setupBadgeLongTerm').hide();
@@ -2543,6 +2699,7 @@
             });
 
             calculateStatistics();
+            applyFormLockState();
         }, 100);
         return true;
     }
@@ -2587,6 +2744,7 @@
                 }
             });
             calculateStatistics();
+            applyFormLockState();
         }, 100);
         return true;
     }
@@ -2728,6 +2886,13 @@
     }
 
     function handleApplyJumlah() {
+        if (isCurrentFinal()) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Data Terkunci',
+                text: 'Data analisa sudah berstatus FINAL dan jumlah sampel tidak dapat diubah lagi.'
+            });
+        }
         const newJumlah = parseInt($('#editJumlahInput').val());
         if (!newJumlah || newJumlah <= 0) {
             return Swal.fire({
@@ -2854,6 +3019,13 @@
 
     function handleReset(e) {
         if (e) e.preventDefault();
+        if (isCurrentFinal()) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Data Terkunci',
+                text: 'Data analisa sudah berstatus FINAL dan tidak dapat di-reset.'
+            });
+        }
         const targetType = currentType;
         const targetKategori = currentKategori;
 
@@ -2920,61 +3092,36 @@
             $('#summaryStatsBar').show();
             calculateStatistics();
         }
-        updateDraftBadgeStatus();
+        applyFormLockState();
         updateMainFormActionsVisibility();
-        saveDraft();
+        if (!isCurrentFinal()) {
+            saveDraft();
+        }
     }
 
     function updateCategorySwitcherBadges() {
         if (!isGulaKristalMaterial(JENIS)) return;
-        const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
-        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
-        const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
-        const hasLongTerm = (SERVER_EXISTING && SERVER_EXISTING.id);
 
-        if (incoming.length > 0) {
-            const isDraft = (incoming[0].status === 'draft');
-            if (isDraft) {
-                $('#badgeCatIncoming').hide();
-            } else {
-                $('#badgeCatIncoming').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
-            }
-        } else {
-            $('#badgeCatIncoming').hide();
-        }
+        const categories = [
+            { key: 'incoming', badgeId: '#badgeCatIncoming' },
+            { key: 'sta', badgeId: '#badgeCatSta' },
+            { key: 'monitoring', badgeId: '#badgeCatMonitoring' },
+            { key: 'long-term', badgeId: '#badgeCatLongTerm' },
+        ];
 
-        if (sta.length > 0) {
-            const isDraft = (sta[0].status === 'draft');
-            if (isDraft) {
-                $('#badgeCatSta').hide();
-            } else {
-                $('#badgeCatSta').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
-            }
-        } else {
-            $('#badgeCatSta').hide();
-        }
+        categories.forEach(cat => {
+            const status = (cat.key === 'long-term') 
+                ? getAnalysisStatus('long-term', 'long-term') 
+                : getAnalysisStatus('short-term', cat.key);
 
-        if (monitoring.length > 0) {
-            const isDraft = (monitoring[0].status === 'draft');
-            if (isDraft) {
-                $('#badgeCatMonitoring').hide();
+            if (status === 'final') {
+                $(cat.badgeId).html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-lock-2-line"></i> Final</span>').show();
+            } else if (status === 'draft') {
+                $(cat.badgeId).html('<span class="badge bg-warning text-dark py-0 px-1" style="font-size:10px;"><i class="mdi mdi-file-document-edit-outline"></i> Draft</span>').show();
             } else {
-                $('#badgeCatMonitoring').html(`<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>`).show();
+                $(cat.badgeId).hide();
             }
-        } else {
-            $('#badgeCatMonitoring').hide();
-        }
-
-        if (hasLongTerm) {
-            const isDraft = (SERVER_EXISTING.status === 'draft');
-            if (isDraft) {
-                $('#badgeCatLongTerm').hide();
-            } else {
-                $('#badgeCatLongTerm').html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-check-line"></i></span>').show();
-            }
-        } else {
-            $('#badgeCatLongTerm').hide();
-        }
+        });
     }
 
     function switchCategoryDirectly(targetCat) {
@@ -2983,13 +3130,18 @@
             return;
         }
 
-        // Flush pending auto-save immediately before switching
-        if (autoSaveTimer) {
+        // Flush pending auto-save immediately before switching ONLY if not final
+        if (!isCurrentFinal()) {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+                executeAutoSave();
+            } else {
+                saveDraft();
+            }
+        } else if (autoSaveTimer) {
             clearTimeout(autoSaveTimer);
             autoSaveTimer = null;
-            executeAutoSave();
-        } else {
-            saveDraft();
         }
 
         // Update URL query param quietly without full reload
@@ -4536,6 +4688,18 @@
         const row = coords ? coords.row : 0;
         const col = coords ? coords.col : 0;
 
+        // Block data modifying keys when form is FINAL (LOCKED)
+        if (isCurrentFinal()) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                return false;
+            }
+        }
+
         // 1. ENTER / TAB: Strictly Navigate Downwards (Shift: Upwards)
         if (e.key === 'Enter' || e.key === 'Tab') {
             e.preventDefault();
@@ -4934,6 +5098,11 @@
     // DIRECT TABLE CELL PASTE LISTENER (Ctrl+V)
     // ─────────────────────────────────────────────
     function handleDirectTablePaste(e) {
+        if (isCurrentFinal()) {
+            e.preventDefault();
+            return;
+        }
+
         if ($(e.target).is('textarea, #editJumlahInput, #jumlahData') && !$(e.target).closest('.analisa-table').length) {
             return;
         }
@@ -5336,12 +5505,27 @@
             container.append(html);
             currentIdx++;
         });
+
+        if (isCurrentFinal()) {
+            $('.btn-remove-photo').hide();
+            $('#attachmentWrapper .input-group, #attachmentWrapper .form-text, #btnClearPhotos').hide();
+        }
     }
 
     // ─────────────────────────────────────────────
     // SUBMIT (FINAL vs DRAFT vs AUTO-SAVE)
     // ─────────────────────────────────────────────
     function submitForm(actionType, isAutoSave = false) {
+        if (isCurrentFinal()) {
+            if (!isAutoSave) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Terkunci',
+                    text: 'Data analisa sudah berstatus FINAL dan tidak dapat diubah lagi.'
+                });
+            }
+            return;
+        }
         const isDraft = (actionType === 'draft');
 
         if (!isDraft) {
@@ -5634,7 +5818,7 @@
     let pendingAutoSave = false;
 
     function scheduleAutoSave() {
-        if (!currentType || $('#analisaSection').is(':hidden')) return;
+        if (isCurrentFinal() || !currentType || $('#analisaSection').is(':hidden')) return;
 
         if (autoSaveTimer) {
             clearTimeout(autoSaveTimer);
@@ -5646,7 +5830,7 @@
     }
 
     function executeAutoSave() {
-        if (!currentType || $('#analisaSection').is(':hidden')) return;
+        if (isCurrentFinal() || !currentType || $('#analisaSection').is(':hidden')) return;
         if (isAutoSaving) {
             pendingAutoSave = true;
             return;
@@ -5700,7 +5884,7 @@
     }
 
     function saveDraft() {
-        if (!currentType) return;
+        if (isCurrentFinal() || !currentType) return;
         const fields = {};
 
         $('#formAnalisa').find('input:not([type=file]), select, textarea').each(function() {

@@ -123,6 +123,7 @@
                                                             <thead>
                                                                 <tr>
                                                                     <th>Batch Range</th>
+                                                                    <th>Jenis Sampel</th>
                                                                     <th>QR Code (URL)</th>
                                                                     <th>Storage</th>
                                                                     <th>Status</th>
@@ -189,6 +190,9 @@
                                                                                         class="badge bg-info">{{ $relasi->batch }}</span>
                                                                                 @endforeach
                                                                             @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="badge bg-info">{{ $storageKimia->jenis_sampel ?? '-' }}</span>
                                                                         </td>
                                                                         <td>
                                                                             <button type="button"
@@ -282,7 +286,7 @@
                                                                         <td>{{ $storageKimia->status ?? '-' }}</td>
                                                                         <td>
                                                                             {{ $storageKimia->disposition }}
-                                                                            @if (in_array($storageKimia->disposition, ['Adjustment', 'Resampling', 'Leveling', 'Jalan Bareng']) &&
+                                                                            @if (in_array($storageKimia->disposition, ['Adjustment', 'Resampling', 'Leveling', 'Jalan Bareng', 'Drain']) &&
                                                                                     $storageKimia->revisi == null &&
                                                                                     $storageKimia->not_standard == true)
                                                                                 <button class="btn btn-sm btn-warning"
@@ -320,6 +324,7 @@
                                                             <thead>
                                                                 <tr>
                                                                     <th>Batch Range</th>
+                                                                    <th>Jenis Sampel</th>
                                                                     <th>QR Code (URL)</th>
                                                                     <th>Storage</th>
                                                                     <th>Hasil</th>
@@ -385,6 +390,9 @@
                                                                                         class="badge bg-info">{{ $relasi->batch }}</span>
                                                                                 @endforeach
                                                                             @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="badge bg-info">{{ $storageMikro->jenis_sampel ?? '-' }}</span>
                                                                         </td>
                                                                         <td>
                                                                             <button type="button"
@@ -523,12 +531,7 @@
                             <small class="text-danger errorNomorBlending"></small>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="volume" class="form-label">Volume <span style="color: red">*</span></label>
-                            <input type="text" name="volume" id="volume" class="form-control comma-input"
-                                placeholder="Contoh: 0,00">
-                            <small class="text-danger errorVolume"></small>
-                        </div>
+                        <input type="hidden" name="volume" id="volume">
                         <div class="mb-3">
                             <label for="storage" class="form-label">Storage</label>
                             <select name="storage" id="storage" class="form-control">
@@ -562,6 +565,20 @@
                                     <option value="D5">D5</option>
                                 </optgroup>
                             </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="jenis_sampel" class="form-label">Jenis Sampel <span style="color: red">*</span></label>
+                            <select name="jenis_sampel" id="jenis_sampel" class="form-control">
+                                <option value="">-- Pilih Jenis Sampel --</option>
+                                <option value="Awal">Awal</option>
+                                <option value="Outlet">Outlet</option>
+                                <option value="Tengah">Tengah</option>
+                                <option value="Akhir">Akhir</option>
+                                <option value="Inlet">Inlet</option>
+                                <option value="After Drain">After Drain</option>
+                            </select>
+                            <small class="text-danger errorJenisSampel"></small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -601,14 +618,14 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="group_no_blending_revisi">
                                 <label class="form-label">Nomor Blending <span style="color: red;">*</span></label>
                                 <input type="text" class="form-control" name="no_blending_revisi"
                                     id="no_blending_revisi">
                                 <small class="text-danger errorNoBlendingRevisi"></small>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Volume After <span style="color: red;">*</span></label>
+                            <div class="col-md-6 mb-3" id="group_volume_revisi">
+                                <label class="form-label" id="label_volume_revisi">Volume After <span style="color: red;">*</span></label>
                                 <input type="text" class="form-control comma-input" placeholder="Contoh: 0,00"
                                     name="volume_revisi" id="volume_revisi">
                                 <small class="text-danger errorVolumeRevisi"></small>
@@ -749,6 +766,23 @@
             $('#additional_batch_group').addClass('d-none');
             $('#additional_batch_group_2').addClass('d-none');
             $('#additional_batch').empty();
+
+            // Handle field volume berdasarkan disposisi:
+            // - Resampling: sembunyikan Volume After
+            // - Drain: tampilkan dan ubah label menjadi "Volume Drain"
+            // - Lainnya: tampilkan dengan label default "Volume After"
+            if (disposition === 'Resampling') {
+                $('#group_volume_revisi').addClass('d-none');
+                $('#group_no_blending_revisi').removeClass('col-md-6').addClass('col-md-12');
+            } else if (disposition === 'Drain') {
+                $('#group_volume_revisi').removeClass('d-none');
+                $('#group_no_blending_revisi').removeClass('col-md-12').addClass('col-md-6');
+                $('#label_volume_revisi').html('Volume Drain <span style="color: red;">*</span>');
+            } else {
+                $('#group_volume_revisi').removeClass('d-none');
+                $('#group_no_blending_revisi').removeClass('col-md-12').addClass('col-md-6');
+                $('#label_volume_revisi').html('Volume After <span style="color: red;">*</span>');
+            }
 
             // Ambil nomor revisi terakhir
             $.ajax({
@@ -1130,6 +1164,20 @@
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
+        const masterSampleTypes = ['Awal', 'Outlet', 'Tengah', 'Akhir', 'Inlet', 'After Drain'];
+
+        function resetJenisSampel(usedSamples = []) {
+            let optionsHtml = '<option value="">-- Pilih Jenis Sampel --</option>';
+            masterSampleTypes.forEach(function(sample) {
+                if (usedSamples.includes(sample)) {
+                    optionsHtml += `<option value="${sample}" disabled style="color: #999;">${sample} (Sudah diinput)</option>`;
+                } else {
+                    optionsHtml += `<option value="${sample}">${sample}</option>`;
+                }
+            });
+            $('#jenis_sampel').html(optionsHtml);
+        }
+
         $('#batch_range').on('change', function() {
             const selectedBatch = $(this).val();
 
@@ -1137,6 +1185,7 @@
                 $('#nomor_blending').val('');
                 $('#volume').val('');
                 $('#storage').val('');
+                resetJenisSampel([]);
                 return;
             }
 
@@ -1170,6 +1219,8 @@
                         } else {
                             $('#storage').val('');
                         }
+
+                        resetJenisSampel(data.used_samples || []);
                     } else {
                         Swal.fire({
                             icon: 'warning',
@@ -1208,6 +1259,7 @@
                     $('#nomor_blending').val('');
                     $('#volume').val('');
                     $('#storage').val('');
+                    resetJenisSampel([]);
                 }
             });
         });
@@ -1219,10 +1271,22 @@
                 }
             });
             populateBatchOptions();
+            resetJenisSampel([]);
 
             if ($('#batch_range').val()) {
                 $('#batch_range').trigger('change');
             }
+
+            $('#inputModal').on('show.bs.modal', function() {
+                $('#form')[0].reset();
+                $('.form-control').removeClass('is-invalid');
+                $('.text-danger').html('');
+                populateBatchOptions();
+                resetJenisSampel([]);
+                if ($('#batch_range').val()) {
+                    $('#batch_range').trigger('change');
+                }
+            });
 
             $('#form').submit(function(e) {
                 e.preventDefault();
@@ -1287,6 +1351,11 @@
                             if (errors.volume) {
                                 $('#volume').addClass('is-invalid');
                                 $('.errorVolume').html(errors.volume.join('<br>'));
+                            }
+
+                            if (errors.jenis_sampel) {
+                                $('#jenis_sampel').addClass('is-invalid');
+                                $('.errorJenisSampel').html(errors.jenis_sampel.join('<br>'));
                             }
                         } else {
                             Swal.fire({

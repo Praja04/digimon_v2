@@ -80,6 +80,68 @@ class MonitoringStorageKimiaController extends Controller
         return view('app.analisa.monitoring_storage_kimia.index');
     }
 
+    public function summary(Request $request, $id)
+    {
+        $productionBatch = ProductionBatch::with([
+            'monitoringStorageKimia.additionalBatches',
+            'monitoringStorageKimia.user'
+        ])->findOrFail($id);
+
+        $allSamples = $productionBatch->monitoringStorageKimia;
+
+        // Group samples by blending / batch
+        $groupedBlendings = $allSamples->groupBy(function ($item) {
+            return $item->nomor_blending ?: ($item->batch_range ?: '1');
+        })->sortKeys();
+
+        $blendings = [];
+        foreach ($groupedBlendings as $blendingKey => $items) {
+            $awal = $items->firstWhere('jenis_sampel', 'Awal');
+            $tengah = $items->firstWhere('jenis_sampel', 'Tengah');
+            $akhir = $items->firstWhere('jenis_sampel', 'Akhir');
+            $otherSamples = $items->reject(function ($i) {
+                return in_array($i->jenis_sampel, ['Awal', 'Tengah', 'Akhir']);
+            });
+
+            $first = $items->first();
+            $blendings[] = [
+                'blending_key' => $blendingKey,
+                'nomor_blending' => $first->nomor_blending ?? $blendingKey,
+                'batch_range' => $first->batch_range ?? '-',
+                'storage' => $first->storage ?? '-',
+                'volume' => $first->volume ?? '-',
+                'awal' => $awal,
+                'tengah' => $tengah,
+                'akhir' => $akhir,
+                'other_samples' => $otherSamples->values(),
+                'total_samples' => $items->count(),
+            ];
+        }
+
+        $summaryData = [
+            'total_samples' => $allSamples->count(),
+            'count_awal' => $allSamples->where('jenis_sampel', 'Awal')->count(),
+            'count_tengah' => $allSamples->where('jenis_sampel', 'Tengah')->count(),
+            'count_akhir' => $allSamples->where('jenis_sampel', 'Akhir')->count(),
+            'count_ok' => $allSamples->where('status', 'OK')->count(),
+            'count_not_ok' => $allSamples->where('status', 'NOT OK')->count(),
+            'count_pending' => $allSamples->whereNull('status')->count(),
+            'is_complete' => $productionBatch->isMonitoringStorageKimiaComplete(),
+        ];
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'production_batch' => $productionBatch,
+                'summary' => $summaryData,
+                'blendings' => $blendings,
+                'all_samples' => $allSamples,
+            ]);
+        }
+
+        return view('app.analisa.monitoring_storage_kimia.summary', compact('productionBatch', 'blendings', 'summaryData', 'allSamples'));
+    }
+
     public function show($id)
     {
         $productionBatch = ProductionBatch::with([
@@ -112,7 +174,7 @@ class MonitoringStorageKimiaController extends Controller
     public function edit($id)
     {
         try {
-            $data = MonitoringStorageKimia::with('user')->find($id);
+            $data = MonitoringStorageKimia::with(['user', 'productionBatch'])->find($id);
 
             if (!$data) {
                 return response()->json([
@@ -121,7 +183,38 @@ class MonitoringStorageKimiaController extends Controller
                 ], 404);
             }
 
-            return response()->json($data);
+            // Ambil semua sampel pada production batch (PO) ini untuk perbandingan parameter Awal, Tengah, Akhir
+            $poSamples = MonitoringStorageKimia::with('user')
+                ->where('production_batch_id', $data->production_batch_id)
+                ->get();
+
+            $groupedBlendings = $poSamples->groupBy(function ($item) {
+                return $item->nomor_blending ?: ($item->batch_range ?: '1');
+            })->sortKeys();
+
+            $blendings = [];
+            foreach ($groupedBlendings as $blendingKey => $items) {
+                $first = $items->first();
+                $blendings[] = [
+                    'blending_key' => (string) $blendingKey,
+                    'nomor_blending' => $first->nomor_blending ?? $blendingKey,
+                    'batch_range' => $first->batch_range ?? '-',
+                    'storage' => $first->storage ?? '-',
+                    'volume' => $first->volume ?? '-',
+                    'awal' => $items->firstWhere('jenis_sampel', 'Awal'),
+                    'tengah' => $items->firstWhere('jenis_sampel', 'Tengah'),
+                    'akhir' => $items->firstWhere('jenis_sampel', 'Akhir'),
+                ];
+            }
+
+            $currentBlendingKey = (string) ($data->nomor_blending ?: ($data->batch_range ?: '1'));
+
+            $responseData = $data->toArray();
+            $responseData['po_number'] = $data->productionBatch->po_number ?? '-';
+            $responseData['blendings'] = $blendings;
+            $responseData['current_blending_key'] = $currentBlendingKey;
+
+            return response()->json($responseData);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -254,6 +347,10 @@ class MonitoringStorageKimiaController extends Controller
                 }
 
                 if ($updateData['disposition'] === 'Leveling') {
+                    $updateData['not_standard'] = true;
+                }
+
+                if ($updateData['disposition'] === 'Drain') {
                     $updateData['not_standard'] = true;
                 }
             }

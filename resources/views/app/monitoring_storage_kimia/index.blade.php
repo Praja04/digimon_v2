@@ -1,5 +1,9 @@
 @extends('layouts.component.main')
 @section('title', 'Monitoring Storage Kimia')
+@php
+    $userRole = strtolower(trim(auth()->user()->role ?? ''));
+    $canManage = in_array($userRole, ['foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
+@endphp
 @section('content')
     <div class="page-content">
         <div class="container-fluid">
@@ -80,62 +84,64 @@
         </div>
     </div>
 
-    <!-- modal -->
-    <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form id="form">
-                    <div class="modal-header">
-                        <h4 class="modal-title" id="modalLabel"></h4>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <input type="hidden" name="id" id="id">
-                            <label for="po_number" class="form-label">Nomor PO <span style="color: red">*</span></label>
-                            <input type="text" id="po_number" name="po_number" class="form-control">
-                            <small class="text-danger errorPONumber"></small>
+    @if ($canManage)
+        <!-- modal -->
+        <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form id="form">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="modalLabel"></h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
                         </div>
-                        <div class="mb-3">
-                            <label for="variant" class="form-label">Varian <span style="color: red">*</span></label>
-                            <select id="variant" name="variant" class="select2 form-control">
-                                <option value="">-- Pilih Varian --</option>
-                                <option value="SS1">SS1</option>
-                                <option value="SS2">SS2</option>
-                                <option value="BB">BB</option>
-                                <option value="MSD NR1">MSD NR1</option>
-                                <option value="MSD NR2">MSD NR2</option>
-                                <option value="JB">JB</option>
-                            </select>
-                            <small class="text-danger errorVariant"></small>
-                        </div>
-                        <div class="mb-3">
-                            <label for="date" class="form-label">Tanggal Produksi <span
-                                    style="color: red">*</span></label>
-                            <input type="date" name="date" id="date" class="form-control" />
-                            <small class="text-danger errorDate"></small>
-                        </div>
-                        <div class="mb-3">
-                            <label for="batch_range" class="form-label">Rentang Batch Masak <span
-                                    style="color: red">*</span></label>
-                            <input type="text" name="batch_range" class="form-control" placeholder="Contoh: 1-10"
-                                id="batch_range" />
-                            <small class="text-danger errorBatchRange"></small>
-                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <input type="hidden" name="id" id="id">
+                                <label for="po_number" class="form-label">Nomor PO <span style="color: red">*</span></label>
+                                <input type="text" id="po_number" name="po_number" class="form-control">
+                                <small class="text-danger errorPONumber"></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="variant" class="form-label">Varian <span style="color: red">*</span></label>
+                                <select id="variant" name="variant" class="select2 form-control">
+                                    <option value="">-- Pilih Varian --</option>
+                                    <option value="SS1">SS1</option>
+                                    <option value="SS2">SS2</option>
+                                    <option value="BB">BB</option>
+                                    <option value="MSD NR1">MSD NR1</option>
+                                    <option value="MSD NR2">MSD NR2</option>
+                                    <option value="JB">JB</option>
+                                </select>
+                                <small class="text-danger errorVariant"></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Tanggal Produksi <span
+                                        style="color: red">*</span></label>
+                                <input type="date" name="date" id="date" class="form-control" />
+                                <small class="text-danger errorDate"></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="batch_range" class="form-label">Rentang Batch Masak <span
+                                        style="color: red">*</span></label>
+                                <input type="text" name="batch_range" class="form-control" placeholder="Contoh: 1-10"
+                                    id="batch_range" />
+                                <small class="text-danger errorBatchRange"></small>
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Keterangan</label>
-                            <input type="text" name="description" class="form-control" />
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Keterangan</label>
+                                <input type="text" name="description" class="form-control" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="save">Simpan</button>
-                    </div>
-                </form>
-            </div><!-- /.modal-content -->
-        </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-primary" id="save">Simpan</button>
+                        </div>
+                    </form>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+    @endif
 @endsection
 
 @section('scripts')
@@ -193,7 +199,8 @@
                         data: 'action',
                         name: 'action',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        visible: {{ $canManage ? 'true' : 'false' }}
                     }
                 ]
             });
@@ -223,6 +230,7 @@
                 table.ajax.reload();
             });
 
+            @if ($canManage)
             $('body').on('click', '#btnEdit', function() {
                 let id = $(this).data('id');
                 $.ajax({
@@ -248,7 +256,7 @@
                         $('#description').val(response.description);
                     }
                 });
-            })
+            });
 
             $('#form').submit(function(e) {
                 e.preventDefault();
@@ -308,8 +316,8 @@
                             });
                         }
                     }
-                })
-            })
+                });
+            });
 
             $('body').on('click', '#btnDelete', function() {
                 let id = $(this).data('id');
@@ -337,8 +345,9 @@
                             }
                         });
                     }
-                })
-            })
+                });
+            });
+            @endif
         });
     </script>
 @endsection
