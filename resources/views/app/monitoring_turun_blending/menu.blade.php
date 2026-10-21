@@ -177,7 +177,7 @@
                     </div>
                 @endif
 
-                @if (auth()->user()->role == 'Analis Field')
+                @if (in_array(strtolower(trim(auth()->user()->role ?? '')), ['analis field', 'foreman', 'supervisor', 'head of dapartement', 'head of department', 'dept head'], true))
                     <!-- Storage Card -->
                     <div class="col-xl-6 col-lg-6">
                         <div class="card border-0 shadow-lg overflow-hidden h-100 card-hover">

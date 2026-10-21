@@ -55,7 +55,7 @@ class MonitoringStorageKimiaUpdateRequest extends FormRequest
             'kristal' => 'nullable|string',
             'endapan' => 'nullable|string',
             'status_disposition' => 'required',
-            'disposition' => 'nullable|in:Release,Release Bersyarat,Resampling,Reject,Repro,Jalan Bareng,Leveling',
+            'disposition' => 'nullable|in:Release,Release Bersyarat,Resampling,Drain,Reject,Repro,Jalan Bareng,Leveling',
             'disposition_remarks' => 'nullable|string|max:255',
             'adjustment_qty_air' => 'nullable',
             'adjustment_qty_garam' => 'nullable',

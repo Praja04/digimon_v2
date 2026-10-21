@@ -298,7 +298,6 @@
                                 <option value="">-- Pilih Status --</option>
                                 <option value="OK">OK</option>
                                 <option value="NOT OK">NOT OK</option>
-                                <option value="Adjustment">Adjustment</option>
                             </select>
                             <small class="text-danger errorStatusDisposition"></small>
                         </div>
@@ -310,10 +309,7 @@
                                     <option value="Release">Release</option>
                                     <option value="Release Bersyarat">Release Bersyarat</option>
                                     <option value="Resampling">Resampling</option>
-                                    <option value="Reject">Reject</option>
-                                    <option value="Repro">Repro</option>
-                                    <option value="Hold">Hold</option>
-                                    <option value="Jalan Bareng">Jalan Bareng</option>
+                                    <option value="Drain">Drain</option>
                                 </select>
                             </div>
                         @endif
@@ -355,7 +351,7 @@
 
     <!-- Modal Detail -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title" id="detailModalLabel">Detail Data Monitoring Storage Kimia</h5>
@@ -366,39 +362,51 @@
                     <div class="mb-4">
                         <h6 class="border-bottom pb-2 mb-3">Informasi Produksi</h6>
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Batch Range</span>
+                                    <span class="text-muted" style="min-width: 130px;">Nomor PO</span>
+                                    <span class="fw-medium">: <span id="detail_po_number">-</span></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex">
+                                    <span class="text-muted" style="min-width: 130px;">Batch Range</span>
                                     <span class="fw-medium">: <span id="detail_batch_range">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Nomor Blending</span>
+                                    <span class="text-muted" style="min-width: 130px;">Nomor Blending</span>
                                     <span class="fw-medium">: <span id="detail_nomor_blending">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Shift</span>
+                                    <span class="text-muted" style="min-width: 130px;">Shift</span>
                                     <span class="fw-medium">: <span id="detail_shift">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Volume</span>
+                                    <span class="text-muted" style="min-width: 130px;">Volume</span>
                                     <span class="fw-medium">: <span id="detail_volume">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Storage</span>
+                                    <span class="text-muted" style="min-width: 130px;">Storage</span>
                                     <span class="fw-medium">: <span id="detail_storage">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="d-flex">
-                                    <span class="text-muted" style="min-width: 140px;">Revisi</span>
+                                    <span class="text-muted" style="min-width: 130px;">Jenis Sampel</span>
+                                    <span class="fw-medium">: <span id="detail_jenis_sampel">-</span></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex">
+                                    <span class="text-muted" style="min-width: 130px;">Revisi</span>
                                     <span class="fw-medium">: <span id="detail_revisi">-</span></span>
                                 </div>
                             </div>
@@ -528,19 +536,19 @@
                     <div>
                         <h6 class="border-bottom pb-2 mb-3">Informasi Tambahan</h6>
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Dibuat Oleh</span>
                                     <span class="fw-medium">: <span id="detail_created_by">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Tanggal Dibuat</span>
                                     <span class="fw-medium">: <span id="detail_created_at">-</span></span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="d-flex">
                                     <span class="text-muted" style="min-width: 140px;">Terakhir Diupdate</span>
                                     <span class="fw-medium">: <span id="detail_updated_at">-</span></span>
@@ -706,36 +714,35 @@
                     dataType: "json",
                     beforeSend: function() {
                         // Reset semua field
-                        $('#detail_batch_range, #detail_nomor_blending, #detail_shift, #detail_volume, #detail_storage, #detail_revisi')
+                        $('#detail_po_number, #detail_batch_range, #detail_nomor_blending, #detail_shift, #detail_volume, #detail_storage, #detail_jenis_sampel, #detail_revisi')
                             .text('-');
                         $('#detail_brix, #detail_nacl, #detail_bj, #detail_visco, #detail_aw, #detail_ph, #detail_tn')
                             .text('-');
                         $('#detail_buih, #detail_organo, #detail_endapan, #detail_aroma, #detail_kristal')
-                            .text(
-                                '-');
+                            .text('-');
                         $('#detail_status, #detail_disposition, #detail_not_standard, #detail_remark')
                             .text('-');
-                        $('#detail_created_by, #detail_created_at, #detail_updated_at').text(
-                            '-');
+                        $('#detail_created_by, #detail_created_at, #detail_updated_at').text('-');
                     },
                     success: function(response) {
                         // Informasi Produksi
+                        $('#detail_po_number').text(response.po_number || '-');
                         $('#detail_batch_range').text(response.batch_range || '-');
                         $('#detail_nomor_blending').text(response.nomor_blending || '-');
                         $('#detail_shift').text(response.shift || '-');
-                        $('#detail_volume').text(response.volume ? response.volume + ' L' :
-                            '-');
+                        $('#detail_volume').text(response.volume ? response.volume + ' L' : '-');
                         $('#detail_storage').text(response.storage || '-');
+                        $('#detail_jenis_sampel').text(response.jenis_sampel || '-');
                         $('#detail_revisi').text(response.revisi || '-');
 
                         // Parameter Analisa
-                        $('#detail_brix').text(response.brix || '-');
-                        $('#detail_nacl').text(response.nacl || '-');
-                        $('#detail_bj').text(response.bj || '-');
-                        $('#detail_visco').text(response.visco || '-');
-                        $('#detail_aw').text(response.aw || '-');
-                        $('#detail_ph').text(response.ph || '-');
-                        $('#detail_tn').text(response.tn || '-');
+                        $('#detail_brix').text(response.brix !== null && response.brix !== undefined ? formatDecimal(response.brix) : '-');
+                        $('#detail_nacl').text(response.nacl !== null && response.nacl !== undefined ? formatDecimal(response.nacl) : '-');
+                        $('#detail_bj').text(response.bj !== null && response.bj !== undefined ? formatDecimal(response.bj) : '-');
+                        $('#detail_visco').text(response.visco !== null && response.visco !== undefined ? formatDecimal(response.visco) : '-');
+                        $('#detail_aw').text(response.aw !== null && response.aw !== undefined ? formatDecimal(response.aw) : '-');
+                        $('#detail_ph').text(response.ph !== null && response.ph !== undefined ? formatDecimal(response.ph) : '-');
+                        $('#detail_tn').text(response.tn !== null && response.tn !== undefined ? formatDecimal(response.tn) : '-');
 
                         // Parameter Fisik
                         $('#detail_buih').text(response.buih || '-');
@@ -747,8 +754,7 @@
                         // Status & Disposisi
                         $('#detail_status').text(response.status || '-');
                         $('#detail_disposition').text(response.disposition || '-');
-                        $('#detail_not_standard').text(response.not_standard == 1 ? 'Ya' :
-                            'Tidak');
+                        $('#detail_not_standard').text(response.not_standard == 1 ? 'Ya' : 'Tidak');
 
                         // Keterangan
                         let remarkText = '-';
@@ -764,7 +770,7 @@
                         }
                         $('#detail_remark').text(remarkText);
 
-                        // Informasi Tambahan - Safe access untuk user
+                        // Informasi Tambahan
                         let createdByText = '-';
                         if (response.user && response.user.name) {
                             createdByText = response.user.name;
@@ -775,10 +781,8 @@
                         }
                         $('#detail_created_by').text(createdByText);
 
-                        $('#detail_created_at').text(response.created_at ? formatDateTime(
-                            response.created_at) : '-');
-                        $('#detail_updated_at').text(response.updated_at ? formatDateTime(
-                            response.updated_at) : '-');
+                        $('#detail_created_at').text(response.created_at ? formatDateTime(response.created_at) : '-');
+                        $('#detail_updated_at').text(response.updated_at ? formatDateTime(response.updated_at) : '-');
 
                         $('#detailModal').modal('show');
                     },
@@ -804,7 +808,6 @@
                 };
                 return date.toLocaleDateString('id-ID', options);
             }
-
 
             $('#form').submit(function(e) {
                 e.preventDefault();

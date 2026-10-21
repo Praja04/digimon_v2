@@ -236,12 +236,8 @@ class SingleDocPelarutanSheetExport implements WithEvents, WithTitle
                     $sheet->getRowDimension($r)->setRowHeight(15);
                 }
 
-                // Notes resmi dari template acuan
-                $sheet->mergeCells('L5:Q5');
-                $sheet->setCellValue('L5', 'Notes: 1 lembar: 2 batch');
-                $sheet->getStyle('L5')->getFont()->setSize(7.5)->setItalic(true);
-                $sheet->getStyle('L5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getRowDimension(5)->setRowHeight(12);
+                // Spasi sebelum blok data
+                $sheet->getRowDimension(5)->setRowHeight(6);
 
                 // ==========================================
                 // 2. BLOK BATCH 1 (Baris 6 - 17)

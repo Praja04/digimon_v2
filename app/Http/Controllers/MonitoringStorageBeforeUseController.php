@@ -110,7 +110,24 @@ class MonitoringStorageBeforeUseController extends Controller
                 ->rawColumns(['waktu_selesai_pemakaian', 'estimasi_kadaluarsa', 'hasil', 'detail', 'action', 'tahap_flushing', 'status_approval'])
                 ->make(true);
         }
-        $variantKecap = Http::get(env('PRODUCTION_URL') . 'api/varian/kecap/all')->json()['data'];
+
+        $variantKecap = [];
+        try {
+            $url = rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/') . '/api/varian/kecap/all';
+            $response = Http::timeout(2)->get($url);
+            if ($response->successful()) {
+                $variantKecap = $response->json()['data'] ?? [];
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal terhubung ke API Varian PRODUCTION_URL: ' . $e->getMessage());
+        }
+
+        if (empty($variantKecap)) {
+            $defaultCodes = ['SS1', 'SS2', 'BB', 'MSD NR1', 'MSD NR2', 'JB', 'MSD', 'MSD Lokal', 'Kecap Sedap 550ml', 'Kecap Manis Sedap 600ml'];
+            $dbVariants = \App\Models\ProductionBatch::whereNotNull('variant')->distinct()->pluck('variant')->toArray();
+            $merged = array_values(array_unique(array_filter(array_merge($defaultCodes, $dbVariants))));
+            $variantKecap = array_map(fn($code) => ['code' => $code], $merged);
+        }
 
         return view('app.monitoring_storage_before_use.index', compact('variantKecap'));
     }

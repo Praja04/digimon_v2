@@ -16,8 +16,12 @@ class MonitoringStorageKimiaUpdateRequest extends FormRequest
 
         foreach ($numericFields as $field) {
             if ($this->has($field) && is_string($this->input($field))) {
-                $cleanedValue = str_replace(' ', '', $this->input($field));
-                $preparedData[$field] = str_replace(',', '.', $cleanedValue);
+                $cleanedValue = trim(str_replace(' ', '', $this->input($field)));
+                if ($cleanedValue !== '') {
+                    $preparedData[$field] = str_replace(',', '.', $cleanedValue);
+                } else {
+                    $preparedData[$field] = null;
+                }
             }
         }
 
@@ -29,7 +33,7 @@ class MonitoringStorageKimiaUpdateRequest extends FormRequest
         return [
             'storage' => 'nullable|string',
             'no_blending_revisi' => 'required',
-            'volume_revisi' => 'required|numeric',
+            'volume_revisi' => 'nullable|numeric',
         ];
     }
 

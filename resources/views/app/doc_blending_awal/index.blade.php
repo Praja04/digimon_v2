@@ -448,10 +448,7 @@
                             <i class="ri-pages-line"></i> LEMBAR BLENDING #${bIdx + 1}
                         </span>
                         <span class="badge bg-light text-dark border ms-2">
-                            Pasangan Batch ${escapeHtml(block.batch || '')} (Tangki No. ${escapeHtml(block.no_blending || String(bIdx + 1))})
-                        </span>
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary ms-2">
-                            1 Halaman = 1 Pasangan Batch (1-2, 3-4, 5-6, …)
+                            Pasangan Batch ${escapeHtml(block.batch || '')} (Blending No. ${escapeHtml(block.no_blending || String(bIdx + 1))})
                         </span>
                     </div>
                     <div>
@@ -485,7 +482,6 @@
                             </tr>
                         </table>
                         <div class="clearfix"></div>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
                     </div>
                 </div>
 

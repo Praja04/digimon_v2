@@ -201,12 +201,7 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                     $sheet->getRowDimension($r)->setRowHeight(16);
                 }
                 
-                // Notes kanan atas (Baris 5)
-                $sheet->mergeCells('M5:P5');
-                $sheet->setCellValue('M5', "Notes:\n1 lembar: 1 blending (1 pasangan batch)");
-                $sheet->getStyle('M5')->getFont()->setSize(7.5)->setItalic(true);
-                $sheet->getStyle('M5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
-                $sheet->getRowDimension(5)->setRowHeight(20);
+                $sheet->getRowDimension(5)->setRowHeight(8);
 
                 // ==========================================
                 // 2. METADATA SIKLUS BLENDING (Baris 6 - 9)

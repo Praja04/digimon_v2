@@ -16,8 +16,12 @@ class MonitoringStorageKimiaStoreRequest extends FormRequest
 
         foreach ($numericFields as $field) {
             if ($this->has($field) && is_string($this->input($field))) {
-                $cleanedValue = str_replace(' ', '', $this->input($field));
-                $preparedData[$field] = str_replace(',', '.', $cleanedValue);
+                $cleanedValue = trim(str_replace(' ', '', $this->input($field)));
+                if ($cleanedValue !== '') {
+                    $preparedData[$field] = str_replace(',', '.', $cleanedValue);
+                } else {
+                    $preparedData[$field] = null;
+                }
             }
         }
 
@@ -31,7 +35,8 @@ class MonitoringStorageKimiaStoreRequest extends FormRequest
             'batch_range' => 'required',
             'storage' => 'nullable|string',
             'nomor_blending' => 'required',
-            'volume' => 'required|numeric',
+            'volume' => 'nullable|numeric',
+            'jenis_sampel' => 'required|string|in:Awal,Outlet,Tengah,Akhir,Inlet,After Drain',
         ];
     }
 
@@ -41,7 +46,8 @@ class MonitoringStorageKimiaStoreRequest extends FormRequest
             'batch_range' => 'Batch',
             'storage' => 'Storage',
             'nomor_blending' => 'Nomor Blending',
-            'volume' => 'Volume'
+            'volume' => 'Volume',
+            'jenis_sampel' => 'Jenis Sampel',
         ];
     }
 }

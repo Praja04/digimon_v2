@@ -134,7 +134,10 @@
                             <select id="variant" name="variant" class="select2 form-control">
                                 <option value="">-- Pilih Varian --</option>
                                 @foreach ($variantKecap as $item)
-                                    <option value="{{ $item['code'] }}">{{ $item['code'] }}</option>
+                                    @php
+                                        $val = is_array($item) ? ($item['code'] ?? '') : ($item->code ?? (string)$item);
+                                    @endphp
+                                    <option value="{{ $val }}">{{ $val }}</option>
                                 @endforeach
                             </select>
                             <small class="text-danger errorVariant"></small>

@@ -677,12 +677,12 @@
 
                                 <div class="rm-filter-panel">
                                     <div class="row g-3 align-items-end">
-                                        <div class="col-12 col-md-2">
+                                        <div class="col-12 col-md-3">
                                             <label for="start_date" class="form-label fw-semibold">Tanggal Mulai</label>
                                             <input type="date" id="start_date" class="form-control">
                                         </div>
 
-                                        <div class="col-12 col-md-2">
+                                        <div class="col-12 col-md-3">
                                             <label for="end_date" class="form-label fw-semibold">Tanggal Akhir</label>
                                             <input type="date" id="end_date" class="form-control">
                                         </div>
@@ -707,12 +707,6 @@
                                         <div class="col-6 col-md-1">
                                             <button type="button" id="btnReset" class="btn btn-light w-100">
                                                 <i class="mdi mdi-refresh"></i>
-                                            </button>
-                                        </div>
-
-                                        <div class="col-12 col-md-2">
-                                            <button type="button" id="btnAdd" class="btn btn-success w-100">
-                                                <i class="mdi mdi-plus me-1"></i> Tambah Data
                                             </button>
                                         </div>
                                     </div>
@@ -950,7 +944,6 @@
             }
 
             $('#btnOpenIncomingCard').on('click', openIncomingCard);
-            $('#btnAdd').on('click', openIncomingCard);
             $('#btnCloseIncomingCard, #btnCancelIncomingCard').on('click', closeIncomingCard);
 
             // DATA RAW MATERIAL: card melebar dan tabel tampil di dalam card.
@@ -1040,6 +1033,71 @@
                     error: function() {
                         $('#qrImageArea').html('<p class="text-danger">Terjadi kesalahan saat memuat QR Code</p>');
                         $('#qrLabelText').html('');
+                    }
+                });
+            });
+
+            $('body').on('click', '.btnDelete', function() {
+                let id = $(this).data('id');
+                let spb = $(this).data('spb') || ('#' + id);
+
+                Swal.fire({
+                    title: 'Hapus Data Raw Material?',
+                    text: 'Data SPB: "' + spb + '" akan dihapus permanen beserta seluruh riwayat sampling dan analisa terkait.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="mdi mdi-delete me-1"></i> Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Menghapus data...',
+                            text: 'Mohon tunggu sebentar',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        $.ajax({
+                            url: "{{ route('rmpm.destroy', '') }}/" + id,
+                            type: 'DELETE',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil!',
+                                        text: response.message || 'Data Raw Material berhasil dihapus.',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    table.ajax.reload(null, false);
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal!',
+                                        text: response.message || 'Terjadi kesalahan saat menghapus data.'
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                let errMsg = 'Terjadi kesalahan pada server saat menghapus data.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errMsg = xhr.responseJSON.message;
+                                }
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal!',
+                                    text: errMsg
+                                });
+                            }
+                        });
                     }
                 });
             });

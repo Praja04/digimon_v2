@@ -98,7 +98,10 @@ class RMPMController extends Controller
                 })
 
                 ->addColumn('action', function ($data) {
-                    return '
+                    $userRole = strtolower(trim(auth()->user()->role ?? ''));
+                    $isSupervisor = in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
+
+                    $btn = '
                         <a
                             class="btn btn-sm btn-info me-1"
                             href="' . route('rmpm.show', $data->id) . '"
@@ -107,6 +110,23 @@ class RMPMController extends Controller
                             Lihat
                         </a>
                     ';
+
+                    if ($isSupervisor) {
+                        $btn .= '
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-danger btnDelete"
+                                data-id="' . $data->id . '"
+                                data-spb="' . htmlspecialchars($data->no_spb ?? '-', ENT_QUOTES) . '"
+                                title="Hapus Data"
+                            >
+                                <span class="mdi mdi-delete"></span>
+                                Hapus
+                            </button>
+                        ';
+                    }
+
+                    return $btn;
                 })
 
                 ->addColumn('status', function ($item) {
@@ -160,6 +180,47 @@ class RMPMController extends Controller
         $masterAsalBahans = \App\Models\MasterAsalBahan::where('status', true)->select('asal_bahan')->distinct()->orderBy('asal_bahan')->get();
 
         return view('app.rmpm.rm', compact('masterJenisBahans', 'masterSuppliers', 'masterAsalBahans'));
+    }
+
+    /**
+     * Hapus data Raw Material (Identitas RM beserta seluruh relasi terkait).
+     * Hanya dapat diakses oleh role Supervisor dan Head of Department.
+     */
+    public function destroy($id)
+    {
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if (!in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akses ditolak. Fitur hapus data hanya dapat diakses oleh Supervisor.',
+            ], 403);
+        }
+
+        try {
+            $identitas = IdentitasRM::findOrFail($id);
+            $noSpb = $identitas->no_spb ?? ('#' . $id);
+
+            \DB::transaction(function () use ($identitas) {
+                // Hapus data Identitas RM (foreign keys cascade menghapus analisa & sampling terkait)
+                $identitas->delete();
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Data Raw Material dengan No SPB: {$noSpb} berhasil dihapus.",
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data Raw Material tidak ditemukan.',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Gagal menghapus data Raw Material: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /*
@@ -707,6 +768,15 @@ public function pmKartonBct(
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
 
+        // Check if existing record is already final (locked)
+        $existingLongTerm = AnalisaLongTerm::where('id_identitas', $request->id_identitas)->latest()->first();
+        if ($existingLongTerm && $existingLongTerm->status && $existingLongTerm->status !== 'draft') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data analisa Long Term sudah berstatus FINAL dan tidak dapat diubah lagi.',
+            ], 422);
+        }
+
         $rules = [
             'id_identitas' => [
                 'required',
@@ -897,6 +967,31 @@ public function pmKartonBct(
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
 
+        // Check if existing record for this kategori is already final (locked)
+        $existingShortTerm = AnalisaShortTerm::where('id_identitas', $request->id_identitas)
+            ->where(function ($q) use ($kategori) {
+                $q->where('kategori', $kategori)
+                  ->orWhere(function ($sub) use ($kategori) {
+                      if ($kategori === 'incoming') {
+                          $sub->whereNull('kategori');
+                      }
+                  });
+            })
+            ->first();
+
+        if ($existingShortTerm && $existingShortTerm->status && $existingShortTerm->status !== 'draft') {
+            $kategoriLabels = [
+                'incoming'   => 'Incoming',
+                'sta'        => 'STA (Short Term Analisa)',
+                'monitoring' => 'Monitoring',
+            ];
+            $label = $kategoriLabels[$kategori] ?? 'Analisa';
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Data analisa {$label} sudah berstatus FINAL dan tidak dapat diubah lagi.",
+            ], 422);
+        }
+
         $rules = [
             'id_identitas' => 'required|exists:identitas_rm,id',
             'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
@@ -1022,6 +1117,15 @@ public function pmKartonBct(
     {
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
+
+        // Check if existing record is already final (locked)
+        $existingGaramGula = AnalisaGaramGula::where('id_identitas', $request->id_identitas)->first();
+        if ($existingGaramGula && $existingGaramGula->status && $existingGaramGula->status !== 'draft') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data analisa sudah berstatus FINAL dan tidak dapat diubah lagi.',
+            ], 422);
+        }
 
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
