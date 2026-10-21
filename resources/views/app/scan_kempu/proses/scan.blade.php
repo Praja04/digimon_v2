@@ -173,16 +173,20 @@
                             <!-- Manual Input Box -->
                             <div class="mt-4 pt-2 border-top">
                                 @if ($canManualInput ?? false)
-                                    <label class="form-label fs-13 fw-semibold text-body mb-2 d-flex align-items-center justify-content-between">
-                                        <span><i class="ri-keyboard-line text-muted me-1"></i> Masukkan ID Kempu Manual:</span>
-                                        <span class="badge bg-info-subtle text-info fs-11"><i class="ri-shield-user-line me-1"></i> Otoritas Khusus Aktif</span>
+                                    <label
+                                        class="form-label fs-13 fw-semibold text-body mb-2 d-flex align-items-center justify-content-between">
+                                        <span><i class="ri-keyboard-line text-muted me-1"></i> Masukkan ID Kempu
+                                            Manual:</span>
+                                        <span class="badge bg-info-subtle text-info fs-11"><i
+                                                class="ri-shield-user-line me-1"></i> Otoritas Khusus Aktif</span>
                                     </label>
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-light text-muted"><i
                                                 class="ri-barcode-line"></i></span>
                                         <input type="text" id="inputManualId" class="form-control font-monospace"
                                             placeholder="Contoh: KMP-001 lalu tekan Enter..." autocomplete="off">
-                                        <button class="btn btn-primary px-4 fw-semibold" type="button" id="btnLookupManual">
+                                        <button class="btn btn-primary px-4 fw-semibold" type="button"
+                                            id="btnLookupManual">
                                             <i class="ri-search-line me-1"></i> Cari Kempu
                                         </button>
                                     </div>
@@ -190,7 +194,9 @@
                                     <div class="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 px-3">
                                         <i class="ri-lock-line fs-20 text-warning flex-shrink-0"></i>
                                         <div class="fs-12 text-muted">
-                                            <strong class="text-body">Pengetikan Manual Terkunci:</strong> Operator wajib memindai kempu via kamera / barcode scanner. Pengetikan ID manual hanya diperuntukkan bagi Foreman / Leader / Supervisor.
+                                            <strong class="text-body">Pengetikan Manual Terkunci:</strong> Operator wajib
+                                            memindai kempu via kamera / barcode scanner. Pengetikan ID manual hanya
+                                            diperuntukkan bagi Foreman / Leader / Supervisor.
                                         </div>
                                     </div>
                                 @endif
@@ -244,30 +250,41 @@
 
                     <!-- Detail Info -->
                     <div class="bg-light p-3 rounded-3 mb-3 border">
-                        <div class="row g-2 fs-13">
-                            <div class="col-4 text-center">
+                        <!-- Baris 1: Data Ringkas (RFID, PO, Reused) -->
+                        <div class="row g-2 fs-13 text-center mb-2 pb-2 border-bottom">
+                            <div class="col-4">
                                 <span class="text-muted d-block fs-11">RFID:</span>
                                 <span class="fw-semibold font-monospace text-body" id="modalKempuRfid">-</span>
                             </div>
-                            <div class="col-4 text-center">
-                                <span class="text-muted d-block fs-11">Status Saat Ini:</span>
-                                <span class="badge bg-light text-body border" id="modalKempuStatus">-</span>
+                            <div class="col-4">
+                                <span class="text-muted d-block fs-11">Nomor PO:</span>
+                                <span class="fw-bold font-monospace text-success" id="modalKempuNoPo">-</span>
                             </div>
-                            <div class="col-4 text-center">
+                            <div class="col-4">
                                 <span class="text-muted d-block fs-11">Siklus Reused:</span>
                                 <span class="fw-bold text-body" id="modalKempuReused">-</span>
                             </div>
+                        </div>
+
+                        <!-- Baris 2: Status Saat Ini (Full-Width) -->
+                        <div class="text-center">
+                            <span class="text-muted d-block fs-11 mb-1">Status Saat Ini:</span>
+                            <span
+                                class="badge bg-white text-secondary border px-3 py-2 text-wrap text-break font-monospace fs-12"
+                                id="modalKempuStatus">-</span>
                         </div>
                     </div>
 
                     <!-- Alert Peringatan Batas Reused Kempu (Pre Cuci) -->
                     <div id="alertMaxReusedNotice" class="alert alert-danger d-none mb-3 py-2 px-3 fs-13 border-danger">
                         <i class="ri-error-warning-fill me-1 align-middle fs-16"></i>
-                        <strong>Batas Maksimal Penggunaan Tercapai (21x).</strong> Kempu ini telah mencapai batas pemakaian maksimal dan tidak dapat digunakan lagi. Silakan konfirmasi untuk melakukan <strong>Scrap Kempu</strong>.
+                        <strong>Batas Maksimal Penggunaan Tercapai (21x).</strong> Kempu ini telah mencapai batas pemakaian
+                        maksimal dan tidak dapat digunakan lagi. Silakan konfirmasi untuk melakukan <strong>Scrap
+                            Kempu</strong>.
                     </div>
 
                     @if ($card['key'] === 'qc-pre-cuci' || $card['key'] === 'qc-proses')
-                        <div class="alert alert-info py-2 px-3 mb-3 fs-12 d-flex align-items-center gap-2">
+                        <div id="alertPreCuciIncomingInfo" class="alert alert-info py-2 px-3 mb-3 fs-12 d-flex align-items-center gap-2">
                             <i class="ri-information-line fs-16 flex-shrink-0 text-primary"></i>
                             <div><strong>Cek Incoming & Pre Cuci:</strong> Pemeriksaan fisik incoming kempu sekaligus
                                 verifikasi kelayakan pre-cuci sebelum proses <strong>Cuci Kempu</strong> di Produksi.
@@ -275,11 +292,13 @@
                         </div>
 
                         <!-- Panel Otoritas Koreksi Reused Manual (Khusus Pre-Cuci) -->
-                        <div class="card border border-primary-subtle bg-soft-primary p-3 mb-3 d-none" id="wrapperManualReused">
+                        <div class="card border border-primary-subtle bg-soft-primary p-3 mb-3 d-none"
+                            id="wrapperManualReused">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
                                     <span class="fw-bold text-dark fs-13">
-                                        <i class="ri-edit-2-line text-primary me-1"></i> Koreksi Manual Reused (Otoritas QC)
+                                        <i class="ri-edit-2-line text-primary me-1"></i> Koreksi Manual Reused (Otoritas
+                                        QC)
                                     </span>
                                     <div class="text-muted fs-11" id="labelReusedHelp">
                                         Saat ini: <span class="badge bg-primary" id="badgeAutoNextReused">0/21</span>.
@@ -314,74 +333,101 @@
                                 <strong>Repair (Kempu Reject ke Workshop)</strong>.
                             </div>
                         </div>
+                    @elseif ($card['key'] === 'qc-retur')
+                        <div id="boxReturControls">
+                            <div
+                                class="alert alert-warning py-2 px-3 mb-3 fs-12 d-flex align-items-start gap-2 border-warning-subtle bg-soft-warning text-warning-emphasis">
+                                <i class="ri-reply-all-line fs-18 flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong>Pemeriksaan Retur PAS (Cek Retur):</strong><br>
+                                    Kempu retur dari PAS yang diterima di WFG. Tentukan keputusan: <b>Repro</b> (Produk Reject dialirkan ke Produksi untuk dikosongkan) atau <b>Reject</b> (Kempu rusak dikirim ke Workshop Engineering).
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="modalReturTarget" class="form-label fs-12 fw-bold text-dark mb-1">
+                                    <i class="ri-git-branch-line me-1"></i> Pilihan Keputusan QC Retur:
+                                </label>
+                                <select class="form-select form-select-lg border-warning fw-semibold fs-14" id="modalReturTarget">
+                                    <option value="REPRO">&#x1F504; Repro (Produk Reject / Kirim ke Produksi)</option>
+                                    <option value="REJECT">&#x1F534; Reject (Kempu Rusak / Kirim ke Workshop Engineering)</option>
+                                </select>
+                            </div>
+                        </div>
                     @elseif (in_array($card['key'], ['qc-force', 'qc-pm-force', 'qc-proses-force']))
                         <div id="boxForceControls">
-                        <div
-                            class="alert alert-danger py-2 px-3 mb-3 fs-12 d-flex align-items-start gap-2 border-danger-subtle bg-danger-subtle text-danger">
-                            <i class="ri-alert-line fs-18 flex-shrink-0 mt-1"></i>
-                            <div>
-                                <strong>Mode Force Scan (Otoritas Khusus):</strong><br>
-                                Fitur ini mengizinkan Anda menentukan status keputusan QC kempu kapanpun &amp; dimanapun
-                                secara manual tanpa terhalang urutan alur normal.
-                            </div>
-                        </div>
-
-                        <!-- Dropdown Pilihan Keputusan Force Scan -->
-                        <div class="mb-3">
-                            <label for="modalForceTarget" class="form-label fs-12 fw-bold text-danger mb-1">
-                                <i class="ri-git-branch-line me-1"></i> Pilih Keputusan / Status Target:
-                            </label>
-                            <select class="form-select form-select-lg border-danger fw-semibold fs-14"
-                                id="modalForceTarget">
-                                @if ($card['key'] === 'qc-pm-force')
-                                    <option value="RELEASE">Release (Release QC PM ke WPM)</option>
-                                    <option value="HOLD">Hold (Ditahan di QC PM)</option>
-                                    <option value="REPRO" id="optForcePmRepro" class="d-none">Repro (Produk Reject ke Produksi)</option>
-                                    <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
-                                    <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
-                                @else
-                                    <option value="RELEASE" id="optForceProsesRelease">Release (Lolos)</option>
-                                    <option value="HOLD">Hold (Ditahan)</option>
-                                    <option value="REPRO" id="optForceProsesRepro">Repro (Produk Reject ke Produksi)</option>
-                                    <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
-                                    <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
-                                @endif
-                            </select>
-                        </div>
-
-                        <!-- Panel Otoritas Koreksi Reused Manual di Force Scan (Muncul jika pilih RELEASE_PRE_CUCI) -->
-                        <div class="card border border-warning-subtle bg-soft-warning p-3 mb-3 d-none"
-                            id="wrapperManualReusedForce">
-                            <div class="d-flex align-items-center justify-content-between">
+                            <div
+                                class="alert alert-danger py-2 px-3 mb-3 fs-12 d-flex align-items-start gap-2 border-danger-subtle bg-danger-subtle text-danger">
+                                <i class="ri-alert-line fs-18 flex-shrink-0 mt-1"></i>
                                 <div>
-                                    <span class="fw-bold text-dark fs-13">
-                                        <i class="ri-edit-2-line text-warning me-1"></i> Koreksi Manual Reused (Force
-                                        Pre-Cuci)
-                                    </span>
-                                    <div class="text-muted fs-11" id="labelReusedHelpForce">
-                                        Saat ini: <span class="badge bg-primary"
-                                            id="badgeAutoNextReusedForce">0/21</span>. Centang untuk atur manual.
+                                    <strong>Mode Force Scan (Otoritas Khusus):</strong><br>
+                                    Fitur ini mengizinkan Anda menentukan status keputusan QC kempu kapanpun &amp; dimanapun
+                                    secara manual tanpa terhalang urutan alur normal.
+                                </div>
+                            </div>
+
+                            <!-- Dropdown Pilihan Keputusan Force Scan -->
+                            <div class="mb-3">
+                                <label for="modalForceTarget" class="form-label fs-12 fw-bold text-danger mb-1">
+                                    <i class="ri-git-branch-line me-1"></i> Pilih Keputusan / Status Target:
+                                </label>
+                                <select class="form-select form-select-lg border-danger fw-semibold fs-14"
+                                    id="modalForceTarget">
+                                    @if ($card['key'] === 'qc-pm-force')
+                                        <option value="RELEASE">Release (Release QC PM ke WPM)</option>
+                                        <option value="HOLD">Hold (Ditahan di QC PM)</option>
+                                        <option value="REPRO" id="optForcePmRepro" class="d-none">Repro (Produk Reject
+                                            ke Produksi)</option>
+                                        <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
+                                        <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
+                                    @else
+                                        <option value="RELEASE" id="optForceProsesRelease">Release (Lolos)</option>
+                                        <option value="HOLD">Hold (Ditahan)</option>
+                                        <option value="REPRO" id="optForceProsesRepro">Repro (Produk Reject ke Produksi)
+                                        </option>
+                                        <option value="REJECT_WORKSHOP">Reject (Kirim Workshop Engineering)</option>
+                                        <option value="SCRAP">Scrap (Rusak Permanen / Afkir)</option>
+                                    @endif
+                                </select>
+                            </div>
+
+                            <!-- Panel Otoritas Koreksi Reused Manual di Force Scan (Muncul jika pilih RELEASE_PRE_CUCI di QC Proses) -->
+                            @if ($card['key'] !== 'qc-pm-force')
+                                <div class="card border border-warning-subtle bg-soft-warning p-3 mb-3 d-none"
+                                    id="wrapperManualReusedForce">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="fw-bold text-dark fs-13">
+                                                <i class="ri-edit-2-line text-warning me-1"></i> Koreksi Manual Reused (Force
+                                                Pre-Cuci)
+                                            </span>
+                                            <div class="text-muted fs-11" id="labelReusedHelpForce">
+                                                Saat ini: <span class="badge bg-primary"
+                                                    id="badgeAutoNextReusedForce">0/21</span>. Centang untuk atur manual.
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch fs-16 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="checkManualReusedForce">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 d-none" id="boxManualReusedInputForce">
+                                        <label for="inputManualReusedForce"
+                                            class="form-label fs-12 fw-semibold text-dark mb-1">
+                                            Set Nilai Siklus Reused Baru (0 - 21x):
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control font-monospace fw-bold"
+                                                id="inputManualReusedForce" min="0" max="21"
+                                                placeholder="0 - 21">
+                                            <span class="input-group-text fs-12 bg-white fw-semibold">/ 21 kali</span>
+                                        </div>
+                                        <small class="text-muted fs-11 mt-1 d-block">
+                                            <i class="ri-information-line text-warning"></i> Nilai ini akan memperbarui siklus
+                                            reused kempu saat eksekusi Force Release Pre-Cuci.
+                                        </small>
                                     </div>
                                 </div>
-                                <div class="form-check form-switch fs-16 mb-0">
-                                    <input class="form-check-input" type="checkbox" id="checkManualReusedForce">
-                                </div>
-                            </div>
-                            <div class="mt-2 d-none" id="boxManualReusedInputForce">
-                                <label for="inputManualReusedForce" class="form-label fs-12 fw-semibold text-dark mb-1">
-                                    Set Nilai Siklus Reused Baru (0 - 21x):
-                                </label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control font-monospace fw-bold"
-                                        id="inputManualReusedForce" min="0" max="21" placeholder="0 - 21">
-                                    <span class="input-group-text fs-12 bg-white fw-semibold">/ 21 kali</span>
-                                </div>
-                                <small class="text-muted fs-11 mt-1 d-block">
-                                    <i class="ri-information-line text-warning"></i> Nilai ini akan memperbarui siklus
-                                    reused kempu saat eksekusi Force Release Pre-Cuci.
-                                </small>
-                            </div>
-                        </div>
+                            @endif
                         </div>
                     @endif
 
@@ -404,6 +450,21 @@
                                 id="btnDecisionForce">
                                 <i class="ri-shield-flash-line me-1"></i> Eksekusi Force Decision
                             </button>
+                        </div>
+                    @elseif ($card['key'] === 'qc-retur')
+                        <div class="row g-2 pt-2 border-top" id="boxReturButtons">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-warning btn-lg w-100 py-3 fw-bold fs-14 shadow-sm text-dark"
+                                    id="btnDecisionReturRepro" title="Produk Reject - Kirim ke Produksi untuk Repro">
+                                    <i class="ri-recycle-line me-1"></i> Repro (Produksi)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-danger btn-lg w-100 py-3 fw-bold fs-14 shadow-sm"
+                                    id="btnDecisionReturReject" title="Kempu Rusak - Kirim ke Workshop Engineering">
+                                    <i class="ri-close-circle-line me-1"></i> Reject (Workshop)
+                                </button>
+                            </div>
                         </div>
                     @elseif ($card['key'] === 'qc-after-filling')
                         <div class="pt-2 border-top" id="boxNormalButtons">
@@ -470,7 +531,6 @@
                                 </button>
                             </div>
                         </div>
-
                     @endif
 
                     <!-- Tombol Khusus Max Reused: Hanya Konfirmasi Scrap -->
@@ -773,7 +833,7 @@
                                 // playBeep('error');
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Alur Status Tidak Sesuai',
+                                    title: 'Flow Salah!',
                                     html: k.flow_error,
                                     confirmButtonText: 'Tutup & Scan Lain'
                                 }).then(() => {
@@ -812,6 +872,7 @@
             function showDecisionModal(k) {
                 $('#modalKempuId').text(k.id_kempu);
                 $('#modalKempuRfid').text(k.rfid || '-');
+                $('#modalKempuNoPo').text(k.no_po || '-');
                 $('#modalKempuLoc').text(k.current_location || '-');
                 $('#modalKempuStatus').text(k.current_status || '-');
                 $('#modalKempuReused').text((k.reused_count || 0) + 'x');
@@ -848,11 +909,13 @@
                 }
 
                 // Cek apakah mencapai batas maksimal reused di Pre Cuci (21x)
-                const isPreCuciContext = (k.qc_stage_context === 'pre_cuci' || !k.is_in_wfg);
-                const isMaxReusedPreCuci = ['qc-pre-cuci', 'qc-proses', 'qc-proses-force', 'qc-force'].includes(QC_TYPE) && isPreCuciContext && (k.is_max_reused || (k.reused_count || 0) >= 21);
+                const isPreCuciContext = !['qc-pm', 'qc-pm-force'].includes(QC_TYPE) && (k.qc_stage_context === 'pre_cuci' || !k.is_in_wfg);
+                const isMaxReusedPreCuci = ['qc-pre-cuci', 'qc-proses', 'qc-proses-force', 'qc-force'].includes(
+                    QC_TYPE) && isPreCuciContext && (k.is_max_reused || (k.reused_count || 0) >= 21);
 
                 if (isMaxReusedPreCuci) {
                     $('#alertMaxReusedNotice').removeClass('d-none');
+                    $('#alertPreCuciIncomingInfo').addClass('d-none');
                     if ($('#boxNormalButtons').length) $('#boxNormalButtons').addClass('d-none');
                     if ($('#boxForceButtons').length) $('#boxForceButtons').addClass('d-none');
                     if ($('#boxForceControls').length) $('#boxForceControls').addClass('d-none');
@@ -862,27 +925,40 @@
                     if ($('#modalForceTarget').length) $('#modalForceTarget').val('SCRAP');
                 } else {
                     $('#alertMaxReusedNotice').addClass('d-none');
+                    $('#alertPreCuciIncomingInfo').removeClass('d-none');
                     if ($('#boxNormalButtons').length) $('#boxNormalButtons').removeClass('d-none');
                     if ($('#boxForceButtons').length) $('#boxForceButtons').removeClass('d-none');
                     if ($('#boxForceControls').length) $('#boxForceControls').removeClass('d-none');
                     $('#boxMaxReusedScrapButton').addClass('d-none');
                 }
 
+                if (QC_TYPE === 'qc-retur') {
+                    if ($('#btnDecisionReturRepro').length) {
+                        $('#btnDecisionReturRepro').prop('disabled', false).html('<i class="ri-recycle-line me-1"></i> Repro (Produksi)');
+                    }
+                    if ($('#btnDecisionReturReject').length) {
+                        $('#btnDecisionReturReject').prop('disabled', false).html('<i class="ri-close-circle-line me-1"></i> Reject (Workshop)');
+                    }
+                    if ($('#modalReturTarget').length) $('#modalReturTarget').val('REPRO');
+                }
+
                 if ($('#btnDecisionScrapPreCuci').length) {
                     $('#btnDecisionScrapPreCuci').prop('disabled', false).html(
-                        '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)');
+                        '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)'
+                        );
                 }
 
                 // Setup panel manual reused jika ada
                 if ($('#checkManualReused').length) {
                     $('#checkManualReused').prop('checked', false);
                     $('#boxManualReusedInput').addClass('d-none');
-                    const nextReused = k.next_auto_reused !== undefined ? k.next_auto_reused : (k.reused_count || 0);
+                    const nextReused = k.next_auto_reused !== undefined ? k.next_auto_reused : (k.reused_count ||
+                    0);
                     $('#inputManualReused').val(nextReused);
                     $('#badgeAutoNextReused').text(nextReused + '/21');
 
-                    // Tampilkan hanya jika memiliki wewenang otoritas
-                    if (k.can_manual_reused) {
+                    // Tampilkan hanya jika memiliki wewenang otoritas dan belum batas maksimal
+                    if (k.can_manual_reused && !isMaxReusedPreCuci) {
                         $('#wrapperManualReused').removeClass('d-none');
                     } else {
                         $('#wrapperManualReused').addClass('d-none');
@@ -913,12 +989,19 @@
                         }
                     }
 
-                    const nextReusedForce = k.next_auto_reused !== undefined ? k.next_auto_reused : (k.reused_count || 0);
-                    $('#inputManualReusedForce').val(nextReusedForce);
-                    $('#badgeAutoNextReusedForce').text(nextReusedForce + '/21');
-                    $('#checkManualReusedForce').prop('checked', false);
-                    $('#boxManualReusedInputForce').addClass('d-none');
-                    checkForceTargetPreCuci();
+                    if (QC_TYPE === 'qc-pm-force') {
+                        $('#wrapperManualReusedForce').addClass('d-none');
+                        $('#checkManualReusedForce').prop('checked', false);
+                        $('#boxManualReusedInputForce').addClass('d-none');
+                    } else {
+                        const nextReusedForce = k.next_auto_reused !== undefined ? k.next_auto_reused : (k
+                            .reused_count || 0);
+                        $('#inputManualReusedForce').val(nextReusedForce);
+                        $('#badgeAutoNextReusedForce').text(nextReusedForce + '/21');
+                        $('#checkManualReusedForce').prop('checked', false);
+                        $('#boxManualReusedInputForce').addClass('d-none');
+                        checkForceTargetPreCuci();
+                    }
                 }
 
                 decisionModal.show();
@@ -926,11 +1009,27 @@
 
             // Fungsi cek target Force Scan apakah Pre-Cuci
             function checkForceTargetPreCuci() {
+                if (QC_TYPE === 'qc-pm-force' || QC_TYPE === 'qc-pm') {
+                    $('#wrapperManualReusedForce').addClass('d-none');
+                    $('#checkManualReusedForce').prop('checked', false);
+                    $('#boxManualReusedInputForce').addClass('d-none');
+                    return;
+                }
+
                 const val = $('#modalForceTarget').val();
                 const isRelease = (val === 'RELEASE' || val === 'RELEASE_PRE_CUCI');
                 const isPreCuci = (currentKempu && currentKempu.qc_stage_context === 'pre_cuci');
 
-                if ($('#modalForceTarget').length && isRelease && isPreCuci && (currentKempu.can_manual_reused !== false)) {
+                const isMax = (currentKempu && (currentKempu.is_max_reused || (currentKempu.reused_count || 0) >= 21));
+                if (isMax) {
+                    $('#wrapperManualReusedForce').addClass('d-none');
+                    $('#checkManualReusedForce').prop('checked', false);
+                    $('#boxManualReusedInputForce').addClass('d-none');
+                    return;
+                }
+
+                if ($('#modalForceTarget').length && isRelease && isPreCuci && (currentKempu.can_manual_reused !==
+                        false)) {
                     $('#wrapperManualReusedForce').removeClass('d-none');
                 } else {
                     $('#wrapperManualReusedForce').addClass('d-none');
@@ -989,6 +1088,8 @@
                 const btnNotOk = $('#btnDecisionNotOk');
                 const btnForce = $('#btnDecisionForce');
                 const btnScrapPreCuci = $('#btnDecisionScrapPreCuci');
+                const btnReturRepro = $('#btnDecisionReturRepro');
+                const btnReturReject = $('#btnDecisionReturReject');
 
                 btnOk.prop('disabled', true);
                 if (btnHold.length) btnHold.prop('disabled', true);
@@ -996,8 +1097,16 @@
                 btnNotOk.prop('disabled', true);
                 if (btnForce.length) btnForce.prop('disabled', true);
                 if (btnScrapPreCuci.length) btnScrapPreCuci.prop('disabled', true);
+                if (btnReturRepro.length) btnReturRepro.prop('disabled', true);
+                if (btnReturReject.length) btnReturReject.prop('disabled', true);
 
-                if (decision === 'FORCE') {
+                if (QC_TYPE === 'qc-retur') {
+                    if (decision === 'REPRO') {
+                        if (btnReturRepro.length) btnReturRepro.html('<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan Repro...');
+                    } else {
+                        if (btnReturReject.length) btnReturReject.html('<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan Reject...');
+                    }
+                } else if (decision === 'FORCE') {
                     if (btnForce.length) btnForce.html(
                         '<i class="ri-loader-4-line ri-spin me-1"></i> Menyimpan...');
                 } else if (decision === 'SCRAP') {
@@ -1019,10 +1128,11 @@
                     resolvedTarget = 'SCRAP';
                 }
 
+                const isReturScan = (QC_TYPE === 'qc-retur');
                 const postData = {
                     id_kempu: currentKempu.id_kempu,
                     qc_type: QC_TYPE,
-                    decision: (isForceScan ? (resolvedTarget || decision || 'OK') : decision),
+                    decision: (isForceScan || isReturScan ? (resolvedTarget || decision || (isReturScan ? $('#modalReturTarget').val() : 'OK')) : decision),
                     notes: $('#modalInputNotes').val().trim(),
                     user_id: "{{ auth()->id() }}",
                     operator_id: "{{ auth()->id() }}",
@@ -1033,8 +1143,8 @@
                     is_manual: (currentKempu && currentKempu.is_manual) ? 1 : 0
                 };
 
-                if (isForceScan) {
-                    postData.force_target = resolvedTarget || decision || 'OK';
+                if (isForceScan || isReturScan) {
+                    postData.force_target = resolvedTarget || decision || (isReturScan ? $('#modalReturTarget').val() : 'OK');
                 }
 
                 if ($('#checkManualReused').length && $('#checkManualReused').is(':checked')) {
@@ -1043,7 +1153,8 @@
                         postData.manual_reused = parseInt(manualVal);
                     }
                 } else if ($('#checkManualReusedForce').length && $('#checkManualReusedForce').is(':checked') && (
-                        forceTarget === 'RELEASE' || forceTarget === 'RELEASE_PRE_CUCI' || $('#modalForceTarget').val() === 'RELEASE' || $('#modalForceTarget').val() === 'RELEASE_PRE_CUCI'
+                        forceTarget === 'RELEASE' || forceTarget === 'RELEASE_PRE_CUCI' || $('#modalForceTarget')
+                        .val() === 'RELEASE' || $('#modalForceTarget').val() === 'RELEASE_PRE_CUCI'
                     )) {
                     const manualVal = $('#inputManualReusedForce').val();
                     if (manualVal !== '' && !isNaN(manualVal)) {
@@ -1083,7 +1194,12 @@
                         if (btnForce.length) btnForce.prop('disabled', false).html(
                             '<i class="ri-shield-flash-line me-1"></i> Eksekusi Force Decision');
                         if (btnScrapPreCuci.length) btnScrapPreCuci.prop('disabled', false).html(
-                            '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)');
+                            '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)'
+                            );
+                        if (btnReturRepro.length) btnReturRepro.prop('disabled', false).html(
+                            '<i class="ri-recycle-line me-1"></i> Repro (Produksi)');
+                        if (btnReturReject.length) btnReturReject.prop('disabled', false).html(
+                            '<i class="ri-close-circle-line me-1"></i> Reject (Workshop)');
 
                         if (res.status) {
                             decisionModal.hide();
@@ -1093,7 +1209,17 @@
                             let label = 'Release (OK)';
                             let iconType = 'success';
 
-                            if (isForceScan) {
+                            if (QC_TYPE === 'qc-retur') {
+                                if (decision === 'REPRO') {
+                                    badgeColor = 'warning text-dark';
+                                    label = 'REPRO (Kirim ke Produksi)';
+                                    iconType = 'warning';
+                                } else {
+                                    badgeColor = 'danger';
+                                    label = 'REJECT (Kirim Workshop)';
+                                    iconType = 'error';
+                                }
+                            } else if (isForceScan) {
                                 badgeColor = (res.data.new_status === 'SCRAPPED' ? 'dark' : 'primary');
                                 label = 'FORCE SCAN: ' + (res.data.new_status || 'Berhasil');
                                 iconType = (res.data.new_status === 'SCRAPPED' ? 'warning' : 'success');
@@ -1162,7 +1288,8 @@
                         if (btnForce.length) btnForce.prop('disabled', false).html(
                             '<i class="ri-shield-flash-line me-1"></i> Eksekusi Force Decision');
                         if (btnScrapPreCuci.length) btnScrapPreCuci.prop('disabled', false).html(
-                            '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)');
+                            '<i class="ri-delete-bin-line me-1 text-danger"></i> Konfirmasi Scrap Kempu (Batas Maksimal 21x)'
+                            );
                         // playBeep('error');
 
                         let msg = 'Terjadi kesalahan server saat menyimpan hasil QC.';
@@ -1208,6 +1335,25 @@
                 }
                 const target = $('#modalForceTarget').val();
                 submitDecision('FORCE', target);
+            });
+
+            // Tombol Decision Cek Retur Repro
+            $('#btnDecisionReturRepro').on('click', function() {
+                submitDecision('REPRO');
+            });
+
+            // Tombol Decision Cek Retur Reject
+            $('#btnDecisionReturReject').on('click', function() {
+                submitDecision('REJECT');
+            });
+
+            $('#modalReturTarget').on('change', function() {
+                const val = $(this).val();
+                if (val === 'REPRO') {
+                    $('#btnDecisionReturRepro').focus();
+                } else {
+                    $('#btnDecisionReturReject').focus();
+                }
             });
 
             // Tombol Decision Scrap (Batas Maksimal Reused Pre-Cuci)
