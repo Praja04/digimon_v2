@@ -212,6 +212,11 @@
         position: relative;
     }
 
+    .table-blending-data tbody tr.data-row.row-turun-blending,
+    .table-blending-data tbody tr.data-row.row-turun-blending td {
+        background-color: #fef9c3 !important;
+    }
+
     .table-blending-data tbody tr.data-row.row-turun-blending .clean-cell-input:focus,
     .table-blending-data tbody tr.data-row.row-turun-blending .clean-cell-textarea:focus {
         background-color: #ffffff !important;
@@ -679,7 +684,7 @@
                 <td class="text-center py-2 fw-bold" style="white-space: pre-line;">${isAwalTurun ? '' : escapeHtml(sampValue || '-')}</td>
                 <td class="text-center py-2 ${isAwalTurun ? 'fw-bold text-dark' : 'fw-semibold'}">${escapeHtml(volValue || '-')}</td>
                 <td class="text-center py-2">${escapeHtml(serahJam || '-')}</td>
-                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(serahPic || '-')}</td>
+                <td class="text-center py-2 ${isAwalTurun ? 'fw-semibold text-dark' : ''}">${escapeHtml(serahPic || '-')}</td>
                 <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(bjVal || '-')}</td>
                 <td class="text-center py-2 fw-semibold">${escapeHtml(brixVal || '-')}</td>
                 <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(phVal || '-')}</td>

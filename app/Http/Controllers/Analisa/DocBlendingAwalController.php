@@ -270,10 +270,73 @@ class DocBlendingAwalController extends Controller
                     $samplingIndex++;
                 }
 
-                // Pad rows hingga minimal 4 baris untuk tampilan awal
-                while (count($rows) < 4) {
+                // Lookup Shift & Grup dan Jam Produksi dari Portal Produksi (API / Direct Query)
+                $bRange = (string)($first->batch_range ?? '');
+                $noBl = (string)($first->nomor_blending ?? '');
+                $blendingShiftGroup = '';
+                $jamProduksiStr = '';
+
+                // Cari data Turun Blending yang sesuai untuk siklus/lembar ini
+                $matchedTb = null;
+                if ($turunItems->isNotEmpty()) {
+                    $matchedTb = $turunItems->first(function($tb) use ($bRange, $noBl) {
+                        if ($bRange !== '' && (string)$tb->batch_range === $bRange) return true;
+                        if ($noBl !== '' && (string)$tb->nomor_blending === $noBl) return true;
+                        return false;
+                    });
+                    if (!$matchedTb && isset($turunItems[$cIdx])) {
+                        $matchedTb = $turunItems[$cIdx];
+                    }
+                }
+
+                if (!$matchedTb) {
+                    try {
+                        $pBatchIdTemp = $this->resolveProductionBatchId($batch->po_number, $batch->id);
+                        if ($pBatchIdTemp) {
+                            $prodTb = DB::table('production.monitoring_turun_blending')
+                                ->where('production_batch_id', $pBatchIdTemp)
+                                ->where(function($q) use ($bRange, $noBl) {
+                                    if ($bRange !== '') $q->where('batch_range', $bRange);
+                                    if ($noBl !== '') $q->orWhere('nomor_blending', $noBl);
+                                })
+                                ->first();
+                            if (!$prodTb) {
+                                $prodTb = DB::table('production.monitoring_turun_blending')
+                                    ->where('production_batch_id', $pBatchIdTemp)
+                                    ->skip($cIdx)
+                                    ->first();
+                            }
+                            if ($prodTb) {
+                                $matchedTb = $prodTb;
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+                }
+
+                // Berikan jeda baris kosong sebelum Turun Blending sesuai acuan (area tengah/bawah form)
+                while (count($rows) < 3) {
                     $rows[] = [
-                        'sampling_ke' => (string)(count($rows) + 1),
+                        'sampling_ke' => '',
+                        'vol_tangki' => '',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                    ];
+                }
+                if (count($rows) >= 3 && $samplingIndex > 3) {
+                    $rows[] = [
+                        'sampling_ke' => '',
                         'vol_tangki' => '',
                         'serah_terima_jam' => '',
                         'serah_terima_pic' => '',
@@ -292,11 +355,82 @@ class DocBlendingAwalController extends Controller
                     ];
                 }
 
-                // Lookup Shift & Grup dan Jam Produksi dari Portal Produksi (API / Direct Query)
-                $bRange = (string)($first->batch_range ?? '');
-                $noBl = (string)($first->nomor_blending ?? '');
-                $blendingShiftGroup = '';
-                $jamProduksiStr = '';
+                // Masukkan Baris Turun Blending
+                $tbForeman = '';
+                if ($matchedTb) {
+                    $tbScanTime = $matchedTb->scanned_at ?? ($matchedTb->created_at ?? ($matchedTb->waktu_kirim_sample ?? null));
+                    $tbJamScan = $tbScanTime ? Carbon::parse($tbScanTime)->setTimezone('Asia/Jakarta')->format('H:i') : '';
+
+                    $tbPic = '';
+                    if (isset($matchedTb->user) && $matchedTb->user) {
+                        $tbPic = $matchedTb->user->name;
+                    } elseif (!empty($matchedTb->created_by)) {
+                        $tbUser = DB::table('users')->where('id', $matchedTb->created_by)->value('name');
+                        $tbPic = $tbUser ?: '';
+                    }
+
+                    $tbJamDisp = '';
+                    if (!empty($matchedTb->updated_at) && $matchedTb->updated_at != $matchedTb->created_at) {
+                        $tbJamDisp = Carbon::parse($matchedTb->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                    }
+
+                    $tbDisp = $matchedTb->disposition ?? '';
+                    $tbRemark = $matchedTb->disposition_remark ?? '';
+                    $tbDispFull = '';
+                    if ($tbDisp && $tbRemark && $tbRemark !== '-' && $tbRemark !== $tbDisp) {
+                        $tbDispFull = $tbDisp . "\n" . $tbRemark;
+                    } elseif ($tbDisp) {
+                        $tbDispFull = $tbDisp;
+                    } elseif ($tbRemark && $tbRemark !== '-') {
+                        $tbDispFull = $tbRemark;
+                    }
+
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => 'Awal',
+                        'serah_terima_jam' => $tbJamScan,
+                        'serah_terima_pic' => $tbPic,
+                        'bj' => '',
+                        'brix' => $this->formatBlankIfZero($matchedTb->brix ?? null),
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => $this->formatBlankIfZero($matchedTb->visco ?? null),
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => $this->formatBlankIfZero($matchedTb->aw ?? null),
+                        'waktu_adjustment' => $tbJamDisp,
+                        'disposisi' => $tbDispFull,
+                        'is_turun_blending' => true,
+                    ];
+
+                    if (!empty($tbDisp)) {
+                        $tbForeman = 'Foreman';
+                    }
+                }
+
+                // Pad baris di bawah Turun Blending agar proporsional
+                while (count($rows) < 7) {
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => '',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                    ];
+                }
 
                 // 1. Cek dari response API Portal Produksi (127.0.0.1:8001)
                 if ($prdDocInfo) {
@@ -427,7 +561,7 @@ class DocBlendingAwalController extends Controller
                     'catatan' => $savedDoc?->catatan ?: '',
                     'pic_sampling' => $savedDoc?->pic_sampling ?: '',
                     'pic_analis' => $cycleAnalis ?: ($detectedAnalis ?: ($savedDoc?->pic_analis ?: (auth()->user()->name ?? ''))),
-                    'pic_checker' => $savedDoc?->pic_checker ?: '',
+                    'pic_checker' => $savedDoc?->pic_checker ?: ($tbForeman ?: 'Foreman'),
                     'rows' => $rows,
                 ];
             }

@@ -471,9 +471,6 @@
                         <span class="badge bg-light text-dark border">
                             Pasangan Batch ${escapeHtml(block.batch || '-')}
                         </span>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success">
-                            1 Halaman = 1 Blending (1 Pasangan Batch)
-                        </span>
                     </div>
                     <div>
                         <span class="badge bg-light text-muted border fs-12">
@@ -506,7 +503,6 @@
                             </tr>
                         </table>
                         <div class="clearfix"></div>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
                     </div>
                 </div>
 

@@ -191,12 +191,8 @@ class DocPasteurisasiStorageBlockSheetExport implements WithEvents, WithTitle
                     $sheet->getRowDimension($r)->setRowHeight(16);
                 }
 
-                // Row 5: Catatan Notes Sesuai Google Sheets
-                $sheet->getRowDimension(5)->setRowHeight(14);
-                $sheet->mergeCells('M5:P5');
-                $sheet->setCellValue('M5', "Notes: 1 lembar: 1 blending (1 pasangan batch)");
-                $sheet->getStyle('M5')->getFont()->setSize(7.5)->setItalic(true)->getColor()->setARGB('FF64748B');
-                $sheet->getStyle('M5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
+                // Spasi sebelum metadata
+                $sheet->getRowDimension(5)->setRowHeight(6);
 
                 // ==========================================
                 // 2. METADATA INFORMASI (Rows 6-8)
