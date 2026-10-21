@@ -327,7 +327,19 @@ class DocPasteurisasiStorageController extends Controller
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
                 $mpScan = $mp->scanned_at ?: $mp->created_at;
-                $sampName = !empty($mp->revisi) ? $mp->revisi : '';
+                
+                $isResampling = stripos((string)($mp->disposition ?? ''), 'resampling') !== false
+                             || stripos((string)($mp->status ?? ''), 'resampling') !== false
+                             || stripos((string)($mp->revisi ?? ''), 'resampling') !== false;
+
+                if ($isResampling) {
+                    $sampName = 'Resampling';
+                } elseif (!empty($mp->revisi)) {
+                    $sampName = $mp->revisi;
+                } else {
+                    $sampName = 'Tengah';
+                }
+
                 $pastRows[] = [
                     'sampling' => $sampName,
                     'jam' => $mpScan ? Carbon::parse($mpScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
@@ -361,6 +373,9 @@ class DocPasteurisasiStorageController extends Controller
                     $pastDispo .= ' - ' . $prodPast->disposition_remark;
                 }
                 $pastRows[0]['disposisi'] = $pastDispo;
+                if (stripos($pastDispo, 'resampling') !== false) {
+                    $pastRows[0]['sampling'] = 'Resampling';
+                }
                 if (empty($pastRows[0]['jam']) && !empty($jamStart)) {
                     $pastRows[0]['jam'] = $jamStart;
                 }
