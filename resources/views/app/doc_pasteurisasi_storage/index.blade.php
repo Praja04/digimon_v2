@@ -384,9 +384,15 @@
             var pastCount = Math.max(6, pastRows.length);
             for (var i = 0; i < pastCount; i++) {
                 var row = pastRows[i] || {};
-                var sampVal = row.sampling ? String(row.sampling).trim() : '';
-                var dispColor = 'text-secondary';
                 var dispVal = (row.disposisi || '').trim();
+                var hasPastData = !!(row.jam || row.pic || row.bj || row.brix || row.ph || row.aw || row.viskositas || row.organo || dispVal);
+                var isResampling = dispVal.toLowerCase().includes('resampling') || String(row.sampling || '').toLowerCase().includes('resampling');
+                var defaultSamp = isResampling ? 'Resampling' : 'Tengah';
+                var sampVal = row.sampling ? String(row.sampling).trim() : (hasPastData ? defaultSamp : '');
+                if (hasPastData && isResampling) {
+                    sampVal = 'Resampling';
+                }
+                var dispColor = 'text-secondary';
                 if (dispVal.toLowerCase().includes('reject') || dispVal.toLowerCase().includes('not ok')) {
                     dispColor = 'text-danger fw-bold';
                 } else if (dispVal.toLowerCase().includes('release') || dispVal.toLowerCase().includes('ok')) {
