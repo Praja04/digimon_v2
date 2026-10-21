@@ -345,7 +345,7 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                         $sheet->setCellValueExplicit("A{$dr}", $isTurun ? '' : $displaySamp, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("B{$dr}", $displayVol, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("C{$dr}", (string)($row['serah_terima_jam'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("D{$dr}", $isTurun ? '' : (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("D{$dr}", (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("E{$dr}", $isTurun ? '' : $this->formatVal($row['bj'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("F{$dr}", $this->formatVal($row['brix'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("G{$dr}", $isTurun ? '' : $this->formatVal($row['ph'] ?? ''), DataType::TYPE_STRING);
