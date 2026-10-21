@@ -155,7 +155,6 @@
                             <td class="p-1 text-start">: {{ $pIdx + 1 }} / {{ $totalSheets }}</td>
                         </tr>
                     </table>
-                    <div class="text-end fst-italic text-muted px-1" style="font-size: 6.5pt;">Notes: 1 lembar: 2 batch</div>
                 </td>
             </tr>
         </table>
