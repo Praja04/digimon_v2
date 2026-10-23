@@ -287,9 +287,8 @@
                                                                         <td>
                                                                             {{ $storageKimia->disposition }}
                                                                             @if (in_array($storageKimia->disposition, ['Adjustment', 'Resampling', 'Leveling', 'Jalan Bareng', 'Drain']) &&
-                                                                                    $storageKimia->revisi == null &&
                                                                                     $storageKimia->not_standard == true)
-                                                                                <button class="btn btn-sm btn-warning"
+                                                                                <button class="btn btn-sm btn-warning btnRevisi"
                                                                                     id="btnRevisi"
                                                                                     data-id="{{ $storageKimia->id }}"
                                                                                     data-batch="{{ $storageKimia->batch_range }}"
@@ -527,44 +526,15 @@
                         <div class="mb-3">
                             <label for="nomor_blending" class="form-label">Nomor Blending <span
                                     style="color: red">*</span></label>
-                            <input type="text" name="nomor_blending" id="nomor_blending" class="form-control">
+                            <input type="text" name="nomor_blending" id="nomor_blending" class="form-control" readonly style="background-color: #f3f3f9; cursor: not-allowed;" placeholder="Otomatis dari Batch PO">
                             <small class="text-danger errorNomorBlending"></small>
                         </div>
 
                         <input type="hidden" name="volume" id="volume">
                         <div class="mb-3">
                             <label for="storage" class="form-label">Storage</label>
-                            <select name="storage" id="storage" class="form-control">
-                                <option value="">-- Pilih Storage --</option>
-                                <optgroup label="A">
-                                    <option value="A1">A1</option>
-                                    <option value="A2">A2</option>
-                                    <option value="A3">A3</option>
-                                    <option value="A4">A4</option>
-                                    <option value="A5">A5</option>
-                                </optgroup>
-                                <optgroup label="B">
-                                    <option value="B1">B1</option>
-                                    <option value="B2">B2</option>
-                                    <option value="B3">B3</option>
-                                    <option value="B4">B4</option>
-                                    <option value="B5">B5</option>
-                                </optgroup>
-                                <optgroup label="C">
-                                    <option value="C1">C1</option>
-                                    <option value="C2">C2</option>
-                                    <option value="C3">C3</option>
-                                    <option value="C4">C4</option>
-                                    <option value="C5">C5</option>
-                                </optgroup>
-                                <optgroup label="D">
-                                    <option value="D1">D1</option>
-                                    <option value="D2">D2</option>
-                                    <option value="D3">D3</option>
-                                    <option value="D4">D4</option>
-                                    <option value="D5">D5</option>
-                                </optgroup>
-                            </select>
+                            <input type="text" name="storage" id="storage" class="form-control" readonly style="background-color: #f3f3f9; cursor: not-allowed;" placeholder="Otomatis dari Batch PO">
+                            <small class="text-danger errorStorage"></small>
                         </div>
 
                         <div class="mb-3">
@@ -630,6 +600,16 @@
                                     name="volume_revisi" id="volume_revisi">
                                 <small class="text-danger errorVolumeRevisi"></small>
                             </div>
+                        </div>
+
+                        <!-- Info Real-Time Drain (Clean Full Width) -->
+                        <div id="drain_calc_info" class="d-none mb-3 py-2 px-3 rounded d-flex justify-content-between align-items-center" style="background-color: #f3f6f9; border: 1px solid #e9ebec;">
+                            <span class="text-muted small">
+                                <i class="ri-information-line me-1 text-primary"></i> Volume Saat Ini: <strong id="drain_prev_vol" class="text-dark">0</strong>
+                            </span>
+                            <span class="text-muted small">
+                                Setelah Drain: <strong id="drain_after_vol" class="text-primary fw-bold">0</strong>
+                            </span>
                         </div>
 
                         <!-- Storage (full width) -->
@@ -729,6 +709,7 @@
 
         const allBatches = @json($filteredBatchGroups);
         const validBatches = @json($filteredBatchGroups);
+        const batchDetailsMap = @json($batchDetailsMap ?? []);
 
         function populateBatchOptions() {
             const $start = $('#batch_range');
@@ -746,7 +727,7 @@
             console.log('Options added:', $start.find('option').length);
         }
 
-        $('body').on('click', '#btnRevisi', function() {
+        $('body').on('click', '.btnRevisi, #btnRevisi', function() {
             $('#formRevisi')[0].reset();
             $('.form-control').removeClass('is-invalid');
             $('.text-danger').html('');
@@ -774,14 +755,19 @@
             if (disposition === 'Resampling') {
                 $('#group_volume_revisi').addClass('d-none');
                 $('#group_no_blending_revisi').removeClass('col-md-6').addClass('col-md-12');
+                $('#drain_calc_info').addClass('d-none');
             } else if (disposition === 'Drain') {
                 $('#group_volume_revisi').removeClass('d-none');
                 $('#group_no_blending_revisi').removeClass('col-md-12').addClass('col-md-6');
                 $('#label_volume_revisi').html('Volume Drain <span style="color: red;">*</span>');
+                $('#volume_revisi').attr('placeholder', 'Contoh: 1000');
+                $('#drain_calc_info').removeClass('d-none');
             } else {
                 $('#group_volume_revisi').removeClass('d-none');
                 $('#group_no_blending_revisi').removeClass('col-md-12').addClass('col-md-6');
                 $('#label_volume_revisi').html('Volume After <span style="color: red;">*</span>');
+                $('#volume_revisi').attr('placeholder', 'Contoh: 0,00');
+                $('#drain_calc_info').addClass('d-none');
             }
 
             // Ambil nomor revisi terakhir
@@ -789,6 +775,7 @@
                 type: "GET",
                 url: "{{ route('monitoring-storage-kimia.getLastRevisi') }}",
                 data: {
+                    id: id_blending,
                     production_batch_id: poId,
                     batch_range: batch
                 },
@@ -798,8 +785,18 @@
                     $('#batch_number_blending').val(batch);
                     $('#revisi_blending').val(res.revisi);
                     $('#no_blending_revisi').val(res.nomor_blending);
-                    $('#volume_revisi').val(res.volume);
                     $('#storage_revisi').val(res.storage);
+
+                    let prevVol = parseFloat(res.volume) || 0;
+                    $('#volume_revisi').data('prev-volume', prevVol);
+
+                    if (disposition === 'Drain') {
+                        $('#volume_revisi').val('');
+                        $('#drain_prev_vol').text(prevVol.toLocaleString('id-ID'));
+                        $('#drain_after_vol').text(prevVol.toLocaleString('id-ID'));
+                    } else {
+                        $('#volume_revisi').val(res.volume);
+                    }
 
 
                     // Handle berdasarkan disposition
@@ -893,6 +890,23 @@
                     });
                 }
             });
+        });
+
+        $('#volume_revisi').on('input', function() {
+            let disposition = $('#disposition_revisi_blending').val();
+            if (disposition === 'Drain') {
+                let prevVol = parseFloat($(this).data('prev-volume')) || 0;
+                let valStr = $(this).val().replace(/\s/g, '').replace(',', '.');
+                let drainVol = parseFloat(valStr) || 0;
+                let afterVol = Math.max(0, prevVol - drainVol);
+
+                $('#drain_prev_vol').text(prevVol.toLocaleString('id-ID'));
+                if (drainVol > prevVol) {
+                    $('#drain_after_vol').html(`<span class="text-danger">${afterVol.toLocaleString('id-ID')} (Drain melebihi volume saat ini!)</span>`);
+                } else {
+                    $('#drain_after_vol').html(`<span class="text-primary">${afterVol.toLocaleString('id-ID')}</span>`);
+                }
+            }
         });
 
         function printQR(id) {
@@ -1186,6 +1200,16 @@
                 $('#volume').val('');
                 $('#storage').val('');
                 resetJenisSampel([]);
+                return;
+            }
+
+            // Langsung update seketika dari batchDetailsMap (0 ms, cepat tanpa delay)
+            if (typeof batchDetailsMap !== 'undefined' && batchDetailsMap[selectedBatch]) {
+                const instantData = batchDetailsMap[selectedBatch];
+                $('#nomor_blending').val(instantData.nomor_blending || '');
+                $('#volume').val(instantData.volume || '');
+                $('#storage').val(instantData.storage || '');
+                resetJenisSampel(instantData.used_samples || []);
                 return;
             }
 
