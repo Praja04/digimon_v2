@@ -294,7 +294,7 @@ class PackagingPouchController extends Controller
 
             'rekomendasi' => [
                 $isFinal ? 'required' : 'nullable',
-                'in:Diterima,Diterima Bersyarat,Ditolak,WIP',
+                'in:Diterima,Diterima Bersyarat,Ditolak',
             ],
 
             'konfirmasi_ketidaksesuaian' => [

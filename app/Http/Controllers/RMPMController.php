@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\LaporanKalkulasiRmExport;
 use App\Http\Requests\RMPMStoreRequest;
 use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
@@ -16,6 +17,8 @@ use App\Models\MasterStandarRm;
 use App\Models\PackagingIncoming;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 use Milon\Barcode\Facades\DNS2DFacade;
 use Yajra\DataTables\DataTables;
 
@@ -41,7 +44,7 @@ class RMPMController extends Controller
     public function rm(Request $request)
     {
         if ($request->ajax()) {
-            $query = IdentitasRM::query()
+            $query = IdentitasRM::with(['analisaShortTerm', 'analisaLongTerm', 'analisaGaramGula'])
                 ->orderBy('created_at', 'desc');
 
             if ($request->filled('start_date')) {
@@ -101,6 +104,37 @@ class RMPMController extends Controller
                     $userRole = strtolower(trim(auth()->user()->role ?? ''));
                     $isSupervisor = in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
+                    $isGula = str_contains(strtoupper($data->jenis ?? ''), 'GULA');
+                    $exportBtn = '';
+
+                    // Tombol Export hanya muncul jika data bertipe Gula dan analisanya sudah FINAL (bukan draft / belum diisi)
+                    $isFinal = false;
+                    if ($isGula && $data->analisaShortTerm && $data->analisaShortTerm->isNotEmpty()) {
+                        $hasFinal = $data->analisaShortTerm->contains(function ($a) {
+                            return !empty($a->status) && $a->status !== 'draft';
+                        });
+                        $hasDraft = $data->analisaShortTerm->contains(function ($a) {
+                            return $a->status === 'draft';
+                        });
+                        if ($hasFinal && !$hasDraft) {
+                            $isFinal = true;
+                        }
+                    }
+
+                    if ($isGula && $isFinal) {
+                        $docRmUrl = route('doc-rm.index', ['id' => $data->id]);
+                        $exportBtn = '
+                            <a
+                                class="btn btn-sm btn-success me-1"
+                                href="' . $docRmUrl . '"
+                                title="Buka Dokumen Laporan Kalkulasi RM"
+                            >
+                                <i class="ri-file-excel-2-line"></i>
+                                Export
+                            </a>
+                        ';
+                    }
+
                     $btn = '
                         <a
                             class="btn btn-sm btn-info me-1"
@@ -109,6 +143,7 @@ class RMPMController extends Controller
                             <span class="mdi mdi-eye"></span>
                             Lihat
                         </a>
+                        ' . $exportBtn . '
                     ';
 
                     if ($isSupervisor) {
@@ -221,6 +256,35 @@ class RMPMController extends Controller
                 'message' => 'Gagal menghapus data: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Export Dokumen Hasil Kalkulasi Analisa RM per SPB ke Excel
+     */
+    public function exportKalkulasi(Request $request, $id)
+    {
+        $identitas = IdentitasRM::with([
+            'analisaShortTerm',
+            'analisaGaramGula',
+        ])->findOrFail($id);
+
+        $standartBps = $request->input('standart_bps', $identitas->standart_bps ?? '');
+        if ($request->has('standart_bps')) {
+            $identitas->standart_bps = $standartBps;
+            // Persist jika diubah
+            \DB::table('identitas_rm')->where('id', $id)->update(['standart_bps' => $standartBps ?: null]);
+        }
+
+        $cleanSpb = preg_replace('/[^A-Za-z0-9_\-]/', '_', $identitas->no_spb ?? ('ID_' . $id));
+        $cleanJenis = preg_replace('/[^A-Za-z0-9_\-]/', '_', strtoupper(trim($identitas->jenis ?? 'RM')));
+        $timestamp = now()->format('Ymd_His');
+
+        $fileName = "LAPORAN_KALKULASI_{$cleanJenis}_{$cleanSpb}_{$timestamp}.xlsx";
+
+        return Excel::download(
+            new LaporanKalkulasiRmExport($identitas),
+            $fileName
+        );
     }
 
     /*
@@ -380,6 +444,8 @@ public function pmKartonBct(
             $id
         )->first();
 
+        $dynamicFields = $this->getDynamicFieldsForMaterial($identitas->jenis);
+
         return view(
             'app.rmpm.show',
             compact(
@@ -392,7 +458,8 @@ public function pmKartonBct(
                 'analisa_short_term',
                 'analisa_long_term',
                 'analisa_long_term_histories',
-                'konfirmasi'
+                'konfirmasi',
+                'dynamicFields'
             )
         );
     }
@@ -568,6 +635,8 @@ public function pmKartonBct(
             ],
         ];
 
+        $dynamicFields = $this->getDynamicFieldsForMaterial($identitas->jenis);
+
         return view(
             'app.rmpm.analisa',
             compact(
@@ -578,7 +647,8 @@ public function pmKartonBct(
                 'histories',
                 'initialGlassware',
                 'initialStandards',
-                'initialParameters'
+                'initialParameters',
+                'dynamicFields'
             )
         );
     }
@@ -999,17 +1069,10 @@ public function pmKartonBct(
             'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
         ];
 
-        // For incoming, require main parameters if final. For STA / Monitoring or Draft, allow flexible partial inputs.
-        if (!$isDraft && $kategori === 'incoming') {
-            $rules['brix']   = 'required|array|min:1';
-            $rules['ph']     = 'required|array|min:1';
-            $rules['ka']     = 'required|array|min:1';
-        } else {
-            $rules['brix']   = 'nullable|array';
-            $rules['ph']     = 'nullable|array';
-            $rules['ka']     = 'nullable|array';
-        }
-
+        // Allow flexible inputs so parameters not applicable to the material can be null
+        $rules['brix']    = 'nullable|array';
+        $rules['ph']      = 'nullable|array';
+        $rules['ka']      = 'nullable|array';
         $rules['kotoran'] = 'nullable|array';
         $rules['organo']  = 'nullable|array';
         $rules['warna']   = 'nullable|array';
@@ -1129,7 +1192,7 @@ public function pmKartonBct(
 
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
-            'fisik'        => $isDraft ? 'nullable|array' : 'required|array|min:1',
+            'fisik'        => 'nullable|array',
             'fisik.*'      => 'nullable|string',
             '%ka'          => 'nullable|array',
             'kotoran'      => 'nullable|array',
@@ -1355,5 +1418,203 @@ public function pmKartonBct(
         return strtoupper(
             trim((string) $value)
         );
+    }
+
+    public function getDynamicFieldsForMaterial($jenis): array
+    {
+        $cleanJenis = strtoupper(trim((string)$jenis));
+        $jb = MasterJenisBahan::whereRaw('UPPER(nama) = ?', [$cleanJenis])
+            ->orWhere('nama', 'LIKE', '%' . trim((string)$jenis) . '%')
+            ->first();
+
+        $standards = collect();
+        if ($jb) {
+            $standards = MasterStandarRm::where('status', true)
+                ->where('id_jenis_bahan', $jb->id)
+                ->get();
+        }
+
+        $isGaram = ($cleanJenis === 'GARAM');
+
+        if ($standards->isEmpty()) {
+            return [
+                ['name' => 'brix', 'key' => 'brix[]', 'label' => 'Brix', 'type' => 'number', 'unit' => '°Bx'],
+                ['name' => 'ph', 'key' => 'ph[]', 'label' => 'pH', 'type' => 'number', 'unit' => ''],
+                ['name' => 'kotoran', 'key' => 'kotoran[]', 'label' => '% Kotoran', 'type' => 'number', 'unit' => '%'],
+                ['name' => 'ka', 'key' => 'ka[]', 'label' => '% KA', 'type' => 'number', 'unit' => '%'],
+                ['name' => 'organo', 'key' => 'organo[]', 'label' => 'Organo', 'type' => 'organo-select', 'unit' => ''],
+                ['name' => 'warna', 'key' => 'warna[]', 'label' => 'Warna', 'type' => 'dropdown', 'masterKey' => 'warna', 'unit' => ''],
+                ['name' => 'aroma', 'key' => 'aroma[]', 'label' => 'Aroma', 'type' => 'dropdown', 'masterKey' => 'aroma', 'unit' => ''],
+            ];
+        }
+
+        $fields = [];
+        foreach ($standards as $std) {
+            $paramRaw = trim($std->parameter);
+            $upper = strtoupper($paramRaw);
+            $uom = trim((string)$std->uom);
+
+            if (str_contains($upper, 'BRIX')) {
+                $fields[] = [
+                    'name' => 'brix',
+                    'key' => 'brix[]',
+                    'label' => 'Brix',
+                    'type' => 'number',
+                    'unit' => $uom ?: '',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif ($upper === 'PH' || str_contains($upper, 'PH')) {
+                $fields[] = [
+                    'name' => 'ph',
+                    'key' => 'ph[]',
+                    'label' => 'pH',
+                    'type' => 'number',
+                    'unit' => $uom ?: '',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'KOTORAN')) {
+                $fields[] = [
+                    'name' => 'kotoran',
+                    'key' => 'kotoran[]',
+                    'label' => $isGaram ? 'Kotoran' : '% Kotoran',
+                    'type' => 'number',
+                    'unit' => $uom ?: ($isGaram ? '' : '%'),
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'KADAR AIR') || $upper === 'KA' || $upper === '%KA') {
+                $fieldKey = $isGaram ? '%ka[]' : 'ka[]';
+                $fieldName = $isGaram ? '%ka' : 'ka';
+                $fields[] = [
+                    'name' => $fieldName,
+                    'key' => $fieldKey,
+                    'label' => $isGaram ? '%KA' : '% KA',
+                    'type' => 'number',
+                    'unit' => '%',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'ORGANO') || str_contains($upper, 'RASA')) {
+                $fields[] = [
+                    'name' => 'organo',
+                    'key' => 'organo[]',
+                    'label' => 'Organo',
+                    'type' => 'organo-select',
+                    'unit' => '',
+                ];
+            } elseif (str_contains($upper, 'WARNA')) {
+                $fields[] = [
+                    'name' => 'warna',
+                    'key' => 'warna[]',
+                    'label' => 'Warna',
+                    'type' => 'dropdown',
+                    'masterKey' => 'warna',
+                    'unit' => '',
+                ];
+            } elseif (str_contains($upper, 'AROMA')) {
+                $fields[] = [
+                    'name' => 'aroma',
+                    'key' => 'aroma[]',
+                    'label' => 'Aroma',
+                    'type' => 'dropdown',
+                    'masterKey' => 'aroma',
+                    'unit' => '',
+                ];
+            } elseif (str_contains($upper, 'NACL')) {
+                $fields[] = [
+                    'name' => '%nacl',
+                    'key' => '%nacl[]',
+                    'label' => '%NaCl',
+                    'type' => 'number',
+                    'unit' => '%',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'WEIGHT') || str_contains($upper, 'BERAT')) {
+                $fields[] = [
+                    'name' => 'gross_weight',
+                    'key' => 'gross_weight[]',
+                    'label' => 'Gross Weight',
+                    'type' => 'number',
+                    'unit' => 'kg',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'FISIK')) {
+                $fields[] = [
+                    'name' => 'fisik',
+                    'key' => 'fisik[]',
+                    'label' => 'Fisik',
+                    'type' => 'text',
+                    'unit' => '',
+                ];
+            } else {
+                $slug = Str::slug($paramRaw, '_');
+                $isNumeric = ($std->min_standar !== null || $std->max_standar !== null || is_numeric($std->target_text));
+                $fields[] = [
+                    'name' => $slug,
+                    'key' => $slug . '[]',
+                    'label' => $paramRaw,
+                    'type' => $isNumeric ? 'number' : 'text',
+                    'unit' => $uom ?: '',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            }
+        }
+
+        // Ensure laboratory calculation parameters (% Kotoran & % Kadar Air) are ALWAYS present for all materials
+        $hasKotoran = false;
+        $hasKa = false;
+        $kaName = $isGaram ? '%ka' : 'ka';
+        foreach ($fields as $f) {
+            if ($f['name'] === 'kotoran') {
+                $hasKotoran = true;
+            }
+            if ($f['name'] === $kaName || $f['name'] === 'ka' || $f['name'] === '%ka') {
+                $hasKa = true;
+            }
+        }
+
+        if (!$hasKotoran) {
+            $fields[] = [
+                'name' => 'kotoran',
+                'key' => 'kotoran[]',
+                'label' => $isGaram ? 'Kotoran' : '% Kotoran',
+                'type' => 'number',
+                'unit' => $isGaram ? '' : '%',
+                'min' => null,
+                'max' => null,
+            ];
+        }
+
+        if (!$hasKa) {
+            $fields[] = [
+                'name' => $kaName,
+                'key' => $isGaram ? '%ka[]' : 'ka[]',
+                'label' => $isGaram ? '%KA' : '% KA',
+                'type' => 'number',
+                'unit' => '%',
+                'min' => null,
+                'max' => null,
+            ];
+        }
+
+        // Keep sensory parameters (Organo, Warna, Aroma) at the end of the table
+        $measurementFields = [];
+        $sensoryFields = [];
+        $sensoryNames = ['organo', 'warna', 'aroma'];
+
+        foreach ($fields as $f) {
+            if (in_array($f['name'], $sensoryNames)) {
+                $sensoryFields[] = $f;
+            } else {
+                $measurementFields[] = $f;
+            }
+        }
+
+        return array_merge($measurementFields, $sensoryFields);
     }
 }

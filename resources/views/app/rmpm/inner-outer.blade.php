@@ -247,14 +247,6 @@
                                         >
                                             Ditolak (Reject)
                                         </option>
-                                        <option
-                                            value="WIP"
-                                            @selected(
-                                                request('status') === 'WIP'
-                                            )
-                                        >
-                                            WIP
-                                        </option>
                                     </optgroup>
 
                                     <option

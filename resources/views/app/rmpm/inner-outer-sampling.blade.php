@@ -623,7 +623,6 @@
                                     'Diterima',
                                     'Diterima Bersyarat',
                                     'Ditolak',
-                                    'WIP',
                                 ] as $option)
                                     <option
                                         value="{{ $option }}"

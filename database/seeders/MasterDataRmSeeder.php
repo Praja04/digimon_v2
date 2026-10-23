@@ -227,28 +227,28 @@ class MasterDataRmSeeder extends Seeder
         $standarList = [
             // GULA KELAPA
             ['jenis' => 'GULA KELAPA', 'parameter' => 'pH', 'min' => 5.5, 'max' => 6.5, 'target' => '5.5 - 6.5', 'uom' => ''],
-            ['jenis' => 'GULA KELAPA', 'parameter' => 'Brix', 'min' => 67.0, 'max' => null, 'target' => 'Min 67 °Bx', 'uom' => '°Bx'],
+            ['jenis' => 'GULA KELAPA', 'parameter' => 'Brix', 'min' => 8.7, 'max' => null, 'target' => 'Min, 8.7', 'uom' => '°Bx'],
             ['jenis' => 'GULA KELAPA', 'parameter' => '%Kadar Air', 'min' => null, 'max' => 8.0, 'target' => 'Maks 8.0%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA', 'parameter' => '%Kotoran', 'min' => null, 'max' => 10.0, 'target' => 'Maks 10.0%', 'uom' => '%'],
-            ['jenis' => 'GULA KELAPA', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK >= 70%', 'uom' => '%'],
+            ['jenis' => 'GULA KELAPA', 'parameter' => 'Organo', 'min' => 70.0, 'max' => null, 'target' => 'OK = 70%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat / Coklat tua / Coklat muda / Gelap', 'uom' => ''],
             ['jenis' => 'GULA KELAPA', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
 
             // GULA KELAPA B
             ['jenis' => 'GULA KELAPA B', 'parameter' => 'pH', 'min' => 5.5, 'max' => 6.5, 'target' => '5.5 - 6.5', 'uom' => ''],
-            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Brix', 'min' => 67.0, 'max' => null, 'target' => 'Min 67 °Bx', 'uom' => '°Bx'],
+            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Brix', 'min' => 8.7, 'max' => null, 'target' => 'Min, 8.7', 'uom' => '°Bx'],
             ['jenis' => 'GULA KELAPA B', 'parameter' => '%Kadar Air', 'min' => null, 'max' => 8.0, 'target' => 'Maks 8.0%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA B', 'parameter' => '%Kotoran', 'min' => null, 'max' => 10.0, 'target' => 'Maks 10.0%', 'uom' => '%'],
-            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK >= 70%', 'uom' => '%'],
+            ['jenis' => 'GULA KELAPA B', 'parameter' => 'Organo', 'min' => 70.0, 'max' => null, 'target' => 'OK = 70%', 'uom' => '%'],
             ['jenis' => 'GULA KELAPA B', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat / Coklat tua / Coklat muda / Gelap', 'uom' => ''],
             ['jenis' => 'GULA KELAPA B', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
 
             // GULA TEBU
             ['jenis' => 'GULA TEBU', 'parameter' => 'pH', 'min' => 5.5, 'max' => 6.5, 'target' => '5.5 - 6.5', 'uom' => ''],
-            ['jenis' => 'GULA TEBU', 'parameter' => 'Brix', 'min' => 65.0, 'max' => null, 'target' => 'Min 65 °Bx', 'uom' => '°Bx'],
+            ['jenis' => 'GULA TEBU', 'parameter' => 'Brix', 'min' => 8.7, 'max' => null, 'target' => 'Min, 8.7', 'uom' => '°Bx'],
             ['jenis' => 'GULA TEBU', 'parameter' => '%Kadar Air', 'min' => null, 'max' => 3.0, 'target' => 'Maks 3.0%', 'uom' => '%'],
             ['jenis' => 'GULA TEBU', 'parameter' => '%Kotoran', 'min' => null, 'max' => 10.0, 'target' => 'Maks 10.0%', 'uom' => '%'],
-            ['jenis' => 'GULA TEBU', 'parameter' => 'Organo', 'min' => null, 'max' => null, 'target' => 'OK >= 70%', 'uom' => '%'],
+            ['jenis' => 'GULA TEBU', 'parameter' => 'Organo', 'min' => 70.0, 'max' => null, 'target' => 'OK = 70%', 'uom' => '%'],
             ['jenis' => 'GULA TEBU', 'parameter' => 'Warna', 'min' => null, 'max' => null, 'target' => 'Coklat / Coklat tua / Coklat muda / Gelap', 'uom' => ''],
             ['jenis' => 'GULA TEBU', 'parameter' => 'Aroma', 'min' => null, 'max' => null, 'target' => 'OK', 'uom' => ''],
 

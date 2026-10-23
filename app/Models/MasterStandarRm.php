@@ -14,6 +14,7 @@ class MasterStandarRm extends Model
 
     protected $fillable = [
         'id_jenis_bahan',
+        'jenis_standar',
         'parameter',
         'min_standar',
         'max_standar',
