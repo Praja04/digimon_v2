@@ -22,6 +22,7 @@ class RMPMStoreRequest extends FormRequest
             'no_spb' => 'required|string',
             'jumlah_kedatangan' => 'required|numeric',
             'lot_batch' => 'required|string',
+            'standart_bps' => 'nullable|string|max:50',
         ];
     }
 
@@ -36,6 +37,7 @@ class RMPMStoreRequest extends FormRequest
             'no_spb' => 'No spb',
             'jumlah_kedatangan' => 'Jumlah kedatangan',
             'lot_batch' => 'Lot batch',
+            'standart_bps' => 'Standart BPS',
         ];
     }
 }

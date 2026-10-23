@@ -432,7 +432,6 @@
                                 <option value="Diterima" @selected($sampling?->rekomendasi === 'Diterima')>Diterima</option>
                                 <option value="Diterima Bersyarat" @selected($sampling?->rekomendasi === 'Diterima Bersyarat')>Diterima Bersyarat</option>
                                 <option value="Ditolak" @selected($sampling?->rekomendasi === 'Ditolak')>Ditolak</option>
-                                <option value="WIP" @selected($sampling?->rekomendasi === 'WIP')>WIP</option>
                             </select>
                         </div>
                         <div class="col-xl-3 col-md-6">

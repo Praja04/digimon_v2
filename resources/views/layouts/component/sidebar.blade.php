@@ -312,7 +312,7 @@
                     @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM'], true))
                         <li class="nav-item">
                             <a href="{{ route('rmpm.index') }}"
-                                class="nav-link menu-link {{ request()->routeIs(['rmpm.index', 'rmpm.rm', 'rmpm.pm', 'rmpm.show', 'rmpm.analisa']) ? 'active' : '' }}">
+                                class="nav-link menu-link {{ request()->routeIs(['rmpm.index', 'rmpm.rm', 'rmpm.pm', 'rmpm.show', 'rmpm.analisa', 'doc-rm.*']) ? 'active' : '' }}">
                                 <i class="mdi mdi-puzzle-outline"></i>
 
                                 <span data-key="t-widgets">

@@ -723,6 +723,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/doc-adjustment/export', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'exportExcel'])->name('doc-adjustment.export');
         Route::get('/doc-adjustment/print/{id}', [App\Http\Controllers\Analisa\DocAdjustmentController::class, 'printView'])->name('doc-adjustment.print');
 
+        // Form Dokumen Hasil Kalkulasi Raw Material (Gula Tebu / Gula Kelapa)
+        Route::get('/doc-rm', [App\Http\Controllers\Analisa\DocRmController::class, 'index'])->name('doc-rm.index');
+        Route::get('/doc-rm/export', [App\Http\Controllers\Analisa\DocRmController::class, 'exportExcel'])->name('doc-rm.export');
+        Route::post('/doc-rm/update-bps', [App\Http\Controllers\Analisa\DocRmController::class, 'updateStandartBps'])->name('doc-rm.update-bps');
+
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');

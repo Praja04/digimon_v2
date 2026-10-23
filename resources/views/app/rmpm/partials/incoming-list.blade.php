@@ -142,12 +142,6 @@
                         >
                             Ditolak (Reject)
                         </option>
-                        <option
-                            value="WIP"
-                            @selected(request('status_filter') === 'WIP')
-                        >
-                            WIP
-                        </option>
                     </optgroup>
                 </select>
             </div>
