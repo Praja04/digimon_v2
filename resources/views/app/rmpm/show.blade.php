@@ -1380,25 +1380,25 @@
                 <div class="list-group">
                     @if (is_null($data_mobil))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalKondisiMobil">
+                        data-target-modal="#modalKondisiMobil" data-bs-target="#modalKondisiMobil">
                         <i class="ri-truck-line me-2 text-primary"></i> Sampling Kondisi Mobil
                     </button>
                     @endif
                     @if (is_null($data_dokumen))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalDokumen">
+                        data-target-modal="#modalDokumen" data-bs-target="#modalDokumen">
                         <i class="ri-file-text-line me-2 text-success"></i> Sampling Dokumen
                     </button>
                     @endif
                     @if (is_null($data_kemasan))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalKemasan">
+                        data-target-modal="#modalKemasan" data-bs-target="#modalKemasan">
                         <i class="ri-inbox-line me-2 text-warning"></i> Sampling Kemasan
                     </button>
                     @endif
                     @if (!$isGaram && is_null($data_raw))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalRaw">
+                        data-target-modal="#modalRaw" data-bs-target="#modalRaw">
                         <i class="ri-flask-line me-2 text-danger"></i> Sampling Raw
                     </button>
                     @endif
@@ -1979,17 +1979,35 @@
         // ── Smooth modal transition from #samplingModal to specific sampling modals (prevents focus trap & blinking) ──
         $(document).on('click', '.btn-open-sampling-modal', function(e) {
             e.preventDefault();
-            const targetSelector = $(this).data('target-modal');
-            const $samplingModal = $('#samplingModal');
+            const targetSelector = $(this).attr('data-target-modal') || $(this).data('target-modal') || $(this).attr('data-bs-target');
+            if (!targetSelector) return;
 
-            $samplingModal.modal('hide');
-            $samplingModal.one('hidden.bs.modal', function() {
-                const targetModalEl = document.querySelector(targetSelector);
-                if (targetModalEl) {
-                    const bsModal = bootstrap.Modal.getOrCreateInstance(targetModalEl);
-                    bsModal.show();
-                }
-            });
+            const targetModalEl = document.querySelector(targetSelector);
+            if (!targetModalEl) return;
+
+            const targetBsModal = bootstrap.Modal.getOrCreateInstance(targetModalEl);
+            const samplingModalEl = document.getElementById('samplingModal');
+
+            if (samplingModalEl && samplingModalEl.classList.contains('show')) {
+                const samplingBsModal = bootstrap.Modal.getInstance(samplingModalEl) || bootstrap.Modal.getOrCreateInstance(samplingModalEl);
+
+                let targetOpened = false;
+                const openTarget = function() {
+                    if (targetOpened) return;
+                    targetOpened = true;
+                    samplingModalEl.removeEventListener('hidden.bs.modal', openTarget);
+                    targetBsModal.show();
+                };
+
+                // Register listener before hiding to guarantee catching hidden event
+                samplingModalEl.addEventListener('hidden.bs.modal', openTarget, { once: true });
+                samplingBsModal.hide();
+
+                // Fallback in case hidden.bs.modal event is missed or transition delayed
+                setTimeout(openTarget, 300);
+            } else {
+                targetBsModal.show();
+            }
         });
 
 
@@ -2290,6 +2308,7 @@
                         text: xhr.responseJSON?.message || 'Gagal menyimpan data konfirmasi.'
                     });
                 }
+            });
         });
     });
 </script>
