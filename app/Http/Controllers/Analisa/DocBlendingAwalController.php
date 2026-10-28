@@ -276,36 +276,35 @@ class DocBlendingAwalController extends Controller
                 $blendingShiftGroup = '';
                 $jamProduksiStr = '';
 
-                // Cari data Turun Blending yang sesuai untuk siklus/lembar ini
+                // Cari data Turun Blending yang sesuai untuk siklus/lembar ini (Hanya berdasarkan WHERE batch_range = $bRange)
+                $cleanBRange = str_replace(' ', '', $bRange);
                 $matchedTb = null;
-                if ($turunItems->isNotEmpty()) {
-                    $matchedTb = $turunItems->first(function($tb) use ($bRange, $noBl) {
-                        if ($bRange !== '' && (string)$tb->batch_range === $bRange) return true;
-                        if ($noBl !== '' && (string)$tb->nomor_blending === $noBl) return true;
-                        return false;
-                    });
-                    if (!$matchedTb && isset($turunItems[$cIdx])) {
-                        $matchedTb = $turunItems[$cIdx];
-                    }
+
+                if ($turunItems->isNotEmpty() && $cleanBRange !== '') {
+                    $matchedTb = $turunItems->filter(function($tb) use ($bRange, $cleanBRange) {
+                        $rawTbRange = (string)($tb->batch_range ?? '');
+                        return $rawTbRange === $bRange || str_replace(' ', '', $rawTbRange) === $cleanBRange;
+                    })->sortByDesc(function($tb) {
+                        // Prioritaskan yang sudah Release, lalu ID terbesar (data pengujian terakhir)
+                        $isRel = (stripos((string)($tb->disposition ?? ''), 'release') !== false) ? 1 : 0;
+                        return sprintf('%d_%010d', $isRel, (int)($tb->id ?? 0));
+                    })->first();
                 }
 
-                if (!$matchedTb) {
+                if (!$matchedTb && $cleanBRange !== '') {
                     try {
                         $pBatchIdTemp = $this->resolveProductionBatchId($batch->po_number, $batch->id);
                         if ($pBatchIdTemp) {
                             $prodTb = DB::table('production.monitoring_turun_blending')
                                 ->where('production_batch_id', $pBatchIdTemp)
-                                ->where(function($q) use ($bRange, $noBl) {
-                                    if ($bRange !== '') $q->where('batch_range', $bRange);
-                                    if ($noBl !== '') $q->orWhere('nomor_blending', $noBl);
+                                ->where(function($q) use ($bRange, $cleanBRange) {
+                                    $q->where('batch_range', $bRange)
+                                      ->orWhereRaw("REPLACE(batch_range, ' ', '') = ?", [$cleanBRange]);
                                 })
+                                ->orderByRaw("CASE WHEN disposition LIKE '%Release%' THEN 1 ELSE 0 END DESC")
+                                ->orderByDesc('id')
                                 ->first();
-                            if (!$prodTb) {
-                                $prodTb = DB::table('production.monitoring_turun_blending')
-                                    ->where('production_batch_id', $pBatchIdTemp)
-                                    ->skip($cIdx)
-                                    ->first();
-                            }
+
                             if ($prodTb) {
                                 $matchedTb = $prodTb;
                             }
@@ -408,6 +407,26 @@ class DocBlendingAwalController extends Controller
                     if (!empty($tbDisp)) {
                         $tbForeman = 'Foreman';
                     }
+                } else {
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => 'Awal',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                        'is_turun_blending' => true,
+                    ];
                 }
 
                 // Pad baris di bawah Turun Blending agar proporsional
