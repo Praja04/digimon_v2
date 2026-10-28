@@ -655,6 +655,22 @@
         border-color: #dee2e6;
     }
 
+    #analisaAccordion .analisa-table .input-group {
+        flex-wrap: nowrap !important;
+        min-width: 110px;
+    }
+
+    #analisaAccordion .analisa-table .input-group .form-control-sm {
+        min-width: 0 !important;
+        flex: 1 1 auto;
+    }
+
+    #analisaAccordion .analisa-table .input-group-text {
+        white-space: nowrap !important;
+        font-size: 11px;
+        padding: 0.25rem 0.5rem;
+    }
+
     #analisaAccordion .analisa-table .form-control-sm:focus,
     #analisaAccordion .analisa-table .form-select-sm:focus {
         border-color: #86b7fe;
@@ -3361,10 +3377,10 @@
                                 placeholder="Kondisi ${f.label}..."
                                 autocomplete="off">
                         </td>`;
-                } else if (f.name === 'kotoran') {
+                } else if (f.name === 'kotoran' || f.key === 'kotoran[]') {
                     tds += `
-                        <td style="min-width: 120px;">
-                            <div class="input-group input-group-sm">
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
                                     class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
@@ -3375,10 +3391,10 @@
                                 <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
                             </div>
                         </td>`;
-                } else if (f.name === 'ka' || f.name === '%ka') {
+                } else if (f.name === 'ka' || f.name === '%ka' || f.key === 'ka[]' || f.key === '%ka[]' || f.name === 'kadar_air') {
                     tds += `
-                        <td style="min-width: 120px;">
-                            <div class="input-group input-group-sm">
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
                                     class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
@@ -3529,7 +3545,9 @@
                                     ${SHORT_TERM_FIELDS.map((f, cIdx) => {
                                         const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
                                         const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
-                                        return `<th class="th-data-col" data-col-idx="${cIdx}" title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+                                        const isGroupCol = (f.name === 'kotoran' || f.name === 'ka' || f.name === '%ka' || f.key === 'kotoran[]' || f.key === '%ka[]' || f.name === 'kadar_air');
+                                        const colMinWidth = isGroupCol ? 'style="min-width: 135px;"' : '';
+                                        return `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
                                     }).join('')}
                                 </tr>
                             </thead>
@@ -3707,7 +3725,9 @@
                 thCols += `<th class="text-center text-muted" style="min-width: 90px;" title="Parameter ${f.label} (NULL)">${f.label}</th>`;
             } else {
                 const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
-                thCols += `<th class="th-data-col" data-col-idx="${cIdx}" title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+                const isGroupCol = (f.name === 'kotoran' || f.name === 'ka' || f.name === '%ka' || f.key === 'kotoran[]' || f.key === '%ka[]' || f.name === 'kadar_air');
+                const colMinWidth = isGroupCol ? 'style="min-width: 135px;"' : '';
+                thCols += `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
             }
         });
 
@@ -3752,10 +3772,10 @@
                                 placeholder="-"
                                 autocomplete="off">
                         </td>`;
-                } else if (f.key === 'kotoran[]') {
+                } else if (f.key === 'kotoran[]' || f.name === 'kotoran') {
                     tds += `
-                        <td style="min-width: 120px;">
-                            <div class="input-group input-group-sm">
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
                                     class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
@@ -3766,10 +3786,10 @@
                                 <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
                             </div>
                         </td>`;
-                } else if (f.key === '%ka[]') {
+                } else if (f.key === '%ka[]' || f.name === 'ka' || f.name === '%ka' || f.key === 'ka[]' || f.name === 'kadar_air') {
                     tds += `
-                        <td style="min-width: 120px;">
-                            <div class="input-group input-group-sm">
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
                                     class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"

@@ -517,7 +517,7 @@
                                             <input type="number" name="jumlah_sampel" id="jumlah_sampel"
                                                 class="form-control @error('jumlah_sampel') is-invalid @enderror"
                                                 value="{{ old('jumlah_sampel') }}" placeholder="Masukkan jumlah sampel"
-                                                min="1" max="50" step="1" required>
+                                                min="1" max="275" step="1" required>
                                         </div>
 
                                         @error('jumlah_sampel')

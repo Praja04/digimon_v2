@@ -302,7 +302,7 @@ class PackagingKartonController extends Controller
                 $isFinal ? 'required' : 'nullable',
                 'integer',
                 'min:1',
-                'max:50',
+                'max:275',
             ],
 
             'no_batch' => [
