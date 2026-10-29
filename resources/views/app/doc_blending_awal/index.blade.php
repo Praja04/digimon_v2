@@ -212,6 +212,11 @@
         position: relative;
     }
 
+    .table-blending-data tbody tr.data-row.row-turun-blending,
+    .table-blending-data tbody tr.data-row.row-turun-blending td {
+        background-color: #fef9c3 !important;
+    }
+
     .table-blending-data tbody tr.data-row.row-turun-blending .clean-cell-input:focus,
     .table-blending-data tbody tr.data-row.row-turun-blending .clean-cell-textarea:focus {
         background-color: #ffffff !important;
@@ -448,10 +453,7 @@
                             <i class="ri-pages-line"></i> LEMBAR BLENDING #${bIdx + 1}
                         </span>
                         <span class="badge bg-light text-dark border ms-2">
-                            Pasangan Batch ${escapeHtml(block.batch || '')} (Tangki No. ${escapeHtml(block.no_blending || String(bIdx + 1))})
-                        </span>
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary ms-2">
-                            1 Halaman = 1 Pasangan Batch (1-2, 3-4, 5-6, …)
+                            Pasangan Batch ${escapeHtml(block.batch || '')} (Blending No. ${escapeHtml(block.no_blending || String(bIdx + 1))})
                         </span>
                     </div>
                     <div>
@@ -485,7 +487,6 @@
                             </tr>
                         </table>
                         <div class="clearfix"></div>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
                     </div>
                 </div>
 
@@ -683,7 +684,7 @@
                 <td class="text-center py-2 fw-bold" style="white-space: pre-line;">${isAwalTurun ? '' : escapeHtml(sampValue || '-')}</td>
                 <td class="text-center py-2 ${isAwalTurun ? 'fw-bold text-dark' : 'fw-semibold'}">${escapeHtml(volValue || '-')}</td>
                 <td class="text-center py-2">${escapeHtml(serahJam || '-')}</td>
-                <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(serahPic || '-')}</td>
+                <td class="text-center py-2 ${isAwalTurun ? 'fw-semibold text-dark' : ''}">${escapeHtml(serahPic || '-')}</td>
                 <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(bjVal || '-')}</td>
                 <td class="text-center py-2 fw-semibold">${escapeHtml(brixVal || '-')}</td>
                 <td class="text-center py-2">${isAwalTurun ? '' : escapeHtml(phVal || '-')}</td>

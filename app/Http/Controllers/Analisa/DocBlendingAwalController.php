@@ -9,6 +9,7 @@ use App\Models\ProductionBatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DocBlendingAwalController extends Controller
@@ -84,7 +85,19 @@ class DocBlendingAwalController extends Controller
 
         $savedDoc = DocBlendingAwal::where('production_batch_id', $poId)->first();
 
-
+        // 1. Ambil data operasional Blending dari API Portal Produksi (127.0.0.1:8001)
+        // (Jam Mulai dari dissolver.jam_selesai_transfer, Jam Selesai dari blending_awal.updated_at, dan Kode Shift & Grup)
+        $prdDocInfo = null;
+        try {
+            $prdUrl = rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/') . '/api/blending-awal/doc-info';
+            $prdRes = Http::timeout(3)->get($prdUrl, [
+                'po_number' => $batch->po_number,
+                'production_batch_id' => $batch->id,
+            ]);
+            if ($prdRes->successful()) {
+                $prdDocInfo = $prdRes->json('data');
+            }
+        } catch (\Throwable $e) {}
 
         // Auto-generate Batch Blocks dari data Blending Awal
         // Pembagian Blending dibuat 1 Halaman untuk 1 Pasangan Batch Blending (1-2, 3-4, 5-6, …)
@@ -97,46 +110,20 @@ class DocBlendingAwalController extends Controller
         $detectedAnalis = '';
 
         if ($blendingItems->count() > 0) {
-            // Pengelompokan Halaman berdasarkan Pasangan Tangki Blending (Rotasi 3 Tangki):
-            // Halaman 1 (Tangki 1): Batch 1-2 Awal/Adj, Batch 7-8 Awal/Adj, dst.
-            // Halaman 2 (Tangki 2): Batch 3-4 Awal/Adj, Batch 9-10 Awal/Adj, dst.
-            // Halaman 3 (Tangki 3): Batch 5-6 Awal/Adj, Batch 11-12 Awal/Adj, dst.
-            $groupedByTankSlot = $blendingItems->groupBy(function($item) {
-                // 1. Jika nomor_blending secara eksplisit ada (1, 2, atau 3)
-                if (!empty($item->nomor_blending)) {
-                    if (preg_match('/(\d+)/', (string)$item->nomor_blending, $m)) {
-                        $n = (int)$m[1];
-                        if ($n >= 1 && $n <= 3) {
-                            return $n - 1; // 0: Tank 1, 1: Tank 2, 2: Tank 3
-                        }
-                    }
-                }
-
-                // 2. Berdasarkan rotasi siklus nomor batch awal
-                $bRange = (string)($item->batch_range ?? '');
-                if (preg_match('/^(\d+)/', $bRange, $m)) {
-                    $firstBatch = (int)$m[1];
-                    $pairIndex = max(0, (int)ceil($firstBatch / 2) - 1);
-                    return $pairIndex % 3; // 0 => Halaman 1, 1 => Halaman 2, 2 => Halaman 3
-                }
-
-                return 0;
+            // Pengelompokan Halaman berdasarkan Pasangan Batch (batch_range):
+            // 1 Lembar = 1 Pasangan Batch (e.g. 1-2, 3-4, 5-6)
+            // Setiap batch_range unik menjadi 1 halaman/lembar tersendiri
+            $groupedByBatchRange = $blendingItems->groupBy(function($item) {
+                return (string)($item->batch_range ?? 'unknown');
             });
 
-            // Urutkan grup tangki berdasarkan slot rotasi (0, 1, 2)
-            $sortedTankGroups = collect();
-            foreach ([0, 1, 2] as $slot) {
-                if ($groupedByTankSlot->has($slot) && $groupedByTankSlot[$slot]->isNotEmpty()) {
-                    $sortedTankGroups->push($groupedByTankSlot[$slot]);
+            // Urutkan grup berdasarkan nomor batch awal (ascending)
+            $sortedTankGroups = $groupedByBatchRange->sortBy(function($items, $key) {
+                if (preg_match('/^(\d+)/', $key, $m)) {
+                    return (int)$m[1];
                 }
-            }
-
-            // Fallback jika ada slot lain
-            foreach ($groupedByTankSlot as $key => $items) {
-                if (!in_array($key, [0, 1, 2], true) && $items->isNotEmpty()) {
-                    $sortedTankGroups->push($items);
-                }
-            }
+                return 9999;
+            })->values();
 
             $totalCycles = $sortedTankGroups->count();
 
@@ -274,7 +261,7 @@ class DocBlendingAwalController extends Controller
                         'visco' => $this->formatBlankIfZero($item->visco),
                         'organo' => $item->organo ?: 'OK',
                         'aroma' => $item->aroma ?: 'OK',
-                        'warna' => $item->color ? $item->color->name : 'Hitam',
+                        'warna' => $item->color ? ($item->color->code ?: $item->color->name) : '',
                         'buih' => 'Tidak Ada',
                         'aw' => $this->formatBlankIfZero($item->aw),
                         'waktu_adjustment' => $waktuAdjStr,
@@ -283,236 +270,298 @@ class DocBlendingAwalController extends Controller
                     $samplingIndex++;
                 }
 
-                // Ambil data Turun Blending yang sesuai dengan nomor blending / batch ini
-                $bRange = $first->batch_range ?? null;
-                $noBl = $first->nomor_blending ?? null;
-
-                $matchedTurun = $turunItems->first(function($t) use ($bRange, $noBl, $cIdx) {
-                    if (!empty($t->batch_range) && !empty($bRange)) {
-                        if ($t->batch_range == $bRange || strpos($bRange, (string)$t->batch_range) !== false || strpos((string)$t->batch_range, (string)$bRange) !== false) {
-                            return true;
-                        }
-                    }
-                    if (!empty($t->nomor_blending) && !empty($noBl)) {
-                        if ((int)$t->nomor_blending === (int)$noBl) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-                if (!$matchedTurun && $turunItems->count() > $cIdx) {
-                    $matchedTurun = $turunItems[$cIdx];
-                }
-
-                $turunRow = null;
-                if ($matchedTurun) {
-                    $turunScan = $matchedTurun->scanned_at ?: $matchedTurun->created_at;
-                    $turunJamScan = $turunScan ? Carbon::parse($turunScan)->setTimezone('Asia/Jakarta')->format('H:i') : '';
-
-                    $turunDispJam = '';
-                    if (!empty($matchedTurun->updated_at) && $matchedTurun->updated_at != $matchedTurun->created_at) {
-                        $turunDispJam = Carbon::parse($matchedTurun->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                    } elseif (!empty($matchedTurun->created_at)) {
-                        $turunDispJam = Carbon::parse($matchedTurun->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                    }
-
-                    $dispTurun = $matchedTurun->disposition ?: 'Release';
-                    if (!empty($matchedTurun->disposition_remark) && $matchedTurun->disposition_remark !== '-' && $matchedTurun->disposition_remark !== $dispTurun) {
-                        $dispTurun .= "\n" . $matchedTurun->disposition_remark;
-                    }
-
-                    $turunRow = [
-                        'sampling_ke' => '',
-                        'vol_tangki' => 'Awal',
-                        'serah_terima_jam' => $turunJamScan,
-                        'serah_terima_pic' => '',
-                        'bj' => '',
-                        'brix' => $this->formatBlankIfZero($matchedTurun->brix),
-                        'ph' => '',
-                        'nacl' => '',
-                        'visco' => $this->formatBlankIfZero($matchedTurun->visco),
-                        'organo' => '',
-                        'aroma' => '',
-                        'warna' => '',
-                        'buih' => '',
-                        'aw' => $this->formatBlankIfZero($matchedTurun->aw),
-                        'waktu_adjustment' => $turunDispJam,
-                        'disposisi' => $dispTurun,
-                    ];
-                } else {
-                    $turunRow = [
-                        'sampling_ke' => '',
-                        'vol_tangki' => 'Awal',
-                        'serah_terima_jam' => '',
-                        'serah_terima_pic' => '',
-                        'bj' => '',
-                        'brix' => '',
-                        'ph' => '',
-                        'nacl' => '',
-                        'visco' => '',
-                        'organo' => '',
-                        'aroma' => '',
-                        'warna' => '',
-                        'buih' => '',
-                        'aw' => '',
-                        'waktu_adjustment' => '',
-                        'disposisi' => '',
-                    ];
-                }
-
-                // Tata letak baris sesuai format Google Spreadsheet:
-                // Baris sampling di atas, baris kosong di tengah, Baris Turun Blending (kuning) di baris ke-7 (atau setelah sampling),
-                // lalu baris kosong hingga minimal 11 baris standar
-                $samplingRows = $rows;
-                $rows = [];
-                $samplingCount = count($samplingRows);
-
-                foreach ($samplingRows as $sr) {
-                    $rows[] = $sr;
-                }
-
-                $turunTargetIdx = max(6, $samplingCount + 1);
-                while (count($rows) < $turunTargetIdx) {
-                    $rows[] = [
-                        'sampling_ke' => (string)(count($rows) + 1),
-                        'vol_tangki' => '',
-                        'serah_terima_jam' => '',
-                        'serah_terima_pic' => '',
-                        'bj' => '',
-                        'brix' => '',
-                        'ph' => '',
-                        'nacl' => '',
-                        'visco' => '',
-                        'organo' => '',
-                        'aroma' => '',
-                        'warna' => '',
-                        'buih' => '',
-                        'aw' => '',
-                        'waktu_adjustment' => '',
-                        'disposisi' => '',
-                    ];
-                }
-
-                $rows[] = $turunRow;
-
-                while (count($rows) < 11) {
-                    $rows[] = [
-                        'sampling_ke' => (string)count($rows),
-                        'vol_tangki' => '',
-                        'serah_terima_jam' => '',
-                        'serah_terima_pic' => '',
-                        'bj' => '',
-                        'brix' => '',
-                        'ph' => '',
-                        'nacl' => '',
-                        'visco' => '',
-                        'organo' => '',
-                        'aroma' => '',
-                        'warna' => '',
-                        'buih' => '',
-                        'aw' => '',
-                        'waktu_adjustment' => '',
-                        'disposisi' => '',
-                    ];
-                }
-
-                // Lookup Shift & Grup dinamis dari production.blending_awal (e.g. Shift 1 - Grup A)
+                // Lookup Shift & Grup dan Jam Produksi dari Portal Produksi (API / Direct Query)
+                $bRange = (string)($first->batch_range ?? '');
+                $noBl = (string)($first->nomor_blending ?? '');
                 $blendingShiftGroup = '';
-                $jamStart = '';
-                $jamRelease = '';
-                try {
-                    $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
-
-                    $blRow = null;
-                    if ($pBatchId) {
-                        if ($bRange) {
-                            $blRow = DB::table('production.blending_awal')
-                                ->where('production_batch_id', $pBatchId)
-                                ->where('batch_range', $bRange)
-                                ->first();
-                        }
-                        if (!$blRow && $noBl) {
-                            $blRow = DB::table('production.blending_awal')
-                                ->where('production_batch_id', $pBatchId)
-                                ->where('nomor_blending', (string)$noBl)
-                                ->first();
-                        }
-                        if (!$blRow) {
-                            $blRow = DB::table('production.monitoring_turun_blending')
-                                ->where('production_batch_id', $pBatchId)
-                                ->when($bRange, fn($q) => $q->where('batch_range', $bRange))
-                                ->first();
-                        }
-                        if (!$blRow) {
-                            $blRow = DB::table('production.blending_awal')
-                                ->where('production_batch_id', $pBatchId)
-                                ->orderBy('id')
-                                ->first();
-                        }
-                    }
-
-                    if ($blRow) {
-                        $blendingShiftGroup = $this->formatShiftGroup($blRow->shift ?? null, $blRow->group ?? null);
-
-                        if (!empty($blRow->waktu_kirim_sample)) {
-                            $jamStart = Carbon::parse($blRow->waktu_kirim_sample)->setTimezone('Asia/Jakarta')->format('H:i');
-                        } elseif (!empty($blRow->created_at)) {
-                            $jamStart = Carbon::parse($blRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                        }
-                    }
-                } catch (\Throwable $e) {}
-
-                // Fallback Jam Start dari created_at Blending Awal
-                if (empty($jamStart) && $first && $first->created_at) {
-                    $jamStart = Carbon::parse($first->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                }
-
-                // Jam Release Terakhir (Disposisi Release Terakhir)
-                if ($matchedTurun && stripos((string)$matchedTurun->disposition, 'release') !== false) {
-                    $relTime = $matchedTurun->updated_at ?: $matchedTurun->created_at;
-                    if ($relTime) {
-                        $jamRelease = Carbon::parse($relTime)->setTimezone('Asia/Jakarta')->format('H:i');
-                    }
-                }
-                if (empty($jamRelease)) {
-                    $releaseItem = $tankItems->filter(fn($i) => stripos((string)$i->disposition, 'release') !== false)->last();
-                    if (!$releaseItem) {
-                        $releaseItem = $tankItems->last();
-                    }
-                    if ($releaseItem && $releaseItem->updated_at) {
-                        $jamRelease = Carbon::parse($releaseItem->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                    }
-                }
-
-                // Format Jam Produksi: (Jam Tambah Blending Awal) - (Jam Disposisi Release Terakhir)
                 $jamProduksiStr = '';
-                if (!empty($jamStart) && !empty($jamRelease) && $jamRelease !== $jamStart) {
-                    $jamProduksiStr = "{$jamStart} - {$jamRelease}";
-                } elseif (!empty($jamStart)) {
-                    $jamProduksiStr = $jamStart;
-                } else {
-                    $jamProduksiStr = '-';
+
+                // Cari data Turun Blending yang sesuai untuk siklus/lembar ini (Hanya berdasarkan WHERE batch_range = $bRange)
+                $cleanBRange = str_replace(' ', '', $bRange);
+                $matchedTb = null;
+
+                if ($turunItems->isNotEmpty() && $cleanBRange !== '') {
+                    $matchedTb = $turunItems->filter(function($tb) use ($bRange, $cleanBRange) {
+                        $rawTbRange = (string)($tb->batch_range ?? '');
+                        return $rawTbRange === $bRange || str_replace(' ', '', $rawTbRange) === $cleanBRange;
+                    })->sortByDesc(function($tb) {
+                        // Prioritaskan yang sudah Release, lalu ID terbesar (data pengujian terakhir)
+                        $isRel = (stripos((string)($tb->disposition ?? ''), 'release') !== false) ? 1 : 0;
+                        return sprintf('%d_%010d', $isRel, (int)($tb->id ?? 0));
+                    })->first();
                 }
 
-                // Fallback Shift & Grup jika belum ada
-                if (empty($blendingShiftGroup)) {
-                    if (!empty($first->shift)) {
-                        $blendingShiftGroup = $this->formatShiftGroup($first->shift, $first->group ?? null);
+                if (!$matchedTb && $cleanBRange !== '') {
+                    try {
+                        $pBatchIdTemp = $this->resolveProductionBatchId($batch->po_number, $batch->id);
+                        if ($pBatchIdTemp) {
+                            $prodTb = DB::table('production.monitoring_turun_blending')
+                                ->where('production_batch_id', $pBatchIdTemp)
+                                ->where(function($q) use ($bRange, $cleanBRange) {
+                                    $q->where('batch_range', $bRange)
+                                      ->orWhereRaw("REPLACE(batch_range, ' ', '') = ?", [$cleanBRange]);
+                                })
+                                ->orderByRaw("CASE WHEN disposition LIKE '%Release%' THEN 1 ELSE 0 END DESC")
+                                ->orderByDesc('id')
+                                ->first();
+
+                            if ($prodTb) {
+                                $matchedTb = $prodTb;
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+                }
+
+                // Berikan jeda baris kosong sebelum Turun Blending sesuai acuan (area tengah/bawah form)
+                while (count($rows) < 3) {
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => '',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                    ];
+                }
+                if (count($rows) >= 3 && $samplingIndex > 3) {
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => '',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                    ];
+                }
+
+                // Masukkan Baris Turun Blending
+                $tbForeman = '';
+                if ($matchedTb) {
+                    $tbScanTime = $matchedTb->scanned_at ?? ($matchedTb->created_at ?? ($matchedTb->waktu_kirim_sample ?? null));
+                    $tbJamScan = $tbScanTime ? Carbon::parse($tbScanTime)->setTimezone('Asia/Jakarta')->format('H:i') : '';
+
+                    $tbPic = '';
+                    if (isset($matchedTb->user) && $matchedTb->user) {
+                        $tbPic = $matchedTb->user->name;
+                    } elseif (!empty($matchedTb->created_by)) {
+                        $tbUser = DB::table('users')->where('id', $matchedTb->created_by)->value('name');
+                        $tbPic = $tbUser ?: '';
+                    }
+
+                    $tbJamDisp = '';
+                    if (!empty($matchedTb->updated_at) && $matchedTb->updated_at != $matchedTb->created_at) {
+                        $tbJamDisp = Carbon::parse($matchedTb->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                    }
+
+                    $tbDisp = $matchedTb->disposition ?? '';
+                    $tbRemark = $matchedTb->disposition_remark ?? '';
+                    $tbDispFull = '';
+                    if ($tbDisp && $tbRemark && $tbRemark !== '-' && $tbRemark !== $tbDisp) {
+                        $tbDispFull = $tbDisp . "\n" . $tbRemark;
+                    } elseif ($tbDisp) {
+                        $tbDispFull = $tbDisp;
+                    } elseif ($tbRemark && $tbRemark !== '-') {
+                        $tbDispFull = $tbRemark;
+                    }
+
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => 'Awal',
+                        'serah_terima_jam' => $tbJamScan,
+                        'serah_terima_pic' => $tbPic,
+                        'bj' => '',
+                        'brix' => $this->formatBlankIfZero($matchedTb->brix ?? null),
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => $this->formatBlankIfZero($matchedTb->visco ?? null),
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => $this->formatBlankIfZero($matchedTb->aw ?? null),
+                        'waktu_adjustment' => $tbJamDisp,
+                        'disposisi' => $tbDispFull,
+                        'is_turun_blending' => true,
+                    ];
+
+                    if (!empty($tbDisp)) {
+                        $tbForeman = 'Foreman';
+                    }
+                } else {
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => 'Awal',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                        'is_turun_blending' => true,
+                    ];
+                }
+
+                // Pad baris di bawah Turun Blending agar proporsional
+                while (count($rows) < 7) {
+                    $rows[] = [
+                        'sampling_ke' => '',
+                        'vol_tangki' => '',
+                        'serah_terima_jam' => '',
+                        'serah_terima_pic' => '',
+                        'bj' => '',
+                        'brix' => '',
+                        'ph' => '',
+                        'nacl' => '',
+                        'visco' => '',
+                        'organo' => '',
+                        'aroma' => '',
+                        'warna' => '',
+                        'buih' => '',
+                        'aw' => '',
+                        'waktu_adjustment' => '',
+                        'disposisi' => '',
+                    ];
+                }
+
+                // 1. Cek dari response API Portal Produksi (127.0.0.1:8001)
+                if ($prdDocInfo) {
+                    $prdItem = null;
+                    if ($bRange !== '' && isset($prdDocInfo['by_batch_range'][$bRange])) {
+                        $prdItem = $prdDocInfo['by_batch_range'][$bRange];
+                    } elseif ($noBl !== '' && isset($prdDocInfo['by_nomor_blending'][$noBl])) {
+                        $prdItem = $prdDocInfo['by_nomor_blending'][$noBl];
+                    }
+                    if ($prdItem) {
+                        $blendingShiftGroup = $prdItem['kode_shift_grup'] ?? '';
+                        $jamProduksiStr = $prdItem['jam_produksi'] ?? '';
                     }
                 }
-                if (empty($blendingShiftGroup) && $matchedTurun && !empty($matchedTurun->shift)) {
-                    $blendingShiftGroup = $this->formatShiftGroup($matchedTurun->shift, null);
-                }
-                if (empty($blendingShiftGroup) && !empty($jamStart)) {
-                    $hour = (int)substr($jamStart, 0, 2);
-                    if ($hour >= 6 && $hour < 14) {
-                        $blendingShiftGroup = 'Shift 1 - Grup A';
-                    } elseif ($hour >= 14 && $hour < 22) {
-                        $blendingShiftGroup = 'Shift 2 - Grup A';
-                    } else {
-                        $blendingShiftGroup = 'Shift 3 - Grup A';
+
+                // 2. Fallback query jika API PRD belum terhubung / kosong
+                if (empty($jamProduksiStr) || empty($blendingShiftGroup)) {
+                    $jamStart = '';
+                    $jamRelease = '';
+                    try {
+                        $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
+
+                        $blRow = null;
+                        if ($pBatchId) {
+                            if ($bRange !== '') {
+                                $blRow = DB::table('production.blending_awal')
+                                    ->where('production_batch_id', $pBatchId)
+                                    ->where('batch_range', $bRange)
+                                    ->first();
+                            }
+                            if (!$blRow && $noBl !== '') {
+                                $blRow = DB::table('production.blending_awal')
+                                    ->where('production_batch_id', $pBatchId)
+                                    ->where('nomor_blending', $noBl)
+                                    ->first();
+                            }
+                            if (!$blRow) {
+                                $blRow = DB::table('production.monitoring_turun_blending')
+                                    ->where('production_batch_id', $pBatchId)
+                                    ->when($bRange !== '', fn($q) => $q->where('batch_range', $bRange))
+                                    ->first();
+                            }
+                            if (!$blRow) {
+                                $blRow = DB::table('production.blending_awal')
+                                    ->where('production_batch_id', $pBatchId)
+                                    ->orderBy('id')
+                                    ->first();
+                            }
+
+                            // Jam Mulai dari dissolver.jam_selesai_transfer
+                            $nums = [];
+                            if (strpos($bRange, '-') !== false) {
+                                [$s, $e] = explode('-', $bRange);
+                                for ($i = (int)$s; $i <= (int)$e; $i++) $nums[] = (string)$i;
+                            } elseif ($bRange !== '') {
+                                $nums[] = $bRange;
+                            }
+                            if (!empty($nums)) {
+                                $dissTransfer = DB::table('production.dissolver')
+                                    ->where('production_batch_id', $pBatchId)
+                                    ->whereIn('batch_number', $nums)
+                                    ->whereNotNull('jam_selesai_transfer')
+                                    ->orderByDesc('jam_selesai_transfer')
+                                    ->value('jam_selesai_transfer');
+                                if ($dissTransfer) {
+                                    $jamStart = substr((string)$dissTransfer, 0, 5);
+                                }
+                            }
+                        }
+
+                        if ($blRow) {
+                            if (empty($blendingShiftGroup)) {
+                                $blendingShiftGroup = $this->formatShiftGroup($blRow->shift ?? null, $blRow->group ?? null);
+                            }
+                            if (empty($jamStart)) {
+                                if (!empty($blRow->waktu_kirim_sample)) {
+                                    $jamStart = Carbon::parse($blRow->waktu_kirim_sample)->setTimezone('Asia/Jakarta')->format('H:i');
+                                } elseif (!empty($blRow->created_at)) {
+                                    $jamStart = Carbon::parse($blRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                                }
+                            }
+                            if (!empty($blRow->updated_at)) {
+                                $jamRelease = Carbon::parse($blRow->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+
+                    if (empty($jamStart) && $first && $first->created_at) {
+                        $jamStart = Carbon::parse($first->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                    }
+
+                    if (empty($jamRelease)) {
+                        $releaseItem = $tankItems->filter(fn($i) => stripos((string)$i->disposition, 'release') !== false)->last();
+                        if (!$releaseItem) $releaseItem = $tankItems->last();
+                        if ($releaseItem && $releaseItem->updated_at) {
+                            $jamRelease = Carbon::parse($releaseItem->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+                    }
+
+                    if (empty($jamProduksiStr)) {
+                        if (!empty($jamStart) && !empty($jamRelease) && $jamRelease !== $jamStart) {
+                            $jamProduksiStr = "{$jamStart} - {$jamRelease}";
+                        } elseif (!empty($jamStart)) {
+                            $jamProduksiStr = $jamStart;
+                        } elseif (!empty($jamRelease)) {
+                            $jamProduksiStr = $jamRelease;
+                        } else {
+                            $jamProduksiStr = '-';
+                        }
                     }
                 }
+
                 if (empty($blendingShiftGroup)) {
                     $blendingShiftGroup = 'Shift 1 - Grup A';
                 }
@@ -531,7 +580,7 @@ class DocBlendingAwalController extends Controller
                     'catatan' => $savedDoc?->catatan ?: '',
                     'pic_sampling' => $savedDoc?->pic_sampling ?: '',
                     'pic_analis' => $cycleAnalis ?: ($detectedAnalis ?: ($savedDoc?->pic_analis ?: (auth()->user()->name ?? ''))),
-                    'pic_checker' => $savedDoc?->pic_checker ?: '',
+                    'pic_checker' => $savedDoc?->pic_checker ?: ($tbForeman ?: 'Foreman'),
                     'rows' => $rows,
                 ];
             }
@@ -543,32 +592,46 @@ class DocBlendingAwalController extends Controller
                 $bRange = "{$bStart}-{$bEnd}";
                 $shiftStr = '';
                 $jamStr = '';
-                if ($pBatchId) {
-                    $blRow = DB::table('production.blending_awal')
-                        ->where('production_batch_id', $pBatchId)
-                        ->where(function($q) use ($bRange, $p) {
-                            $q->where('batch_range', $bRange)->orWhere('nomor_blending', (string)$p);
-                        })
-                        ->first();
-                    if (!$blRow) {
-                        $blRow = DB::table('production.monitoring_turun_blending')
+                if ($prdDocInfo) {
+                    $prdItem = $prdDocInfo['by_batch_range'][$bRange] ?? ($prdDocInfo['by_nomor_blending'][(string)$p] ?? null);
+                    if ($prdItem) {
+                        $shiftStr = $prdItem['kode_shift_grup'] ?? '';
+                        $jamStr = $prdItem['jam_produksi'] ?? '';
+                    }
+                }
+
+                if (empty($shiftStr) || empty($jamStr)) {
+                    if ($pBatchId) {
+                        $blRow = DB::table('production.blending_awal')
                             ->where('production_batch_id', $pBatchId)
                             ->where(function($q) use ($bRange, $p) {
                                 $q->where('batch_range', $bRange)->orWhere('nomor_blending', (string)$p);
                             })
                             ->first();
-                    }
-                    if (!$blRow) {
-                        $blRow = DB::table('production.blending_awal')
-                            ->where('production_batch_id', $pBatchId)
-                            ->first();
-                    }
-                    if ($blRow) {
-                        $shiftStr = $this->formatShiftGroup($blRow->shift ?? null, $blRow->group ?? null);
-                        if (!empty($blRow->waktu_kirim_sample)) {
-                            $jamStr = Carbon::parse($blRow->waktu_kirim_sample)->setTimezone('Asia/Jakarta')->format('H:i');
-                        } elseif (!empty($blRow->created_at)) {
-                            $jamStr = Carbon::parse($blRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        if (!$blRow) {
+                            $blRow = DB::table('production.monitoring_turun_blending')
+                                ->where('production_batch_id', $pBatchId)
+                                ->where(function($q) use ($bRange, $p) {
+                                    $q->where('batch_range', $bRange)->orWhere('nomor_blending', (string)$p);
+                                })
+                                ->first();
+                        }
+                        if (!$blRow) {
+                            $blRow = DB::table('production.blending_awal')
+                                ->where('production_batch_id', $pBatchId)
+                                ->first();
+                        }
+                        if ($blRow) {
+                            if (empty($shiftStr)) {
+                                $shiftStr = $this->formatShiftGroup($blRow->shift ?? null, $blRow->group ?? null);
+                            }
+                            if (empty($jamStr)) {
+                                if (!empty($blRow->waktu_kirim_sample)) {
+                                    $jamStr = Carbon::parse($blRow->waktu_kirim_sample)->setTimezone('Asia/Jakarta')->format('H:i');
+                                } elseif (!empty($blRow->created_at)) {
+                                    $jamStr = Carbon::parse($blRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                                }
+                            }
                         }
                     }
                 }
@@ -591,7 +654,7 @@ class DocBlendingAwalController extends Controller
                         'visco' => '',
                         'organo' => $r === 1 ? 'OK' : '',
                         'aroma' => $r === 1 ? 'OK' : '',
-                        'warna' => $r === 1 ? 'Hitam' : '',
+                        'warna' => '',
                         'buih' => $r === 1 ? 'Tidak Ada' : '',
                         'aw' => '',
                         'waktu_adjustment' => '',

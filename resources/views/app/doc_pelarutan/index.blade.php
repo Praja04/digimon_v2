@@ -622,9 +622,6 @@
                         <span class="badge bg-light text-dark border ms-2">
                             Batch ${escapeHtml(b1.batch || String(b1Idx + 1))} & Batch ${escapeHtml(b2.batch || String(b2Idx + 1))}
                         </span>
-                        <span class="badge bg-info bg-opacity-10 text-info border border-info ms-2">
-                            1 Lembar = 2 Batch
-                        </span>
                     </div>
                     <div>
                         <span class="badge bg-light text-muted border fs-12">
@@ -657,7 +654,6 @@
                             </tr>
                         </table>
                         <div class="clearfix"></div>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 2 batch</span>
                     </div>
                 </div>
 

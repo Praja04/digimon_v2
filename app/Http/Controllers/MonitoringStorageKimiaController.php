@@ -13,6 +13,7 @@ use App\Models\ProductionBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\DataTables;
 
 class MonitoringStorageKimiaController extends Controller
@@ -254,6 +255,9 @@ class MonitoringStorageKimiaController extends Controller
             $rawBatchGroups[] = [
                 'string' => implode('-', $fullStringParts),
                 'numbers' => $numbers,
+                'nomor_blending' => $chosen->nomor_blending,
+                'volume' => $chosen->volume,
+                'storage' => $chosen->storage,
             ];
         }
 
@@ -317,6 +321,25 @@ class MonitoringStorageKimiaController extends Controller
 
         $filteredBatchGroups = array_map(fn($g) => $g['string'], $finalCandidates);
 
+        $batchDetailsMap = [];
+        foreach ($finalCandidates as $cand) {
+            $bStr = $cand['string'];
+            $usedSamples = MonitoringStorageKimia::where('production_batch_id', $id)
+                ->where('batch_range', $bStr)
+                ->pluck('jenis_sampel')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $batchDetailsMap[$bStr] = [
+                'nomor_blending' => $cand['nomor_blending'] ?? null,
+                'volume' => $cand['volume'] ? number_format((float)$cand['volume'], 2, ',', '') : null,
+                'storage' => $cand['storage'] ?? null,
+                'used_samples' => $usedSamples,
+            ];
+        }
+
         foreach ($productionBatch->MonitoringStorageKimia as $data) {
             $data->has_relation = $data->additionalBatches && $data->additionalBatches->isNotEmpty();
             $data->related_batches = $data->has_relation
@@ -331,7 +354,8 @@ class MonitoringStorageKimiaController extends Controller
 
         return view('app.monitoring_storage_kimia.show', compact(
             'productionBatch',
-            'filteredBatchGroups'
+            'filteredBatchGroups',
+            'batchDetailsMap'
         ));
     }
 
@@ -518,26 +542,33 @@ class MonitoringStorageKimiaController extends Controller
         $request->validate([
             'production_batch_id' => 'required|integer|exists:production_batches,id',
             'batch_range' => 'required|string',
+            'id' => 'nullable|integer|exists:monitoring_storage_kimia,id',
         ]);
 
+        $currentRecord = null;
+        if (!empty($request->id)) {
+            $currentRecord = MonitoringStorageKimia::find($request->id);
+        }
 
         $lastRevisi = MonitoringStorageKimia::where('production_batch_id', $request->production_batch_id)
             ->where('batch_range', $request->batch_range)
             ->max('revisi');
 
         // Jika belum ada, revisi dimulai dari 1
-        $nextRevisi = is_null($lastRevisi) ? 1 : $lastRevisi + 1;
+        $nextRevisi = is_null($lastRevisi) ? 1 : ((int)$lastRevisi + 1);
 
-        $data = MonitoringStorageKimia::where('production_batch_id', $request->production_batch_id)
-            ->where('batch_range', $request->batch_range)
-            ->where('revisi', $lastRevisi)
-            ->first();
+        if (!$currentRecord) {
+            $currentRecord = MonitoringStorageKimia::where('production_batch_id', $request->production_batch_id)
+                ->where('batch_range', $request->batch_range)
+                ->where('revisi', $lastRevisi)
+                ->first();
+        }
 
         return response()->json([
             'revisi' => $nextRevisi,
-            'nomor_blending' => $data->nomor_blending,
-            'volume' => $data->volume,
-            'storage' => $data->storage,
+            'nomor_blending' => $currentRecord?->nomor_blending,
+            'volume' => $currentRecord?->volume,
+            'storage' => $currentRecord?->storage,
         ]);
     }
 
@@ -820,7 +851,35 @@ class MonitoringStorageKimiaController extends Controller
 
             $poLevelings = array_filter($poLevelingsRaw);
 
-            $volume = !empty($request->volume_revisi) ? $request->volume_revisi : $blending->volume;
+            if ($disposition_revisi === 'Drain') {
+                $rawVolumeDrain = $request->volume_revisi;
+                if ($rawVolumeDrain === null || $rawVolumeDrain === '' || (float) str_replace(',', '.', $rawVolumeDrain) <= 0) {
+                    return response()->json([
+                        'status' => 'error',
+                        'errors' => [
+                            'volume_revisi' => ['Volume drain wajib diisi dan harus lebih besar dari 0.']
+                        ],
+                        'message' => 'Volume drain wajib diisi dan harus lebih besar dari 0.'
+                    ], 422);
+                }
+
+                $prevVolume = (float) ($blending->volume ?? 0);
+                $drainAmount = (float) str_replace(',', '.', $rawVolumeDrain);
+
+                if ($drainAmount > $prevVolume) {
+                    return response()->json([
+                        'status' => 'error',
+                        'errors' => [
+                            'volume_revisi' => ["Volume drain (" . number_format($drainAmount, 0, ',', '.') . ") tidak boleh melebihi volume sebelumnya (" . number_format($prevVolume, 0, ',', '.') . ")."]
+                        ],
+                        'message' => "Volume drain (" . number_format($drainAmount, 0, ',', '.') . ") tidak boleh melebihi volume sebelumnya (" . number_format($prevVolume, 0, ',', '.') . ")."
+                    ], 422);
+                }
+
+                $volume = max(0, $prevVolume - $drainAmount);
+            } else {
+                $volume = !empty($request->volume_revisi) ? $request->volume_revisi : $blending->volume;
+            }
 
             $base = [
                 'production_batch_id' => $request->id_productbatch_revisi_blending,
@@ -828,8 +887,8 @@ class MonitoringStorageKimiaController extends Controller
                 'nomor_blending' => $request->no_blending_revisi,
                 'volume' => $volume,
                 'revisi' => $request->revisi_blending,
-                'storage' => $request->storage_revisi ?? null,
-                'jenis_sampel' => $blending->jenis_sampel,
+                'storage' => !empty($request->storage_revisi) ? $request->storage_revisi : ($blending->storage ?? null),
+                'jenis_sampel' => ($disposition_revisi === 'Drain') ? 'After Drain' : $blending->jenis_sampel,
                 'not_standard' => false,
             ];
 
@@ -873,6 +932,26 @@ class MonitoringStorageKimiaController extends Controller
             }
 
             $blending->update(['not_standard' => false]);
+
+            if ($disposition_revisi === 'Drain') {
+                $prodUrl = rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/');
+                try {
+                    $response = Http::timeout(5)->post("{$prodUrl}/api/monitoring-storage-kimia/drain", [
+                        'production_batch_id' => $request->id_productbatch_revisi_blending,
+                        'batch_range' => $request->batch_number_blending,
+                        'storage' => !empty($request->storage_revisi) ? $request->storage_revisi : ($blending->storage ?? null),
+                        'volume_drain' => $drainAmount,
+                        'volume_after' => $volume,
+                        'revisi' => $request->revisi_blending,
+                    ]);
+
+                    if (!$response->successful()) {
+                        Log::warning("Gagal sync drain ke production ({$prodUrl}): " . $response->body());
+                    }
+                } catch (\Exception $apiEx) {
+                    Log::warning("Gagal menghubungi production URL ({$prodUrl}) untuk drain: " . $apiEx->getMessage());
+                }
+            }
 
             return response()->json([
                 'status'  => 'success',

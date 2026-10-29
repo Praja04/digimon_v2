@@ -183,10 +183,6 @@
                 </tr>
             </table>
 
-            <!-- Notes Kanan Atas Sesuai Google Sheets -->
-            <div class="d-flex justify-content-end mb-1 mt-1">
-                <span class="text-muted fst-italic" style="font-size: 7.5pt;">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
-            </div>
 
             <!-- 2. Metadata Grid -->
             <table class="meta-table mb-2">

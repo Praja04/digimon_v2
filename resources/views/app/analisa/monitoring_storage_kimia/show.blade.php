@@ -104,6 +104,7 @@
                                             <tr>
                                                 <th>Nomor PO</th>
                                                 <th>Batch Range</th>
+                                                <th>Jenis Sampel</th>
                                                 <th>No Blending</th>
                                                 <th>Volume</th>
                                                 <th>Storage</th>
@@ -150,6 +151,9 @@
                                                                 <span class="badge bg-info">{{ $relasi->batch }}</span>
                                                             @endforeach
                                                         @endif
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-info">{{ $blending->jenis_sampel ?? '-' }}</span>
                                                     </td>
                                                     <td>{{ $blending->nomor_blending }}</td>
                                                     <td>{{ $blending->volume }}</td>
@@ -199,7 +203,7 @@
                                                 </tr>
                                             @empty
                                                 <tr class="text-center">
-                                                    <td colspan="9">Tidak ada data tersedia.</td>
+                                                    <td colspan="10">Tidak ada data tersedia.</td>
                                                 </tr>
                                             @endforelse
                                         </tbody>
@@ -219,7 +223,10 @@
             <form id="form">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Kelola Data Monitoring Storage Kimia</h5>
+                        <div>
+                            <h5 class="modal-title mb-0">Kelola Data Monitoring Storage Kimia</h5>
+                            <small class="text-muted" id="modalSubtitle"></small>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -692,6 +699,9 @@
                             $('.adjustment-qty-wrapper').addClass('d-none');
                             $('.adjustment-qty').prop('required', false).val('');
                         }
+
+                        const sampleBadge = response.jenis_sampel ? `<span class="badge bg-info">${response.jenis_sampel}</span>` : '-';
+                        $('#modalSubtitle').html(`Batch: <strong>${response.batch_range || '-'}</strong> | Jenis Sampel: ${sampleBadge} | Storage: <strong>${response.storage || '-'}</strong>`);
 
                         $('#modal').modal('show');
                     },

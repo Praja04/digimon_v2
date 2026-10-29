@@ -416,24 +416,13 @@
                                                             == 'Foreman'
                                                         )
 
-                                                            @if (is_null($blending->disposition))
-
-                                                                <button
-                                                                    type="button"
-                                                                    class="btn btn-sm btn-warning open-blending-modal-edit"
-                                                                    data-id="{{ $blending->id }}"
-                                                                >
-                                                                    Kelola Data
-                                                                </button>
-
-                                                            @else
-
-                                                                <span class="badge bg-success-subtle text-success">
-                                                                    <i class="ri-check-line align-middle"></i>
-                                                                    Lengkap
-                                                                </span>
-
-                                                            @endif
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-sm btn-warning open-blending-modal-edit"
+                                                                data-id="{{ $blending->id }}"
+                                                            >
+                                                                Kelola Data
+                                                            </button>
 
                                                         @else
 

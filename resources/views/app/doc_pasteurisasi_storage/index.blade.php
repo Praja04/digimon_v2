@@ -384,9 +384,15 @@
             var pastCount = Math.max(6, pastRows.length);
             for (var i = 0; i < pastCount; i++) {
                 var row = pastRows[i] || {};
-                var sampVal = row.sampling ? String(row.sampling).trim() : '';
-                var dispColor = 'text-secondary';
                 var dispVal = (row.disposisi || '').trim();
+                var hasPastData = !!(row.jam || row.pic || row.bj || row.brix || row.ph || row.aw || row.viskositas || row.organo || dispVal);
+                var isResampling = dispVal.toLowerCase().includes('resampling') || String(row.sampling || '').toLowerCase().includes('resampling');
+                var defaultSamp = isResampling ? 'Resampling' : 'Tengah';
+                var sampVal = row.sampling ? String(row.sampling).trim() : (hasPastData ? defaultSamp : '');
+                if (hasPastData && isResampling) {
+                    sampVal = 'Resampling';
+                }
+                var dispColor = 'text-secondary';
                 if (dispVal.toLowerCase().includes('reject') || dispVal.toLowerCase().includes('not ok')) {
                     dispColor = 'text-danger fw-bold';
                 } else if (dispVal.toLowerCase().includes('release') || dispVal.toLowerCase().includes('ok')) {
@@ -471,9 +477,6 @@
                         <span class="badge bg-light text-dark border">
                             Pasangan Batch ${escapeHtml(block.batch || '-')}
                         </span>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success">
-                            1 Halaman = 1 Blending (1 Pasangan Batch)
-                        </span>
                     </div>
                     <div>
                         <span class="badge bg-light text-muted border fs-12">
@@ -506,7 +509,6 @@
                             </tr>
                         </table>
                         <div class="clearfix"></div>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-11 fst-italic">Notes: 1 lembar: 1 blending (1 pasangan batch)</span>
                     </div>
                 </div>
 

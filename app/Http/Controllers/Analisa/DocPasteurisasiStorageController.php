@@ -9,6 +9,7 @@ use App\Models\ProductionBatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DocPasteurisasiStorageController extends Controller
@@ -80,6 +81,19 @@ class DocPasteurisasiStorageController extends Controller
         $pBatchId = null;
         try {
             $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
+        } catch (\Throwable $e) {}
+
+        // Ambil info resmi dari Portal Produksi via API (Port 8001)
+        $prdDocInfo = null;
+        try {
+            $prdUrl = rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/') . '/api/pasteurisasi-storage/doc-info';
+            $prdRes = Http::timeout(3)->get($prdUrl, [
+                'po_number' => $batch->po_number,
+                'production_batch_id' => $pBatchId ?: $batch->id,
+            ]);
+            if ($prdRes->successful()) {
+                $prdDocInfo = $prdRes->json('data');
+            }
         } catch (\Throwable $e) {}
 
         // Ambil data Pasteurisasi dari QC
@@ -174,8 +188,55 @@ class DocPasteurisasiStorageController extends Controller
             $jamStart = '';
             $jamEnd = '';
             $blockShift = '';
+            $jamProduksi = '';
+            $prodPast = null;
 
-            if ($pBatchId) {
+            // 1. Prioritas Utama: Ambil dari API Portal Produksi (Port 8001)
+            $prdItem = null;
+            if (!empty($prdDocInfo['items'])) {
+                foreach ($prdDocInfo['items'] as $it) {
+                    $itemRange = trim((string)($it['batch_range'] ?? ''));
+                    if ($itemRange === $batchKey) {
+                        $prdItem = $it;
+                        break;
+                    }
+                    if (preg_match('/^(\d+)\s*-\s*(\d+)$/', $itemRange, $mRange)) {
+                        $rStart = (int)$mRange[1];
+                        $rEnd = (int)$mRange[2];
+                        if ($bStart >= $rStart && $bStart <= $rEnd) {
+                            $prdItem = $it;
+                            break;
+                        }
+                    } elseif ($itemRange === (string)$bStart) {
+                        $prdItem = $it;
+                        break;
+                    }
+                }
+                if (!$prdItem && isset($prdDocInfo['items'][$cIdx])) {
+                    $prdItem = $prdDocInfo['items'][$cIdx];
+                }
+            }
+
+            if ($prdItem) {
+                if (!empty($prdItem['kode_shift_grup'])) {
+                    $blockShift = $prdItem['kode_shift_grup'];
+                }
+                if (!empty($prdItem['jam_mulai'])) {
+                    $jamStart = $prdItem['jam_mulai'];
+                }
+                if (!empty($prdItem['jam_selesai'])) {
+                    $jamEnd = $prdItem['jam_selesai'];
+                }
+                if (!empty($prdItem['jam_produksi']) && $prdItem['jam_produksi'] !== '-') {
+                    $jamProduksi = $prdItem['jam_produksi'];
+                }
+                if (!empty($prdItem['storage'])) {
+                    $blockKodeSt = $prdItem['storage'];
+                }
+            }
+
+            // 2. Fallback: Direct DB jika API Portal Produksi belum terjangkau/kosong
+            if (empty($blockShift) && empty($jamStart) && $pBatchId) {
                 try {
                     $prodPast = DB::table('production.monitoring_pasteurisasi')
                         ->where('production_batch_id', $pBatchId)
@@ -198,14 +259,12 @@ class DocPasteurisasiStorageController extends Controller
                         if (!empty($prodPast->shift)) {
                             $blockShift = $this->formatShiftGroup($prodPast->shift, $prodPast->group ?? null);
                         }
-                        // 1. Jam Tambah Data (dari jam_mulai_pasteurisasi atau created_at produksi)
                         if (!empty($prodPast->jam_mulai_pasteurisasi)) {
                             $jamStart = substr($prodPast->jam_mulai_pasteurisasi, 0, 5);
                         } elseif (!empty($prodPast->created_at)) {
                             $jamStart = Carbon::parse($prodPast->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
                         }
 
-                        // 2. Jam Selesai Pasteurisasi (dari jam_selesai_pasteurisasi atau updated_at)
                         if (!empty($prodPast->jam_selesai_pasteurisasi)) {
                             $jamEnd = substr($prodPast->jam_selesai_pasteurisasi, 0, 5);
                         } elseif (!empty($prodPast->updated_at) && !empty($prodPast->status_pasteurisasi) && stripos($prodPast->status_pasteurisasi, 'selesai') !== false) {
@@ -268,7 +327,19 @@ class DocPasteurisasiStorageController extends Controller
                     $disposisiFull .= ($disposisiFull ? ' - ' : '') . $mp->disposition_remark;
                 }
                 $mpScan = $mp->scanned_at ?: $mp->created_at;
-                $sampName = !empty($mp->revisi) ? $mp->revisi : '';
+                
+                $isResampling = stripos((string)($mp->disposition ?? ''), 'resampling') !== false
+                             || stripos((string)($mp->status ?? ''), 'resampling') !== false
+                             || stripos((string)($mp->revisi ?? ''), 'resampling') !== false;
+
+                if ($isResampling) {
+                    $sampName = 'Resampling';
+                } elseif (!empty($mp->revisi)) {
+                    $sampName = $mp->revisi;
+                } else {
+                    $sampName = 'Tengah';
+                }
+
                 $pastRows[] = [
                     'sampling' => $sampName,
                     'jam' => $mpScan ? Carbon::parse($mpScan)->setTimezone('Asia/Jakarta')->format('H:i') : '',
@@ -280,7 +351,7 @@ class DocPasteurisasiStorageController extends Controller
                     'viskositas' => $this->formatBlankIfZero($mp->visco),
                     'organo' => $mp->organo ?: '',
                     'aroma' => $mp->aroma ?? '',
-                    'warna' => $mp->color ? $mp->color->name : '',
+                    'warna' => $mp->color ? ($mp->color->code ?: $mp->color->name) : '',
                     'buih' => $this->formatBlankIfZero($mp->buih),
                     'endapan' => $mp->endapan ?: '',
                     'disposisi' => $disposisiFull ?: '',
@@ -295,12 +366,16 @@ class DocPasteurisasiStorageController extends Controller
             }
 
             // Fallback disposisi after cooling dari production jika belum diisi di QC
-            if (empty($pastRows[0]['disposisi']) && !empty($prodPast?->disposition)) {
-                $pastDispo = $prodPast->disposition;
-                if (!empty($prodPast->disposition_remark) && $prodPast->disposition_remark !== '-') {
+            $prodDispo = $prdItem['disposition'] ?? ($prodPast?->disposition ?? '');
+            if (empty($pastRows[0]['disposisi']) && !empty($prodDispo)) {
+                $pastDispo = $prodDispo;
+                if (!empty($prodPast?->disposition_remark) && $prodPast->disposition_remark !== '-') {
                     $pastDispo .= ' - ' . $prodPast->disposition_remark;
                 }
                 $pastRows[0]['disposisi'] = $pastDispo;
+                if (stripos($pastDispo, 'resampling') !== false) {
+                    $pastRows[0]['sampling'] = 'Resampling';
+                }
                 if (empty($pastRows[0]['jam']) && !empty($jamStart)) {
                     $pastRows[0]['jam'] = $jamStart;
                 }
@@ -340,7 +415,7 @@ class DocPasteurisasiStorageController extends Controller
                     'viskositas' => $this->formatBlankIfZero($msk->visco ?? null),
                     'organo' => $msk->organo ?? '',
                     'aroma' => $msk->aroma ?? '',
-                    'warna' => isset($msk->color) ? ($msk->color->name ?? '') : '',
+                    'warna' => isset($msk->color) ? ($msk->color->code ?? ($msk->color->name ?? '')) : '',
                     'buih' => $this->formatBlankIfZero($msk->buih ?? null),
                     'endapan' => $msk->endapan ?? '',
                     'kristal' => $msk->kristal ?? '',
@@ -378,7 +453,7 @@ class DocPasteurisasiStorageController extends Controller
                 'tanggal_produksi' => $batch->date ? Carbon::parse($batch->date)->format('Y-m-d') : date('Y-m-d'),
                 'jam_produksi_start' => $jamStart,
                 'jam_produksi_end' => $jamEnd,
-                'jam_produksi' => ($jamStart || $jamEnd) ? ($jamStart . ($jamEnd ? ' s/d ' . $jamEnd : '')) : '-',
+                'jam_produksi' => !empty($jamProduksi) ? $jamProduksi : (($jamStart || $jamEnd) ? ($jamStart . ($jamEnd ? ' - ' . $jamEnd : '')) : '-'),
                 'kode_shift_grup' => $blockShift,
                 'pasteurisasi_rows' => $pastRows,
                 'storage_rows' => $storageRows,

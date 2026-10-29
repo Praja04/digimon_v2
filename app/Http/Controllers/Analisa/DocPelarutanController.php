@@ -9,6 +9,7 @@ use App\Models\ProductionBatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DocPelarutanController extends Controller
@@ -82,6 +83,20 @@ class DocPelarutanController extends Controller
 
         $savedDoc = DocPelarutan::where('production_batch_id', $poId)->first();
 
+        // 1. Ambil data operasional Pelarutan dari API Portal Produksi (127.0.0.1:8001)
+        // (Shift, Grup, Jam Mulai, Jam Selesai, dan Jam Produksi)
+        $prdDocInfo = null;
+        try {
+            $prdUrl = rtrim(env('PRODUCTION_URL', 'http://127.0.0.1:8001/'), '/') . '/api/pelarutan/doc-info';
+            $prdRes = Http::timeout(3)->get($prdUrl, [
+                'po_number' => $batch->po_number,
+                'production_batch_id' => $batch->id,
+            ]);
+            if ($prdRes->successful()) {
+                $prdDocInfo = $prdRes->json('data');
+            }
+        } catch (\Throwable $e) {}
+
         // Auto-generate Batch Blocks secara LIVE langsung dari data Pelarutan 1 & 2 dan Database Produksi
         $p1Items = $batch->pelarutan_1 ? $batch->pelarutan_1->sortBy('id')->values() : collect();
         $p2Items = $batch->pelarutan_2 ? $batch->pelarutan_2->sortBy('id')->values() : collect();
@@ -109,115 +124,123 @@ class DocPelarutanController extends Controller
                 $maxRows = max(1, $p1ForBatch->count(), $p2ForBatch->count());
                 $rows = [];
 
-                // 1. Lookup production.dissolver dengan multi-tier matching PO & batch number
+                $cleanBNum = preg_replace('/\D/', '', (string)$bNum);
                 $dissolverShiftGroup = '';
                 $dissolverName = (string)$dissolver;
                 $jamProduksiStr = '';
                 $dRow = null;
+                $prdItem = null;
 
-                try {
-                    $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
-                    $cleanBNum = preg_replace('/\D/', '', (string)$bNum);
+                // 1. Cek dari response API Portal Produksi (127.0.0.1:8001)
+                if ($prdDocInfo && !empty($prdDocInfo['by_batch'])) {
+                    $prdItem = $prdDocInfo['by_batch'][(string)$bNum] ?? ($cleanBNum !== '' ? ($prdDocInfo['by_batch'][$cleanBNum] ?? null) : null);
+                    if ($prdItem) {
+                        $dissolverShiftGroup = $prdItem['kode_shift_grup'] ?? '';
+                        $jamProduksiStr = $prdItem['jam_produksi'] ?? '';
+                        if (!empty($prdItem['dissolver_number'])) {
+                            $dissolverName = $prdItem['dissolver_number'];
+                        }
+                    }
+                }
 
-                    if ($pBatchId) {
-                        $dRow = DB::table('production.dissolver')
-                            ->where('production_batch_id', $pBatchId)
-                            ->where(function($q) use ($bNum, $cleanBNum) {
-                                $q->where('batch_number', (string)$bNum);
-                                if ($cleanBNum !== '') {
-                                    $q->orWhere('batch_number', $cleanBNum);
-                                }
-                            })
-                            ->first();
+                // 2. Fallback query database jika belum ada dari API PRD
+                if (empty($dissolverShiftGroup) || empty($jamProduksiStr)) {
+                    $jamStart = '';
+                    $jamEnd = '';
+                    try {
+                        $pBatchId = $this->resolveProductionBatchId($batch->po_number, $batch->id);
 
-                        if (!$dRow) {
+                        if ($pBatchId) {
                             $dRow = DB::table('production.dissolver')
                                 ->where('production_batch_id', $pBatchId)
-                                ->orderBy('id')
+                                ->where(function($q) use ($bNum, $cleanBNum) {
+                                    $q->where('batch_number', (string)$bNum);
+                                    if ($cleanBNum !== '') {
+                                        $q->orWhere('batch_number', $cleanBNum);
+                                    }
+                                })
                                 ->first();
+
+                            if (!$dRow) {
+                                $dRow = DB::table('production.dissolver')
+                                    ->where('production_batch_id', $pBatchId)
+                                    ->orderBy('id')
+                                    ->first();
+                            }
                         }
+
+                        if ($dRow) {
+                            if (empty($dissolverShiftGroup)) {
+                                $dissolverShiftGroup = $this->formatShiftGroup($dRow->shift, $dRow->group);
+                            }
+
+                            if (!empty($dRow->dissolver_number)) {
+                                $dissolverName = $dRow->dissolver_number;
+                            }
+
+                            if (!empty($dRow->jam_mulai_proses)) {
+                                $jamStart = substr($dRow->jam_mulai_proses, 0, 5);
+                            } elseif (!empty($dRow->created_at)) {
+                                $jamStart = Carbon::parse($dRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+
+                    if (empty($jamStart) && $p1ForBatch->first() && $p1ForBatch->first()->created_at) {
+                        $jamStart = Carbon::parse($p1ForBatch->first()->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
                     }
 
+                    // Cek jam selesai dari production.pelarutan_2 / pelarutan_1 / dissolver
                     if ($dRow) {
-                        $dissolverShiftGroup = $this->formatShiftGroup($dRow->shift, $dRow->group);
+                        try {
+                            $lastProdP2 = DB::table('production.pelarutan_2')
+                                ->where('dissolver_id', $dRow->id)
+                                ->whereNotNull('jam_selesai')
+                                ->orderByDesc('id')
+                                ->first();
+                            if ($lastProdP2 && !empty($lastProdP2->jam_selesai)) {
+                                $jamEnd = Carbon::parse($lastProdP2->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
+                            }
+                        } catch (\Throwable $e) {}
 
-                        if (!empty($dRow->dissolver_number)) {
-                            $dissolverName = $dRow->dissolver_number;
-                        }
-
-                        if (!empty($dRow->jam_mulai_proses)) {
-                            $jamStart = substr($dRow->jam_mulai_proses, 0, 5);
-                        } elseif (!empty($dRow->created_at)) {
-                            $jamStart = Carbon::parse($dRow->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        if (empty($jamEnd)) {
+                            try {
+                                $lastProdP1 = DB::table('production.pelarutan_1')
+                                    ->where('dissolver_id', $dRow->id)
+                                    ->whereNotNull('jam_selesai')
+                                    ->orderByDesc('id')
+                                    ->first();
+                                if ($lastProdP1 && !empty($lastProdP1->jam_selesai)) {
+                                    $jamEnd = Carbon::parse($lastProdP1->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
+                                }
+                            } catch (\Throwable $e) {}
                         }
                     }
-                } catch (\Throwable $e) {}
 
-                if (empty($jamStart) && $p1ForBatch->first() && $p1ForBatch->first()->created_at) {
-                    $jamStart = Carbon::parse($p1ForBatch->first()->created_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                }
+                    if (empty($jamEnd)) {
+                        $lastP2 = $p2ForBatch->last();
+                        if ($lastP2 && $lastP2->updated_at) {
+                            $jamEnd = Carbon::parse($lastP2->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        } elseif ($p1ForBatch->last() && $p1ForBatch->last()->updated_at) {
+                            $jamEnd = Carbon::parse($p1ForBatch->last()->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        } elseif ($dRow && !empty($dRow->updated_at) && $dRow->updated_at != $dRow->created_at) {
+                            $jamEnd = Carbon::parse($dRow->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
+                        }
+                    }
 
-                $jamEnd = '';
-                // 1. Cek jam selesai dari production.pelarutan_2 (Jam Disposisi Release Pelarutan 2)
-                if ($dRow) {
-                    try {
-                        $lastProdP2 = DB::table('production.pelarutan_2')
-                            ->where('dissolver_id', $dRow->id)
-                            ->whereNotNull('jam_selesai')
-                            ->orderByDesc('id')
-                            ->first();
-                        if ($lastProdP2 && !empty($lastProdP2->jam_selesai)) {
-                            $jamEnd = Carbon::parse($lastProdP2->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
+                    if (empty($jamProduksiStr)) {
+                        if (!empty($jamStart) && !empty($jamEnd) && $jamEnd !== $jamStart) {
+                            $jamProduksiStr = "{$jamStart} - {$jamEnd}";
+                        } elseif (!empty($jamStart)) {
+                            $jamProduksiStr = $jamStart;
+                        } elseif (!empty($jamEnd)) {
+                            $jamProduksiStr = $jamEnd;
+                        } else {
+                            $jamProduksiStr = '-';
                         }
-                    } catch (\Throwable $e) {}
-                }
-                // 2. Fallback production.pelarutan_1 jika p2 belum ada
-                if (empty($jamEnd) && $dRow) {
-                    try {
-                        $lastProdP1 = DB::table('production.pelarutan_1')
-                            ->where('dissolver_id', $dRow->id)
-                            ->whereNotNull('jam_selesai')
-                            ->orderByDesc('id')
-                            ->first();
-                        if ($lastProdP1 && !empty($lastProdP1->jam_selesai)) {
-                            $jamEnd = Carbon::parse($lastProdP1->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
-                        }
-                    } catch (\Throwable $e) {}
-                }
-                // 3. Fallback ke QC pelarutan 2 / 1 updated_at (jam disposisi analis)
-                if (empty($jamEnd)) {
-                    $lastP2 = $p2ForBatch->last();
-                    if ($lastP2 && $lastP2->updated_at) {
-                        $jamEnd = Carbon::parse($lastP2->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                    } elseif ($p1ForBatch->last() && $p1ForBatch->last()->updated_at) {
-                        $jamEnd = Carbon::parse($p1ForBatch->last()->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
-                    } elseif ($dRow && !empty($dRow->updated_at) && $dRow->updated_at != $dRow->created_at) {
-                        $jamEnd = Carbon::parse($dRow->updated_at)->setTimezone('Asia/Jakarta')->format('H:i');
                     }
                 }
 
-                if (!empty($jamStart) && !empty($jamEnd) && $jamEnd !== $jamStart) {
-                    $jamProduksiStr = "{$jamStart} - {$jamEnd}";
-                } elseif (!empty($jamStart)) {
-                    $jamProduksiStr = $jamStart;
-                } else {
-                    $jamProduksiStr = '-';
-                }
-
-                // Fallback Shift & Grup jika belum ada
-                if (empty($dissolverShiftGroup) && $p1ForBatch->first() && !empty($p1ForBatch->first()->shift)) {
-                    $dissolverShiftGroup = $this->formatShiftGroup($p1ForBatch->first()->shift, null);
-                }
-                if (empty($dissolverShiftGroup) && !empty($jamStart) && $jamStart !== '-') {
-                    $hour = (int)substr($jamStart, 0, 2);
-                    if ($hour >= 6 && $hour < 14) {
-                        $dissolverShiftGroup = 'Shift 1 - Grup A';
-                    } elseif ($hour >= 14 && $hour < 22) {
-                        $dissolverShiftGroup = 'Shift 2 - Grup A';
-                    } else {
-                        $dissolverShiftGroup = 'Shift 3 - Grup A';
-                    }
-                }
                 if (empty($dissolverShiftGroup)) {
                     $dissolverShiftGroup = 'Shift 1 - Grup A';
                 }
@@ -250,7 +273,9 @@ class DocPelarutanController extends Controller
                     }
                     $prodP1Row = $prodP1Items->get($i) ?: $prodP1Items->last();
                     $p1JamDisp = '';
-                    if ($prodP1Row && $prodP1Row->jam_selesai) {
+                    if ($prdItem && !empty($prdItem['p1_jam_disp'][$i])) {
+                        $p1JamDisp = $prdItem['p1_jam_disp'][$i];
+                    } elseif ($prodP1Row && $prodP1Row->jam_selesai) {
                         $p1JamDisp = Carbon::parse($prodP1Row->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
                     } elseif ($p1 && $p1->disposition && $p1->updated_at) {
                         $p1JamDisp = $p1->updated_at->setTimezone('Asia/Jakarta')->format('H:i');
@@ -269,7 +294,9 @@ class DocPelarutanController extends Controller
                     }
                     $prodP2Row = $prodP2Items->get($i) ?: $prodP2Items->last();
                     $p2JamDisp = '';
-                    if ($prodP2Row && $prodP2Row->jam_selesai) {
+                    if ($prdItem && !empty($prdItem['p2_jam_disp'][$i])) {
+                        $p2JamDisp = $prdItem['p2_jam_disp'][$i];
+                    } elseif ($prodP2Row && $prodP2Row->jam_selesai) {
                         $p2JamDisp = Carbon::parse($prodP2Row->jam_selesai)->setTimezone('Asia/Jakarta')->format('H:i');
                     } elseif ($p2 && $p2->disposition && $p2->updated_at) {
                         $p2JamDisp = $p2->updated_at->setTimezone('Asia/Jakarta')->format('H:i');

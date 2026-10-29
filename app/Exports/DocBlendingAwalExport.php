@@ -201,12 +201,7 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                     $sheet->getRowDimension($r)->setRowHeight(16);
                 }
                 
-                // Notes kanan atas (Baris 5)
-                $sheet->mergeCells('M5:P5');
-                $sheet->setCellValue('M5', "Notes:\n1 lembar: 1 blending (1 pasangan batch)");
-                $sheet->getStyle('M5')->getFont()->setSize(7.5)->setItalic(true);
-                $sheet->getStyle('M5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
-                $sheet->getRowDimension(5)->setRowHeight(20);
+                $sheet->getRowDimension(5)->setRowHeight(8);
 
                 // ==========================================
                 // 2. METADATA SIKLUS BLENDING (Baris 6 - 9)
@@ -350,7 +345,7 @@ class SingleDocBlendingSheetExport implements WithEvents, WithTitle
                         $sheet->setCellValueExplicit("A{$dr}", $isTurun ? '' : $displaySamp, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("B{$dr}", $displayVol, DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("C{$dr}", (string)($row['serah_terima_jam'] ?? ''), DataType::TYPE_STRING);
-                        $sheet->setCellValueExplicit("D{$dr}", $isTurun ? '' : (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit("D{$dr}", (string)($row['serah_terima_pic'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("E{$dr}", $isTurun ? '' : $this->formatVal($row['bj'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("F{$dr}", $this->formatVal($row['brix'] ?? ''), DataType::TYPE_STRING);
                         $sheet->setCellValueExplicit("G{$dr}", $isTurun ? '' : $this->formatVal($row['ph'] ?? ''), DataType::TYPE_STRING);

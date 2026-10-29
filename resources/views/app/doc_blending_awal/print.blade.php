@@ -257,7 +257,7 @@
                         <td class="fw-bold">{!! $isTurun ? '' : nl2br(e($displaySamp)) !!}</td>
                         <td class="{{ $isTurun ? 'fw-bold' : '' }}">{{ $displayVol }}</td>
                         <td>{{ $row['serah_terima_jam'] ?? '' }}</td>
-                        <td>{{ $isTurun ? '' : ($row['serah_terima_pic'] ?? '') }}</td>
+                        <td>{{ $row['serah_terima_pic'] ?? '' }}</td>
                         <td>{{ $isTurun ? '' : ($row['bj'] ?? '') }}</td>
                         <td>{{ $row['brix'] ?? '' }}</td>
                         <td>{{ $isTurun ? '' : ($row['ph'] ?? '') }}</td>
