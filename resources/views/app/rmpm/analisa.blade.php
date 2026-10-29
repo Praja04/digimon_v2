@@ -94,7 +94,7 @@
                                 </div>
 
                                 <div class="col-md-3">
-                                    <button type="button" class="btn btn-primary w-100" id="btnMulai">
+                                    <button type="button" class="btn btn-primary w-100" id="btnMulai" onclick="handleMulai(event)">
                                         <i class="ri-play-line me-1"></i> Mulai Input
                                     </button>
                                 </div>
@@ -1951,8 +1951,8 @@
             saveDraft();
         });
 
-        $('#btnMulai').on('click', handleMulai);
-        $('#btnReset').on('click', handleReset);
+        $(document).on('click', '#btnMulai', handleMulai);
+        $(document).on('click', '#btnReset', handleReset);
         $(document).on('click', '#btnBackToSetup, .btn-back-to-setup', function(e) {
             e.preventDefault();
             saveDraft();

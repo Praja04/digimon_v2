@@ -1070,13 +1070,24 @@ public function pmKartonBct(
         ];
 
         // Allow flexible inputs so parameters not applicable to the material can be null
-        $rules['brix']    = 'nullable|array';
-        $rules['ph']      = 'nullable|array';
-        $rules['ka']      = 'nullable|array';
-        $rules['kotoran'] = 'nullable|array';
-        $rules['organo']  = 'nullable|array';
-        $rules['warna']   = 'nullable|array';
-        $rules['aroma']   = 'nullable|array';
+        $rules['brix']         = 'nullable|array';
+        $rules['ph']           = 'nullable|array';
+        $rules['ka']           = 'nullable|array';
+        $rules['%ka']          = 'nullable|array';
+        $rules['kotoran']      = 'nullable|array';
+        $rules['organo']       = 'nullable|array';
+        $rules['warna']        = 'nullable|array';
+        $rules['aroma']        = 'nullable|array';
+        $rules['nacl']         = 'nullable|array';
+        $rules['%nacl']        = 'nullable|array';
+        $rules['gross_weight'] = 'nullable|array';
+        $rules['fisik']        = 'nullable|array';
+        $rules['berat_jenis']  = 'nullable|array';
+        $rules['suhu']         = 'nullable|array';
+        $rules['aw']           = 'nullable|array';
+        $rules['viskositas']   = 'nullable|array';
+        $rules['tn']           = 'nullable|array';
+        $rules['%tn']          = 'nullable|array';
 
         $request->validate($rules);
 
@@ -1089,18 +1100,33 @@ public function pmKartonBct(
                 count($request->ph ?? []),
                 count($request->kotoran ?? []),
                 count($request->ka ?? []),
+                count($request['%ka'] ?? []),
                 count($request->organo ?? []),
                 count($request->warna ?? []),
                 count($request->aroma ?? []),
                 count($request->timbang_a ?? []),
                 count($request->timbang_b ?? []),
                 count($request->no_beaker ?? []),
+                count($request->gross_weight ?? []),
+                count($request->suhu ?? []),
+                count($request->aw ?? []),
+                count($request->viskositas ?? []),
+                count($request->berat_jenis ?? []),
+                count($request->fisik ?? []),
+                count($request->nacl ?? []),
+                count($request['%nacl'] ?? []),
+                count($request->tn ?? []),
+                count($request['%tn'] ?? []),
             ];
             $jumlah = max(1, ...$sampleCounts);
 
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
+                $kaVal = $request->ka[$i] ?? ($request['%ka'][$i] ?? null);
+                $naclVal = $request->nacl[$i] ?? ($request['%nacl'][$i] ?? null);
+                $tnVal = $request->tn[$i] ?? ($request['%tn'][$i] ?? null);
+
                 $dataAnalisa[] = [
                     'id_identitas'     => $request->id_identitas,
                     'kategori'         => $kategori,
@@ -1117,10 +1143,18 @@ public function pmKartonBct(
                     'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
                     'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
                     'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
-                    'ka'               => $this->nullableFloat($request->ka[$i] ?? null),
+                    'ka'               => $this->nullableFloat($kaVal),
                     'organo'           => $this->nullableString($request->organo[$i] ?? null),
                     'warna'            => $this->nullableString($request->warna[$i] ?? null),
                     'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
+                    'nacl'             => $this->nullableFloat($naclVal),
+                    'gross_weight'     => $this->nullableFloat($request->gross_weight[$i] ?? null),
+                    'fisik'            => $this->nullableString($request->fisik[$i] ?? null),
+                    'berat_jenis'      => $this->nullableFloat($request->berat_jenis[$i] ?? null),
+                    'suhu'             => $this->nullableFloat($request->suhu[$i] ?? null),
+                    'aw'               => $this->nullableFloat($request->aw[$i] ?? null),
+                    'viskositas'       => $this->nullableFloat($request->viskositas[$i] ?? null),
+                    'tn'               => $this->nullableFloat($tnVal),
                     'disposisi'        => $request->disposisi,
                     'status'           => $isDraft ? 'draft' : 'final',
                     'keterangan'       => $request->keterangan,
@@ -1195,12 +1229,22 @@ public function pmKartonBct(
             'fisik'        => 'nullable|array',
             'fisik.*'      => 'nullable|string',
             '%ka'          => 'nullable|array',
+            'ka'           => 'nullable|array',
             'kotoran'      => 'nullable|array',
             'organo'       => 'nullable|array',
             'warna'        => 'nullable|array',
             'aroma'        => 'nullable|array',
             '%nacl'        => 'nullable|array',
+            'nacl'         => 'nullable|array',
             'gross_weight' => 'nullable|array',
+            'ph'           => 'nullable|array',
+            'brix'         => 'nullable|array',
+            'berat_jenis'  => 'nullable|array',
+            'suhu'         => 'nullable|array',
+            'aw'           => 'nullable|array',
+            'viskositas'   => 'nullable|array',
+            'tn'           => 'nullable|array',
+            '%tn'          => 'nullable|array',
             'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
             'keterangan'   => 'nullable|string',
         ]);
@@ -1211,27 +1255,48 @@ public function pmKartonBct(
             $sampleCounts = [
                 count($request->fisik ?? []),
                 count($request['%ka'] ?? []),
+                count($request->ka ?? []),
                 count($request->kotoran ?? []),
                 count($request->organo ?? []),
                 count($request->warna ?? []),
                 count($request->aroma ?? []),
                 count($request['%nacl'] ?? []),
+                count($request->nacl ?? []),
                 count($request->gross_weight ?? []),
+                count($request->ph ?? []),
+                count($request->brix ?? []),
+                count($request->berat_jenis ?? []),
+                count($request->suhu ?? []),
+                count($request->aw ?? []),
+                count($request->viskositas ?? []),
+                count($request->tn ?? []),
+                count($request['%tn'] ?? []),
             ];
             $jumlah = max(1, ...$sampleCounts);
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
+                $kaVal = $request['%ka'][$i] ?? ($request->ka[$i] ?? null);
+                $naclVal = $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null);
+                $tnVal = $request['%tn'][$i] ?? ($request->tn[$i] ?? null);
+
                 $dataAnalisa[] = [
                     'id_identitas' => $request->id_identitas,
                     'fisik'        => $this->nullableString($request->fisik[$i] ?? null),
-                    '%ka'          => $this->nullableFloat($request['%ka'][$i] ?? null),
+                    '%ka'          => $this->nullableFloat($kaVal),
                     'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
                     'organo'       => $this->nullableString($request->organo[$i] ?? null),
                     'warna'        => $this->nullableString($request->warna[$i] ?? null),
                     'aroma'        => $this->nullableString($request->aroma[$i] ?? null),
-                    '%nacl'        => $this->nullableFloat($request['%nacl'][$i] ?? null),
+                    '%nacl'        => $this->nullableFloat($naclVal),
                     'gross_weight' => $this->nullableFloat($request->gross_weight[$i] ?? null),
+                    'ph'           => $this->nullableFloat($request->ph[$i] ?? null),
+                    'brix'         => $this->nullableFloat($request->brix[$i] ?? null),
+                    'berat_jenis'  => $this->nullableFloat($request->berat_jenis[$i] ?? null),
+                    'suhu'         => $this->nullableFloat($request->suhu[$i] ?? null),
+                    'aw'           => $this->nullableFloat($request->aw[$i] ?? null),
+                    'viskositas'   => $this->nullableFloat($request->viskositas[$i] ?? null),
+                    'tn'           => $this->nullableFloat($tnVal),
                     'disposisi'    => $request->disposisi,
                     'status'       => $isDraft ? 'draft' : 'final',
                     'keterangan'   => $request->keterangan,
@@ -1532,7 +1597,17 @@ public function pmKartonBct(
                     'min' => $std->min_standar,
                     'max' => $std->max_standar,
                 ];
-            } elseif (str_contains($upper, 'WEIGHT') || str_contains($upper, 'BERAT')) {
+            } elseif (str_contains($upper, 'BERAT JENIS')) {
+                $fields[] = [
+                    'name' => 'berat_jenis',
+                    'key' => 'berat_jenis[]',
+                    'label' => 'Berat Jenis',
+                    'type' => 'number',
+                    'unit' => $uom ?: '',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'WEIGHT') || str_contains($upper, 'BERAT') || str_contains($upper, 'GROSS')) {
                 $fields[] = [
                     'name' => 'gross_weight',
                     'key' => 'gross_weight[]',
@@ -1563,43 +1638,6 @@ public function pmKartonBct(
                     'max' => $std->max_standar,
                 ];
             }
-        }
-
-        // Ensure laboratory calculation parameters (% Kotoran & % Kadar Air) are ALWAYS present for all materials
-        $hasKotoran = false;
-        $hasKa = false;
-        $kaName = $isGaram ? '%ka' : 'ka';
-        foreach ($fields as $f) {
-            if ($f['name'] === 'kotoran') {
-                $hasKotoran = true;
-            }
-            if ($f['name'] === $kaName || $f['name'] === 'ka' || $f['name'] === '%ka') {
-                $hasKa = true;
-            }
-        }
-
-        if (!$hasKotoran) {
-            $fields[] = [
-                'name' => 'kotoran',
-                'key' => 'kotoran[]',
-                'label' => $isGaram ? 'Kotoran' : '% Kotoran',
-                'type' => 'number',
-                'unit' => $isGaram ? '' : '%',
-                'min' => null,
-                'max' => null,
-            ];
-        }
-
-        if (!$hasKa) {
-            $fields[] = [
-                'name' => $kaName,
-                'key' => $isGaram ? '%ka[]' : 'ka[]',
-                'label' => $isGaram ? '%KA' : '% KA',
-                'type' => 'number',
-                'unit' => '%',
-                'min' => null,
-                'max' => null,
-            ];
         }
 
         // Keep sensory parameters (Organo, Warna, Aroma) at the end of the table
