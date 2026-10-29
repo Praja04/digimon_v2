@@ -535,7 +535,7 @@ class PackagingInnerOuterController extends Controller
             'foto_pengecekan.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:20480',
             ],
 
             'foto_ketidaksesuaian' => [
@@ -547,7 +547,7 @@ class PackagingInnerOuterController extends Controller
             'foto_ketidaksesuaian.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:20480',
             ],
 
             'keterangan' => [

@@ -516,7 +516,7 @@
 
                             <div
                                 id="foto_pengecekan_preview"
-                                class="photo-preview-grid mt-3"
+                                class="d-flex flex-column gap-2 mt-2"
                             ></div>
                         </div>
                     </div>
@@ -811,7 +811,7 @@
 
                             <div
                                 id="foto_ketidaksesuaian_preview"
-                                class="photo-preview-grid mt-3"
+                                class="d-flex flex-column gap-2 mt-2"
                             ></div>
                         </div>
 
@@ -882,7 +882,7 @@
 
 
 <div class="modal fade" id="photoCameraModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Ambil Foto</h5>
@@ -894,7 +894,7 @@
                     id="photoCameraPreview"
                     autoplay
                     playsinline
-                    style="width:100%;border-radius:12px;"
+                    class="camera-video"
                 ></video>
 
                 <canvas id="photoCameraCanvas" hidden></canvas>
@@ -913,6 +913,8 @@
         </div>
     </div>
 </div>
+
+<input type="file" id="native_camera_inner_outer" accept="image/*" capture="environment" class="d-none">
 
 @endsection
 
@@ -1156,6 +1158,15 @@
         .nonconformity-grid {
             grid-template-columns: 1fr;
         }
+    }
+
+    .camera-video {
+        width: 100%;
+        min-height: 280px;
+        max-height: 65vh;
+        border-radius: 12px;
+        background: #111827;
+        object-fit: cover;
     }
 </style>
 
@@ -1759,23 +1770,71 @@
             return true;
         }
 
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 KB';
+            const sizeInKb = (bytes / 1024).toFixed(1);
+            return (bytes >= 1024 * 1024)
+                ? (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+                : sizeInKb + ' KB';
+        }
+
         function renderSelectedPhotos(input) {
             const preview = document.getElementById(
                 `${input.id}_preview`
             );
+            if (!preview) return;
 
             preview.innerHTML = '';
 
-            Array.from(input.files ?? []).forEach(function (file) {
-                const item = document.createElement('div');
-                item.className = 'photo-preview-item';
+            const files = Array.from(input.files ?? []);
+            if (files.length === 0) return;
 
-                const image = document.createElement('img');
-                image.src = URL.createObjectURL(file);
-                image.alt = file.name;
+            files.forEach(function (file, index) {
+                const card = document.createElement('div');
+                card.className = 'd-flex align-items-center gap-3 p-2 border rounded bg-light';
+                card.style.maxWidth = '480px';
 
-                item.appendChild(image);
-                preview.appendChild(item);
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+                img.style.width = '70px';
+                img.style.height = '70px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '6px';
+                img.style.flexShrink = '0';
+
+                const info = document.createElement('div');
+                info.className = 'flex-grow-1 min-w-0';
+
+                const name = document.createElement('div');
+                name.className = 'fw-semibold text-truncate small text-dark';
+                name.textContent = file.name;
+                name.title = file.name;
+
+                const size = document.createElement('small');
+                size.className = 'text-muted d-block';
+                size.textContent = formatFileSize(file.size);
+
+                const btnHapus = document.createElement('button');
+                btnHapus.type = 'button';
+                btnHapus.className = 'btn btn-xs btn-outline-danger mt-1 py-0 px-2';
+                btnHapus.innerHTML = '<i class="mdi mdi-delete-outline me-1"></i> Hapus Foto';
+                btnHapus.addEventListener('click', function () {
+                    const dt = new DataTransfer();
+                    Array.from(input.files ?? []).forEach((f, i) => {
+                        if (i !== index) dt.items.add(f);
+                    });
+                    input.files = dt.files;
+                    renderSelectedPhotos(input);
+                });
+
+                info.appendChild(name);
+                info.appendChild(size);
+                info.appendChild(btnHapus);
+
+                card.appendChild(img);
+                card.appendChild(info);
+                preview.appendChild(card);
             });
         }
 
@@ -1807,12 +1866,32 @@
                 });
             });
 
+        const nativeCameraInnerOuter = document.getElementById('native_camera_inner_outer');
+
+        function triggerNativeCameraInnerOuter(targetInput) {
+            if (!nativeCameraInnerOuter) return;
+            nativeCameraInnerOuter.onchange = function () {
+                if (this.files && this.files.length > 0) {
+                    if (mergeFiles(targetInput, Array.from(this.files))) {
+                        renderSelectedPhotos(targetInput);
+                    }
+                }
+                this.value = '';
+            };
+            nativeCameraInnerOuter.click();
+        }
+
         document.querySelectorAll('.btn-camera-photo')
             .forEach(function (button) {
                 button.addEventListener('click', async function () {
                     activePhotoInput = document.getElementById(
                         this.dataset.target
                     );
+
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        triggerNativeCameraInnerOuter(activePhotoInput);
+                        return;
+                    }
 
                     cameraModal.show();
 
@@ -1828,8 +1907,8 @@
 
                         cameraPreview.srcObject = cameraStream;
                     } catch (error) {
-                        alert('Kamera tidak dapat dibuka. Pastikan izin kamera aktif.');
                         cameraModal.hide();
+                        triggerNativeCameraInnerOuter(activePhotoInput);
                     }
                 });
             });

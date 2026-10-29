@@ -530,6 +530,7 @@
                                 </a>
                             @endforeach
                         </div>
+                        <div id="fotoNewPreview" class="d-flex flex-column gap-2 mt-2"></div>
                     </div>
 
                     <div class="section-title mt-4">
@@ -845,6 +846,7 @@
                                 </a>
                             @endforeach
                         </div>
+                        <div id="fotoKetidaksesuaianNewPreview" class="d-flex flex-column gap-2 mt-2"></div>
                     </div>
 
                     <div class="mt-4">
@@ -957,6 +959,8 @@
         </div>
     </div>
 </div>
+
+<input type="file" id="nativeCameraKartonFallback" accept="image/*" capture="environment" hidden>
 
 @endsection
 
@@ -1738,6 +1742,14 @@ document.addEventListener(
             return true;
         }
 
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 KB';
+            const sizeInKb = (bytes / 1024).toFixed(1);
+            return (bytes >= 1024 * 1024)
+                ? (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+                : sizeInKb + ' KB';
+        }
+
         function previewFiles(
             input,
             previewId,
@@ -1752,38 +1764,65 @@ document.addEventListener(
                 return;
             }
 
-            const preview =
-                document.getElementById(
-                    previewId
-                );
+            const targetContainerId = previewId === 'fotoPreview'
+                ? 'fotoNewPreview'
+                : (previewId === 'fotoKetidaksesuaianPreview' ? 'fotoKetidaksesuaianNewPreview' : previewId);
 
-            preview
-                .querySelectorAll(
-                    '[data-new-preview="1"]'
-                )
-                .forEach(
-                    element => element.remove()
-                );
+            const container = document.getElementById(targetContainerId);
+            if (!container) return;
 
-            Array.from(input.files)
-                .forEach(function (file) {
-                    const wrapper =
-                        document.createElement('div');
+            container.innerHTML = '';
 
-                    wrapper.dataset.newPreview = '1';
+            const files = Array.from(input.files ?? []);
+            if (files.length === 0) return;
 
-                    const image =
-                        document.createElement('img');
+            files.forEach(function (file, index) {
+                const card = document.createElement('div');
+                card.className = 'd-flex align-items-center gap-3 p-2 border rounded bg-light';
+                card.style.maxWidth = '480px';
 
-                    image.src =
-                        URL.createObjectURL(file);
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+                img.style.width = '70px';
+                img.style.height = '70px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '6px';
+                img.style.flexShrink = '0';
 
-                    image.alt =
-                        'Preview foto baru';
+                const info = document.createElement('div');
+                info.className = 'flex-grow-1 min-w-0';
 
-                    wrapper.appendChild(image);
-                    preview.appendChild(wrapper);
+                const name = document.createElement('div');
+                name.className = 'fw-semibold text-truncate small text-dark';
+                name.textContent = file.name;
+                name.title = file.name;
+
+                const size = document.createElement('small');
+                size.className = 'text-muted d-block';
+                size.textContent = formatFileSize(file.size);
+
+                const btnHapus = document.createElement('button');
+                btnHapus.type = 'button';
+                btnHapus.className = 'btn btn-xs btn-outline-danger mt-1 py-0 px-2';
+                btnHapus.innerHTML = '<i class="mdi mdi-delete-outline me-1"></i> Hapus Foto';
+                btnHapus.addEventListener('click', function () {
+                    const dt = new DataTransfer();
+                    Array.from(input.files ?? []).forEach((f, i) => {
+                        if (i !== index) dt.items.add(f);
+                    });
+                    input.files = dt.files;
+                    previewFiles(input, previewId, existingCount);
                 });
+
+                info.appendChild(name);
+                info.appendChild(size);
+                info.appendChild(btnHapus);
+
+                card.appendChild(img);
+                card.appendChild(info);
+                container.appendChild(card);
+            });
         }
 
         const fotoInput =
@@ -1917,6 +1956,32 @@ document.addEventListener(
                 'cameraCanvas'
             );
 
+        const nativeCameraKartonFallback = document.getElementById('nativeCameraKartonFallback');
+
+        function triggerNativeCameraKarton(targetInputId) {
+            if (!nativeCameraKartonFallback) return;
+            nativeCameraKartonFallback.onchange = function () {
+                if (!this.files || !this.files.length) return;
+                const targetInput = document.getElementById(targetInputId);
+                if (!targetInput) return;
+
+                const existingCount = targetInputId === 'foto' ? existingFotoCount : existingFotoKetidaksesuaianCount;
+                if (existingCount + targetInput.files.length >= 10) {
+                    alert('Maksimal total 10 foto.');
+                    this.value = '';
+                    return;
+                }
+
+                const dataTransfer = new DataTransfer();
+                Array.from(targetInput.files).forEach(f => dataTransfer.items.add(f));
+                dataTransfer.items.add(this.files[0]);
+                targetInput.files = dataTransfer.files;
+                targetInput.dispatchEvent(new Event('change'));
+                this.value = '';
+            };
+            nativeCameraKartonFallback.click();
+        }
+
         document
             .querySelectorAll(
                 '[data-camera-target]'
@@ -1937,6 +2002,11 @@ document.addEventListener(
                             return;
                         }
 
+                        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                            triggerNativeCameraKarton(activeInputId);
+                            return;
+                        }
+
                         try {
                             stream =
                                 await navigator
@@ -1952,9 +2022,8 @@ document.addEventListener(
                             video.srcObject = stream;
                             cameraModal.show();
                         } catch (error) {
-                            alert(
-                                'Kamera tidak dapat diakses. Periksa izin kamera browser.'
-                            );
+                            cameraModal.hide();
+                            triggerNativeCameraKarton(activeInputId);
                         }
                     }
                 );

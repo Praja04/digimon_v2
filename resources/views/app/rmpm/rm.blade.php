@@ -723,6 +723,7 @@
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
+                                                    <th>Aksi</th>
                                                     <th>No SPB</th>
                                                     <th>Jenis</th>
                                                     <th>Supplier</th>
@@ -732,7 +733,6 @@
                                                     <th>Selesai Analisa</th>
                                                     <th>Keterangan</th>
                                                     <th>QR Code</th>
-                                                    <th>Aksi</th>
                                                 </tr>
                                             </thead>
                                             <tbody></tbody>
@@ -848,6 +848,7 @@
                 },
                 columns: [
                     { data: 'DT_RowIndex',        name: 'DT_RowIndex',        orderable: false, searchable: false },
+                    { data: 'action',              name: 'action',              orderable: false, searchable: false },
                     { data: 'no_spb',              name: 'no_spb' },
                     { data: 'jenis',               name: 'jenis' },
                     { data: 'supplier',            name: 'supplier' },
@@ -869,7 +870,6 @@
                         }
                     },
                     { data: 'qr_code',  name: 'qr_code',  orderable: false, searchable: false },
-                    { data: 'action',   name: 'action',   orderable: false, searchable: false },
                 ]
             });
 
@@ -1220,7 +1220,9 @@
                     },
                     error: function(xhr) {
                         if (xhr.status === 422) {
-                            let errors = xhr.responseJSON.errors;
+                            let errors = xhr.responseJSON.errors || {};
+                            let firstError = Object.values(errors).flat()[0] || xhr.responseJSON.message || 'Periksa kembali inputan Anda.';
+                            Swal.fire({ icon: 'warning', title: 'Validasi Gagal', text: firstError });
                             if (errors.jenis)               { $('#jenis').addClass('is-invalid');               $('.errorJenis').html(errors.jenis.join('<br>')); }
                             if (errors.tanggal_kedatangan)  { $('#tanggal_kedatangan').addClass('is-invalid');  $('.errorTanggalKedatangan').html(errors.tanggal_kedatangan.join('<br>')); }
                             if (errors.supplier)            { $('#supplier').addClass('is-invalid');            $('.errorSupplier').html(errors.supplier.join('<br>')); }

@@ -337,7 +337,7 @@ class PackagingPouchController extends Controller
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:20480',
             ],
 
             'foto' => [
@@ -349,7 +349,7 @@ class PackagingPouchController extends Controller
             'foto.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:20480',
             ],
 
             'keterangan' => [

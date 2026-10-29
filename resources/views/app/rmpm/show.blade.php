@@ -25,8 +25,9 @@
 @section('content')
 @php
     $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
-    $isGaram = ($jenisUpper === 'GARAM');
-    $isKelapaTebu = (str_contains($jenisUpper, 'KELAPA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'GULA'));
+    $isGaram = str_contains($jenisUpper, 'GARAM');
+    // Hanya Gula Kelapa (GK) dan Gula Tebu (GT) yang memiliki opsi STA dan Long Term (Uji Kristal)
+    $isKelapaTebu = (str_contains($jenisUpper, 'KELAPA') || str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GK' || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
     $isGulaKristal = $isKelapaTebu;
 @endphp
 <div class="page-content">
@@ -71,14 +72,15 @@
                                 </a>
                                 @php
                                     $isGula = str_contains(strtoupper($identitas->jenis ?? ''), 'GULA');
-                                    $isFinalRm = false;
-                                    if ($isGula && $identitas->analisaShortTerm && $identitas->analisaShortTerm->isNotEmpty()) {
-                                        $hasFinal = $identitas->analisaShortTerm->contains(fn($a) => !empty($a->status) && $a->status !== 'draft');
-                                        $hasDraft = $identitas->analisaShortTerm->contains(fn($a) => $a->status === 'draft');
-                                        $isFinalRm = ($hasFinal && !$hasDraft);
+                                    $hasAnalisaRm = false;
+                                    if ($isGula && (
+                                        ($identitas->analisaShortTerm && $identitas->analisaShortTerm->isNotEmpty()) ||
+                                        ($identitas->analisaGaramGula && $identitas->analisaGaramGula->isNotEmpty())
+                                    )) {
+                                        $hasAnalisaRm = true;
                                     }
                                 @endphp
-                                @if ($isGula && $isFinalRm)
+                                @if ($isGula && $hasAnalisaRm)
                                 <a href="{{ route('doc-rm.index', ['id' => $identitas->id]) }}" class="btn btn-success" title="Buka Dokumen Laporan Kalkulasi RM">
                                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Laporan
                                 </a>
