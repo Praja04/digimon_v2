@@ -666,12 +666,17 @@
 
                             {{-- TABEL BENAR-BENAR ADA DI DALAM CARD DATA RAW MATERIAL --}}
                             <div class="collapse rm-card-detail rm-data-detail" id="dataCardDetail">
-                                <div class="rm-card-detail-header">
+                                <div class="rm-card-detail-header d-flex flex-wrap align-items-center justify-content-between gap-2">
                                     <div>
                                         <h5 class="fw-bold mb-1">Daftar Raw Material</h5>
                                         <p class="text-muted small mb-0">
-                                            Pilih data melalui tombol Lihat untuk melanjutkan proses yang sudah ada.
+                                            Pilih data melalui tombol Lihat untuk analisa, atau tombol Export untuk dokumen kalkulasi.
                                         </p>
+                                    </div>
+                                    <div>
+                                        <a href="{{ route('doc-rm.index') }}" class="btn btn-success btn-sm">
+                                            <i class="ri-file-excel-2-line me-1"></i> Form Dokumen Kalkulasi RM
+                                        </a>
                                     </div>
                                 </div>
 

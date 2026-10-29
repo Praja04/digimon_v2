@@ -251,6 +251,19 @@ class PackagingPouchController extends Controller
                 $packagingIncoming->jumlah_sampel,
         ]);
 
+        if ($request->filled('samples_json')) {
+            $decodedSamples = json_decode(
+                $request->input('samples_json'),
+                true
+            );
+
+            if (is_array($decodedSamples)) {
+                $request->merge([
+                    'samples' => $decodedSamples,
+                ]);
+            }
+        }
+
         $rules = [
             'save_mode' => [
                 'required',
@@ -273,7 +286,7 @@ class PackagingPouchController extends Controller
                 $isFinal ? 'required' : 'nullable',
                 'integer',
                 'min:1',
-                'max:200',
+                'max:275',
             ],
 
             'no_batch' => [
@@ -294,7 +307,7 @@ class PackagingPouchController extends Controller
 
             'rekomendasi' => [
                 $isFinal ? 'required' : 'nullable',
-                'in:Diterima,Diterima Bersyarat,Ditolak,WIP',
+                'in:Diterima,Diterima Bersyarat,Ditolak',
             ],
 
             'konfirmasi_ketidaksesuaian' => [
@@ -515,6 +528,9 @@ class PackagingPouchController extends Controller
             [
                 'jumlah_sampel.required' =>
                     'Jumlah sampel wajib diisi.',
+
+                'jumlah_sampel.max' =>
+                    'Jumlah sampel maksimal 275.',
 
                 'rekomendasi.required' =>
                     'Rekomendasi wajib dipilih untuk Simpan Final.',

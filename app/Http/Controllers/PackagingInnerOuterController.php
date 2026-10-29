@@ -377,7 +377,7 @@ class PackagingInnerOuterController extends Controller
                 'required',
                 'integer',
                 'min:1',
-                'max:50',
+                'max:275',
             ],
 
             'no_batch' => [
@@ -500,7 +500,7 @@ class PackagingInnerOuterController extends Controller
 
             'rekomendasi' => [
                 $isFinal ? 'required' : 'nullable',
-                'in:Diterima,Diterima Bersyarat,Ditolak,WIP',
+                'in:Diterima,Diterima Bersyarat,Ditolak',
             ],
 
             'konfirmasi_ketidaksesuaian' => [

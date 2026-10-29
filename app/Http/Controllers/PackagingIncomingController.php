@@ -869,7 +869,7 @@ class PackagingIncomingController extends Controller
                     'required',
                     'integer',
                     'min:1',
-                    'max:50',
+                    'max:275',
                 ],
 
                 'jenis_incoming_id' => [
@@ -949,7 +949,7 @@ class PackagingIncomingController extends Controller
                     'Jumlah sampel minimal 1.',
 
                 'jumlah_sampel.max' =>
-                    'Jumlah sampel maksimal 50.',
+                    'Jumlah sampel maksimal 275.',
 
                 'jenis_incoming_id.required' =>
                     'Jenis incoming wajib dipilih.',

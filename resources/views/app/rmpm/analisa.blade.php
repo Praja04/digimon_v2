@@ -5,7 +5,8 @@
 @php
     $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
     $isGaram = ($jenisUpper === 'GARAM');
-    $isGulaKristal = (!$isGaram && (str_contains($jenisUpper, 'GULA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'KELAPA')));
+    $isKelapaTebu = (str_contains($jenisUpper, 'KELAPA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'GULA'));
+    $isGulaKristal = $isKelapaTebu;
 @endphp
 <div class="page-content">
     <div class="container-fluid">
@@ -61,42 +62,24 @@
                             </div>
 
                             <div class="row g-3 align-items-end">
-                                @if ($isGulaKristal)
+                                @if ($isKelapaTebu)
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold">Pilih Kategori / Jenis Analisa</label>
                                     <div class="row g-2">
-                                        <div class="col-md-3 col-6">
-                                            <input type="radio" class="btn-check" name="analisa_type" id="katIncoming" value="incoming" checked>
-                                            <label class="btn btn-outline-primary w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katIncoming">
-                                                <i class="ri-inbox-archive-line fs-5 mb-1"></i>
-                                                <span class="fw-bold">1. Incoming</span>
-                                                <small class="text-muted" style="font-size:11px;">Wajib Lengkap</small>
-                                                <span id="setupBadgeIncoming" class="badge bg-primary text-white mt-1" style="display:none; font-size:10px;"></span>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-3 col-6">
-                                            <input type="radio" class="btn-check" name="analisa_type" id="katSta" value="sta">
+                                        <div class="col-md-6 col-12">
+                                            <input type="radio" class="btn-check" name="analisa_type" id="katSta" value="sta" checked>
                                             <label class="btn btn-outline-info w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katSta">
                                                 <i class="ri-flashlight-line fs-5 mb-1"></i>
-                                                <span class="fw-bold">2. STA</span>
-                                                <small class="text-muted" style="font-size:11px;">Fleksibel / Parsial</small>
+                                                <span class="fw-bold">1. STA</span>
+                                                <small class="text-muted" style="font-size:11px;">Short Term Analisa</small>
                                                 <span id="setupBadgeSta" class="badge bg-info text-white mt-1" style="display:none; font-size:10px;"></span>
                                             </label>
                                         </div>
-                                        <div class="col-md-3 col-6">
-                                            <input type="radio" class="btn-check" name="analisa_type" id="katMonitoring" value="monitoring">
-                                            <label class="btn btn-outline-success w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katMonitoring">
-                                                <i class="ri-line-chart-line fs-5 mb-1"></i>
-                                                <span class="fw-bold">3. Monitoring</span>
-                                                <small class="text-muted" style="font-size:11px;">Pemantauan Berkala</small>
-                                                <span id="setupBadgeMonitoring" class="badge bg-success text-white mt-1" style="display:none; font-size:10px;"></span>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-3 col-6">
+                                        <div class="col-md-6 col-12">
                                             <input type="radio" class="btn-check" name="analisa_type" id="katLongTerm" value="long-term">
                                             <label class="btn btn-outline-dark w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katLongTerm">
                                                 <i class="ri-microscope-line fs-5 mb-1"></i>
-                                                <span class="fw-bold">4. Long Term</span>
+                                                <span class="fw-bold">2. Long Term</span>
                                                 <small class="text-muted" style="font-size:11px;">Uji Kristal</small>
                                                 <span id="setupBadgeLongTerm" class="badge bg-dark text-white mt-1" style="display:none; font-size:10px;"></span>
                                             </label>
@@ -129,7 +112,7 @@
                         {{-- STEP 2: Form --}}
                         <div id="analisaSection" style="display:none;">
 
-                            @if ($isGulaKristal)
+                            @if ($isKelapaTebu)
                             {{-- Category Switcher Bar --}}
                             <div class="card bg-light border p-2 mb-3 rounded-3" id="categorySwitcherNav">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -145,17 +128,11 @@
                                         </span>
                                     </div>
                                     <div class="btn-group btn-group-sm flex-wrap" role="group">
-                                        <button type="button" class="btn btn-outline-primary btn-category-switch" data-cat="incoming">
-                                            <i class="ri-inbox-archive-line me-1"></i> 1. Incoming <span id="badgeCatIncoming" class="badge bg-primary text-white ms-1" style="display:none;"></span>
-                                        </button>
                                         <button type="button" class="btn btn-outline-info btn-category-switch" data-cat="sta">
-                                            <i class="ri-flashlight-line me-1"></i> 2. STA <span id="badgeCatSta" class="badge bg-info text-white ms-1" style="display:none;"></span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-success btn-category-switch" data-cat="monitoring">
-                                            <i class="ri-line-chart-line me-1"></i> 3. Monitoring <span id="badgeCatMonitoring" class="badge bg-success text-white ms-1" style="display:none;"></span>
+                                            <i class="ri-flashlight-line me-1"></i> 1. STA <span id="badgeCatSta" class="badge bg-info text-white ms-1" style="display:none;"></span>
                                         </button>
                                         <button type="button" class="btn btn-outline-dark btn-category-switch" data-cat="long-term">
-                                            <i class="ri-microscope-line me-1"></i> 4. Long Term <span id="badgeCatLongTerm" class="ms-1" style="display:none;"></span>
+                                            <i class="ri-microscope-line me-1"></i> 2. Long Term <span id="badgeCatLongTerm" class="ms-1" style="display:none;"></span>
                                         </button>
                                     </div>
                                 </div>
@@ -179,9 +156,14 @@
                                         <i class="ri-lock-2-line me-1"></i> Status: Final (Terkunci)
                                     </span>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger" id="btnReset">
-                                    <i class="ri-refresh-line me-1"></i> Reset
-                                </button>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-back-to-setup" title="Kembali ke setup jumlah sampel">
+                                        <i class="ri-arrow-left-line me-1"></i> Setup
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="btnReset">
+                                        <i class="ri-refresh-line me-1"></i> Reset
+                                    </button>
+                                </div>
                             </div>
 
                             {{-- Alert Banner for FINAL (LOCKED) --}}
@@ -673,6 +655,22 @@
         border-color: #dee2e6;
     }
 
+    #analisaAccordion .analisa-table .input-group {
+        flex-wrap: nowrap !important;
+        min-width: 110px;
+    }
+
+    #analisaAccordion .analisa-table .input-group .form-control-sm {
+        min-width: 0 !important;
+        flex: 1 1 auto;
+    }
+
+    #analisaAccordion .analisa-table .input-group-text {
+        white-space: nowrap !important;
+        font-size: 11px;
+        padding: 0.25rem 0.5rem;
+    }
+
     #analisaAccordion .analisa-table .form-control-sm:focus,
     #analisaAccordion .analisa-table .form-select-sm:focus {
         border-color: #86b7fe;
@@ -987,12 +985,12 @@
     const SERVER_INITIAL_GLASSWARE = @json($initialGlassware ?? null);
     const SERVER_INITIAL_STANDARDS = @json($initialStandards ?? null);
     const SERVER_INITIAL_PARAMETERS = @json($initialParameters ?? null);
+    const SERVER_DYNAMIC_FIELDS = @json($dynamicFields ?? []);
 
     function isGulaKristalMaterial(jenisStr) {
         if (!jenisStr) return false;
         const j = jenisStr.toUpperCase().trim();
-        if (j === 'GARAM') return false;
-        return j.includes('GULA') || j.includes('TEBU') || j.includes('KELAPA');
+        return j.includes('TEBU') || j.includes('KELAPA') || j.includes('GULA');
     }
 
     let currentType = null;
@@ -1018,7 +1016,7 @@
 
     function initCategorySampleCounts() {
         ['incoming', 'sta', 'monitoring'].forEach(cat => {
-            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === cat);
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === cat || (cat === 'sta' && (item.kategori || 'incoming') === 'incoming'));
             if (matching.length > 0) {
                 categorySampleCounts[cat] = matching.length;
                 return;
@@ -1556,15 +1554,15 @@
         if (triggerChange) $select.trigger('change');
     }
 
-    // Short-term fields definition (7 columns in Resume Table - Tab 1)
-    const SHORT_TERM_FIELDS = [
-        { key: 'brix[]', label: 'Brix', type: 'number', unit: '' },
-        { key: 'ph[]', label: 'pH', type: 'number', unit: '' },
-        { key: 'kotoran[]', label: '% Kotoran', type: 'number', unit: '%' },
-        { key: 'ka[]', label: '% KA', type: 'number', unit: '%' },
-        { key: 'organo[]', label: 'Organo', type: 'organo-select', unit: '' },
-        { key: 'warna[]', label: 'Warna', type: 'dropdown', masterKey: 'warna', unit: '' },
-        { key: 'aroma[]', label: 'Aroma', type: 'dropdown', masterKey: 'aroma', unit: '' },
+    // Default short-term fields definition (7 parameters of Gula Kelapa & Gula Tebu)
+    const DEFAULT_SHORT_TERM_FIELDS = [
+        { name: 'brix', key: 'brix[]', label: 'Brix', type: 'number', unit: '' },
+        { name: 'ph', key: 'ph[]', label: 'pH', type: 'number', unit: '' },
+        { name: 'kotoran', key: 'kotoran[]', label: '% Kotoran', type: 'number', unit: '%' },
+        { name: 'ka', key: 'ka[]', label: '% KA', type: 'number', unit: '%' },
+        { name: 'organo', key: 'organo[]', label: 'Organo', type: 'organo-select', unit: '' },
+        { name: 'warna', key: 'warna[]', label: 'Warna', type: 'dropdown', masterKey: 'warna', unit: '' },
+        { name: 'aroma', key: 'aroma[]', label: 'Aroma', type: 'dropdown', masterKey: 'aroma', unit: '' },
     ];
 
     // Tab 2: Lembar % Kotoran fields definition (4 data columns)
@@ -1582,17 +1580,26 @@
         { key: 'ka_calc', label: 'Hasil % Kadar Air', type: 'readonly', unit: '%' },
     ];
 
-    // Garam-Gula table fields definition
-    const GARAM_GULA_FIELDS = [
-        { key: 'fisik[]', label: 'Fisik', type: 'text', unit: '' },
-        { key: '%ka[]', label: '%KA', type: 'number', unit: '%' },
-        { key: 'kotoran[]', label: 'Kotoran', type: 'number', unit: '' },
-        { key: 'organo[]', label: 'Organo', type: 'organo-select', unit: '' },
-        { key: 'warna[]', label: 'Warna', type: 'dropdown', masterKey: 'warna', unit: '' },
-        { key: 'aroma[]', label: 'Aroma', type: 'dropdown', masterKey: 'aroma', unit: '' },
-        { key: '%nacl[]', label: '%NaCl', type: 'number', unit: '%' },
-        { key: 'gross_weight[]', label: 'Gross Weight', type: 'number', unit: 'kg' },
+    // Default Garam table fields definition (8 parameters of Garam)
+    const DEFAULT_GARAM_GULA_FIELDS = [
+        { name: 'fisik', key: 'fisik[]', label: 'Fisik', type: 'text', unit: '' },
+        { name: 'kotoran', key: 'kotoran[]', label: 'Kotoran', type: 'number', unit: '' },
+        { name: '%ka', key: '%ka[]', label: '%KA', type: 'number', unit: '%' },
+        { name: 'organo', key: 'organo[]', label: 'Organo', type: 'organo-select', unit: '' },
+        { name: 'warna', key: 'warna[]', label: 'Warna', type: 'dropdown', masterKey: 'warna', unit: '' },
+        { name: 'aroma', key: 'aroma[]', label: 'Aroma', type: 'dropdown', masterKey: 'aroma', unit: '' },
+        { name: '%nacl', key: '%nacl[]', label: '%NaCl', type: 'number', unit: '%' },
+        { name: 'gross_weight', key: 'gross_weight[]', label: 'Gross Weight', type: 'number', unit: 'kg' },
     ];
+
+    // Auto-detect dynamic fields from Master Standar RM
+    const SHORT_TERM_FIELDS = (SERVER_DYNAMIC_FIELDS && SERVER_DYNAMIC_FIELDS.length > 0)
+        ? SERVER_DYNAMIC_FIELDS
+        : DEFAULT_SHORT_TERM_FIELDS;
+
+    const GARAM_GULA_FIELDS = (SERVER_DYNAMIC_FIELDS && SERVER_DYNAMIC_FIELDS.length > 0)
+        ? SERVER_DYNAMIC_FIELDS
+        : DEFAULT_GARAM_GULA_FIELDS;
 
     const FIELD_DEFS = {
         'short-term': [
@@ -1699,8 +1706,9 @@
             }
 
             // Pulse highlight target input column in Ringkasan
-            const targetSelector = target === 'kotoran' ? 'input[name="kotoran[]"]' : 'input[name="ka[]"]';
-            const $targetInputs = $('#tableAnalisaShortTerm tbody ' + targetSelector);
+            const targetSelector = target === 'kotoran' ? 'input[name="kotoran[]"]' : (currentType === 'garam-gula' ? 'input[name="%ka[]"]' : 'input[name="ka[]"]');
+            const $targetTable = (currentType === 'garam-gula') ? $('#tableAnalisaGaramGula') : $('#tableAnalisaShortTerm');
+            const $targetInputs = $targetTable.find('tbody ' + targetSelector);
             $targetInputs.closest('td').addClass('highlight-flash');
             setTimeout(() => {
                 $targetInputs.closest('td').removeClass('highlight-flash');
@@ -1945,16 +1953,27 @@
 
         $('#btnMulai').on('click', handleMulai);
         $('#btnReset').on('click', handleReset);
-        $(document).on('click', '#btnBackToSetup', function(e) {
+        $(document).on('click', '#btnBackToSetup, .btn-back-to-setup', function(e) {
             e.preventDefault();
             saveDraft();
             currentType = null;
             $('#analisaSection, #dividerForm').hide();
             updateSetupBadges();
             $('#setupSection').slideDown(150);
-            const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
-            const showCount = categorySampleCounts[activeRadio] || 1;
+
+            const isKelapaTebu = isGulaKristalMaterial(JENIS);
+            const isGaram = (JENIS.toUpperCase().trim() === 'GARAM');
+            let showCount = 1;
+            if (isKelapaTebu) {
+                const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'sta';
+                showCount = categorySampleCounts[activeRadio] || 1;
+            } else if (isGaram) {
+                showCount = currentJumlah || (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 ? SERVER_GARAM_GULA.length : (categorySampleCounts['garam-gula'] || 1));
+            } else {
+                showCount = currentJumlah || (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0 ? SERVER_SHORT_TERM.length : (categorySampleCounts['incoming'] || 1));
+            }
             $('#jumlahData').val(showCount);
+
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('kategori');
             window.history.replaceState({}, '', newUrl.pathname);
@@ -2455,7 +2474,7 @@
         }
         if (t === 'short-term') {
             const cat = k || 'incoming';
-            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming'));
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming') || (cat === 'sta' && (item.kategori || 'incoming') === 'incoming'));
             if (!matching.length) return 'empty';
             return matching.some(item => item.status === 'draft') ? 'draft' : 'final';
         }
@@ -2559,21 +2578,8 @@
 
     function updateSetupBadges() {
         if (!isGulaKristalMaterial(JENIS)) return;
-        const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
-        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
-        const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
+        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta' || item.kategori === 'incoming');
         const hasLongTerm = (SERVER_EXISTING && SERVER_EXISTING.id);
-
-        if (incoming.length > 0) {
-            const isDraft = (incoming[0].status === 'draft');
-            if (isDraft) {
-                $('#setupBadgeIncoming').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + incoming.length + ')').removeClass('bg-primary bg-success').addClass('bg-warning text-dark').show();
-            } else {
-                $('#setupBadgeIncoming').html('<i class="ri-lock-2-line me-1"></i> Final (' + incoming.length + ')').removeClass('bg-primary bg-warning text-dark').addClass('bg-success text-white').show();
-            }
-        } else {
-            $('#setupBadgeIncoming').hide();
-        }
 
         if (sta.length > 0) {
             const isDraft = (sta[0].status === 'draft');
@@ -2584,17 +2590,6 @@
             }
         } else {
             $('#setupBadgeSta').hide();
-        }
-
-        if (monitoring.length > 0) {
-            const isDraft = (monitoring[0].status === 'draft');
-            if (isDraft) {
-                $('#setupBadgeMonitoring').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + monitoring.length + ')').removeClass('bg-success text-white').addClass('bg-warning text-dark').show();
-            } else {
-                $('#setupBadgeMonitoring').html('<i class="ri-lock-2-line me-1"></i> Final (' + monitoring.length + ')').removeClass('bg-warning text-dark').addClass('bg-success text-white').show();
-            }
-        } else {
-            $('#setupBadgeMonitoring').hide();
         }
 
         if (hasLongTerm) {
@@ -2611,7 +2606,7 @@
 
     function populateExistingShortTerm(kategori, customJumlah = null) {
         if (!SERVER_SHORT_TERM || !SERVER_SHORT_TERM.length) return false;
-        const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming'));
+        const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming') || (kategori === 'sta' && (item.kategori || 'incoming') === 'incoming'));
         if (!matching.length) return false;
 
         const count = (customJumlah && customJumlah > 0) ? customJumlah : (categorySampleCounts[kategori] || (matching.length > 0 ? matching.length : 1));
@@ -2761,7 +2756,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const reqKategori = urlParams.get('kategori');
 
-        // Priority 1: If URL explicitly specifies a category (?kategori=incoming, sta, monitoring, long-term)
+        // Priority 1: If URL explicitly specifies a category (?kategori=sta or long-term)
         if (reqKategori) {
             if (reqKategori === 'long-term') {
                 if (isGulaKristalMaterial(JENIS)) {
@@ -2776,67 +2771,75 @@
             }
 
             if (['incoming', 'sta', 'monitoring'].includes(reqKategori)) {
+                const targetKategori = isGulaKristalMaterial(JENIS) ? 'sta' : reqKategori;
                 if (isGulaKristalMaterial(JENIS)) {
-                    $(`input[name="analisa_type"][value="${reqKategori}"]`).prop('checked', true);
+                    $(`input[name="analisa_type"][value="sta"]`).prop('checked', true);
                 }
 
                 let draft;
                 try {
-                    draft = JSON.parse(localStorage.getItem(getDraftKey(reqKategori)));
+                    draft = JSON.parse(localStorage.getItem(getDraftKey(targetKategori)));
                     if (!draft) {
                         const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
-                        if (legacy && legacy.setup && legacy.setup.kategori === reqKategori) draft = legacy;
+                        if (legacy && legacy.setup && legacy.setup.kategori === targetKategori) draft = legacy;
                     }
                 } catch (e) {}
 
-                const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === reqKategori);
+                const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === targetKategori || (targetKategori === 'sta' && (item.kategori || 'incoming') === 'incoming'));
                 const draftCount = (draft && draft.setup && draft.setup.jumlah) ? parseInt(draft.setup.jumlah) : null;
-                const sampleCount = draftCount || (matching.length > 0 ? matching.length : (categorySampleCounts[reqKategori] || 1));
+                const sampleCount = draftCount || (matching.length > 0 ? matching.length : (categorySampleCounts[targetKategori] || 1));
 
-                categorySampleCounts[reqKategori] = sampleCount;
+                categorySampleCounts[targetKategori] = sampleCount;
                 $('#jumlahData').val(sampleCount);
 
-                const hasDb = populateExistingShortTerm(reqKategori, sampleCount);
+                const hasDb = populateExistingShortTerm(targetKategori, sampleCount);
                 if (hasDb) return;
 
-                if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === reqKategori) {
-                    restoreFromDraft(reqKategori);
+                if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === targetKategori) {
+                    restoreFromDraft(targetKategori);
                     return;
                 }
 
-                startForm('short-term', sampleCount, reqKategori);
+                startForm('short-term', sampleCount, targetKategori);
                 return;
             }
         }
 
-        // Priority 2: For non-Gula material (Garam, etc.) that don't have multiple category selection cards
-        if (!isGulaKristalMaterial(JENIS)) {
-            if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
-                populateExistingGaramGula();
-                return;
-            }
-            startForm('garam-gula', 1, 'incoming');
-            return;
-        }
-
-        // Priority 3: For Gula without ?kategori param in URL:
-        // Always present the Setup Section so the user can choose category & input sample count freely!
+        // Priority 2: When no explicit ?kategori query param is in URL:
+        // Always present Setup Section first for ALL materials so analyst can review/set sample count!
         $('#setupSection').show();
         $('#dividerForm, #analisaSection').hide();
-        const activeRadio = $('input[name="analisa_type"]:checked').val() || 'incoming';
-        $('#jumlahData').val(categorySampleCounts[activeRadio] || 1);
+
+        const isKelapaTebu = isGulaKristalMaterial(JENIS);
+        const isGaram = (JENIS.toUpperCase().trim() === 'GARAM');
+
+        if (isKelapaTebu) {
+            const activeRadio = $('input[name="analisa_type"]:checked').val() || 'sta';
+            $('#jumlahData').val(categorySampleCounts[activeRadio] || 1);
+        } else if (isGaram) {
+            const count = (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0)
+                ? SERVER_GARAM_GULA.length
+                : (categorySampleCounts['garam-gula'] || 1);
+            categorySampleCounts['garam-gula'] = count;
+            $('#jumlahData').val(count);
+        } else {
+            const count = (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0)
+                ? SERVER_SHORT_TERM.length
+                : (categorySampleCounts['incoming'] || 1);
+            categorySampleCounts['incoming'] = count;
+            $('#jumlahData').val(count);
+        }
     }
 
     function handleMulai(e) {
         if (e) e.preventDefault();
-        const isGulaKristal = isGulaKristalMaterial(JENIS);
-        let selectedVal = isGulaKristal ? $('input[name="analisa_type"]:checked').val() : 'garam-gula';
+        const isKelapaTebu = isGulaKristalMaterial(JENIS);
+        const isGaram = (JENIS.toUpperCase().trim() === 'GARAM');
+        let selectedVal = isKelapaTebu ? $('input[name="analisa_type"]:checked').val() : (isGaram ? 'garam-gula' : 'short-term');
 
-        if (isGulaKristal && !selectedVal) {
-            return Swal.fire({
-                icon: 'warning',
-                text: 'Pilih jenis analisa terlebih dahulu.'
-            });
+        if (isKelapaTebu && !selectedVal) {
+            selectedVal = 'sta';
+            $('input[name="analisa_type"][value="sta"]').prop('checked', true);
         }
 
         const inputJumlah = parseInt($('#jumlahData').val()) || categorySampleCounts[selectedVal] || 1;
@@ -2844,7 +2847,10 @@
 
         if (selectedVal === 'long-term') {
             if (SERVER_EXISTING && SERVER_EXISTING.id) {
-                populateExistingLongTerm();
+                const ok = populateExistingLongTerm();
+                if (!ok) {
+                    startForm('long-term', 1, 'long-term');
+                }
             } else {
                 startForm('long-term', 1, 'long-term');
             }
@@ -2852,35 +2858,52 @@
         }
 
         if (selectedVal === 'garam-gula') {
+            let draft;
+            try {
+                draft = JSON.parse(localStorage.getItem(getDraftKey('garam-gula')));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.type === 'garam-gula') draft = legacy;
+                }
+            } catch (e) {}
+
             if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
                 populateExistingGaramGula(inputJumlah);
+                if (draft && draft.fields) loadFieldsFromDraft(draft.fields);
+            } else if (draft && draft.setup && draft.setup.type === 'garam-gula') {
+                draft.setup.jumlah = inputJumlah;
+                restoreFromDraft('garam-gula');
             } else {
                 startForm('garam-gula', inputJumlah, 'incoming');
             }
             return;
         }
 
-        // Short-term: incoming, sta, monitoring
-        const matching = SERVER_SHORT_TERM ? SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === selectedVal) : [];
+        // Short-term: sta (for Kelapa/Tebu) or incoming/short-term (for sisanya)
+        const catKey = isKelapaTebu ? (selectedVal || 'sta') : 'incoming';
+        const matching = SERVER_SHORT_TERM ? SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === catKey || (catKey === 'sta' && (item.kategori || 'incoming') === 'incoming')) : [];
 
         if (matching.length > 0) {
-            populateExistingShortTerm(selectedVal, inputJumlah);
+            const ok = populateExistingShortTerm(catKey, inputJumlah);
+            if (!ok) {
+                startForm('short-term', inputJumlah, catKey);
+            }
         } else {
             // Check draft for this category
             let draft;
             try {
-                draft = JSON.parse(localStorage.getItem(getDraftKey(selectedVal)));
+                draft = JSON.parse(localStorage.getItem(getDraftKey(catKey)));
                 if (!draft) {
                     const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
-                    if (legacy && legacy.setup && legacy.setup.kategori === selectedVal) draft = legacy;
+                    if (legacy && legacy.setup && legacy.setup.kategori === catKey) draft = legacy;
                 }
             } catch (e) {}
 
-            if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === selectedVal) {
+            if (draft && draft.setup && draft.setup.type === 'short-term' && draft.setup.kategori === catKey) {
                 draft.setup.jumlah = inputJumlah;
-                restoreFromDraft(selectedVal);
+                restoreFromDraft(catKey);
             } else {
-                startForm('short-term', inputJumlah, selectedVal);
+                startForm('short-term', inputJumlah, catKey);
             }
         }
     }
@@ -3103,16 +3126,14 @@
         if (!isGulaKristalMaterial(JENIS)) return;
 
         const categories = [
-            { key: 'incoming', badgeId: '#badgeCatIncoming' },
             { key: 'sta', badgeId: '#badgeCatSta' },
-            { key: 'monitoring', badgeId: '#badgeCatMonitoring' },
             { key: 'long-term', badgeId: '#badgeCatLongTerm' },
         ];
 
         categories.forEach(cat => {
             const status = (cat.key === 'long-term') 
                 ? getAnalysisStatus('long-term', 'long-term') 
-                : getAnalysisStatus('short-term', cat.key);
+                : (getAnalysisStatus('short-term', 'sta') !== 'empty' ? getAnalysisStatus('short-term', 'sta') : getAnalysisStatus('short-term', 'incoming'));
 
             if (status === 'final') {
                 $(cat.badgeId).html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-lock-2-line"></i> Final</span>').show();
@@ -3196,8 +3217,11 @@
             } else if (currentKategori === 'monitoring') {
                 typeBadge = '<i class="ri-line-chart-line me-1"></i> Monitoring Berkala';
                 $('#labelAnalisaType').removeClass().addClass('badge bg-success text-white fs-6').html(typeBadge);
+            } else if (isGulaKristalMaterial(JENIS)) {
+                typeBadge = '<i class="ri-flashlight-line me-1"></i> STA (Short Term Analisa)';
+                $('#labelAnalisaType').removeClass().addClass('badge bg-info text-white fs-6').html(typeBadge);
             } else {
-                typeBadge = '<i class="ri-inbox-archive-line me-1"></i> Incoming (Short Term)';
+                typeBadge = '<i class="ri-flask-line me-1"></i> Short Term';
                 $('#labelAnalisaType').removeClass().addClass('badge bg-primary text-white fs-6').html(typeBadge);
             }
         } else if (currentType === 'long-term') {
@@ -3328,61 +3352,73 @@
             const tareCawan = (glasswareData.cawan && glasswareData.cawan[defaultCawan] !== undefined) ? glasswareData.cawan[defaultCawan] : '';
 
             // 1. Tab 1: Ringkasan & Parameter (Resume)
-            rowsRingkasan += `
-                <tr>
-                    <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
-                    <td style="min-width: 110px;">
-                        <input type="text"
-                            inputmode="decimal"
-                            class="form-control form-control-sm calc-trigger numeric-clean-input input-brix"
-                            name="brix[]"
-                            tabindex="${100 + i}"
-                            placeholder="0.00"
-                            autocomplete="off">
-                    </td>
-                    <td style="min-width: 110px;">
-                        <input type="text"
-                            inputmode="decimal"
-                            class="form-control form-control-sm calc-trigger numeric-clean-input input-ph"
-                            name="ph[]"
-                            tabindex="${200 + i}"
-                            placeholder="0.00"
-                            autocomplete="off">
-                    </td>
-                    <td style="min-width: 120px;">
-                        <div class="input-group input-group-sm">
+            let tds = `<td class="td-sampel"><span class="sampel-badge">${i}</span></td>`;
+            SHORT_TERM_FIELDS.forEach((f, cIdx) => {
+                const tabIndex = (cIdx + 1) * 100 + i;
+                if (f.disabled || f.type === 'readonly') {
+                    tds += `
+                        <td style="min-width: 90px;">
+                            <input type="text"
+                                class="form-control form-control-sm text-center bg-light text-muted"
+                                value="-"
+                                disabled>
+                        </td>`;
+                } else if (f.type === 'organo-select') {
+                    tds += `<td style="min-width: 160px;">${renderOrganoCell(f.key, tabIndex)}</td>`;
+                } else if (f.type === 'dropdown') {
+                    tds += `<td style="min-width: 130px;">${renderDropdownCell(f, tabIndex)}</td>`;
+                } else if (f.type === 'text') {
+                    tds += `
+                        <td>
+                            <input type="text"
+                                class="form-control form-control-sm"
+                                name="${f.key}"
+                                tabindex="${tabIndex}"
+                                placeholder="Kondisi ${f.label}..."
+                                autocomplete="off">
+                        </td>`;
+                } else if (f.name === 'kotoran' || f.key === 'kotoran[]') {
+                    tds += `
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
+                                <input type="text"
+                                    inputmode="decimal"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
+                                    name="${f.key}"
+                                    tabindex="${tabIndex}"
+                                    placeholder="0.00"
+                                    autocomplete="off">
+                                <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
+                            </div>
+                        </td>`;
+                } else if (f.name === 'ka' || f.name === '%ka' || f.key === 'ka[]' || f.key === '%ka[]' || f.name === 'kadar_air') {
+                    tds += `
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
+                                <input type="text"
+                                    inputmode="decimal"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
+                                    name="${f.key}"
+                                    tabindex="${tabIndex}"
+                                    placeholder="0.00"
+                                    autocomplete="off">
+                                <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kadar Air">%</span>
+                            </div>
+                        </td>`;
+                } else {
+                    tds += `
+                        <td style="min-width: 110px;">
                             <input type="text"
                                 inputmode="decimal"
-                                class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
-                                name="kotoran[]"
-                                tabindex="${300 + i}"
+                                class="form-control form-control-sm calc-trigger numeric-clean-input input-${f.name}"
+                                name="${f.key}"
+                                tabindex="${tabIndex}"
                                 placeholder="0.00"
                                 autocomplete="off">
-                            <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
-                        </div>
-                    </td>
-                    <td style="min-width: 120px;">
-                        <div class="input-group input-group-sm">
-                            <input type="text"
-                                inputmode="decimal"
-                                class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
-                                name="ka[]"
-                                tabindex="${400 + i}"
-                                placeholder="0.00"
-                                autocomplete="off">
-                            <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kadar Air">%</span>
-                        </div>
-                    </td>
-                    <td style="min-width: 160px;">
-                        ${renderOrganoCell('organo[]', 500 + i)}
-                    </td>
-                    <td style="min-width: 130px;">
-                        ${renderDropdownCell({ key: 'warna[]', masterKey: 'warna' }, 600 + i)}
-                    </td>
-                    <td style="min-width: 130px;">
-                        ${renderDropdownCell({ key: 'aroma[]', masterKey: 'aroma' }, 700 + i)}
-                    </td>
-                </tr>`;
+                        </td>`;
+                }
+            });
+            rowsRingkasan += `<tr>${tds}</tr>`;
 
             // 2. Tab 2: Lembar % Kotoran
             rowsKotoran += `
@@ -3506,61 +3542,29 @@
                             <thead>
                                 <tr>
                                     <th class="th-sampel">Sampel</th>
-                                    <th class="th-data-col" data-col-idx="0" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>Brix</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="0" title="Salin nilai baris 1 ke semua baris (Brix)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
-                                    <th class="th-data-col" data-col-idx="1" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>pH</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="1" title="Salin nilai baris 1 ke semua baris (pH)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
-                                    <th class="th-data-col" data-col-idx="2" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>% Kotoran</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="2" title="Salin nilai baris 1 ke semua baris (% Kotoran)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
-                                    <th class="th-data-col" data-col-idx="3" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>% KA</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="3" title="Salin nilai baris 1 ke semua baris (% KA)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
-                                    <th class="th-data-col" data-col-idx="4" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>Organo (Rasa)</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="4" title="Salin nilai baris 1 ke semua baris (Organo)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
-                                    <th class="th-data-col" data-col-idx="5" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>Warna</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="5" title="Salin nilai baris 1 ke semua baris (Warna)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
-                                    <th class="th-data-col" data-col-idx="6" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
-                                            <span>Aroma</span>
-                                            <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="6" title="Salin nilai baris 1 ke semua baris (Aroma)"><i class="ri-arrow-down-double-line"></i></button>
-                                        </div>
-                                    </th>
+                                    ${SHORT_TERM_FIELDS.map((f, cIdx) => {
+                                        const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
+                                        const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
+                                        const isGroupCol = (f.name === 'kotoran' || f.name === 'ka' || f.name === '%ka' || f.key === 'kotoran[]' || f.key === '%ka[]' || f.name === 'kadar_air');
+                                        const colMinWidth = isGroupCol ? 'style="min-width: 135px;"' : '';
+                                        return `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+                                    }).join('')}
                                 </tr>
                             </thead>
                             <tbody>${rowsRingkasan}</tbody>
                             <tfoot class="table-light">
                                 <tr class="fw-bold">
                                     <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
-                                    <td><span id="tblAvgBrix" class="text-primary fw-bold">-</span></td>
-                                    <td><span id="tblAvgPh" class="text-primary fw-bold">-</span></td>
-                                    <td><span id="tblAvgKotoran" class="text-primary fw-bold">-</span></td>
-                                    <td><span id="tblAvgKa" class="text-primary fw-bold">-</span></td>
-                                    <td><div id="tblOrganoPercent" class="d-flex flex-wrap gap-1 align-items-center">-</div></td>
-                                    <td><span class="text-muted small">-</span></td>
-                                    <td><span class="text-muted small">-</span></td>
+                                    ${SHORT_TERM_FIELDS.map(f => {
+                                        if (f.name === 'brix') return `<td><span id="tblAvgBrix" class="text-primary fw-bold">-</span></td>`;
+                                        if (f.name === 'ph') return `<td><span id="tblAvgPh" class="text-primary fw-bold">-</span></td>`;
+                                        if (f.name === 'kotoran') return `<td><span id="tblAvgKotoran" class="text-primary fw-bold">-</span></td>`;
+                                        if (f.name === 'ka' || f.name === '%ka') return `<td><span id="tblAvgKa" class="text-primary fw-bold">-</span></td>`;
+                                        if (f.name === 'organo') return `<td><div id="tblOrganoPercent" class="d-flex flex-wrap gap-1 align-items-center">-</div></td>`;
+                                        if (f.name === '%nacl') return `<td><span id="tblAvgNacl" class="text-primary fw-bold">-</span></td>`;
+                                        if (f.name === 'gross_weight') return `<td><span id="tblAvgWeight" class="text-primary fw-bold">-</span></td>`;
+                                        return `<td><span class="text-muted small">-</span></td>`;
+                                    }).join('')}
                                 </tr>
                             </tfoot>
                         </table>
@@ -3717,16 +3721,44 @@
         let thCols = `<th class="th-sampel">Sampel</th>`;
         GARAM_GULA_FIELDS.forEach((f, cIdx) => {
             const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
-            const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
-            thCols += `<th class="th-data-col" data-col-idx="${cIdx}" title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+            if (f.disabled || f.type === 'readonly') {
+                thCols += `<th class="text-center text-muted" style="min-width: 90px;" title="Parameter ${f.label} (NULL)">${f.label}</th>`;
+            } else {
+                const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
+                const isGroupCol = (f.name === 'kotoran' || f.name === 'ka' || f.name === '%ka' || f.key === 'kotoran[]' || f.key === '%ka[]' || f.name === 'kadar_air');
+                const colMinWidth = isGroupCol ? 'style="min-width: 135px;"' : '';
+                thCols += `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+            }
         });
 
-        let rows = '';
+        let rowsRingkasan = '';
+        let rowsKotoran = '';
+        let rowsKa = '';
+
         for (let i = 1; i <= jumlah; i++) {
+            const rowIdx = i - 1;
+
+            const defaultBeaker = getSmartBeakerForSample(rowIdx);
+            const tare500 = (glasswareData.beaker_500 && glasswareData.beaker_500[defaultBeaker] !== undefined) ? glasswareData.beaker_500[defaultBeaker] : '';
+            const tare250 = (glasswareData.beaker_250 && glasswareData.beaker_250[defaultBeaker] !== undefined) ? glasswareData.beaker_250[defaultBeaker] : '';
+
+            const defaultCawan = getSmartCawanForSample(rowIdx);
+            const tareCawan = (glasswareData.cawan && glasswareData.cawan[defaultCawan] !== undefined) ? glasswareData.cawan[defaultCawan] : '';
+
+            // 1. Tab 1: Ringkasan
             let tds = `<td class="td-sampel"><span class="sampel-badge">${i}</span></td>`;
             GARAM_GULA_FIELDS.forEach((f, cIdx) => {
                 const tabIndex = (cIdx + 1) * 100 + i;
-                if (f.type === 'organo-select') {
+                if (f.disabled || f.type === 'readonly') {
+                    tds += `
+                        <td style="min-width: 90px;">
+                            <input type="text"
+                                class="form-control form-control-sm text-center bg-light text-muted"
+                                value="-"
+                                disabled
+                                title="Parameter ${f.label} tidak ada di standar mutu Garam (NULL)">
+                        </td>`;
+                } else if (f.type === 'organo-select') {
                     tds += `<td>${renderOrganoCell(f.key, tabIndex)}</td>`;
                 } else if (f.type === 'dropdown') {
                     tds += `<td>${renderDropdownCell(f, tabIndex)}</td>`;
@@ -3740,8 +3772,35 @@
                                 placeholder="-"
                                 autocomplete="off">
                         </td>`;
+                } else if (f.key === 'kotoran[]' || f.name === 'kotoran') {
+                    tds += `
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
+                                <input type="text"
+                                    inputmode="decimal"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
+                                    name="kotoran[]"
+                                    tabindex="${tabIndex}"
+                                    placeholder="0.00"
+                                    autocomplete="off">
+                                <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
+                            </div>
+                        </td>`;
+                } else if (f.key === '%ka[]' || f.name === 'ka' || f.name === '%ka' || f.key === 'ka[]' || f.name === 'kadar_air') {
+                    tds += `
+                        <td style="min-width: 135px;">
+                            <div class="input-group input-group-sm flex-nowrap">
+                                <input type="text"
+                                    inputmode="decimal"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
+                                    name="%ka[]"
+                                    tabindex="${tabIndex}"
+                                    placeholder="0.00"
+                                    autocomplete="off">
+                                <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kadar Air">%</span>
+                            </div>
+                        </td>`;
                 } else {
-                    // number inputs (%KA, Kotoran, %NaCl, Gross Weight)
                     tds += `
                         <td>
                             <input type="text"
@@ -3754,8 +3813,56 @@
                         </td>`;
                 }
             });
-            rows += `<tr>${tds}</tr>`;
+            rowsRingkasan += `<tr>${tds}</tr>`;
+
+            // 2. Tab 2: Lembar % Kotoran (Hitungan Beaker)
+            rowsKotoran += `
+                <tr>
+                    <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
+                    <td style="min-width: 170px;">
+                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]" tabindex="${100 + i}">
+                            ${getBeakerOptions(defaultBeaker)}
+                        </select>
+                        <input type="hidden" name="berat_beaker_500[]" value="${tare500}">
+                        <input type="hidden" name="berat_beaker_250[]" value="${tare250}">
+                    </td>
+                    <td style="min-width: 140px;">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_a[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
+                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B500: <span class="val-tare-500">${tare500 ? tare500 + 'g' : '-'}</span></small>
+                    </td>
+                    <td style="min-width: 140px;">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_b[]" tabindex="${300 + i}" placeholder="0.00" autocomplete="off">
+                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B250: <span class="val-tare-250">${tare250 ? tare250 + 'g' : '-'}</span></small>
+                    </td>
+                    <td style="min-width: 140px;" class="text-center align-middle">
+                        <span class="badge badge-kotoran-calc bg-light text-muted fs-7">-%</span>
+                    </td>
+                </tr>`;
+
+            // 3. Tab 3: Lembar % Kadar Air (Hitungan Cawan)
+            rowsKa += `
+                <tr>
+                    <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
+                    <td style="min-width: 170px;">
+                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]" tabindex="${100 + i}">
+                            ${getCawanOptions(defaultCawan)}
+                        </select>
+                        <input type="hidden" name="berat_cawan[]" value="${tareCawan}">
+                    </td>
+                    <td style="min-width: 150px;">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
+                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <span class="val-tare-cawan">${tareCawan ? tareCawan + 'g' : '-'}</span></small>
+                    </td>
+                    <td style="min-width: 150px;" class="text-center align-middle">
+                        <span class="badge badge-ka-calc bg-light text-muted fs-7">-%</span>
+                    </td>
+                </tr>`;
         }
+
+        const beakerUsed = glasswareData.total_today?.beaker || 0;
+        const cawanUsed = glasswareData.total_today?.cawan || 0;
+        const beakerRemain = Math.max(0, 90 - beakerUsed);
+        const cawanRemain = Math.max(0, 240 - cawanUsed);
 
         const tfoot = `
             <tfoot class="table-light">
@@ -3763,56 +3870,237 @@
                     <td class="text-center">
                         <span class="badge bg-primary px-2 py-1">AVERAGE</span>
                     </td>
-                    <td><span class="text-muted small">-</span></td>
-                    <td><span id="tblAvgKaGG" class="text-primary fw-bold">-</span></td>
-                    <td><span id="tblAvgKotoranGG" class="text-primary fw-bold">-</span></td>
-                    <td>
-                        <div id="tblOrganoPercentGG" class="d-flex flex-wrap gap-1 align-items-center">-</div>
-                    </td>
-                    <td><span class="text-muted small">-</span></td>
-                    <td><span class="text-muted small">-</span></td>
-                    <td><span id="tblAvgNaclGG" class="text-primary fw-bold">-</span></td>
-                    <td><span id="tblAvgWeightGG" class="text-primary fw-bold">-</span></td>
+                    ${GARAM_GULA_FIELDS.map(f => {
+                        if (f.name === 'brix') return `<td><span id="tblAvgBrixGG" class="text-primary fw-bold">-</span></td>`;
+                        if (f.name === 'ph') return `<td><span id="tblAvgPhGG" class="text-primary fw-bold">-</span></td>`;
+                        if (f.name === 'kotoran') return `<td><span id="tblAvgKotoranGG" class="text-primary fw-bold">-</span></td>`;
+                        if (f.name === 'ka' || f.name === '%ka') return `<td><span id="tblAvgKaGG" class="text-primary fw-bold">-</span></td>`;
+                        if (f.name === 'organo') return `<td><div id="tblOrganoPercentGG" class="d-flex flex-wrap gap-1 align-items-center">-</div></td>`;
+                        if (f.name === '%nacl') return `<td><span id="tblAvgNaclGG" class="text-primary fw-bold">-</span></td>`;
+                        if (f.name === 'gross_weight') return `<td><span id="tblAvgWeightGG" class="text-primary fw-bold">-</span></td>`;
+                        return `<td><span class="text-muted small">-</span></td>`;
+                    }).join('')}
                 </tr>
             </tfoot>`;
 
         const disposisiHtml = `
-                <div class="disposisi-section">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold mb-1">
-                                <i class="ri-check-double-line me-1 text-primary"></i>
-                                Disposisi <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select form-select-sm" name="disposisi">
-                                <option value="">-- Pilih Disposisi --</option>
-                                <option value="Release">Release</option>
-                                <option value="Reject">Reject</option>
-                            </select>
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-semibold mb-1">
-                                <i class="ri-file-text-line me-1 text-secondary"></i>
-                                Keterangan
-                                <span class="text-muted fw-normal" style="font-size:11px;">(opsional)</span>
-                            </label>
-                            <textarea class="form-control form-control-sm" name="keterangan"
-                                rows="2" placeholder="Tambahkan catatan atau keterangan analisa..."></textarea>
-                        </div>
+            <div class="disposisi-section mt-4 p-3 bg-light rounded border">
+                <h6 class="fw-bold mb-3 text-dark d-flex align-items-center gap-1.5">
+                    <i class="ri-checkbox-circle-fill text-success"></i> Keputusan Akhir Analisa
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold mb-1">
+                            Disposisi <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" name="disposisi" required>
+                            <option value="">-- Pilih Disposisi --</option>
+                            <option value="Release">Release</option>
+                            <option value="Reject">Reject</option>
+                        </select>
                     </div>
-                </div>`;
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold mb-1">
+                            Keterangan <span class="text-muted fw-normal" style="font-size:11px;">(opsional)</span>
+                        </label>
+                        <textarea class="form-control form-control-sm" name="keterangan" rows="2" placeholder="Tambahkan catatan atau keterangan analisa..."></textarea>
+                    </div>
+                </div>
+            </div>`;
 
         return `
-                <div class="short-term-table-wrapper">
-                    <table class="analisa-table" id="tableAnalisaGaramGula">
-                        <thead>
-                            <tr>${thCols}</tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                        ${tfoot}
-                    </table>
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-worksheet mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tabRingkasanBtn" data-bs-toggle="tab" data-bs-target="#paneRingkasan" type="button" role="tab">
+                        <i class="ri-table-line me-1"></i> 1. Ringkasan & Parameter (Resume)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tabKotoranBtn" data-bs-toggle="tab" data-bs-target="#paneKotoran" type="button" role="tab">
+                        <i class="ri-flask-line me-1"></i> 2. Lembar % Kotoran
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tabKadarAirBtn" data-bs-toggle="tab" data-bs-target="#paneKadarAir" type="button" role="tab">
+                        <i class="ri-drop-line me-1"></i> 3. Lembar % Kadar Air
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="garamGulaTabContent">
+
+                <!-- TAB 1: Ringkasan & Parameter (Resume Table) -->
+                <div class="tab-pane fade show active" id="paneRingkasan" role="tabpanel">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-outline-info btn-switch-tab" data-target-tab="#paneKotoran" title="Buka Lembar Kalkulasi % Kotoran">
+                                <i class="ri-flask-line me-1"></i> Lembar % Kotoran
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success btn-switch-tab" data-target-tab="#paneKadarAir" title="Buka Lembar Kalkulasi % Kadar Air">
+                                <i class="ri-drop-line me-1"></i> Lembar % Kadar Air
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2.5" id="btnQuickSetAllOrganoOk" title="Set seluruh sampel Organo/Rasa menjadi 'OK'">
+                                <i class="ri-checkbox-circle-line me-1"></i> Set Rasa "OK"
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5" id="btnQuickSetAllWarnaAroma" title="Set seluruh Warna ke standar dan Aroma ke 'OK'">
+                                <i class="ri-palette-line me-1"></i> Set Warna & Aroma
+                            </button>
+                        </div>
+                    </div>
+                    <div class="short-term-table-wrapper">
+                        <table class="analisa-table" id="tableAnalisaGaramGula">
+                            <thead>
+                                <tr>${thCols}</tr>
+                            </thead>
+                            <tbody>${rowsRingkasan}</tbody>
+                            ${tfoot}
+                        </table>
+                    </div>
+                    ${disposisiHtml}
                 </div>
-                ${disposisiHtml}`;
+
+                <!-- TAB 2: Lembar % Kotoran (Hitungan Beaker) -->
+                <div class="tab-pane fade" id="paneKotoran" role="tabpanel">
+                    <div class="card border shadow-sm mb-3">
+                        <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-primary d-flex align-items-center gap-1.5">
+                                    <i class="ri-flask-line"></i> Lembar Uji % Kotoran (Hitungan Beaker)
+                                </h6>
+                                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                    <span class="formula-badge">% Kotoran = [ (A - Tare B500) - (B - Tare B250) ] / (A - Tare B500) &times; 100%</span>
+                                    <span class="text-muted small">(Maks 10.00%)</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 11.5px;">
+                                    🧪 Beaker: <strong class="text-primary" id="badgeBeakerUsed">${beakerUsed}/90</strong> <span class="text-muted">(Sisa: <span id="badgeBeakerRemain">${beakerRemain}</span>)</span>
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-info py-1 px-2.5 btn-open-glassware-modal" data-default-filter="beaker">
+                                    <i class="ri-history-line me-1"></i> Log Transaksi Beaker
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary py-1 px-2.5 btn-switch-tab" data-target-tab="#paneRingkasan">
+                                    <i class="ri-arrow-left-line me-1"></i> Kembali ke Ringkasan
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="short-term-table-wrapper border-0">
+                                <table class="analisa-table" id="tableLembarKotoran">
+                                    <thead>
+                                        <tr>
+                                            <th class="th-sampel">Sampel</th>
+                                            <th class="th-data-col" data-col-idx="0" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <span>No. Beaker <span class="badge bg-secondary ms-1">1-90</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="0" title="Salin nilai baris 1 ke semua baris (No. Beaker)"><i class="ri-arrow-down-double-line"></i></button>
+                                                </div>
+                                            </th>
+                                            <th class="th-data-col" data-col-idx="1" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <span>Beaker 500g <span class="unit-badge">gr</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="1" title="Salin nilai baris 1 ke semua baris (Beaker 500g)"><i class="ri-arrow-down-double-line"></i></button>
+                                                </div>
+                                            </th>
+                                            <th class="th-data-col" data-col-idx="2" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <span>Beaker 250g <span class="unit-badge">gr</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="2" title="Salin nilai baris 1 ke semua baris (Beaker 250g)"><i class="ri-arrow-down-double-line"></i></button>
+                                                </div>
+                                            </th>
+                                            <th class="text-center">Hasil % Kotoran</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${rowsKotoran}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light py-2.5 px-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="text-muted small">
+                                <i class="ri-information-line me-1 text-primary"></i> Data kalkulasi % Kotoran otomatis disinkronkan ke Ringkasan (Tab 1).
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-warning px-3 btn-draft-worksheet">
+                                    <i class="mdi mdi-content-save-edit-outline me-1"></i> Simpan Sementara
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success px-3 btn-apply-worksheet" data-target="kotoran">
+                                    <i class="ri-check-double-line me-1"></i> Terapkan Hasil ke Ringkasan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Lembar % Kadar Air (Hitungan Cawan) -->
+                <div class="tab-pane fade" id="paneKadarAir" role="tabpanel">
+                    <div class="card border shadow-sm mb-3">
+                        <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-success d-flex align-items-center gap-1.5">
+                                    <i class="ri-drop-line"></i> Lembar Uji % Kadar Air (Hitungan Cawan)
+                                </h6>
+                                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                    <span class="formula-badge" style="background:#dcfce7; color:#15803d; border-color:#86efac;">% KA = [ 5.00 - (AA - Tare Cawan) ] / 5.00 &times; 100%</span>
+                                    <span class="text-muted small">(Maks 8.00%)</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 11.5px;">
+                                    🥣 Cawan: <strong class="text-success" id="badgeCawanUsed">${cawanUsed}/240</strong> <span class="text-muted">(Sisa: <span id="badgeCawanRemain">${cawanRemain}</span>)</span>
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-info py-1 px-2.5 btn-open-glassware-modal" data-default-filter="cawan">
+                                    <i class="ri-history-line me-1"></i> Log Transaksi Cawan
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary py-1 px-2.5 btn-switch-tab" data-target-tab="#paneRingkasan">
+                                    <i class="ri-arrow-left-line me-1"></i> Kembali ke Ringkasan
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="short-term-table-wrapper border-0">
+                                <table class="analisa-table" id="tableLembarKa">
+                                    <thead>
+                                        <tr>
+                                            <th class="th-sampel">Sampel</th>
+                                            <th class="th-data-col" data-col-idx="0" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <span>No. Cawan <span class="badge bg-secondary ms-1">1-240</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="0" title="Salin nilai baris 1 ke semua baris (No. Cawan)"><i class="ri-arrow-down-double-line"></i></button>
+                                                </div>
+                                            </th>
+                                            <th class="th-data-col" data-col-idx="1" title="Klik kolom untuk blok & copy-paste / Ctrl+D">
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <span>Bobot Akhir (AA) <span class="unit-badge">gr</span></span>
+                                                    <button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="1" title="Salin nilai baris 1 ke semua baris (Bobot Akhir AA)"><i class="ri-arrow-down-double-line"></i></button>
+                                                </div>
+                                            </th>
+                                            <th class="text-center">Hasil % Kadar Air</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${rowsKa}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light py-2.5 px-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="text-muted small">
+                                <i class="ri-information-line me-1 text-success"></i> Data kalkulasi % Kadar Air otomatis disinkronkan ke Ringkasan (Tab 1).
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-warning px-3 btn-draft-worksheet">
+                                    <i class="mdi mdi-content-save-edit-outline me-1"></i> Simpan Sementara
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success px-3 btn-apply-worksheet" data-target="ka">
+                                    <i class="ri-check-double-line me-1"></i> Terapkan Hasil ke Ringkasan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>`;
     }
 
     // ─────────────────────────────────────────────
@@ -4120,7 +4408,9 @@
         const b = parseRapidNumericValue(timbangBStr);
 
         const $badge = $tabKotoranRow.find('.badge-kotoran-calc');
-        const $tabRingkasanInput = $('#tableAnalisaShortTerm tbody tr').eq(rowIdx).find('input[name="kotoran[]"]');
+        const $tabRingkasanInput = (currentType === 'garam-gula')
+            ? $('#tableAnalisaGaramGula tbody tr').eq(rowIdx).find('input[name="kotoran[]"]')
+            : $('#tableAnalisaShortTerm tbody tr').eq(rowIdx).find('input[name="kotoran[]"]');
         const maxKotoran = (dynamicStandards && dynamicStandards.kotoran && dynamicStandards.kotoran.max !== null) ? dynamicStandards.kotoran.max : 10.0;
         const maxKotoranLabel = (dynamicStandards && dynamicStandards.kotoran && dynamicStandards.kotoran.label) ? dynamicStandards.kotoran.label : `${maxKotoran}%`;
 
@@ -4193,7 +4483,9 @@
         const aa = parseRapidNumericValue(timbangAaStr);
 
         const $badge = $tabKaRow.find('.badge-ka-calc');
-        const $tabRingkasanInput = $('#tableAnalisaShortTerm tbody tr').eq(rowIdx).find('input[name="ka[]"]');
+        const $tabRingkasanInput = (currentType === 'garam-gula')
+            ? $('#tableAnalisaGaramGula tbody tr').eq(rowIdx).find('input[name="%ka[]"]')
+            : $('#tableAnalisaShortTerm tbody tr').eq(rowIdx).find('input[name="ka[]"]');
         const defaultKaMax = JENIS.toLowerCase().includes('garam') ? 8.0 : 3.0;
         const maxKa = (dynamicStandards && dynamicStandards.ka && dynamicStandards.ka.max !== null) ? dynamicStandards.ka.max : defaultKaMax;
         const maxKaLabel = (dynamicStandards && dynamicStandards.ka && dynamicStandards.ka.label) ? dynamicStandards.ka.label : `${maxKa}%`;
@@ -5583,38 +5875,17 @@
                     });
                 }
             } else if (currentType === 'garam-gula') {
-                let hasEmpty = false;
-                const emptyFields = new Set();
-
-                $('#formAnalisa').find('.analisa-table tbody tr').each(function(rowIdx) {
-                    const $row = $(this);
-                    const sampelNo = rowIdx + 1;
-                    const $fisik = $row.find('input[name="fisik[]"]');
-                    if ($fisik.length && (!$fisik.val() || !$fisik.val().trim())) {
-                        hasEmpty = true;
-                        emptyFields.add('Fisik (Sampel ' + sampelNo + ')');
-                        $fisik.addClass('is-invalid');
-                    } else {
-                        $fisik.removeClass('is-invalid');
-                    }
-                });
-
                 const $disp = $('select[name="disposisi"]');
                 if (!$disp.val()) {
-                    hasEmpty = true;
-                    emptyFields.add('Disposisi');
                     $disp.addClass('is-invalid');
-                } else {
-                    $disp.removeClass('is-invalid');
-                }
-
-                if (hasEmpty) {
                     return Swal.fire({
                         icon: 'warning',
                         title: 'Data belum lengkap',
-                        html: 'Field berikut masih kosong:<br><br>' + [...emptyFields].map(f => `<span class="badge bg-danger me-1 mb-1">${f}</span>`).join(''),
+                        html: 'Pilih Disposisi (Release / Reject) terlebih dahulu.',
                         confirmButtonText: 'Oke',
                     });
+                } else {
+                    $disp.removeClass('is-invalid');
                 }
             } else if (currentType === 'long-term') {
                 const ujiKristal = $('#selectUjiKristal').val();

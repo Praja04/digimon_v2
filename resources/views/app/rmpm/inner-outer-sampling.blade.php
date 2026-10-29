@@ -326,7 +326,7 @@
                                 id="jumlah_sampel"
                                 class="form-control bg-light"
                                 min="1"
-                                max="50"
+                                max="275"
                                 value="{{ $packagingIncoming->jumlah_sampel }}"
                                 readonly
                                 required
@@ -623,7 +623,6 @@
                                     'Diterima',
                                     'Diterima Bersyarat',
                                     'Ditolak',
-                                    'WIP',
                                 ] as $option)
                                     <option
                                         value="{{ $option }}"

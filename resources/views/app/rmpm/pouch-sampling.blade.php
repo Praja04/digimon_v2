@@ -172,7 +172,7 @@
                                 name="jumlah_sampel"
                                 class="form-control bg-light"
                                 min="1"
-                                max="200"
+                                max="275"
                                 value="{{ $packagingIncoming->jumlah_sampel }}"
                                 readonly
                                 required
@@ -432,7 +432,6 @@
                                 <option value="Diterima" @selected($sampling?->rekomendasi === 'Diterima')>Diterima</option>
                                 <option value="Diterima Bersyarat" @selected($sampling?->rekomendasi === 'Diterima Bersyarat')>Diterima Bersyarat</option>
                                 <option value="Ditolak" @selected($sampling?->rekomendasi === 'Ditolak')>Ditolak</option>
-                                <option value="WIP" @selected($sampling?->rekomendasi === 'WIP')>WIP</option>
                             </select>
                         </div>
                         <div class="col-xl-3 col-md-6">
@@ -998,7 +997,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderRows(total) {
         const safeTotal = Math.max(
             1,
-            Math.min(parseInt(total || 1), 200)
+            Math.min(parseInt(total || 1), 275)
         );
 
         while (samples.length < safeTotal) {
@@ -1681,6 +1680,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 'save_mode',
                 saveMode
             );
+
+            // Kumpulkan data sample ke JSON untuk mencegah batas PHP max_input_vars (default 1000)
+            const collectedSamples = [];
+            const trList = rowsContainer.querySelectorAll('tr');
+            trList.forEach(function (tr) {
+                const sampleObj = {};
+                tr.querySelectorAll('input').forEach(function (input) {
+                    const match = input.name && input.name.match(/^samples\[\d+\]\[([^\]]+)\]$/);
+                    if (match) {
+                        const field = match[1];
+                        if (input.type === 'radio') {
+                            if (input.checked) {
+                                sampleObj[field] = input.value;
+                            }
+                        } else {
+                            sampleObj[field] = input.value;
+                        }
+                    }
+                });
+                collectedSamples.push(sampleObj);
+            });
+
+            for (const key of Array.from(formData.keys())) {
+                if (key.startsWith('samples[')) {
+                    formData.delete(key);
+                }
+            }
+
+            formData.set('samples_json', JSON.stringify(collectedSamples));
 
             try {
                 const response = await fetch(

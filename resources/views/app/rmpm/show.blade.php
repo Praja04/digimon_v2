@@ -26,7 +26,8 @@
 @php
     $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
     $isGaram = ($jenisUpper === 'GARAM');
-    $isGulaKristal = (!$isGaram && (str_contains($jenisUpper, 'GULA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'KELAPA')));
+    $isKelapaTebu = (str_contains($jenisUpper, 'KELAPA') || str_contains($jenisUpper, 'TEBU') || str_contains($jenisUpper, 'GULA'));
+    $isGulaKristal = $isKelapaTebu;
 @endphp
 <div class="page-content">
     <div class="container-fluid">
@@ -68,6 +69,20 @@
                                 <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info">
                                     <i class="ri-edit-line align-bottom me-1"></i> Update Analisa
                                 </a>
+                                @php
+                                    $isGula = str_contains(strtoupper($identitas->jenis ?? ''), 'GULA');
+                                    $isFinalRm = false;
+                                    if ($isGula && $identitas->analisaShortTerm && $identitas->analisaShortTerm->isNotEmpty()) {
+                                        $hasFinal = $identitas->analisaShortTerm->contains(fn($a) => !empty($a->status) && $a->status !== 'draft');
+                                        $hasDraft = $identitas->analisaShortTerm->contains(fn($a) => $a->status === 'draft');
+                                        $isFinalRm = ($hasFinal && !$hasDraft);
+                                    }
+                                @endphp
+                                @if ($isGula && $isFinalRm)
+                                <a href="{{ route('doc-rm.index', ['id' => $identitas->id]) }}" class="btn btn-success" title="Buka Dokumen Laporan Kalkulasi RM">
+                                    <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Laporan
+                                </a>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -189,26 +204,27 @@
                                     </div>
                                     <div class="col-lg-3 col-6">
                                         <p class="text-muted mb-2 text-uppercase fw-semibold">Disposisi</p>
-                                        @if ($isGulaKristal)
+                                        @if ($isKelapaTebu)
                                         @php
-                                        $disposisi_short_term =
-                                        $analisa_short_term->first()->disposisi ?? null;
+                                        $staRecord = $analisa_short_term->firstWhere('kategori', 'sta') ?? $analisa_short_term->first();
+                                        $disposisi_sta = $staRecord->disposisi ?? null;
                                         $latest_long = $analisa_long_term->first();
-                                        $disposisi_long_term =
-                                        $latest_long->disposisi ?? null;
-                                        $group_long_term =
-                                        $latest_long->group ?? null;
+                                        $disposisi_long_term = $latest_long->disposisi ?? null;
+                                        $group_long_term = $latest_long->group ?? null;
                                         @endphp
-                                        <h6>Short Term : {{ $disposisi_short_term ?? 'Belum input' }}</h6>
+                                        <h6>STA : {{ $disposisi_sta ?? 'Belum input' }}</h6>
                                         <h6>
                                             Long Term : {{ $disposisi_long_term ?? 'Belum input' }}
                                             @if (!empty($group_long_term))
                                             <span class="badge bg-primary fs-7 ms-1">{{ $group_long_term }}</span>
                                             @endif
                                         </h6>
+                                        @elseif ($isGaram)
+                                        @php $disposisi_garam = $analisa_garam_gula->first()->disposisi ?? null; @endphp
+                                        <h6>Disposisi : {{ $disposisi_garam ?? 'Belum input' }}</h6>
                                         @else
-                                        @php $disposisi_gula_garam = $analisa_garam_gula->first()->disposisi ?? null; @endphp
-                                        <h6>Disposisi : {{ $disposisi_gula_garam ?? 'Belum input' }}</h6>
+                                        @php $disposisi_short = $analisa_short_term->first()->disposisi ?? null; @endphp
+                                        <h6>Disposisi : {{ $disposisi_short ?? 'Belum input' }}</h6>
                                         @endif
                                     </div>
                                 </div>
@@ -530,10 +546,21 @@
                                     <p class="text-center text-muted mb-0">Belum ada data</p>
                                     @endif
                                 </div>
-                            </div>
                         </div>
 
                         {{-- ── TABEL ANALISA ── --}}
+                        @php
+                            $displayFields = !empty($dynamicFields) ? $dynamicFields : [
+                                ['name' => 'brix', 'label' => 'Brix', 'type' => 'number', 'unit' => ''],
+                                ['name' => 'ph', 'label' => 'pH', 'type' => 'number', 'unit' => ''],
+                                ['name' => 'kotoran', 'label' => 'Kotoran', 'type' => 'number', 'unit' => '%'],
+                                ['name' => 'ka', 'label' => 'KA (%)', 'type' => 'number', 'unit' => '%'],
+                                ['name' => 'organo', 'label' => 'Organo', 'type' => 'organo-select', 'unit' => ''],
+                                ['name' => 'warna', 'label' => 'Warna', 'type' => 'dropdown', 'unit' => ''],
+                                ['name' => 'aroma', 'label' => 'Aroma', 'type' => 'dropdown', 'unit' => ''],
+                            ];
+                        @endphp
+
                         @if ($isGulaKristal)
 
                         {{-- Unified Short Term Analysis: Incoming, STA, Monitoring --}}
@@ -550,20 +577,28 @@
                                     </h5>
                                     <div class="d-flex gap-2 flex-wrap align-items-center">
                                         @if ($groupedShort->has('incoming'))
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
-                                            <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel
-                                        </span>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
+                                                <i class="ri-inbox-archive-line me-1"></i> Incoming: {{ $groupedShort['incoming']->count() }} Sampel
+                                            </span>
                                         @endif
                                         @if ($groupedShort->has('sta'))
-                                        <span class="badge bg-info-subtle text-info border border-info-subtle fs-7 py-1 px-2">
-                                            <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel
-                                        </span>
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle fs-7 py-1 px-2">
+                                                <i class="ri-flashlight-line me-1"></i> STA: {{ $groupedShort['sta']->count() }} Sampel
+                                            </span>
                                         @endif
                                         @if ($groupedShort->has('monitoring'))
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle fs-7 py-1 px-2">
-                                            <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel
-                                        </span>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle fs-7 py-1 px-2">
+                                                <i class="ri-line-chart-line me-1"></i> Monitoring: {{ $groupedShort['monitoring']->count() }} Sampel
+                                            </span>
                                         @endif
+                                        @if ($groupedShort->isEmpty())
+                                            <span class="badge bg-secondary-subtle text-secondary border fs-7 py-1 px-2">
+                                                0 Sampel
+                                            </span>
+                                        @endif
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                            <i class="ri-edit-box-line me-1"></i> Update Analisa
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -572,14 +607,10 @@
                                             <thead class="table-light text-muted text-uppercase small">
                                                 <tr>
                                                     <th width="4%" class="text-center">#</th>
-                                                    <th width="12%">Kategori</th>
-                                                    <th>Brix</th>
-                                                    <th>pH</th>
-                                                    <th>Kotoran</th>
-                                                    <th>KA (%)</th>
-                                                    <th>Organo</th>
-                                                    <th>Warna</th>
-                                                    <th>Aroma</th>
+                                                    <th width="10%">Kategori</th>
+                                                    @foreach ($displayFields as $f)
+                                                        <th>{{ $f['label'] }}</th>
+                                                    @endforeach
                                                     <th>Disposisi</th>
                                                     <th>Status</th>
                                                     <th>Keterangan</th>
@@ -612,21 +643,30 @@
                                                             <i class="{{ $katIcon }} me-1"></i>{{ $katLabel }}
                                                         </span>
                                                     </td>
-                                                    <td>{{ $short->brix !== null ? number_format($short->brix, 2) : '-' }}</td>
-                                                    <td>{{ $short->ph !== null ? number_format($short->ph, 2) : '-' }}</td>
-                                                    <td>{{ $short->kotoran !== null ? number_format($short->kotoran, 3) : '-' }}</td>
-                                                    <td>{{ $short->ka !== null ? number_format($short->ka, 2) . '%' : '-' }}</td>
-                                                    <td>
-                                                        @if (!empty($short->organo))
-                                                        <span class="badge {{ in_array(strtoupper($short->organo), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
-                                                            {{ $short->organo }}
-                                                        </span>
+                                                    @foreach ($displayFields as $f)
+                                                        @php $colVal = $short->{$f['name']} ?? null; @endphp
+                                                        @if ($f['name'] === 'organo')
+                                                            <td>
+                                                                @if (!empty($colVal))
+                                                                    <span class="badge {{ in_array(strtoupper($colVal), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                                        {{ $colVal }}
+                                                                    </span>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @elseif ($f['type'] === 'number')
+                                                            <td class="{{ in_array($f['name'], ['brix', 'ph', 'kotoran', 'ka', '%ka', '%nacl', 'gross_weight']) ? 'text-primary' : '' }}">
+                                                                @if ($colVal !== null && is_numeric($colVal))
+                                                                    {{ number_format((float)$colVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    {{ $colVal ?? '-' }}
+                                                                @endif
+                                                            </td>
                                                         @else
-                                                        -
+                                                            <td>{{ $colVal ?? '-' }}</td>
                                                         @endif
-                                                    </td>
-                                                    <td>{{ $short->warna ?? '-' }}</td>
-                                                    <td>{{ $short->aroma ?? '-' }}</td>
+                                                    @endforeach
                                                     <td>
                                                         @if ($short->disposisi === 'Release')
                                                         <span class="badge bg-success">{{ $short->disposisi }}</span>
@@ -654,75 +694,110 @@
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="12" class="text-center text-muted py-4">
+                                                    <td colspan="{{ count($displayFields) + 5 }}" class="text-center text-muted py-4">
                                                         <i class="ri-inbox-line fs-3 d-block mb-1 text-muted"></i>
                                                         Belum ada data analisa (Incoming, STA, atau Monitoring)
                                                     </td>
                                                 </tr>
                                                 @endforelse
-                                            </tbody>
-                                            @if ($analisa_short_term->isNotEmpty())
-                                            <tfoot class="table-light border-top">
-                                                @foreach ($groupedShort as $groupKey => $groupItems)
-                                                @php
-                                                $gAvgBrix = $groupItems->whereNotNull('brix')->avg('brix');
-                                                $gAvgPh = $groupItems->whereNotNull('ph')->avg('ph');
-                                                $gAvgKotoran = $groupItems->whereNotNull('kotoran')->avg('kotoran');
-                                                $gAvgKa = $groupItems->whereNotNull('ka')->avg('ka');
-                                                $gTotalOrgano = $groupItems->whereNotNull('organo')->count();
-                                                $gOrganoCounts = [];
-                                                foreach ($groupItems as $gItem) {
-                                                $val = trim($gItem->organo ?? '');
+                                                                                    @if ($analisa_short_term->isNotEmpty())
+                                            @php
+                                            $monitoringSamples = $analisa_short_term->filter(fn($item) => strtolower($item->kategori ?? '') === 'monitoring');
+                                            $shortTermSamples = $analisa_short_term->filter(fn($item) => strtolower($item->kategori ?? '') !== 'monitoring');
+                                            
+                                            $hasMonitoring = $monitoringSamples->isNotEmpty();
+                                            $hasShortTerm = $shortTermSamples->isNotEmpty();
+
+                                            // Jika sudah ada monitoring (long term) dan short term: kalkulasi gabungan seluruh sampel
+                                            // Jika baru short term saja: kalkulasi sampel short term
+                                            // Jika hanya monitoring: kalkulasi monitoring
+                                            if ($hasMonitoring && $hasShortTerm) {
+                                                $calcItems = $analisa_short_term;
+                                                $avgLabel = 'AVERAGE (STR & LONG TERM)';
+                                                $avgTooltip = 'Rata-rata Gabungan Short Term & Long Term (Monitoring) - Total: ' . $calcItems->count() . ' Sampel';
+                                            } elseif ($hasMonitoring) {
+                                                $calcItems = $monitoringSamples;
+                                                $avgLabel = 'AVERAGE (LONG TERM)';
+                                                $avgTooltip = 'Rata-rata Long Term (Monitoring) - ' . $calcItems->count() . ' Sampel';
+                                            } else {
+                                                $calcItems = $shortTermSamples->isNotEmpty() ? $shortTermSamples : $analisa_short_term;
+                                                $avgLabel = 'AVERAGE (STR)';
+                                                $avgTooltip = 'Rata-rata Short Term - ' . $calcItems->count() . ' Sampel';
+                                            }
+
+                                            $avgBrix = $calcItems->whereNotNull('brix')->avg('brix');
+                                            $avgPh = $calcItems->whereNotNull('ph')->avg('ph');
+                                            $avgKotoran = $calcItems->whereNotNull('kotoran')->avg('kotoran');
+                                            $avgKa = $calcItems->whereNotNull('ka')->avg('ka');
+                                            $totalOrgano = $calcItems->whereNotNull('organo')->count();
+                                            $organoCounts = [];
+                                            foreach ($calcItems as $cItem) {
+                                                $val = trim($cItem->organo ?? '');
                                                 if ($val !== '') {
-                                                $cat = $val;
-                                                if (stripos($val, 'Lain-lain') === 0) $cat = 'Lain-lain';
-                                                elseif (stripos($val, 'Campuran') === 0) $cat = 'Campuran';
-                                                elseif (in_array(strtoupper($val), ['OK', 'SESUAI', 'NORMAL'])) $cat = 'OK';
-                                                $gOrganoCounts[$cat] = ($gOrganoCounts[$cat] ?? 0) + 1;
+                                                    $cat = $val;
+                                                    if (stripos($val, 'Lain-lain') === 0) $cat = 'Lain-lain';
+                                                    elseif (stripos($val, 'Campuran') === 0) $cat = 'Campuran';
+                                                    elseif (in_array(strtoupper($val), ['OK', 'SESUAI', 'NORMAL'])) $cat = 'OK';
+                                                    $organoCounts[$cat] = ($organoCounts[$cat] ?? 0) + 1;
                                                 }
-                                                }
-                                                $gLabel = match($groupKey) {
-                                                'sta' => 'AVG STA',
-                                                'monitoring' => 'AVG Monitoring',
-                                                default => 'AVG Incoming',
-                                                };
-                                                $gBadgeClass = match($groupKey) {
-                                                'sta' => 'bg-info',
-                                                'monitoring' => 'bg-success',
-                                                default => 'bg-primary',
-                                                };
-                                                @endphp
+                                            }
+                                            @endphp
+                                            <tfoot class="table-light border-top">
                                                 <tr class="fw-bold bg-light">
                                                     <td class="text-center">-</td>
                                                     <td>
-                                                        <span class="badge {{ $gBadgeClass }} px-2 py-1">{{ $gLabel }}</span>
+                                                        <span class="badge bg-primary px-2 py-1" title="{{ $avgTooltip }}">
+                                                            {{ $avgLabel }}
+                                                        </span>
                                                     </td>
-                                                    <td class="text-primary">{{ $gAvgBrix !== null ? number_format($gAvgBrix, 2) : '-' }}</td>
-                                                    <td class="text-primary">{{ $gAvgPh !== null ? number_format($gAvgPh, 2) : '-' }}</td>
-                                                    <td class="text-primary">{{ $gAvgKotoran !== null ? number_format($gAvgKotoran, 3) : '-' }}</td>
-                                                    <td class="text-primary">{{ $gAvgKa !== null ? number_format($gAvgKa, 2) . '%' : '-' }}</td>
-                                                    <td>
-                                                        <div class="d-flex flex-wrap gap-1">
-                                                            @forelse ($gOrganoCounts as $cName => $cCnt)
+                                                    @foreach ($displayFields as $f)
+                                                        @if ($f['name'] === 'brix')
+                                                            <td class="text-primary">{{ $avgBrix !== null ? number_format($avgBrix, 2) : '-' }}</td>
+                                                        @elseif ($f['name'] === 'ph')
+                                                            <td class="text-primary">{{ $avgPh !== null ? number_format($avgPh, 2) : '-' }}</td>
+                                                        @elseif ($f['name'] === 'kotoran')
+                                                            <td class="text-primary">{{ $avgKotoran !== null ? number_format($avgKotoran, 3) : '-' }}</td>
+                                                        @elseif ($f['name'] === 'ka' || $f['name'] === '%ka')
+                                                            <td class="text-primary">{{ $avgKa !== null ? number_format($avgKa, 2) . '%' : '-' }}</td>
+                                                        @elseif ($f['name'] === 'organo')
+                                                            <td>
+                                                                <div class="d-flex flex-wrap gap-1">
+                                                                    @forelse ($organoCounts as $cName => $cCnt)
+                                                                    @php
+                                                                    $pct = $totalOrgano > 0 ? round(($cCnt / $totalOrgano) * 100) : 0;
+                                                                    $isOk = ($cName === 'OK');
+                                                                    @endphp
+                                                                    <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cCnt }}/{{ $totalOrgano }} sampel">
+                                                                        {{ $cName }}: {{ $pct }}%
+                                                                    </span>
+                                                                    @empty
+                                                                    <span class="text-muted small">-</span>
+                                                                    @endforelse
+                                                                </div>
+                                                            </td>
+                                                        @elseif ($f['name'] === '%nacl')
+                                                            <td class="text-primary">{{ $calcItems->whereNotNull('%nacl')->avg('%nacl') !== null ? number_format($calcItems->whereNotNull('%nacl')->avg('%nacl'), 2) . '%' : '-' }}</td>
+                                                        @elseif ($f['name'] === 'gross_weight')
+                                                            <td class="text-primary">{{ $calcItems->whereNotNull('gross_weight')->avg('gross_weight') !== null ? number_format($calcItems->whereNotNull('gross_weight')->avg('gross_weight'), 2) . ' kg' : '-' }}</td>
+                                                        @elseif ($f['type'] === 'number')
                                                             @php
-                                                            $pct = $gTotalOrgano > 0 ? round(($cCnt / $gTotalOrgano) * 100) : 0;
-                                                            $isOk = ($cName === 'OK');
+                                                            $avgCol = $calcItems->whereNotNull($f['name'])->avg($f['name']);
                                                             @endphp
-                                                            <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cCnt }}/{{ $gTotalOrgano }} sampel">
-                                                                {{ $cName }}: {{ $pct }}%
-                                                            </span>
-                                                            @empty
-                                                            <span class="text-muted small">-</span>
-                                                            @endforelse
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-muted small">-</td>
-                                                    <td class="text-muted small">-</td>
+                                                            <td class="text-primary">
+                                                                @if ($avgCol !== null)
+                                                                    {{ number_format((float)$avgCol, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @else
+                                                            <td class="text-muted small">-</td>
+                                                        @endif
+                                                    @endforeach
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
                                                 </tr>
-                                                @endforeach
                                             </tfoot>
                                             @endif
                                         </table>
@@ -738,6 +813,9 @@
                                     <h5 class="mb-0 fw-semibold text-dark">
                                         <i class="ri-microscope-line text-primary me-1"></i> Hasil Analisa Long Term
                                     </h5>
+                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-dark shadow-sm">
+                                        <i class="ri-edit-box-line me-1"></i> Update Long Term
+                                    </a>
                                 </div>
                                 <div class="card-body p-3">
                                     <div class="table-responsive">
@@ -967,13 +1045,13 @@
                             </div>
                         </div>
                         @endif
-                        @else
-                        {{-- Garam / Gula --}}
+                        @elseif ($isGaram)
+                        {{-- Garam --}}
                         <div class="col-lg-12">
                             <div class="card shadow-sm">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <h5 class="mb-0 fw-semibold text-dark">
-                                        <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa
+                                        <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa (Garam)
                                     </h5>
                                     <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
                                         <i class="ri-edit-box-line me-1"></i> Update Analisa
@@ -984,15 +1062,10 @@
                                         <table class="table table-hover table-striped align-middle mb-0">
                                             <thead class="table-light text-muted text-uppercase small">
                                                 <tr>
-                                                    <th width="5%">#</th>
-                                                    <th>Fisik</th>
-                                                    <th>%KA</th>
-                                                    <th>Kotoran</th>
-                                                    <th>Organo</th>
-                                                    <th>Warna</th>
-                                                    <th>Aroma</th>
-                                                    <th>%NaCl</th>
-                                                    <th>Gross Weight</th>
+                                                    <th width="4%" class="text-center">#</th>
+                                                    @foreach ($displayFields as $f)
+                                                        <th>{{ $f['label'] }}</th>
+                                                    @endforeach
                                                     <th>Disposisi</th>
                                                     <th>Keterangan</th>
                                                 </tr>
@@ -1000,22 +1073,39 @@
                                             <tbody>
                                                 @forelse ($analisa_garam_gula as $gg)
                                                 <tr>
-                                                    <td>{{ $loop->iteration }}</td>
-                                                    <td>{{ $gg->fisik ?? '-' }}</td>
-                                                    <td>{{ $gg->{'%ka'} ?? '-' }}</td>
-                                                    <td>{{ $gg->kotoran ?? '-' }}</td>
-                                                    <td>{{ $gg->organo ?? '-' }}</td>
-                                                    <td>{{ $gg->warna ?? '-' }}</td>
-                                                    <td>{{ $gg->aroma ?? '-' }}</td>
-                                                    <td>{{ $gg->{'%nacl'} ?? '-' }}</td>
-                                                    <td>{{ $gg->gross_weight ?? '-' }}</td>
+                                                    <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                                                    @foreach ($displayFields as $f)
+                                                        @php $colVal = $gg->{$f['name']} ?? null; @endphp
+                                                        @if ($f['name'] === 'organo')
+                                                            <td>
+                                                                @if (!empty($colVal))
+                                                                    <span class="badge {{ in_array(strtoupper($colVal), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                                        {{ $colVal }}
+                                                                    </span>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @elseif ($f['type'] === 'number')
+                                                            <td class="text-primary">
+                                                                @if ($colVal !== null && is_numeric($colVal))
+                                                                    {{ number_format((float)$colVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    {{ $colVal ?? '-' }}
+                                                                @endif
+                                                            </td>
+                                                        @else
+                                                            <td>{{ $colVal ?? '-' }}</td>
+                                                        @endif
+                                                    @endforeach
                                                     <td>{{ $gg->disposisi ?? '-' }}</td>
                                                     <td>{{ $gg->keterangan ?? '-' }}</td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="10" class="text-center text-muted py-4">
-                                                        Belum ada data analisa</td>
+                                                    <td colspan="{{ count($displayFields) + 3 }}" class="text-center text-muted py-4">
+                                                        Belum ada data analisa
+                                                    </td>
                                                 </tr>
                                                 @endforelse
                                             </tbody>
@@ -1041,28 +1131,212 @@
                                             <tfoot class="table-light">
                                                 <tr class="fw-bold">
                                                     <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
+                                                    @foreach ($displayFields as $f)
+                                                        @if ($f['name'] === 'brix')
+                                                            <td class="text-primary">{{ $analisa_garam_gula->whereNotNull('brix')->avg('brix') !== null ? number_format($analisa_garam_gula->whereNotNull('brix')->avg('brix'), 2) : '-' }}</td>
+                                                        @elseif ($f['name'] === 'ph')
+                                                            <td class="text-primary">{{ $analisa_garam_gula->whereNotNull('ph')->avg('ph') !== null ? number_format($analisa_garam_gula->whereNotNull('ph')->avg('ph'), 2) : '-' }}</td>
+                                                        @elseif ($f['name'] === 'kotoran')
+                                                            <td class="text-primary">{{ $avgKotoranGG !== null ? number_format($avgKotoranGG, 3) : '-' }}</td>
+                                                        @elseif ($f['name'] === 'ka' || $f['name'] === '%ka')
+                                                            <td class="text-primary">{{ $avgKaGG !== null ? number_format($avgKaGG, 2) . '%' : '-' }}</td>
+                                                        @elseif ($f['name'] === 'organo')
+                                                            <td>
+                                                                <div class="d-flex flex-wrap gap-1">
+                                                                    @forelse ($organoCountsGG as $cat => $cnt)
+                                                                    @php
+                                                                    $pct = $totalOrganoGG > 0 ? round(($cnt / $totalOrganoGG) * 100) : 0;
+                                                                    $isOk = ($cat === 'OK');
+                                                                    @endphp
+                                                                    <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cnt }}/{{ $totalOrganoGG }} sampel">
+                                                                        {{ $cat }}: {{ $pct }}%
+                                                                    </span>
+                                                                    @empty
+                                                                    <span class="text-muted small">-</span>
+                                                                    @endforelse
+                                                                </div>
+                                                            </td>
+                                                        @elseif ($f['name'] === '%nacl')
+                                                            <td class="text-primary">{{ $avgNaclGG !== null ? number_format($avgNaclGG, 2) . '%' : '-' }}</td>
+                                                        @elseif ($f['name'] === 'gross_weight')
+                                                            <td class="text-primary">{{ $avgWeightGG !== null ? number_format($avgWeightGG, 2) . ' kg' : '-' }}</td>
+                                                        @else
+                                                            <td class="text-muted small">-</td>
+                                                        @endif
+                                                    @endforeach
                                                     <td class="text-muted small">-</td>
-                                                    <td class="text-primary">{{ $avgKaGG !== null ? number_format($avgKaGG, 2) . '%' : '-' }}</td>
-                                                    <td class="text-primary">{{ $avgKotoranGG !== null ? number_format($avgKotoranGG, 3) : '-' }}</td>
+                                                    <td class="text-muted small">-</td>
+                                                </tr>
+                                            </tfoot>
+                                            @endif
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        {{-- Sisanya: Short Term (e.g. GULA, MSG) --}}
+                        <div class="col-lg-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <h5 class="mb-0 fw-semibold text-dark">
+                                        <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa Short Term
+                                    </h5>
+                                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
+                                            Short Term: {{ $analisa_short_term->count() }} Sampel
+                                        </span>
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                            <i class="ri-edit-box-line me-1"></i> Update Analisa
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light text-muted text-uppercase small">
+                                                <tr>
+                                                    <th width="4%" class="text-center">#</th>
+                                                    @foreach ($displayFields as $f)
+                                                        <th>{{ $f['label'] }}</th>
+                                                    @endforeach
+                                                    <th>Disposisi</th>
+                                                    <th>Status</th>
+                                                    <th>Keterangan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse ($analisa_short_term as $short)
+                                                <tr>
+                                                    <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                                                    @foreach ($displayFields as $f)
+                                                        @php $colVal = $short->{$f['name']} ?? null; @endphp
+                                                        @if ($f['name'] === 'organo')
+                                                            <td>
+                                                                @if (!empty($colVal))
+                                                                    <span class="badge {{ in_array(strtoupper($colVal), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                                        {{ $colVal }}
+                                                                    </span>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @elseif ($f['type'] === 'number')
+                                                            <td class="text-primary">
+                                                                @if ($colVal !== null && is_numeric($colVal))
+                                                                    {{ number_format((float)$colVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    {{ $colVal ?? '-' }}
+                                                                @endif
+                                                            </td>
+                                                        @else
+                                                            <td>{{ $colVal ?? '-' }}</td>
+                                                        @endif
+                                                    @endforeach
                                                     <td>
-                                                        <div class="d-flex flex-wrap gap-1">
-                                                            @forelse ($organoCountsGG as $cat => $cnt)
-                                                            @php
-                                                            $pct = $totalOrganoGG > 0 ? round(($cnt / $totalOrganoGG) * 100) : 0;
-                                                            $isOk = ($cat === 'OK');
-                                                            @endphp
-                                                            <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cnt }}/{{ $totalOrganoGG }} sampel">
-                                                                {{ $cat }}: {{ $pct }}%
-                                                            </span>
-                                                            @empty
-                                                            <span class="text-muted small">-</span>
-                                                            @endforelse
-                                                        </div>
+                                                        @if ($short->disposisi === 'Release')
+                                                        <span class="badge bg-success">{{ $short->disposisi }}</span>
+                                                        @elseif ($short->disposisi === 'Reject')
+                                                        <span class="badge bg-danger">{{ $short->disposisi }}</span>
+                                                        @else
+                                                        <span class="badge bg-secondary">{{ $short->disposisi ?? '-' }}</span>
+                                                        @endif
                                                     </td>
+                                                    <td>
+                                                        @php
+                                                        $isRowDraft = (($short->status ?? '') === 'draft' || empty($short->disposisi) || $short->disposisi === '-');
+                                                        @endphp
+                                                        @if ($isRowDraft)
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="mdi mdi-content-save-edit-outline me-1"></i> Draft
+                                                        </span>
+                                                        @else
+                                                        <span class="badge bg-success-subtle text-success">
+                                                            <i class="ri-checkbox-circle-line me-1"></i> Final
+                                                        </span>
+                                                        @endif
+                                                    </td>
+                                                    <td><small class="text-muted">{{ $short->keterangan ?? '-' }}</small></td>
+                                                </tr>
+                                                @empty
+                                                <tr>
+                                                    <td colspan="{{ count($displayFields) + 4 }}" class="text-center text-muted py-4">
+                                                        Belum ada data analisa Short Term
+                                                    </td>
+                                                </tr>
+                                                @endforelse
+                                            </tbody>
+                                            @if ($analisa_short_term->isNotEmpty())
+                                            @php
+                                            $monitoringSamplesST = $analisa_short_term->filter(fn($item) => strtolower($item->kategori ?? '') === 'monitoring');
+                                            $shortTermSamplesST = $analisa_short_term->filter(fn($item) => strtolower($item->kategori ?? '') !== 'monitoring');
+                                            
+                                            $hasMonitoringST = $monitoringSamplesST->isNotEmpty();
+                                            $hasShortTermST = $shortTermSamplesST->isNotEmpty();
+
+                                            if ($hasMonitoringST && $hasShortTermST) {
+                                                $calcItemsST = $analisa_short_term;
+                                                $avgLabelST = 'AVERAGE (STR & LONG TERM)';
+                                                $avgTooltipST = 'Rata-rata Gabungan Short Term & Long Term (Monitoring) - Total: ' . $calcItemsST->count() . ' Sampel';
+                                            } elseif ($hasMonitoringST) {
+                                                $calcItemsST = $monitoringSamplesST;
+                                                $avgLabelST = 'AVERAGE (LONG TERM)';
+                                                $avgTooltipST = 'Rata-rata Long Term (Monitoring) - ' . $calcItemsST->count() . ' Sampel';
+                                            } else {
+                                                $calcItemsST = $shortTermSamplesST->isNotEmpty() ? $shortTermSamplesST : $analisa_short_term;
+                                                $avgLabelST = 'AVERAGE (STR)';
+                                                $avgTooltipST = 'Rata-rata Short Term - ' . $calcItemsST->count() . ' Sampel';
+                                            }
+
+                                            $totalOrganoST = $calcItemsST->count();
+                                            $organoCountsST = [];
+                                            foreach ($calcItemsST as $item) {
+                                                $val = trim($item->organo ?? '');
+                                                if ($val !== '') {
+                                                    $cat = $val;
+                                                    if (stripos($val, 'Lain-lain') === 0) $cat = 'Lain-lain';
+                                                    elseif (stripos($val, 'Campuran') === 0) $cat = 'Campuran';
+                                                    elseif (in_array(strtoupper($val), ['OK', 'SESUAI', 'NORMAL'])) $cat = 'OK';
+                                                    $organoCountsST[$cat] = ($organoCountsST[$cat] ?? 0) + 1;
+                                                }
+                                            }
+                                            @endphp
+                                            <tfoot class="table-light">
+                                                <tr class="fw-bold">
+                                                    <td class="text-center"><span class="badge bg-primary px-2 py-1" title="{{ $avgTooltipST }}">{{ $avgLabelST }}</span></td>
+                                                    @foreach ($displayFields as $f)
+                                                        @if ($f['name'] === 'organo')
+                                                            <td>
+                                                                <div class="d-flex flex-wrap gap-1">
+                                                                    @forelse ($organoCountsST as $cat => $cnt)
+                                                                    @php
+                                                                    $pct = $totalOrganoST > 0 ? round(($cnt / $totalOrganoST) * 100) : 0;
+                                                                    $isOk = ($cat === 'OK');
+                                                                    @endphp
+                                                                    <span class="badge {{ $isOk ? 'bg-success' : 'bg-warning text-dark' }} fs-8" title="{{ $cnt }}/{{ $totalOrganoST }} sampel">
+                                                                        {{ $cat }}: {{ $pct }}%
+                                                                    </span>
+                                                                    @empty
+                                                                    <span class="text-muted small">-</span>
+                                                                    @endforelse
+                                                                </div>
+                                                            </td>
+                                                        @elseif ($f['type'] === 'number')
+                                                            @php
+                                                            $avgCol = $calcItemsST->whereNotNull($f['name'])->avg($f['name']);
+                                                            @endphp
+                                                            <td class="text-primary">
+                                                                @if ($avgCol !== null)
+                                                                    {{ number_format((float)$avgCol, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @else
+                                                            <td class="text-muted small">-</td>
+                                                        @endif
+                                                    @endforeach
                                                     <td class="text-muted small">-</td>
-                                                    <td class="text-muted small">-</td>
-                                                    <td class="text-primary">{{ $avgNaclGG !== null ? number_format($avgNaclGG, 2) . '%' : '-' }}</td>
-                                                    <td class="text-primary">{{ $avgWeightGG !== null ? number_format($avgWeightGG, 2) . ' kg' : '-' }}</td>
                                                     <td class="text-muted small">-</td>
                                                     <td class="text-muted small">-</td>
                                                 </tr>
@@ -1106,25 +1380,25 @@
                 <div class="list-group">
                     @if (is_null($data_mobil))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalKondisiMobil">
+                        data-target-modal="#modalKondisiMobil" data-bs-target="#modalKondisiMobil">
                         <i class="ri-truck-line me-2 text-primary"></i> Sampling Kondisi Mobil
                     </button>
                     @endif
                     @if (is_null($data_dokumen))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalDokumen">
+                        data-target-modal="#modalDokumen" data-bs-target="#modalDokumen">
                         <i class="ri-file-text-line me-2 text-success"></i> Sampling Dokumen
                     </button>
                     @endif
                     @if (is_null($data_kemasan))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalKemasan">
+                        data-target-modal="#modalKemasan" data-bs-target="#modalKemasan">
                         <i class="ri-inbox-line me-2 text-warning"></i> Sampling Kemasan
                     </button>
                     @endif
                     @if (!$isGaram && is_null($data_raw))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
-                        data-target-modal="#modalRaw">
+                        data-target-modal="#modalRaw" data-bs-target="#modalRaw">
                         <i class="ri-flask-line me-2 text-danger"></i> Sampling Raw
                     </button>
                     @endif
@@ -1705,17 +1979,35 @@
         // ── Smooth modal transition from #samplingModal to specific sampling modals (prevents focus trap & blinking) ──
         $(document).on('click', '.btn-open-sampling-modal', function(e) {
             e.preventDefault();
-            const targetSelector = $(this).data('target-modal');
-            const $samplingModal = $('#samplingModal');
+            const targetSelector = $(this).attr('data-target-modal') || $(this).data('target-modal') || $(this).attr('data-bs-target');
+            if (!targetSelector) return;
 
-            $samplingModal.modal('hide');
-            $samplingModal.one('hidden.bs.modal', function() {
-                const targetModalEl = document.querySelector(targetSelector);
-                if (targetModalEl) {
-                    const bsModal = bootstrap.Modal.getOrCreateInstance(targetModalEl);
-                    bsModal.show();
-                }
-            });
+            const targetModalEl = document.querySelector(targetSelector);
+            if (!targetModalEl) return;
+
+            const targetBsModal = bootstrap.Modal.getOrCreateInstance(targetModalEl);
+            const samplingModalEl = document.getElementById('samplingModal');
+
+            if (samplingModalEl && samplingModalEl.classList.contains('show')) {
+                const samplingBsModal = bootstrap.Modal.getInstance(samplingModalEl) || bootstrap.Modal.getOrCreateInstance(samplingModalEl);
+
+                let targetOpened = false;
+                const openTarget = function() {
+                    if (targetOpened) return;
+                    targetOpened = true;
+                    samplingModalEl.removeEventListener('hidden.bs.modal', openTarget);
+                    targetBsModal.show();
+                };
+
+                // Register listener before hiding to guarantee catching hidden event
+                samplingModalEl.addEventListener('hidden.bs.modal', openTarget, { once: true });
+                samplingBsModal.hide();
+
+                // Fallback in case hidden.bs.modal event is missed or transition delayed
+                setTimeout(openTarget, 300);
+            } else {
+                targetBsModal.show();
+            }
         });
 
 
