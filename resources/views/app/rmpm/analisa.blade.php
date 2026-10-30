@@ -76,20 +76,38 @@
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold">Pilih Kategori / Jenis Analisa</label>
                                     <div class="row g-2">
-                                        <div class="col-md-6 col-12">
-                                            <input type="radio" class="btn-check" name="analisa_type" id="katSta" value="sta" checked>
+                                        <div class="col-md-3 col-6">
+                                            <input type="radio" class="btn-check" name="analisa_type" id="katIncoming" value="incoming" checked>
+                                            <label class="btn btn-outline-primary w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katIncoming">
+                                                <i class="ri-inbox-archive-line fs-5 mb-1"></i>
+                                                <span class="fw-bold">1. Incoming</span>
+                                                <small class="text-muted" style="font-size:11px;">Wajib Lengkap</small>
+                                                <span id="setupBadgeIncoming" class="badge bg-primary text-white mt-1" style="display:none; font-size:10px;"></span>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <input type="radio" class="btn-check" name="analisa_type" id="katSta" value="sta">
                                             <label class="btn btn-outline-info w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katSta">
                                                 <i class="ri-flashlight-line fs-5 mb-1"></i>
-                                                <span class="fw-bold">1. STA</span>
+                                                <span class="fw-bold">2. STA</span>
                                                 <small class="text-muted" style="font-size:11px;">Short Term Analisa</small>
                                                 <span id="setupBadgeSta" class="badge bg-info text-white mt-1" style="display:none; font-size:10px;"></span>
                                             </label>
                                         </div>
-                                        <div class="col-md-6 col-12">
+                                        <div class="col-md-3 col-6">
+                                            <input type="radio" class="btn-check" name="analisa_type" id="katMonitoring" value="monitoring">
+                                            <label class="btn btn-outline-success w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katMonitoring">
+                                                <i class="ri-line-chart-line fs-5 mb-1"></i>
+                                                <span class="fw-bold">3. Monitoring</span>
+                                                <small class="text-muted" style="font-size:11px;">Pemantauan Berkala</small>
+                                                <span id="setupBadgeMonitoring" class="badge bg-success text-white mt-1" style="display:none; font-size:10px;"></span>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3 col-6">
                                             <input type="radio" class="btn-check" name="analisa_type" id="katLongTerm" value="long-term">
                                             <label class="btn btn-outline-dark w-100 py-2 d-flex flex-column align-items-center justify-content-center" for="katLongTerm">
                                                 <i class="ri-microscope-line fs-5 mb-1"></i>
-                                                <span class="fw-bold">2. Long Term</span>
+                                                <span class="fw-bold">4. Long Term</span>
                                                 <small class="text-muted" style="font-size:11px;">Uji Kristal</small>
                                                 <span id="setupBadgeLongTerm" class="badge bg-dark text-white mt-1" style="display:none; font-size:10px;"></span>
                                             </label>
@@ -135,11 +153,17 @@
                                         </span>
                                     </div>
                                     <div class="btn-group btn-group-sm flex-wrap" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-category-switch" data-cat="incoming">
+                                            <i class="ri-inbox-archive-line me-1"></i> 1. Incoming <span id="badgeCatIncoming" class="badge bg-primary text-white ms-1" style="display:none;"></span>
+                                        </button>
                                         <button type="button" class="btn btn-outline-info btn-category-switch" data-cat="sta">
-                                            <i class="ri-flashlight-line me-1"></i> 1. STA <span id="badgeCatSta" class="badge bg-info text-white ms-1" style="display:none;"></span>
+                                            <i class="ri-flashlight-line me-1"></i> 2. STA <span id="badgeCatSta" class="badge bg-info text-white ms-1" style="display:none;"></span>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success btn-category-switch" data-cat="monitoring">
+                                            <i class="ri-line-chart-line me-1"></i> 3. Monitoring <span id="badgeCatMonitoring" class="badge bg-success text-white ms-1" style="display:none;"></span>
                                         </button>
                                         <button type="button" class="btn btn-outline-dark btn-category-switch" data-cat="long-term">
-                                            <i class="ri-microscope-line me-1"></i> 2. Long Term <span id="badgeCatLongTerm" class="ms-1" style="display:none;"></span>
+                                            <i class="ri-microscope-line me-1"></i> 4. Long Term <span id="badgeCatLongTerm" class="ms-1" style="display:none;"></span>
                                         </button>
                                     </div>
                                 </div>
@@ -1021,7 +1045,7 @@
 
     function initCategorySampleCounts() {
         ['incoming', 'sta', 'monitoring'].forEach(cat => {
-            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === cat || (cat === 'sta' && (item.kategori || 'incoming') === 'incoming'));
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === cat);
             if (matching.length > 0) {
                 categorySampleCounts[cat] = matching.length;
                 return;
@@ -1970,7 +1994,7 @@
             const isGaram = JENIS.toUpperCase().includes('GARAM');
             let showCount = 1;
             if (isKelapaTebu) {
-                const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'sta';
+                const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
                 showCount = categorySampleCounts[activeRadio] || 1;
             } else if (isGaram) {
                 showCount = currentJumlah || (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 ? SERVER_GARAM_GULA.length : (categorySampleCounts['garam-gula'] || 1));
@@ -2479,7 +2503,7 @@
         }
         if (t === 'short-term') {
             const cat = k || 'incoming';
-            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming') || (cat === 'sta' && (item.kategori || 'incoming') === 'incoming'));
+            const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming'));
             if (!matching.length) return 'empty';
             return matching.some(item => item.status === 'draft') ? 'draft' : 'final';
         }
@@ -2583,8 +2607,21 @@
 
     function updateSetupBadges() {
         if (!isGulaKristalMaterial(JENIS)) return;
-        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta' || item.kategori === 'incoming');
+        const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
+        const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
+        const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
         const hasLongTerm = (SERVER_EXISTING && SERVER_EXISTING.id);
+
+        if (incoming.length > 0) {
+            const isDraft = (incoming[0].status === 'draft');
+            if (isDraft) {
+                $('#setupBadgeIncoming').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + incoming.length + ')').removeClass('bg-primary bg-success').addClass('bg-warning text-dark').show();
+            } else {
+                $('#setupBadgeIncoming').html('<i class="ri-lock-2-line me-1"></i> Final (' + incoming.length + ')').removeClass('bg-primary bg-warning text-dark').addClass('bg-success text-white').show();
+            }
+        } else {
+            $('#setupBadgeIncoming').hide();
+        }
 
         if (sta.length > 0) {
             const isDraft = (sta[0].status === 'draft');
@@ -2595,6 +2632,17 @@
             }
         } else {
             $('#setupBadgeSta').hide();
+        }
+
+        if (monitoring.length > 0) {
+            const isDraft = (monitoring[0].status === 'draft');
+            if (isDraft) {
+                $('#setupBadgeMonitoring').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Draft (' + monitoring.length + ')').removeClass('bg-success text-white').addClass('bg-warning text-dark').show();
+            } else {
+                $('#setupBadgeMonitoring').html('<i class="ri-lock-2-line me-1"></i> Final (' + monitoring.length + ')').removeClass('bg-warning text-dark').addClass('bg-success text-white').show();
+            }
+        } else {
+            $('#setupBadgeMonitoring').hide();
         }
 
         if (hasLongTerm) {
@@ -2611,7 +2659,7 @@
 
     function populateExistingShortTerm(kategori, customJumlah = null) {
         if (!SERVER_SHORT_TERM || !SERVER_SHORT_TERM.length) return false;
-        const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming') || (kategori === 'sta' && (item.kategori || 'incoming') === 'incoming'));
+        const matching = SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === (kategori || 'incoming'));
         if (!matching.length) return false;
 
         const count = (customJumlah && customJumlah > 0) ? customJumlah : (categorySampleCounts[kategori] || (matching.length > 0 ? matching.length : 1));
@@ -2776,9 +2824,9 @@
             }
 
             if (['incoming', 'sta', 'monitoring'].includes(reqKategori)) {
-                const targetKategori = isGulaKristalMaterial(JENIS) ? 'sta' : reqKategori;
+                const targetKategori = reqKategori;
                 if (isGulaKristalMaterial(JENIS)) {
-                    $(`input[name="analisa_type"][value="sta"]`).prop('checked', true);
+                    $(`input[name="analisa_type"][value="${targetKategori}"]`).prop('checked', true);
                 }
 
                 let draft;
@@ -2790,7 +2838,7 @@
                     }
                 } catch (e) {}
 
-                const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === targetKategori || (targetKategori === 'sta' && (item.kategori || 'incoming') === 'incoming'));
+                const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === targetKategori);
                 const draftCount = (draft && draft.setup && draft.setup.jumlah) ? parseInt(draft.setup.jumlah) : null;
                 const sampleCount = draftCount || (matching.length > 0 ? matching.length : (categorySampleCounts[targetKategori] || 1));
 
@@ -2819,7 +2867,7 @@
         const isGaram = JENIS.toUpperCase().includes('GARAM');
 
         if (isKelapaTebu) {
-            const activeRadio = $('input[name="analisa_type"]:checked').val() || 'sta';
+            const activeRadio = $('input[name="analisa_type"]:checked').val() || 'incoming';
             $('#jumlahData').val(categorySampleCounts[activeRadio] || 1);
         } else if (isGaram) {
             const count = (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0)
@@ -2843,8 +2891,8 @@
         let selectedVal = isKelapaTebu ? $('input[name="analisa_type"]:checked').val() : (isGaram ? 'garam-gula' : 'short-term');
 
         if (isKelapaTebu && !selectedVal) {
-            selectedVal = 'sta';
-            $('input[name="analisa_type"][value="sta"]').prop('checked', true);
+            selectedVal = 'incoming';
+            $('input[name="analisa_type"][value="incoming"]').prop('checked', true);
         }
 
         const inputJumlah = parseInt($('#jumlahData').val()) || categorySampleCounts[selectedVal] || 1;
@@ -2884,9 +2932,9 @@
             return;
         }
 
-        // Short-term: sta (for Kelapa/Tebu) or incoming/short-term (for sisanya)
-        const catKey = isKelapaTebu ? (selectedVal || 'sta') : 'incoming';
-        const matching = SERVER_SHORT_TERM ? SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === catKey || (catKey === 'sta' && (item.kategori || 'incoming') === 'incoming')) : [];
+        // Short-term: incoming/sta/monitoring (for Kelapa/Tebu) or incoming/short-term (for sisanya)
+        const catKey = isKelapaTebu ? (selectedVal || 'incoming') : 'incoming';
+        const matching = SERVER_SHORT_TERM ? SERVER_SHORT_TERM.filter(item => (item.kategori || 'incoming') === catKey) : [];
 
         if (matching.length > 0) {
             const ok = populateExistingShortTerm(catKey, inputJumlah);
@@ -3131,14 +3179,16 @@
         if (!isGulaKristalMaterial(JENIS)) return;
 
         const categories = [
+            { key: 'incoming', badgeId: '#badgeCatIncoming' },
             { key: 'sta', badgeId: '#badgeCatSta' },
+            { key: 'monitoring', badgeId: '#badgeCatMonitoring' },
             { key: 'long-term', badgeId: '#badgeCatLongTerm' },
         ];
 
         categories.forEach(cat => {
             const status = (cat.key === 'long-term') 
                 ? getAnalysisStatus('long-term', 'long-term') 
-                : (getAnalysisStatus('short-term', 'sta') !== 'empty' ? getAnalysisStatus('short-term', 'sta') : getAnalysisStatus('short-term', 'incoming'));
+                : getAnalysisStatus('short-term', cat.key);
 
             if (status === 'final') {
                 $(cat.badgeId).html('<span class="badge bg-success text-white py-0 px-1" style="font-size:10px;"><i class="ri-lock-2-line"></i> Final</span>').show();
@@ -3216,15 +3266,15 @@
     function updateLabels() {
         let typeBadge = '';
         if (currentType === 'short-term') {
-            if (currentKategori === 'sta') {
+            if (currentKategori === 'incoming') {
+                typeBadge = '<i class="ri-inbox-archive-line me-1"></i> Incoming';
+                $('#labelAnalisaType').removeClass().addClass('badge bg-primary text-white fs-6').html(typeBadge);
+            } else if (currentKategori === 'sta') {
                 typeBadge = '<i class="ri-flashlight-line me-1"></i> STA (Short Term Analisa)';
                 $('#labelAnalisaType').removeClass().addClass('badge bg-info text-white fs-6').html(typeBadge);
             } else if (currentKategori === 'monitoring') {
                 typeBadge = '<i class="ri-line-chart-line me-1"></i> Monitoring Berkala';
                 $('#labelAnalisaType').removeClass().addClass('badge bg-success text-white fs-6').html(typeBadge);
-            } else if (isGulaKristalMaterial(JENIS)) {
-                typeBadge = '<i class="ri-flashlight-line me-1"></i> STA (Short Term Analisa)';
-                $('#labelAnalisaType').removeClass().addClass('badge bg-info text-white fs-6').html(typeBadge);
             } else {
                 typeBadge = '<i class="ri-flask-line me-1"></i> Short Term';
                 $('#labelAnalisaType').removeClass().addClass('badge bg-primary text-white fs-6').html(typeBadge);

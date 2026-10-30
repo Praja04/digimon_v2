@@ -208,12 +208,15 @@
                                         <p class="text-muted mb-2 text-uppercase fw-semibold">Disposisi</p>
                                         @if ($isKelapaTebu)
                                         @php
-                                        $staRecord = $analisa_short_term->firstWhere('kategori', 'sta') ?? $analisa_short_term->first();
+                                        $incomingRecord = $analisa_short_term->firstWhere('kategori', 'incoming') ?? ($analisa_short_term->whereNull('kategori')->first());
+                                        $disposisi_incoming = $incomingRecord->disposisi ?? null;
+                                        $staRecord = $analisa_short_term->firstWhere('kategori', 'sta');
                                         $disposisi_sta = $staRecord->disposisi ?? null;
                                         $latest_long = $analisa_long_term->first();
                                         $disposisi_long_term = $latest_long->disposisi ?? null;
                                         $group_long_term = $latest_long->group ?? null;
                                         @endphp
+                                        <h6>Incoming : {{ $disposisi_incoming ?? 'Belum input' }}</h6>
                                         <h6>STA : {{ $disposisi_sta ?? 'Belum input' }}</h6>
                                         <h6>
                                             Long Term : {{ $disposisi_long_term ?? 'Belum input' }}
