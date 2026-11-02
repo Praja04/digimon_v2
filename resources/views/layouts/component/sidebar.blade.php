@@ -492,7 +492,7 @@
                     @endif
 
                     {{-- SCAN KEMPU --}}
-                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Helper', 'QC'], true))
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Helper', 'QC', 'Analis Field'], true))
                         <li class="nav-item">
                             <a class="nav-link menu-link {{ $scanKempuActive ? 'active' : '' }}" href="#ScanKempu"
                                 data-bs-toggle="collapse" role="button"
