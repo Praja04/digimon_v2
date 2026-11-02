@@ -509,20 +509,25 @@
                                             Report
                                         </a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a href="{{ route('scan-kempu.pm.index') }}"
-                                            class="nav-link {{ request()->routeIs('scan-kempu.pm.*') ? 'active' : '' }}">
-                                            <i class="mdi mdi-package-variant"></i>
-                                            QC PM
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{ route('scan-kempu.proses.index') }}"
-                                            class="nav-link {{ request()->routeIs('scan-kempu.proses.*') || (request()->routeIs('scan-kempu.scan') && in_array(request()->route('type'), ['qc-proses', 'qc-pre-cuci', 'qc-after-filling', 'qc-retur'])) ? 'active' : '' }}">
-                                            <i class="mdi mdi-archive-check-outline"></i>
-                                            QC Proses
-                                        </a>
-                                    </li>
+                                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM'], true))
+                                        <li class="nav-item">
+                                            <a href="{{ route('scan-kempu.pm.index') }}"
+                                                class="nav-link {{ request()->routeIs('scan-kempu.pm.*') ? 'active' : '' }}">
+                                                <i class="mdi mdi-package-variant"></i>
+                                                QC PM
+                                            </a>
+                                        </li>
+                                    @endif
+
+                                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis Field'], true))
+                                        <li class="nav-item">
+                                            <a href="{{ route('scan-kempu.proses.index') }}"
+                                                class="nav-link {{ request()->routeIs('scan-kempu.proses.*') || (request()->routeIs('scan-kempu.scan') && in_array(request()->route('type'), ['qc-proses', 'qc-pre-cuci', 'qc-after-filling', 'qc-retur'])) ? 'active' : '' }}">
+                                                <i class="mdi mdi-archive-check-outline"></i>
+                                                QC Proses
+                                            </a>
+                                        </li>
+                                    @endif
                                 </ul>
                             </div>
                         </li>
