@@ -166,12 +166,12 @@
                                 Proses)</span>
                         </div>
                         <div class="page-title-right d-flex align-items-center gap-2 mt-2 mt-sm-0 flex-wrap">
-                            <a href="{{ route('scan-kempu.pm.index') }}" class="btn btn-outline-primary btn-sm">
+                            {{-- <a href="{{ route('scan-kempu.pm.index') }}" class="btn btn-outline-primary btn-sm">
                                 <i class="ri-package-line me-1"></i> Buka QC PM
                             </a>
                             <a href="{{ route('scan-kempu.proses.index') }}" class="btn btn-outline-success btn-sm">
                                 <i class="ri-flask-line me-1"></i> Buka QC Proses
-                            </a>
+                            </a> --}}
                             <button type="button" class="btn btn-success btn-sm" id="btnExportCsv">
                                 <i class="ri-file-excel-2-line me-1"></i> Export CSV
                             </button>
@@ -789,7 +789,8 @@
                     if (item.action_result === 'HOLD') {
                         resultBadge = '<span class="badge bg-warning text-dark fs-11">HOLD (Tahan)</span>';
                     } else if (item.action_result === 'REPRO') {
-                        resultBadge = '<span class="badge bg-info text-white fs-11">REPRO (Produksi)</span>';
+                        resultBadge =
+                        '<span class="badge bg-info text-white fs-11">REPRO (Produksi)</span>';
                     } else if (item.action_result === 'NOT_OK') {
                         resultBadge = '<span class="badge bg-danger fs-11">Reject / Repair</span>';
                     } else if (item.action_result === 'SCRAPPED') {
