@@ -2,23 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\IdentitasRM;
-use App\Models\User;
-
-class AnalisaGaramGula extends Model
-{
-    protected $table = 'analisa_garam_gula';
-
-    protected $guarded = [];
-
-    public function identitas()
-    {
-        return $this->belongsTo(IdentitasRM::class, 'id_identitas');
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-}
+/**
+ * Legacy Alias -> Mengarah ke tabel analisa_rm_sampels
+ */
+class AnalisaGaramGula extends AnalisaRMSampel {}

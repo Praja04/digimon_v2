@@ -485,7 +485,7 @@ class PackagingKartonController extends Controller
             'foto.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:20480',
             ],
 
             'foto_ketidaksesuaian' => [
@@ -502,7 +502,7 @@ class PackagingKartonController extends Controller
             'foto_ketidaksesuaian.*' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:20480',
             ],
 
             'keterangan' => [

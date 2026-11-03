@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
-use App\Models\AnalisaShortTerm;
+use App\Models\AnalisaRMSampel;
 use App\Models\SamplingDokumen;
 use App\Models\SamplingFisikKemasan;
 use App\Models\SamplingFisikRaw;
@@ -20,9 +19,26 @@ class IdentitasRM extends Model
 
     protected $guarded = [];
 
+    public function analisaSampel()
+    {
+        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')
+            ->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END")
+            ->orderBy('id', 'asc');
+    }
+
     public function analisaGaramGula()
     {
-        return $this->hasMany(AnalisaGaramGula::class, 'id_identitas');
+        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')->orderBy('id', 'asc');
+    }
+
+    public function analisaBahanKering()
+    {
+        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')->orderBy('id', 'asc');
+    }
+
+    public function analisaBahanCair()
+    {
+        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')->orderBy('id', 'asc');
     }
 
     public function analisaLongTerm()
@@ -37,7 +53,7 @@ class IdentitasRM extends Model
 
     public function analisaShortTerm()
     {
-        return $this->hasMany(AnalisaShortTerm::class, 'id_identitas')
+        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')
             ->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END")
             ->orderBy('id', 'asc');
     }
@@ -70,10 +86,34 @@ class IdentitasRM extends Model
     public function isSamplingComplete()
     {
         $jenisUpper = strtoupper(trim($this->jenis ?? ''));
-        if ($jenisUpper === 'GARAM') {
+        if (str_contains($jenisUpper, 'GARAM')) {
             return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan;
         } else {
             return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan && $this->samplingFisikRaw;
         }
+    }
+
+    public function getMaterialCategoryAttribute(): string
+    {
+        $upper = strtoupper(trim((string)$this->jenis));
+        if ((str_contains($upper, 'KELAPA') || str_contains($upper, 'TEBU') || $upper === 'GK' || $upper === 'GT') && !str_contains($upper, 'RAFINASI')) {
+            return 'kelapa-tebu';
+        }
+        if (str_contains($upper, 'GARAM')) {
+            return 'garam';
+        }
+        if (
+            str_contains($upper, 'GLUKOSA') || 
+            str_contains($upper, 'FRUCTOSE') || 
+            str_contains($upper, 'HFCS') || 
+            str_contains($upper, 'KECAP') || 
+            str_contains($upper, 'HAITIAN') || 
+            str_contains($upper, 'CARAMEL') || 
+            str_contains($upper, 'KARAMEL') ||
+            str_contains($upper, 'LIQUID')
+        ) {
+            return 'cair';
+        }
+        return 'kering';
     }
 }

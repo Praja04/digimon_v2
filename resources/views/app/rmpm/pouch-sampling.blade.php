@@ -306,21 +306,64 @@
                     <div class="row g-3 mt-3">
                         <div class="col-xl-6 col-md-8">
                             <label
-                                for="foto_pengecekan"
                                 class="form-label"
                             >
                                 Foto Pengecekan
                                 <span class="text-danger">*</span>
                             </label>
 
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-primary"
+                                    id="btnCameraPengecekan"
+                                >
+                                    <i class="mdi mdi-camera-outline me-1"></i>
+                                    Gunakan Kamera
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="btnFilePengecekan"
+                                >
+                                    <i class="mdi mdi-folder-image me-1"></i>
+                                    Pilih File
+                                </button>
+                            </div>
+
+                            <!-- Native camera input fallback for mobile -->
+                            <input
+                                type="file"
+                                id="native_camera_pengecekan"
+                                accept="image/*"
+                                capture="environment"
+                                class="d-none"
+                            >
+
+                            <!-- Hidden actual file input -->
                             <input
                                 type="file"
                                 name="foto_pengecekan"
                                 id="foto_pengecekan"
-                                class="form-control"
+                                class="d-none"
                                 accept="image/*"
                                 @required(! $sampling?->foto_pengecekan)
                             >
+
+                            <!-- Live preview card for newly chosen photo -->
+                            <div id="foto_pengecekan_new_preview" class="mt-2 d-none">
+                                <div class="d-flex align-items-center gap-3 p-2 border rounded bg-light" style="max-width: 480px;">
+                                    <img id="foto_pengecekan_new_thumb" src="" alt="Preview Foto Pengecekan" style="width: 70px; height: 70px; object-fit: cover; border-radius: 6px;">
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div id="foto_pengecekan_new_name" class="fw-semibold text-truncate small text-dark"></div>
+                                        <small id="foto_pengecekan_new_size" class="text-muted d-block"></small>
+                                        <button type="button" class="btn btn-xs btn-outline-danger mt-1 py-0 px-2" id="btnHapusFotoPengecekanBaru">
+                                            <i class="mdi mdi-delete-outline me-1"></i> Hapus Foto
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
                             @if ($sampling?->foto_pengecekan)
                                 <div class="existing-photo-card mt-3">
@@ -567,12 +610,21 @@
                                 </button>
                             </div>
 
+                            <!-- Native camera fallback for ketidaksesuaian -->
+                            <input
+                                type="file"
+                                id="native_camera_ketidaksesuaian"
+                                accept="image/*"
+                                capture="environment"
+                                class="d-none"
+                            >
+
                             <!-- Modal Kamera Langsung -->
                             <div class="modal fade" id="cameraModal" tabindex="-1">
-                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title">
+                                            <h5 class="modal-title" id="cameraModalTitle">
                                                 Foto Ketidaksesuaian
                                             </h5>
                                             <button
@@ -587,7 +639,7 @@
                                                 id="cameraPreview"
                                                 autoplay
                                                 playsinline
-                                                style="width:100%;border-radius:10px;">
+                                                class="camera-video">
                                             </video>
 
                                             <canvas
@@ -890,6 +942,14 @@
     }
 }
 
+.camera-video {
+    width: 100%;
+    min-height: 280px;
+    max-height: 65vh;
+    border-radius: 12px;
+    background: #111827;
+    object-fit: cover;
+}
 </style>
 @endsection
 
@@ -1291,39 +1351,91 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    function updateSelectedPhotoInfo() {
-        const selectedCount =
-            fotoInput.files?.length ?? 0;
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 KB';
+        const sizeInKb = (bytes / 1024).toFixed(1);
+        return (bytes >= 1024 * 1024)
+            ? (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+            : sizeInKb + ' KB';
+    }
 
-        const totalCount =
-            getExistingPhotoCount()
-            + selectedCount;
+    function updateSelectedPhotoInfo() {
+        const files = Array.from(fotoInput.files ?? []);
+        const selectedCount = files.length;
+        const totalCount = getExistingPhotoCount() + selectedCount;
 
         if (selectedCount === 0) {
             selectedPhotoInfo.innerHTML = '';
             return;
         }
 
-        const badgeClass =
-            totalCount > 10
-                ? 'bg-danger-subtle text-danger'
-                : 'bg-primary-subtle text-primary';
-
-        selectedPhotoInfo.innerHTML = `
-            <span class="badge ${badgeClass}">
-                ${selectedCount} foto baru dipilih — total ${totalCount}/10
-            </span>
-        `;
-
         if (totalCount > 10) {
             fotoInput.value = '';
-
             selectedPhotoInfo.innerHTML = `
                 <span class="badge bg-danger-subtle text-danger">
                     Total foto tidak boleh lebih dari 10.
                 </span>
             `;
+            return;
         }
+
+        selectedPhotoInfo.innerHTML = `
+            <div class="mb-2">
+                <span class="badge bg-primary-subtle text-primary">
+                    ${selectedCount} foto baru dipilih — total ${totalCount}/10
+                </span>
+            </div>
+            <div id="foto_ketidaksesuaian_new_cards" class="d-flex flex-column gap-2"></div>
+        `;
+
+        const container = document.getElementById('foto_ketidaksesuaian_new_cards');
+        files.forEach(function (file, idx) {
+            const card = document.createElement('div');
+            card.className = 'd-flex align-items-center gap-3 p-2 border rounded bg-light';
+            card.style.maxWidth = '480px';
+
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = file.name;
+            img.style.width = '70px';
+            img.style.height = '70px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '6px';
+            img.style.flexShrink = '0';
+
+            const info = document.createElement('div');
+            info.className = 'flex-grow-1 min-w-0';
+
+            const name = document.createElement('div');
+            name.className = 'fw-semibold text-truncate small text-dark';
+            name.textContent = file.name;
+            name.title = file.name;
+
+            const size = document.createElement('small');
+            size.className = 'text-muted d-block';
+            size.textContent = formatFileSize(file.size);
+
+            const btnHapus = document.createElement('button');
+            btnHapus.type = 'button';
+            btnHapus.className = 'btn btn-xs btn-outline-danger mt-1 py-0 px-2';
+            btnHapus.innerHTML = '<i class="mdi mdi-delete-outline me-1"></i> Hapus Foto';
+            btnHapus.addEventListener('click', function () {
+                const dt = new DataTransfer();
+                Array.from(fotoInput.files ?? []).forEach((f, i) => {
+                    if (i !== idx) dt.items.add(f);
+                });
+                fotoInput.files = dt.files;
+                updateSelectedPhotoInfo();
+            });
+
+            info.appendChild(name);
+            info.appendChild(size);
+            info.appendChild(btnHapus);
+
+            card.appendChild(img);
+            card.appendChild(info);
+            container.appendChild(card);
+        });
     }
 
     function updateKetidaksesuaianFields() {
@@ -1387,6 +1499,106 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const btnCameraFoto = document.getElementById('btnCameraFoto');
     const btnFileFoto = document.getElementById('btnFileFoto');
+    const btnCameraPengecekan = document.getElementById('btnCameraPengecekan');
+    const btnFilePengecekan = document.getElementById('btnFilePengecekan');
+    const fotoPengecekanInput = document.getElementById('foto_pengecekan');
+    const nativeCameraPengecekan = document.getElementById('native_camera_pengecekan');
+    const nativeCameraKetidaksesuaian = document.getElementById('native_camera_ketidaksesuaian');
+    const previewPengecekan = document.getElementById('foto_pengecekan_new_preview');
+    const thumbPengecekan = document.getElementById('foto_pengecekan_new_thumb');
+    const namePengecekan = document.getElementById('foto_pengecekan_new_name');
+    const sizePengecekan = document.getElementById('foto_pengecekan_new_size');
+    const btnHapusPengecekan = document.getElementById('btnHapusFotoPengecekanBaru');
+    const cameraModalTitle = document.getElementById('cameraModalTitle');
+
+    let currentCameraTarget = 'ketidaksesuaian';
+
+    // ── Foto Pengecekan Handler ──
+    if (btnFilePengecekan && fotoPengecekanInput) {
+        btnFilePengecekan.addEventListener('click', function () {
+            fotoPengecekanInput.click();
+        });
+    }
+
+    function renderPengecekanPreview() {
+        if (!fotoPengecekanInput || !fotoPengecekanInput.files || !fotoPengecekanInput.files[0]) {
+            if (previewPengecekan) previewPengecekan.classList.add('d-none');
+            return;
+        }
+        const file = fotoPengecekanInput.files[0];
+        if (thumbPengecekan) thumbPengecekan.src = URL.createObjectURL(file);
+        if (namePengecekan) {
+            namePengecekan.textContent = file.name;
+            namePengecekan.title = file.name;
+        }
+        if (sizePengecekan) {
+            sizePengecekan.textContent = formatFileSize(file.size);
+        }
+        if (previewPengecekan) previewPengecekan.classList.remove('d-none');
+    }
+
+    if (fotoPengecekanInput) {
+        fotoPengecekanInput.addEventListener('change', renderPengecekanPreview);
+    }
+
+    if (btnHapusPengecekan && fotoPengecekanInput) {
+        btnHapusPengecekan.addEventListener('click', function () {
+            fotoPengecekanInput.value = '';
+            if (previewPengecekan) previewPengecekan.classList.add('d-none');
+            if (thumbPengecekan) thumbPengecekan.src = '';
+        });
+    }
+
+    if (nativeCameraPengecekan && fotoPengecekanInput) {
+        nativeCameraPengecekan.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                const dt = new DataTransfer();
+                dt.items.add(this.files[0]);
+                fotoPengecekanInput.files = dt.files;
+                renderPengecekanPreview();
+            }
+        });
+    }
+
+    if (nativeCameraKetidaksesuaian && fotoInput) {
+        nativeCameraKetidaksesuaian.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                const dt = new DataTransfer();
+                Array.from(fotoInput.files ?? []).forEach(f => dt.items.add(f));
+                dt.items.add(this.files[0]);
+                fotoInput.files = dt.files;
+                updateSelectedPhotoInfo();
+            }
+        });
+    }
+
+    if (btnCameraPengecekan) {
+        btnCameraPengecekan.addEventListener('click', async function () {
+            currentCameraTarget = 'pengecekan';
+            if (cameraModalTitle) cameraModalTitle.textContent = 'Foto Pengecekan Pouch';
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                if (nativeCameraPengecekan) nativeCameraPengecekan.click();
+                return;
+            }
+
+            cameraModal.show();
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: 'environment' }
+                    },
+                    audio: false
+                });
+
+                cameraPreview.srcObject = cameraStream;
+            } catch (error) {
+                cameraModal.hide();
+                if (nativeCameraPengecekan) nativeCameraPengecekan.click();
+            }
+        });
+    }
 
     const cameraModalElement =
         document.getElementById('cameraModal');
@@ -1409,15 +1621,20 @@ document.addEventListener('DOMContentLoaded', function () {
         fotoInput.click();
     });
 
-
     btnCameraFoto.addEventListener(
         'click',
         async function () {
+            currentCameraTarget = 'ketidaksesuaian';
+            if (cameraModalTitle) cameraModalTitle.textContent = 'Foto Ketidaksesuaian';
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                if (nativeCameraKetidaksesuaian) nativeCameraKetidaksesuaian.click();
+                return;
+            }
 
             cameraModal.show();
 
             try {
-
                 cameraStream =
                     await navigator.mediaDevices.getUserMedia({
                         video: {
@@ -1428,33 +1645,23 @@ document.addEventListener('DOMContentLoaded', function () {
                         audio: false
                     });
 
-
                 cameraPreview.srcObject =
                     cameraStream;
-
             } catch(error) {
-
-                alert(
-                    'Kamera tidak dapat dibuka. Pastikan izin kamera aktif.'
-                );
-
                 cameraModal.hide();
+                if (nativeCameraKetidaksesuaian) nativeCameraKetidaksesuaian.click();
             }
-
         }
     );
-
 
     takePhoto.addEventListener(
         'click',
         function () {
-
             cameraCanvas.width =
                 cameraPreview.videoWidth;
 
             cameraCanvas.height =
                 cameraPreview.videoHeight;
-
 
             cameraCanvas
                 .getContext('2d')
@@ -1464,25 +1671,36 @@ document.addEventListener('DOMContentLoaded', function () {
                     0
                 );
 
-
             cameraCanvas.toBlob(
                 function(blob){
+                    if (currentCameraTarget === 'pengecekan') {
+                        const file = new File(
+                            [blob],
+                            `foto-pengecekan-${Date.now()}.jpg`,
+                            { type: 'image/jpeg' }
+                        );
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        fotoPengecekanInput.files = dt.files;
+                        renderPengecekanPreview();
+                        stopCamera();
+                        cameraModal.hide();
+                        return;
+                    }
 
                     const file =
                         new File(
                             [
                                 blob
                             ],
-                            'foto-ketidaksesuaian.jpg',
+                            `foto-ketidaksesuaian-${Date.now()}.jpg`,
                             {
                                 type:'image/jpeg'
                             }
                         );
 
-
                     const dataTransfer =
                         new DataTransfer();
-
 
                     Array.from(
                         fotoInput.files ?? []
@@ -1492,25 +1710,20 @@ document.addEventListener('DOMContentLoaded', function () {
                             dataTransfer.items.add(file)
                     );
 
-
                     dataTransfer.items.add(file);
-
 
                     fotoInput.files =
                         dataTransfer.files;
-
 
                     updateSelectedPhotoInfo();
 
                     stopCamera();
 
                     cameraModal.hide();
-
                 },
                 'image/jpeg',
                 0.9
             );
-
         }
     );
 

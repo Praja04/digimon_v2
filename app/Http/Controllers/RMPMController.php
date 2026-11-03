@@ -4,10 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Exports\LaporanKalkulasiRmExport;
 use App\Http\Requests\RMPMStoreRequest;
-use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
 use App\Models\AnalisaLongTermHistory;
-use App\Models\AnalisaShortTerm;
+use App\Models\AnalisaRMSampel;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
 use App\Models\MasterGlassware;
@@ -44,7 +43,7 @@ class RMPMController extends Controller
     public function rm(Request $request)
     {
         if ($request->ajax()) {
-            $query = IdentitasRM::with(['analisaShortTerm', 'analisaLongTerm', 'analisaGaramGula'])
+            $query = IdentitasRM::with(['analisaSampel', 'analisaLongTerm'])
                 ->orderBy('created_at', 'desc');
 
             if ($request->filled('start_date')) {
@@ -104,24 +103,12 @@ class RMPMController extends Controller
                     $userRole = strtolower(trim(auth()->user()->role ?? ''));
                     $isSupervisor = in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
-                    $isGula = str_contains(strtoupper($data->jenis ?? ''), 'GULA');
                     $exportBtn = '';
 
-                    // Tombol Export hanya muncul jika data bertipe Gula dan analisanya sudah FINAL (bukan draft / belum diisi)
-                    $isFinal = false;
-                    if ($isGula && $data->analisaShortTerm && $data->analisaShortTerm->isNotEmpty()) {
-                        $hasFinal = $data->analisaShortTerm->contains(function ($a) {
-                            return !empty($a->status) && $a->status !== 'draft';
-                        });
-                        $hasDraft = $data->analisaShortTerm->contains(function ($a) {
-                            return $a->status === 'draft';
-                        });
-                        if ($hasFinal && !$hasDraft) {
-                            $isFinal = true;
-                        }
-                    }
+                    // Tombol Export selalu muncul jika data sudah memiliki sampel analisa (baik draft/simpan sementara maupun final)
+                    $hasAnalisa = $data->analisaSampel && $data->analisaSampel->isNotEmpty();
 
-                    if ($isGula && $isFinal) {
+                    if ($hasAnalisa) {
                         $docRmUrl = route('doc-rm.index', ['id' => $data->id]);
                         $exportBtn = '
                             <a
@@ -166,35 +153,25 @@ class RMPMController extends Controller
 
                 ->addColumn('status', function ($item) {
                     $status = '⌛ Proses';
-                    $jenisUpper = strtoupper(trim($item->jenis ?? ''));
 
-                    if ($jenisUpper === 'GARAM') {
-                        foreach ($item->analisaGaramGula as $analisa) {
-                            if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
-                                $status = '✅ Selesai';
-                                break;
-                            } elseif ($analisa->status === 'draft') {
-                                $status = '⌛ Draft';
-                            }
+                    // 1. Cek sampel analisa dari tabel terpadu analisa_rm_sampels
+                    foreach ($item->analisaSampel as $analisa) {
+                        if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
+                            $status = '✅ Selesai';
+                            break;
+                        } elseif ($analisa->status === 'draft') {
+                            $status = '⌛ Draft';
                         }
-                    } else {
-                        // Gula, Gula Kelapa, Gula Tebu, etc. Check long term or short term incoming
+                    }
+
+                    // 2. Jika belum selesai, cek juga analisa Long Term
+                    if ($status !== '✅ Selesai') {
                         foreach ($item->analisaLongTerm as $analisa) {
                             if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                 $status = '✅ Selesai';
                                 break;
-                            } elseif ($analisa->status === 'draft') {
+                            } elseif ($analisa->status === 'draft' && $status !== '⌛ Draft') {
                                 $status = '⌛ Draft';
-                            }
-                        }
-                        if ($status === '⌛ Proses') {
-                            foreach ($item->analisaShortTerm as $analisa) {
-                                if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
-                                    $status = '✅ Selesai';
-                                    break;
-                                } elseif ($analisa->status === 'draft') {
-                                    $status = '⌛ Draft';
-                                }
                             }
                         }
                     }
@@ -296,119 +273,117 @@ class RMPMController extends Controller
     /**
      * Menampilkan empat pilihan proses Packaging Material.
      */
-  public function pm()
-{
-    return view('app.rmpm.pm');
-}
+    public function pm()
+    {
+        return view('app.rmpm.pm');
+    }
 
 
-public function pmInnerOuter()
-{
-    return view('app.rmpm.pm-placeholder', [
-        'title' => 'Pengecekan Inner / Outer',
-        'subtitle' =>
+    public function pmInnerOuter()
+    {
+        return view('app.rmpm.pm-placeholder', [
+            'title' => 'Pengecekan Inner / Outer',
+            'subtitle' =>
             'Kelola antrean sampling dan pemeriksaan material Inner / Outer.',
-        'icon' => 'mdi-chart-donut',
-        'step' => 'Tahap 2',
-    ]);
-}
+            'icon' => 'mdi-chart-donut',
+            'step' => 'Tahap 2',
+        ]);
+    }
 
-/*
+    /*
 |--------------------------------------------------------------------------
 | PM - KARTON
 |--------------------------------------------------------------------------
 */
 
-public function pmKarton()
-{
-    return view('app.rmpm.karton');
-}
+    public function pmKarton()
+    {
+        return view('app.rmpm.karton');
+    }
 
-public function pmKartonMenu()
-{
-    return view('app.rmpm.pm-placeholder', [
-        'title' => 'Menu Karton',
-        'subtitle' =>
+    public function pmKartonMenu()
+    {
+        return view('app.rmpm.pm-placeholder', [
+            'title' => 'Menu Karton',
+            'subtitle' =>
             'Daftar SPB Karton yang menunggu proses pemeriksaan dan sampling.',
-        'icon' => 'mdi-format-list-bulleted-square',
-        'step' => 'Karton',
-    ]);
-}
+            'icon' => 'mdi-format-list-bulleted-square',
+            'step' => 'Karton',
+        ]);
+    }
 
-public function pmKartonDisplay(
-    PackagingIncoming $packagingIncoming
-)
-{
-    $packagingIncoming->load([
-        'jenisIncoming',
-        'jenisMaterial',
-        'supplier',
-        'samplingStatus',
-    ]);
+    public function pmKartonDisplay(
+        PackagingIncoming $packagingIncoming
+    ) {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'samplingStatus',
+        ]);
 
-    abort_unless(
-        in_array(
-            $packagingIncoming
-                ->jenisIncoming
-                ?->nama,
-            [
-                'Karton',
-                'Kardus',
-            ],
-            true
-        ),
-        404,
-        'Data incoming bukan kategori Karton.'
-    );
+        abort_unless(
+            in_array(
+                $packagingIncoming
+                    ->jenisIncoming
+                    ?->nama,
+                [
+                    'Karton',
+                    'Kardus',
+                ],
+                true
+            ),
+            404,
+            'Data incoming bukan kategori Karton.'
+        );
 
-    return view(
-        'app.rmpm.karton-display',
-        compact('packagingIncoming')
-    );
-}
+        return view(
+            'app.rmpm.karton-display',
+            compact('packagingIncoming')
+        );
+    }
 
-public function pmPouch()
-{
-    return view('app.rmpm.pm-placeholder', [
-        'title' => 'Pengecekan Pouch',
-        'subtitle' =>
+    public function pmPouch()
+    {
+        return view('app.rmpm.pm-placeholder', [
+            'title' => 'Pengecekan Pouch',
+            'subtitle' =>
             'Kelola antrean sampling dan pemeriksaan ukuran, seal, ketebalan, serta visual Pouch.',
-        'icon' => 'mdi-package-variant',
-        'step' => 'Tahap 4',
-    ]);
-}
+            'icon' => 'mdi-package-variant',
+            'step' => 'Tahap 4',
+        ]);
+    }
 
-public function pmKartonBct(
-    PackagingIncoming $packagingIncoming
-)
-{
-    $packagingIncoming->load([
-        'jenisIncoming',
-        'jenisMaterial',
-        'supplier',
-        'samplingStatus',
-    ]);
+    public function pmKartonBct(
+        PackagingIncoming $packagingIncoming
+    ) {
+        $packagingIncoming->load([
+            'jenisIncoming',
+            'jenisMaterial',
+            'supplier',
+            'samplingStatus',
+        ]);
 
-    abort_unless(
-        in_array(
-            $packagingIncoming
-                ->jenisIncoming
-                ?->nama,
-            [
-                'Karton',
-                'Kardus',
-            ],
-            true
-        ),
-        404,
-        'Data incoming bukan kategori Karton.'
-    );
+        abort_unless(
+            in_array(
+                $packagingIncoming
+                    ->jenisIncoming
+                    ?->nama,
+                [
+                    'Karton',
+                    'Kardus',
+                ],
+                true
+            ),
+            404,
+            'Data incoming bukan kategori Karton.'
+        );
 
-    return view(
-        'app.rmpm.karton-bct',
-        compact('packagingIncoming')
-    );
-}
+        return view(
+            'app.rmpm.karton-bct',
+            compact('packagingIncoming')
+        );
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -425,6 +400,8 @@ public function pmKartonBct(
             'samplingFisikRaw',
             'analisaGaramGula',
             'analisaShortTerm',
+            'analisaBahanKering',
+            'analisaBahanCair',
             'analisaLongTerm.user',
             'analisaLongTerm.histories.user',
             'analisaLongTermHistories.user',
@@ -434,8 +411,11 @@ public function pmKartonBct(
         $data_mobil = $identitas->samplingKondisiMobil;
         $data_kemasan = $identitas->samplingFisikKemasan;
         $data_raw = $identitas->samplingFisikRaw;
-        $analisa_garam_gula = $identitas->analisaGaramGula;
-        $analisa_short_term = $identitas->analisaShortTerm;
+        $analisa_sampel = $identitas->analisaSampel;
+        $analisa_garam_gula = $analisa_sampel;
+        $analisa_short_term = $analisa_sampel;
+        $analisa_bahan_kering = $analisa_sampel;
+        $analisa_bahan_cair = $analisa_sampel;
         $analisa_long_term = $identitas->analisaLongTerm;
         $analisa_long_term_histories = $identitas->analisaLongTermHistories;
 
@@ -454,8 +434,11 @@ public function pmKartonBct(
                 'data_mobil',
                 'data_kemasan',
                 'data_raw',
+                'analisa_sampel',
                 'analisa_garam_gula',
                 'analisa_short_term',
+                'analisa_bahan_kering',
+                'analisa_bahan_cair',
                 'analisa_long_term',
                 'analisa_long_term_histories',
                 'konfirmasi',
@@ -472,11 +455,16 @@ public function pmKartonBct(
             'analisaLongTermHistories.user',
             'analisaShortTerm',
             'analisaGaramGula',
+            'analisaBahanKering',
+            'analisaBahanCair',
         ])->findOrFail($id);
 
         $existingLongTerm = $identitas->analisaLongTerm->last();
-        $existingShortTerm = $identitas->analisaShortTerm ?? collect();
-        $existingGaramGula = $identitas->analisaGaramGula ?? collect();
+        $existingSampel = $identitas->analisaSampel ?? collect();
+        $existingShortTerm = $existingSampel;
+        $existingGaramGula = $existingSampel;
+        $existingBahanKering = $existingSampel;
+        $existingBahanCair = $existingSampel;
         $histories = $identitas->analisaLongTermHistories;
 
         // Preload Master Glassware Tare Weights & Quota
@@ -509,13 +497,13 @@ public function pmKartonBct(
             }
         }
 
-        $beakerQuery = DB::table('analisa_short_term')
+        $beakerQuery = DB::table('analisa_rm_sampels')
             ->whereDate('created_at', today())
             ->whereNotNull('no_beaker')
             ->where('no_beaker', '!=', '')
             ->where('id_identitas', '!=', $id);
 
-        $cawanQuery = DB::table('analisa_short_term')
+        $cawanQuery = DB::table('analisa_rm_sampels')
             ->whereDate('created_at', today())
             ->whereNotNull('no_cawan')
             ->where('no_cawan', '!=', '')
@@ -555,7 +543,7 @@ public function pmKartonBct(
             'beaker_500' => $beaker500,
             'beaker_250' => $beaker250,
             'cawan'      => $cawan,
-            'total_today'=> [
+            'total_today' => [
                 'beaker' => $totalBeakerToday,
                 'cawan'  => $totalCawanToday,
             ],
@@ -569,12 +557,14 @@ public function pmKartonBct(
             ],
         ];
 
-        // Preload Master Standards for this material
+        // Preload Master Standards for this material using SQL DISTINCT
         $cleanJenis = strtoupper(trim((string)$identitas->jenis));
         $standards = MasterStandarRm::where('status', true)
             ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
                 $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
             })
+            ->select('parameter', 'min_standar', 'max_standar', 'target_text', 'uom', 'jenis_standar')
+            ->distinct()
             ->get();
 
         $standardsMap = [];
@@ -600,7 +590,7 @@ public function pmKartonBct(
         if ($jb) {
             $paramQuery->where(function ($q) use ($jb) {
                 $q->where('jenis_bahan_id', $jb->id)
-                  ->orWhereNull('jenis_bahan_id');
+                    ->orWhereNull('jenis_bahan_id');
             });
         }
         $paramList = $paramQuery->orderBy('urutan')->orderBy('id')->get();
@@ -642,8 +632,11 @@ public function pmKartonBct(
             compact(
                 'identitas',
                 'existingLongTerm',
+                'existingSampel',
                 'existingShortTerm',
                 'existingGaramGula',
+                'existingBahanKering',
+                'existingBahanCair',
                 'histories',
                 'initialGlassware',
                 'initialStandards',
@@ -662,6 +655,23 @@ public function pmKartonBct(
     public function store(RMPMStoreRequest $request)
     {
         try {
+            $cleanSpb = trim((string)$request->no_spb);
+            $cleanJenis = strtolower(trim((string)$request->jenis));
+
+            $exists = IdentitasRM::where('no_spb', $cleanSpb)
+                ->whereRaw('LOWER(TRIM(jenis)) = ?', [$cleanJenis])
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No SPB "' . $cleanSpb . '" dengan jenis material "' . $request->jenis . '" sudah pernah diinput sebelumnya (tidak boleh duplikat).',
+                    'errors' => [
+                        'no_spb' => ['Kombinasi No SPB dan jenis bahan ini sudah terdaftar. Tidak dapat diinput 2x.']
+                    ]
+                ], 422);
+            }
+
             IdentitasRM::create(
                 $request->validated()
             );
@@ -669,13 +679,13 @@ public function pmKartonBct(
             return response()->json([
                 'status' => 'success',
                 'message' =>
-                    'Data identitas RM berhasil disimpan.',
+                'Data identitas RM berhasil disimpan.',
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' =>
-                    'Terjadi kesalahan, silakan coba lagi.',
+                'Terjadi kesalahan, silakan coba lagi.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -728,7 +738,7 @@ public function pmKartonBct(
             return response()->json([
                 'status' => 'error',
                 'message' =>
-                    'Gagal generate QR Code: ' .
+                'Gagal generate QR Code: ' .
                     $e->getMessage(),
             ], 500);
         }
@@ -871,9 +881,10 @@ public function pmKartonBct(
         }
 
         if ($request->hasFile('attachments')) {
-            $rules['attachments'] = ['nullable'];
+            $rules['attachments'] = ['nullable', 'array', 'max:5'];
+            $rules['attachments.*'] = ['file', 'mimes:jpeg,jpg,png,webp', 'max:2048'];
         } elseif ($request->hasFile('attachment')) {
-            $rules['attachment'] = ['nullable'];
+            $rules['attachment'] = ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:2048'];
         }
 
         $request->validate($rules);
@@ -1023,11 +1034,10 @@ public function pmKartonBct(
 
     /*
     |--------------------------------------------------------------------------
-    | ANALISA SHORT TERM
+    | ANALISA SAMPEL TERPADU (SEMUA BAHAN BAKU)
     |--------------------------------------------------------------------------
     */
-
-    public function storeShortTerm(Request $request)
+    public function storeSampel(Request $request)
     {
         $kategori = $request->input('kategori', 'incoming');
         if (!in_array($kategori, ['incoming', 'sta', 'monitoring'])) {
@@ -1037,19 +1047,12 @@ public function pmKartonBct(
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
 
-        // Check if existing record for this kategori is already final (locked)
-        $existingShortTerm = AnalisaShortTerm::where('id_identitas', $request->id_identitas)
-            ->where(function ($q) use ($kategori) {
-                $q->where('kategori', $kategori)
-                  ->orWhere(function ($sub) use ($kategori) {
-                      if ($kategori === 'incoming') {
-                          $sub->whereNull('kategori');
-                      }
-                  });
-            })
+        // Cek apakah data untuk kategori ini sudah FINAL
+        $existing = AnalisaRMSampel::where('id_identitas', $request->id_identitas)
+            ->where('kategori', $kategori)
             ->first();
 
-        if ($existingShortTerm && $existingShortTerm->status && $existingShortTerm->status !== 'draft') {
+        if ($existing && $existing->status && $existing->status !== 'draft') {
             $kategoriLabels = [
                 'incoming'   => 'Incoming',
                 'sta'        => 'STA (Short Term Analisa)',
@@ -1062,65 +1065,76 @@ public function pmKartonBct(
             ], 422);
         }
 
-        $rules = [
+        $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
             'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
             'keterangan'   => 'nullable|string',
             'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
-        ];
-
-        // Allow flexible inputs so parameters not applicable to the material can be null
-        $rules['brix']    = 'nullable|array';
-        $rules['ph']      = 'nullable|array';
-        $rules['ka']      = 'nullable|array';
-        $rules['kotoran'] = 'nullable|array';
-        $rules['organo']  = 'nullable|array';
-        $rules['warna']   = 'nullable|array';
-        $rules['aroma']   = 'nullable|array';
-
-        $request->validate($rules);
+        ]);
 
         DB::beginTransaction();
 
         try {
-            // Determine number of sample rows from whichever array is provided
-            $sampleCounts = [
-                count($request->brix ?? []),
-                count($request->ph ?? []),
-                count($request->kotoran ?? []),
-                count($request->ka ?? []),
-                count($request->organo ?? []),
-                count($request->warna ?? []),
-                count($request->aroma ?? []),
-                count($request->timbang_a ?? []),
-                count($request->timbang_b ?? []),
-                count($request->no_beaker ?? []),
+            $fieldArrays = [
+                $request->brix ?? [],
+                $request->ph ?? [],
+                $request->ka ?? [],
+                $request['%ka'] ?? [],
+                $request->kotoran ?? [],
+                $request->nacl ?? [],
+                $request['%nacl'] ?? [],
+                $request->berat_jenis ?? [],
+                $request->suhu ?? [],
+                $request->aw ?? [],
+                $request->viskositas ?? [],
+                $request->tn ?? [],
+                $request['%tn'] ?? [],
+                $request->gross_weight ?? [],
+                $request->organo ?? [],
+                $request->warna ?? [],
+                $request->aroma ?? [],
+                $request->fisik ?? [],
+                $request->rasa ?? [],
             ];
-            $jumlah = max(1, ...$sampleCounts);
+            $counts = array_map('count', $fieldArrays);
+            $jumlah = max(1, ...$counts);
 
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
+                $kaVal = $request['%ka'][$i] ?? ($request->ka[$i] ?? null);
+                $naclVal = $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null);
+                $tnVal = $request['%tn'][$i] ?? ($request->tn[$i] ?? null);
+
                 $dataAnalisa[] = [
                     'id_identitas'     => $request->id_identitas,
                     'kategori'         => $kategori,
+                    'sampel_ke'        => $i + 1,
                     'brix'             => $this->nullableFloat($request->brix[$i] ?? null),
                     'ph'               => $this->nullableFloat($request->ph[$i] ?? null),
+                    'ka'               => $this->nullableFloat($kaVal),
+                    'nacl'             => $this->nullableFloat($naclVal),
+                    'berat_jenis'      => $this->nullableFloat($request->berat_jenis[$i] ?? null),
+                    'suhu'             => $this->nullableFloat($request->suhu[$i] ?? null),
+                    'aw'               => $this->nullableFloat($request->aw[$i] ?? null),
+                    'viskositas'       => $this->nullableFloat($request->viskositas[$i] ?? null),
+                    'tn'               => $this->nullableFloat($tnVal),
+                    'gross_weight'     => $this->nullableFloat($request->gross_weight[$i] ?? null),
                     'no_beaker'        => $this->nullableString($request->no_beaker[$i] ?? null),
                     'berat_beaker_500' => $this->nullableFloat($request->berat_beaker_500[$i] ?? null),
                     'berat_beaker_250' => $this->nullableFloat($request->berat_beaker_250[$i] ?? null),
                     'timbang_a'        => $this->nullableFloat($request->timbang_a[$i] ?? null),
                     'timbang_b'        => $this->nullableFloat($request->timbang_b[$i] ?? null),
-                    'kotoran'          => $this->nullableFloat($request->kotoran[$i] ?? null),
-                    'rasa'             => $this->nullableString($request->rasa[$i] ?? null),
-                    'aroma_pengotor'   => $this->nullableString($request->aroma_pengotor[$i] ?? null),
                     'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
                     'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
                     'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
-                    'ka'               => $this->nullableFloat($request->ka[$i] ?? null),
+                    'kotoran'          => $this->nullableString($request->kotoran[$i] ?? null),
                     'organo'           => $this->nullableString($request->organo[$i] ?? null),
                     'warna'            => $this->nullableString($request->warna[$i] ?? null),
                     'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
+                    'fisik'            => $this->nullableString($request->fisik[$i] ?? null),
+                    'rasa'             => $this->nullableString($request->rasa[$i] ?? null),
+                    'aroma_pengotor'   => $this->nullableString($request->aroma_pengotor[$i] ?? null),
                     'disposisi'        => $request->disposisi,
                     'status'           => $isDraft ? 'draft' : 'final',
                     'keterangan'       => $request->keterangan,
@@ -1130,119 +1144,12 @@ public function pmKartonBct(
                 ];
             }
 
-            // Remove existing records for this specific kategori so it cleanly updates
-            AnalisaShortTerm::where('id_identitas', $request->id_identitas)
-                ->where(function ($q) use ($kategori) {
-                    $q->where('kategori', $kategori)
-                      ->orWhere(function ($sub) use ($kategori) {
-                          if ($kategori === 'incoming') {
-                              $sub->whereNull('kategori');
-                          }
-                      });
-                })
+            // Simpan ke tabel analisa_rm_sampels
+            AnalisaRMSampel::where('id_identitas', $request->id_identitas)
+                ->where('kategori', $kategori)
                 ->delete();
 
-            AnalisaShortTerm::insert($dataAnalisa);
-
-            DB::commit();
-
-            $kategoriLabels = [
-                'incoming'   => 'Incoming',
-                'sta'        => 'STA (Short Term Analisa)',
-                'monitoring' => 'Monitoring',
-            ];
-            $label = $kategoriLabels[$kategori] ?? 'Analisa';
-
-            $message = $isDraft
-                ? "Data {$label} berhasil disimpan sementara (Draft)."
-                : "Berhasil menyimpan data {$label}.";
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => $message,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ANALISA GARAM DAN GULA
-    |--------------------------------------------------------------------------
-    */
-
-    public function storeGaramGula(Request $request)
-    {
-        $saveAction = $request->input('save_action', 'final');
-        $isDraft = ($saveAction === 'draft');
-
-        // Check if existing record is already final (locked)
-        $existingGaramGula = AnalisaGaramGula::where('id_identitas', $request->id_identitas)->first();
-        if ($existingGaramGula && $existingGaramGula->status && $existingGaramGula->status !== 'draft') {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data analisa sudah berstatus FINAL dan tidak dapat diubah lagi.',
-            ], 422);
-        }
-
-        $request->validate([
-            'id_identitas' => 'required|exists:identitas_rm,id',
-            'fisik'        => 'nullable|array',
-            'fisik.*'      => 'nullable|string',
-            '%ka'          => 'nullable|array',
-            'kotoran'      => 'nullable|array',
-            'organo'       => 'nullable|array',
-            'warna'        => 'nullable|array',
-            'aroma'        => 'nullable|array',
-            '%nacl'        => 'nullable|array',
-            'gross_weight' => 'nullable|array',
-            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
-            'keterangan'   => 'nullable|string',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $sampleCounts = [
-                count($request->fisik ?? []),
-                count($request['%ka'] ?? []),
-                count($request->kotoran ?? []),
-                count($request->organo ?? []),
-                count($request->warna ?? []),
-                count($request->aroma ?? []),
-                count($request['%nacl'] ?? []),
-                count($request->gross_weight ?? []),
-            ];
-            $jumlah = max(1, ...$sampleCounts);
-            $dataAnalisa = [];
-
-            for ($i = 0; $i < $jumlah; $i++) {
-                $dataAnalisa[] = [
-                    'id_identitas' => $request->id_identitas,
-                    'fisik'        => $this->nullableString($request->fisik[$i] ?? null),
-                    '%ka'          => $this->nullableFloat($request['%ka'][$i] ?? null),
-                    'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
-                    'organo'       => $this->nullableString($request->organo[$i] ?? null),
-                    'warna'        => $this->nullableString($request->warna[$i] ?? null),
-                    'aroma'        => $this->nullableString($request->aroma[$i] ?? null),
-                    '%nacl'        => $this->nullableFloat($request['%nacl'][$i] ?? null),
-                    'gross_weight' => $this->nullableFloat($request->gross_weight[$i] ?? null),
-                    'disposisi'    => $request->disposisi,
-                    'status'       => $isDraft ? 'draft' : 'final',
-                    'keterangan'   => $request->keterangan,
-                    'created_by'   => auth()->id(),
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ];
-            }
-
-            AnalisaGaramGula::where('id_identitas', $request->id_identitas)->delete();
-            AnalisaGaramGula::insert($dataAnalisa);
+            AnalisaRMSampel::insert($dataAnalisa);
 
             DB::commit();
 
@@ -1259,6 +1166,42 @@ public function pmKartonBct(
                 'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function storeShortTerm(Request $request)
+    {
+        return $this->storeSampel($request);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA GARAM DAN GULA
+    |--------------------------------------------------------------------------
+    */
+
+        public function storeGaramGula(Request $request)
+    {
+        return $this->storeSampel($request);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA BAHAN KERING (MSG, ND, GULA RAFINASI)
+    |--------------------------------------------------------------------------
+    */
+    public function storeBahanKering(Request $request)
+    {
+        return $this->storeSampel($request);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA BAHAN CAIR (GLUKOSA, HFCS, SARI KECAP, KARAMEL)
+    |--------------------------------------------------------------------------
+    */
+    public function storeBahanCair(Request $request)
+    {
+        return $this->storeSampel($request);
     }
 
     /*
@@ -1337,19 +1280,19 @@ public function pmKartonBct(
     {
         try {
             // Delete all unfinalized/draft records for this identitas ID across short-term, long-term, and garam-gula
-            AnalisaShortTerm::where('id_identitas', $id)
+            AnalisaRMSampel::where('id_identitas', $id)
                 ->where(function ($q) {
                     $q->where('status', 'draft')
-                      ->orWhereNull('disposisi')
-                      ->orWhere('disposisi', '');
+                        ->orWhereNull('disposisi')
+                        ->orWhere('disposisi', '');
                 })
                 ->delete();
 
             $draftLongTerms = AnalisaLongTerm::where('id_identitas', $id)
                 ->where(function ($q) {
                     $q->where('status', 'draft')
-                      ->orWhereNull('disposisi')
-                      ->orWhere('disposisi', '');
+                        ->orWhereNull('disposisi')
+                        ->orWhere('disposisi', '');
                 })
                 ->get();
 
@@ -1360,14 +1303,6 @@ public function pmKartonBct(
 
             AnalisaLongTermHistory::where('id_identitas', $id)
                 ->where('action', 'Simpan Sementara')
-                ->delete();
-
-            AnalisaGaramGula::where('id_identitas', $id)
-                ->where(function ($q) {
-                    $q->where('status', 'draft')
-                      ->orWhereNull('disposisi')
-                      ->orWhere('disposisi', '');
-                })
                 ->delete();
 
             return response()->json([
@@ -1429,12 +1364,15 @@ public function pmKartonBct(
 
         $standards = collect();
         if ($jb) {
+            // DISTINCT SQL: Ambil parameter unik dari database master standar
             $standards = MasterStandarRm::where('status', true)
                 ->where('id_jenis_bahan', $jb->id)
+                ->select('parameter', 'jenis_standar', 'min_standar', 'max_standar', 'target_text', 'uom')
+                ->distinct()
                 ->get();
         }
 
-        $isGaram = ($cleanJenis === 'GARAM');
+        $isGaram = str_contains($cleanJenis, 'GARAM');
 
         if ($standards->isEmpty()) {
             return [
@@ -1460,11 +1398,11 @@ public function pmKartonBct(
                     'key' => 'brix[]',
                     'label' => 'Brix',
                     'type' => 'number',
-                    'unit' => $uom ?: '',
+                    'unit' => $uom ?: '°Bx',
                     'min' => $std->min_standar,
                     'max' => $std->max_standar,
                 ];
-            } elseif ($upper === 'PH' || str_contains($upper, 'PH')) {
+            } elseif ($upper === 'PH' || preg_match('/\bPH\b/i', $upper)) {
                 $fields[] = [
                     'name' => 'ph',
                     'key' => 'ph[]',
@@ -1475,15 +1413,29 @@ public function pmKartonBct(
                     'max' => $std->max_standar,
                 ];
             } elseif (str_contains($upper, 'KOTORAN')) {
-                $fields[] = [
-                    'name' => 'kotoran',
-                    'key' => 'kotoran[]',
-                    'label' => $isGaram ? 'Kotoran' : '% Kotoran',
-                    'type' => 'number',
-                    'unit' => $uom ?: ($isGaram ? '' : '%'),
-                    'min' => $std->min_standar,
-                    'max' => $std->max_standar,
-                ];
+                $isKuali = (strtolower((string)$std->jenis_standar) === 'kuali')
+                    || ($std->min_standar === null && $std->max_standar === null && !str_contains($upper, '%') && ($uom === '' || $uom === null));
+
+                if ($isKuali) {
+                    $fields[] = [
+                        'name' => 'kotoran',
+                        'key' => 'kotoran[]',
+                        'label' => 'Kotoran',
+                        'type' => 'text',
+                        'unit' => '',
+                        'target' => $std->target_text,
+                    ];
+                } else {
+                    $fields[] = [
+                        'name' => 'kotoran',
+                        'key' => 'kotoran[]',
+                        'label' => '% Kotoran',
+                        'type' => 'number',
+                        'unit' => $uom ?: '%',
+                        'min' => $std->min_standar,
+                        'max' => $std->max_standar,
+                    ];
+                }
             } elseif (str_contains($upper, 'KADAR AIR') || $upper === 'KA' || $upper === '%KA') {
                 $fieldKey = $isGaram ? '%ka[]' : 'ka[]';
                 $fieldName = $isGaram ? '%ka' : 'ka';
@@ -1532,7 +1484,17 @@ public function pmKartonBct(
                     'min' => $std->min_standar,
                     'max' => $std->max_standar,
                 ];
-            } elseif (str_contains($upper, 'WEIGHT') || str_contains($upper, 'BERAT')) {
+            } elseif (str_contains($upper, 'BERAT JENIS')) {
+                $fields[] = [
+                    'name' => 'berat_jenis',
+                    'key' => 'berat_jenis[]',
+                    'label' => 'Berat Jenis',
+                    'type' => 'number',
+                    'unit' => $uom ?: '',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'WEIGHT') || str_contains($upper, 'BERAT') || str_contains($upper, 'GROSS')) {
                 $fields[] = [
                     'name' => 'gross_weight',
                     'key' => 'gross_weight[]',
@@ -1549,6 +1511,7 @@ public function pmKartonBct(
                     'label' => 'Fisik',
                     'type' => 'text',
                     'unit' => '',
+                    'target' => $std->target_text,
                 ];
             } else {
                 $slug = Str::slug($paramRaw, '_');
@@ -1565,43 +1528,6 @@ public function pmKartonBct(
             }
         }
 
-        // Ensure laboratory calculation parameters (% Kotoran & % Kadar Air) are ALWAYS present for all materials
-        $hasKotoran = false;
-        $hasKa = false;
-        $kaName = $isGaram ? '%ka' : 'ka';
-        foreach ($fields as $f) {
-            if ($f['name'] === 'kotoran') {
-                $hasKotoran = true;
-            }
-            if ($f['name'] === $kaName || $f['name'] === 'ka' || $f['name'] === '%ka') {
-                $hasKa = true;
-            }
-        }
-
-        if (!$hasKotoran) {
-            $fields[] = [
-                'name' => 'kotoran',
-                'key' => 'kotoran[]',
-                'label' => $isGaram ? 'Kotoran' : '% Kotoran',
-                'type' => 'number',
-                'unit' => $isGaram ? '' : '%',
-                'min' => null,
-                'max' => null,
-            ];
-        }
-
-        if (!$hasKa) {
-            $fields[] = [
-                'name' => $kaName,
-                'key' => $isGaram ? '%ka[]' : 'ka[]',
-                'label' => $isGaram ? '%KA' : '% KA',
-                'type' => 'number',
-                'unit' => '%',
-                'min' => null,
-                'max' => null,
-            ];
-        }
-
         // Keep sensory parameters (Organo, Warna, Aroma) at the end of the table
         $measurementFields = [];
         $sensoryFields = [];
@@ -1615,6 +1541,9 @@ public function pmKartonBct(
             }
         }
 
-        return array_merge($measurementFields, $sensoryFields);
+        return collect(array_merge($measurementFields, $sensoryFields))
+            ->unique('name')
+            ->values()
+            ->all();
     }
 }

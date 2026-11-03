@@ -18,20 +18,15 @@ class DocRmController extends Controller
      */
     public function index(Request $request)
     {
-        // Prioritaskan daftar Raw Material yang bertipe Gula (Gula Tebu & Gula Kelapa)
-        $identitasList = IdentitasRM::where('jenis', 'LIKE', '%gula%')
+        $identitasList = IdentitasRM::with('analisaSampel')
             ->orderBy('tanggal_kedatangan', 'desc')
             ->orderBy('id', 'desc')
             ->get();
 
         $selectedId = $request->input('id');
         if (!$selectedId || !$identitasList->contains('id', $selectedId)) {
-            // Default ke data Gula Tebu terbaru terlebih dahulu
-            $defaultTebu = $identitasList->first(function ($item) {
-                $j = strtoupper(trim($item->jenis ?? ''));
-                return str_contains($j, 'TEBU') || (!str_contains($j, 'KELAPA') && str_contains($j, 'GULA'));
-            });
-            $selectedId = $defaultTebu?->id ?? $identitasList->first()?->id;
+            $defaultItem = $identitasList->first(fn($item) => $item->analisaSampel && $item->analisaSampel->isNotEmpty()) ?? $identitasList->first();
+            $selectedId = $defaultItem?->id;
         }
 
         $docData = null;
@@ -57,6 +52,7 @@ class DocRmController extends Controller
         }
 
         $identitas = IdentitasRM::with([
+            'analisaSampel',
             'analisaShortTerm',
             'analisaGaramGula',
         ])->findOrFail($id);
@@ -109,6 +105,7 @@ class DocRmController extends Controller
     public function getDocumentData($id): ?array
     {
         $identitas = IdentitasRM::with([
+            'analisaSampel',
             'analisaShortTerm',
             'analisaGaramGula',
         ])->find($id);
@@ -125,8 +122,8 @@ class DocRmController extends Controller
         $title = $isGulaTebu ? 'GULA TEBU' : ($isGulaKelapa ? 'GULA KELAPA' : $jenisUpper);
         $displayJenis = $isGulaTebu ? 'Gula Tebu' : ($isGulaKelapa ? 'Gula Kelapa' : ucwords(strtolower($jenisRaw)));
 
-        // Ambil data sampel analisa (Jika ada monitoring/long term, hitung rata-rata gabungan)
-        $samples = $identitas->analisaShortTerm ?? collect();
+        // Ambil data sampel analisa (baik draft maupun final)
+        $samples = $identitas->analisaSampel ?? ($identitas->analisaShortTerm ?? collect());
         $hasMonitoring = $samples->contains(fn($s) => strtolower($s->kategori ?? '') === 'monitoring');
         if ($hasMonitoring) {
             $incomingSamples = $samples;

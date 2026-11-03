@@ -480,6 +480,11 @@ Route::middleware(['auth'])->group(function () {
         )->name('rmpm.update-disposisi.long-term');
 
         Route::post(
+            '/analisa/rmpm/sampel',
+            [App\Http\Controllers\RMPMController::class, 'storeSampel']
+        )->name('rmpm.store.sampel');
+
+        Route::post(
             '/analisa/rmpm/long-term',
             [App\Http\Controllers\RMPMController::class, 'storeLongTerm']
         )->name('rmpm.store.long-term');
@@ -493,6 +498,16 @@ Route::middleware(['auth'])->group(function () {
             '/analisa/rmpm/garam-gula',
             [App\Http\Controllers\RMPMController::class, 'storeGaramGula']
         )->name('rmpm.store.garam-gula');
+
+        Route::post(
+            '/analisa/rmpm/bahan-kering',
+            [App\Http\Controllers\RMPMController::class, 'storeBahanKering']
+        )->name('rmpm.store.bahan-kering');
+
+        Route::post(
+            '/analisa/rmpm/bahan-cair',
+            [App\Http\Controllers\RMPMController::class, 'storeBahanCair']
+        )->name('rmpm.store.bahan-cair');
 
         Route::post(
             '/analisa/rmpm/{id}/reset-draft',
