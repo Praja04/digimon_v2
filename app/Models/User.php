@@ -18,9 +18,8 @@ use App\Models\KonfirmasiMonitoringStorageMikro;
 use App\Models\BlendingAfterAdjustMikro;
 use App\Models\KonfirmasiBlendingAfterAdjustMikro;
 use App\Models\MonitoringDailyTank;
-use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
-use App\Models\AnalisaShortTerm;
+use App\Models\AnalisaRMSampel;
 use App\Models\KonfirmasiKedatangan;
 
 class User extends Authenticatable
@@ -125,9 +124,14 @@ class User extends Authenticatable
         return $this->hasMany(MonitoringDailyTank::class, 'qc_field');
     }
 
+    public function analisaSampel()
+    {
+        return $this->hasMany(AnalisaRMSampel::class, 'created_by');
+    }
+
     public function analisaGaramGula()
     {
-        return $this->hasMany(AnalisaGaramGula::class, 'created_by');
+        return $this->hasMany(AnalisaRMSampel::class, 'created_by');
     }
 
     public function analisaLongTerm()
@@ -137,7 +141,17 @@ class User extends Authenticatable
 
     public function analisaShortTerm()
     {
-        return $this->hasMany(AnalisaShortTerm::class, 'created_by');
+        return $this->hasMany(AnalisaRMSampel::class, 'created_by');
+    }
+
+    public function analisaBahanKering()
+    {
+        return $this->hasMany(AnalisaRMSampel::class, 'created_by');
+    }
+
+    public function analisaBahanCair()
+    {
+        return $this->hasMany(AnalisaRMSampel::class, 'created_by');
     }
 
     public function konfirmasiKedatangan()

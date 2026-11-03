@@ -24,10 +24,11 @@
 
 @section('content')
 @php
-    $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
-    $isGaram = str_contains($jenisUpper, 'GARAM');
-    // Hanya Gula Kelapa (GK) dan Gula Tebu (GT) yang memiliki opsi STA dan Long Term (Uji Kristal)
-    $isKelapaTebu = (str_contains($jenisUpper, 'KELAPA') || str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GK' || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
+    $matCategory = $identitas->material_category;
+    $isKelapaTebu = ($matCategory === 'kelapa-tebu');
+    $isGaram = ($matCategory === 'garam');
+    $isBahanKering = ($matCategory === 'kering');
+    $isBahanCair = ($matCategory === 'cair');
     $isGulaKristal = $isKelapaTebu;
 @endphp
 <div class="page-content">
@@ -71,16 +72,10 @@
                                     <i class="ri-edit-line align-bottom me-1"></i> Update Analisa
                                 </a>
                                 @php
-                                    $isGula = str_contains(strtoupper($identitas->jenis ?? ''), 'GULA');
-                                    $hasAnalisaRm = false;
-                                    if ($isGula && (
-                                        ($identitas->analisaShortTerm && $identitas->analisaShortTerm->isNotEmpty()) ||
-                                        ($identitas->analisaGaramGula && $identitas->analisaGaramGula->isNotEmpty())
-                                    )) {
-                                        $hasAnalisaRm = true;
-                                    }
+                                    // Tombol Export selalu muncul jika data sudah memiliki sampel analisa (baik draft maupun final)
+                                    $hasAnalisaRm = $identitas->analisaSampel && $identitas->analisaSampel->isNotEmpty();
                                 @endphp
-                                @if ($isGula && $hasAnalisaRm)
+                                @if ($hasAnalisaRm)
                                 <a href="{{ route('doc-rm.index', ['id' => $identitas->id]) }}" class="btn btn-success" title="Buka Dokumen Laporan Kalkulasi RM">
                                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Laporan
                                 </a>
@@ -208,9 +203,9 @@
                                         <p class="text-muted mb-2 text-uppercase fw-semibold">Disposisi</p>
                                         @if ($isKelapaTebu)
                                         @php
-                                        $incomingRecord = $analisa_short_term->firstWhere('kategori', 'incoming') ?? ($analisa_short_term->whereNull('kategori')->first());
+                                        $incomingRecord = $analisa_sampel->firstWhere('kategori', 'incoming') ?? ($analisa_sampel->whereNull('kategori')->first());
                                         $disposisi_incoming = $incomingRecord->disposisi ?? null;
-                                        $staRecord = $analisa_short_term->firstWhere('kategori', 'sta');
+                                        $staRecord = $analisa_sampel->firstWhere('kategori', 'sta');
                                         $disposisi_sta = $staRecord->disposisi ?? null;
                                         $latest_long = $analisa_long_term->first();
                                         $disposisi_long_term = $latest_long->disposisi ?? null;
@@ -224,12 +219,9 @@
                                             <span class="badge bg-primary fs-7 ms-1">{{ $group_long_term }}</span>
                                             @endif
                                         </h6>
-                                        @elseif ($isGaram)
-                                        @php $disposisi_garam = $analisa_garam_gula->first()->disposisi ?? null; @endphp
-                                        <h6>Disposisi : {{ $disposisi_garam ?? 'Belum input' }}</h6>
                                         @else
-                                        @php $disposisi_short = $analisa_short_term->first()->disposisi ?? null; @endphp
-                                        <h6>Disposisi : {{ $disposisi_short ?? 'Belum input' }}</h6>
+                                        @php $disposisi_sampel = $analisa_sampel->first()->disposisi ?? null; @endphp
+                                        <h6>Disposisi : {{ $disposisi_sampel ?? 'Belum input' }}</h6>
                                         @endif
                                     </div>
                                 </div>
@@ -1165,6 +1157,206 @@
                                                             <td class="text-primary">{{ $avgNaclGG !== null ? number_format($avgNaclGG, 2) . '%' : '-' }}</td>
                                                         @elseif ($f['name'] === 'gross_weight')
                                                             <td class="text-primary">{{ $avgWeightGG !== null ? number_format($avgWeightGG, 2) . ' kg' : '-' }}</td>
+                                                        @else
+                                                            <td class="text-muted small">-</td>
+                                                        @endif
+                                                    @endforeach
+                                                    <td class="text-muted small">-</td>
+                                                    <td class="text-muted small">-</td>
+                                                </tr>
+                                            </tfoot>
+                                            @endif
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @elseif ($isBahanKering)
+                        {{-- Bahan Kering (MSG, ND, Rafinasi) --}}
+                        <div class="col-lg-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <h5 class="mb-0 fw-semibold text-dark">
+                                        <i class="ri-archive-line text-primary me-1"></i> Hasil Analisa (Bahan Kering / {{ $identitas->jenis }})
+                                    </h5>
+                                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
+                                            Total: {{ $analisa_bahan_kering->count() }} Sampel
+                                        </span>
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                            <i class="ri-edit-box-line me-1"></i> Update Analisa
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover table-striped align-middle mb-0">
+                                            <thead class="table-light text-muted text-uppercase small">
+                                                <tr>
+                                                    <th width="4%" class="text-center">#</th>
+                                                    @foreach ($displayFields as $f)
+                                                        <th>{{ $f['label'] }}</th>
+                                                    @endforeach
+                                                    <th>Disposisi</th>
+                                                    <th>Keterangan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse ($analisa_bahan_kering as $bk)
+                                                <tr>
+                                                    <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                                                    @foreach ($displayFields as $f)
+                                                        @php $colVal = $bk->{$f['name']} ?? null; @endphp
+                                                        @if ($f['name'] === 'organo')
+                                                            <td>
+                                                                @if (!empty($colVal))
+                                                                    <span class="badge {{ in_array(strtoupper($colVal), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                                        {{ $colVal }}
+                                                                    </span>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @elseif ($f['type'] === 'number')
+                                                            <td class="text-primary">
+                                                                @if ($colVal !== null && is_numeric($colVal))
+                                                                    {{ number_format((float)$colVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    {{ $colVal ?? '-' }}
+                                                                @endif
+                                                            </td>
+                                                        @else
+                                                            <td>{{ $colVal ?? '-' }}</td>
+                                                        @endif
+                                                    @endforeach
+                                                    <td>{{ $bk->disposisi ?? '-' }}</td>
+                                                    <td>{{ $bk->keterangan ?? '-' }}</td>
+                                                </tr>
+                                                @empty
+                                                <tr>
+                                                    <td colspan="{{ count($displayFields) + 3 }}" class="text-center text-muted py-4">
+                                                        Belum ada data analisa
+                                                    </td>
+                                                </tr>
+                                                @endforelse
+                                            </tbody>
+                                            @if ($analisa_bahan_kering->isNotEmpty())
+                                            <tfoot class="table-light fw-bold">
+                                                <tr>
+                                                    <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
+                                                    @foreach ($displayFields as $f)
+                                                        @if ($f['type'] === 'number')
+                                                            @php $avgVal = $analisa_bahan_kering->whereNotNull($f['name'])->avg($f['name']); @endphp
+                                                            <td class="text-primary">{{ $avgVal !== null ? number_format($avgVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') : '-' }}</td>
+                                                        @elseif ($f['name'] === 'organo')
+                                                            <td>
+                                                                @php
+                                                                    $totalOrg = $analisa_bahan_kering->whereNotNull('organo')->count();
+                                                                    $okOrg = $analisa_bahan_kering->filter(fn($i) => in_array(strtoupper(trim($i->organo ?? '')), ['OK', 'SESUAI', 'NORMAL']))->count();
+                                                                    $pctOrg = $totalOrg > 0 ? round(($okOrg / $totalOrg) * 100) : 0;
+                                                                @endphp
+                                                                <span class="badge {{ $pctOrg >= 90 ? 'bg-success' : 'bg-warning text-dark' }}">{{ $pctOrg }}% OK</span>
+                                                            </td>
+                                                        @else
+                                                            <td class="text-muted small">-</td>
+                                                        @endif
+                                                    @endforeach
+                                                    <td class="text-muted small">-</td>
+                                                    <td class="text-muted small">-</td>
+                                                </tr>
+                                            </tfoot>
+                                            @endif
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @elseif ($isBahanCair)
+                        {{-- Bahan Cair (Glukosa, HFCS, Sari Kecap, Karamel) --}}
+                        <div class="col-lg-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <h5 class="mb-0 fw-semibold text-dark">
+                                        <i class="ri-drop-line text-primary me-1"></i> Hasil Analisa (Bahan Cair / {{ $identitas->jenis }})
+                                    </h5>
+                                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
+                                            Total: {{ $analisa_bahan_cair->count() }} Sampel
+                                        </span>
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                            <i class="ri-edit-box-line me-1"></i> Update Analisa
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover table-striped align-middle mb-0">
+                                            <thead class="table-light text-muted text-uppercase small">
+                                                <tr>
+                                                    <th width="4%" class="text-center">#</th>
+                                                    @foreach ($displayFields as $f)
+                                                        <th>{{ $f['label'] }}</th>
+                                                    @endforeach
+                                                    <th>Disposisi</th>
+                                                    <th>Keterangan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse ($analisa_bahan_cair as $bc)
+                                                <tr>
+                                                    <td class="text-center fw-semibold text-muted">{{ $loop->iteration }}</td>
+                                                    @foreach ($displayFields as $f)
+                                                        @php $colVal = $bc->{$f['name']} ?? null; @endphp
+                                                        @if ($f['name'] === 'organo')
+                                                            <td>
+                                                                @if (!empty($colVal))
+                                                                    <span class="badge {{ in_array(strtoupper($colVal), ['OK', 'SESUAI', 'NORMAL']) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                                        {{ $colVal }}
+                                                                    </span>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
+                                                        @elseif ($f['type'] === 'number')
+                                                            <td class="text-primary">
+                                                                @if ($colVal !== null && is_numeric($colVal))
+                                                                    {{ number_format((float)$colVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') }}
+                                                                @else
+                                                                    {{ $colVal ?? '-' }}
+                                                                @endif
+                                                            </td>
+                                                        @else
+                                                            <td>{{ $colVal ?? '-' }}</td>
+                                                        @endif
+                                                    @endforeach
+                                                    <td>{{ $bc->disposisi ?? '-' }}</td>
+                                                    <td>{{ $bc->keterangan ?? '-' }}</td>
+                                                </tr>
+                                                @empty
+                                                <tr>
+                                                    <td colspan="{{ count($displayFields) + 3 }}" class="text-center text-muted py-4">
+                                                        Belum ada data analisa
+                                                    </td>
+                                                </tr>
+                                                @endforelse
+                                            </tbody>
+                                            @if ($analisa_bahan_cair->isNotEmpty())
+                                            <tfoot class="table-light fw-bold">
+                                                <tr>
+                                                    <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
+                                                    @foreach ($displayFields as $f)
+                                                        @if ($f['type'] === 'number')
+                                                            @php $avgVal = $analisa_bahan_cair->whereNotNull($f['name'])->avg($f['name']); @endphp
+                                                            <td class="text-primary">{{ $avgVal !== null ? number_format($avgVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') : '-' }}</td>
+                                                        @elseif ($f['name'] === 'organo')
+                                                            <td>
+                                                                @php
+                                                                    $totalOrg = $analisa_bahan_cair->whereNotNull('organo')->count();
+                                                                    $okOrg = $analisa_bahan_cair->filter(fn($i) => in_array(strtoupper(trim($i->organo ?? '')), ['OK', 'SESUAI', 'NORMAL']))->count();
+                                                                    $pctOrg = $totalOrg > 0 ? round(($okOrg / $totalOrg) * 100) : 0;
+                                                                @endphp
+                                                                <span class="badge {{ $pctOrg >= 90 ? 'bg-success' : 'bg-warning text-dark' }}">{{ $pctOrg }}% OK</span>
+                                                            </td>
                                                         @else
                                                             <td class="text-muted small">-</td>
                                                         @endif

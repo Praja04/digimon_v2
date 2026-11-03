@@ -3,10 +3,11 @@
 
 @section('content')
 @php
-    $jenisUpper = strtoupper(trim($identitas->jenis ?? ''));
-    $isGaram = str_contains($jenisUpper, 'GARAM');
-    // Hanya Gula Kelapa (GK) dan Gula Tebu (GT) yang memiliki opsi STA dan Long Term (Uji Kristal)
-    $isKelapaTebu = (str_contains($jenisUpper, 'KELAPA') || str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GK' || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
+    $matCategory = $identitas->material_category;
+    $isKelapaTebu = ($matCategory === 'kelapa-tebu');
+    $isGaram = ($matCategory === 'garam');
+    $isBahanKering = ($matCategory === 'kering');
+    $isBahanCair = ($matCategory === 'cair');
     $isGulaKristal = $isKelapaTebu;
 @endphp
 <div class="page-content">
@@ -1005,21 +1006,21 @@
 @section('scripts')
 <script>
     const JENIS = '{{ $identitas->jenis }}';
+    const MAT_CATEGORY = '{{ $identitas->material_category }}';
     const IDENTITAS_ID = '{{ $identitas->id }}';
     const DRAFT_KEY = `rmpm_analisa_${IDENTITAS_ID}`;
     const SERVER_EXISTING = @json($existingLongTerm ?? null);
     const SERVER_SHORT_TERM = @json($existingShortTerm ?? []);
     const SERVER_GARAM_GULA = @json($existingGaramGula ?? []);
+    const SERVER_BAHAN_KERING = @json($existingBahanKering ?? []);
+    const SERVER_BAHAN_CAIR = @json($existingBahanCair ?? []);
     const SERVER_INITIAL_GLASSWARE = @json($initialGlassware ?? null);
     const SERVER_INITIAL_STANDARDS = @json($initialStandards ?? null);
     const SERVER_INITIAL_PARAMETERS = @json($initialParameters ?? null);
     const SERVER_DYNAMIC_FIELDS = @json($dynamicFields ?? []);
 
     function isGulaKristalMaterial(jenisStr) {
-        if (!jenisStr) return false;
-        const j = jenisStr.toUpperCase().trim();
-        // Hanya Gula Kelapa (GK) dan Gula Tebu (GT) yang memiliki opsi STA dan Long Term (Uji Kristal)
-        return (j.includes('TEBU') || j.includes('KELAPA') || j === 'GK' || j === 'GT') && !j.includes('RAFINASI');
+        return MAT_CATEGORY === 'kelapa-tebu';
     }
 
     let currentType = null;
@@ -1031,7 +1032,9 @@
         'sta': 1,
         'monitoring': 1,
         'long-term': 1,
-        'garam-gula': 1
+        'garam-gula': 1,
+        'bahan-kering': 1,
+        'bahan-cair': 1
     };
     let selectedFiles = [];       // array of File objects for newly added photos
     let existingPhotos = [];      // array of string filenames from server draft/record
@@ -1070,6 +1073,12 @@
 
         if (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0) {
             categorySampleCounts['garam-gula'] = SERVER_GARAM_GULA.length;
+        }
+        if (SERVER_BAHAN_KERING && SERVER_BAHAN_KERING.length > 0) {
+            categorySampleCounts['bahan-kering'] = SERVER_BAHAN_KERING.length;
+        }
+        if (SERVER_BAHAN_CAIR && SERVER_BAHAN_CAIR.length > 0) {
+            categorySampleCounts['bahan-cair'] = SERVER_BAHAN_CAIR.length;
         }
     }
 
@@ -1713,15 +1722,85 @@
             e.preventDefault();
             const target = $(this).data('target'); // 'kotoran' or 'ka'
 
-            // Force recalculate all rows to ensure Tab 1 is 100% updated
+            // Blur active element to force immediate parsing & normalization
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+
+            let hasValidCalc = false;
+            let invalidReason = '';
+
             if (target === 'kotoran') {
                 $('#tableLembarKotoran tbody tr').each(function(idx) {
                     calculateRowKotoran(idx);
+                    const $inputRingkasan = $('#paneRingkasan tbody tr').eq(idx).find('.input-kotoran, input[name="kotoran[]"]');
+                    const val = $inputRingkasan.val();
+                    if (val && !isNaN(parseFloat(val))) {
+                        hasValidCalc = true;
+                    } else if (!invalidReason) {
+                        const $r = $(this);
+                        const beaker = $r.find('.select-no-beaker').val();
+                        const aStr = $r.find('input[name="timbang_a[]"]').val();
+                        const bStr = $r.find('input[name="timbang_b[]"]').val();
+                        const t500 = parseFloat($r.find('input[name="berat_beaker_500[]"]').val());
+                        const t250 = parseFloat($r.find('input[name="berat_beaker_250[]"]').val());
+                        const a = parseRapidNumericValue(aStr);
+                        const b = parseRapidNumericValue(bStr);
+                        if (!beaker) {
+                            invalidReason = 'Nomor beaker belum dipilih.';
+                        } else if (!aStr || !bStr) {
+                            invalidReason = 'Timbang Beaker 500g dan 250g belum lengkap diisi.';
+                        } else if (a <= t500) {
+                            invalidReason = `Timbang Beaker 500g (${a}g) harus lebih besar dari Tare B500 (${t500.toFixed(2)}g).`;
+                        } else if (b <= t250) {
+                            invalidReason = `Timbang Beaker 250g (${b}g) harus lebih besar dari Tare B250 (${t250.toFixed(2)}g).`;
+                        }
+                    }
                 });
+
+                if (!hasValidCalc) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Hasil % Kotoran Belum Dapat Diterapkan',
+                        html: `${invalidReason || 'Periksa kembali isian No. Beaker dan Timbang Beaker 500g / 250g.'}<br><br><small class="text-muted">Pastikan timbang beaker lebih besar dari berat tara beaker.</small>`,
+                        confirmButtonText: 'Mengerti'
+                    });
+                    return;
+                }
             } else if (target === 'ka') {
                 $('#tableLembarKa tbody tr').each(function(idx) {
                     calculateRowKa(idx);
+                    const $inputRingkasan = $('#paneRingkasan tbody tr').eq(idx).find('.input-ka, input[name="%ka[]"], input[name="ka[]"]');
+                    const val = $inputRingkasan.val();
+                    if (val && !isNaN(parseFloat(val))) {
+                        hasValidCalc = true;
+                    } else if (!invalidReason) {
+                        const $r = $(this);
+                        const cawan = $r.find('.select-no-cawan').val();
+                        const aaStr = $r.find('input[name="timbang_aa[]"]').val();
+                        const aa = parseRapidNumericValue(aaStr);
+                        const tare = parseFloat($r.find('input[name="berat_cawan[]"]').val());
+                        if (!cawan) {
+                            invalidReason = 'Nomor cawan belum dipilih.';
+                        } else if (!aaStr) {
+                            invalidReason = 'Bobot Akhir (AA) belum diisi.';
+                        } else if (aa <= tare) {
+                            invalidReason = `Bobot Akhir (${aa}g) harus lebih besar dari Tare Cawan (${tare.toFixed(2)}g).<br><small class="text-muted">Bobot Akhir adalah berat cawan + sampel kering setelah di-oven (misal: ${(tare + 4.95).toFixed(2)}g).</small>`;
+                        } else if ((aa - tare) > 5.00) {
+                            invalidReason = `Net bobot sampel (${(aa - tare).toFixed(2)}g) melebihi berat awal 5.00g (Anomali).`;
+                        }
+                    }
                 });
+
+                if (!hasValidCalc) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Hasil % Kadar Air Belum Dapat Diterapkan',
+                        html: `${invalidReason || 'Periksa kembali isian No. Cawan dan Bobot Akhir (AA).'}<br><br><small class="text-muted"><strong>Petunjuk:</strong> Bobot Akhir (AA) adalah berat cawan + sampel kering setelah di-oven (harus lebih besar dari berat cawan kosong).</small>`,
+                        confirmButtonText: 'Mengerti'
+                    });
+                    return;
+                }
             }
 
             calculateStatistics();
@@ -1735,9 +1814,8 @@
             }
 
             // Pulse highlight target input column in Ringkasan
-            const targetSelector = target === 'kotoran' ? 'input[name="kotoran[]"]' : (currentType === 'garam-gula' ? 'input[name="%ka[]"]' : 'input[name="ka[]"]');
-            const $targetTable = (currentType === 'garam-gula') ? $('#tableAnalisaGaramGula') : $('#tableAnalisaShortTerm');
-            const $targetInputs = $targetTable.find('tbody ' + targetSelector);
+            const targetSelector = target === 'kotoran' ? '.input-kotoran, input[name="kotoran[]"]' : '.input-ka, input[name="%ka[]"], input[name="ka[]"]';
+            const $targetInputs = $('#paneRingkasan').find(targetSelector);
             $targetInputs.closest('td').addClass('highlight-flash');
             setTimeout(() => {
                 $targetInputs.closest('td').removeClass('highlight-flash');
@@ -2501,6 +2579,14 @@
             if (!SERVER_GARAM_GULA || !SERVER_GARAM_GULA.length) return 'empty';
             return SERVER_GARAM_GULA.some(item => item.status === 'draft') ? 'draft' : 'final';
         }
+        if (t === 'bahan-kering') {
+            if (!SERVER_BAHAN_KERING || !SERVER_BAHAN_KERING.length) return 'empty';
+            return SERVER_BAHAN_KERING.some(item => item.status === 'draft') ? 'draft' : 'final';
+        }
+        if (t === 'bahan-cair') {
+            if (!SERVER_BAHAN_CAIR || !SERVER_BAHAN_CAIR.length) return 'empty';
+            return SERVER_BAHAN_CAIR.some(item => item.status === 'draft') ? 'draft' : 'final';
+        }
         if (t === 'short-term') {
             const cat = k || 'incoming';
             const matching = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === (cat || 'incoming'));
@@ -2752,34 +2838,44 @@
         return true;
     }
 
-    function populateExistingGaramGula(customJumlah = null) {
-        if (!SERVER_GARAM_GULA || !SERVER_GARAM_GULA.length) return false;
+    function populateGgFamilyRecords(records, type, customJumlah = null) {
+        if (!records || !records.length) return false;
 
-        const count = (customJumlah && customJumlah > 0) ? customJumlah : SERVER_GARAM_GULA.length;
-        currentType = 'garam-gula';
+        const count = (customJumlah && customJumlah > 0) ? customJumlah : records.length;
+        currentType = type;
         currentKategori = 'incoming';
         currentJumlah = count;
 
         $('#jumlahData').val(count);
-        startForm('garam-gula', count, 'incoming');
+        startForm(type, count, 'incoming');
 
         setTimeout(() => {
-            if (SERVER_GARAM_GULA[0].disposisi) {
-                $('select[name="disposisi"]').val(SERVER_GARAM_GULA[0].disposisi).trigger('change');
+            if (records[0].disposisi) {
+                $('select[name="disposisi"]').val(records[0].disposisi).trigger('change');
             } else {
                 $('select[name="disposisi"]').val('').trigger('change');
             }
             updateDraftBadgeStatus();
-            if (SERVER_GARAM_GULA[0].keterangan) {
-                $('textarea[name="keterangan"]').val(SERVER_GARAM_GULA[0].keterangan);
+            if (records[0].keterangan) {
+                $('textarea[name="keterangan"]').val(records[0].keterangan);
             }
-            SERVER_GARAM_GULA.forEach((rec, idx) => {
+
+            records.forEach((rec, idx) => {
                 if (idx >= count) return;
-                if (rec.fisik) $('input[name="fisik[]"]').eq(idx).val(rec.fisik);
-                if (rec.ka) $('input[name="%ka[]"]').eq(idx).val(rec.ka);
-                if (rec.kotoran) $('input[name="kotoran[]"]').eq(idx).val(rec.kotoran);
-                if (rec.nacl) $('input[name="%nacl[]"]').eq(idx).val(rec.nacl);
-                if (rec.gross_weight) $('input[name="gross_weight[]"]').eq(idx).val(rec.gross_weight);
+
+                // 1. Numeric Ringkasan Fields
+                if (rec.brix !== null && rec.brix !== undefined) $('input[name="brix[]"]').eq(idx).val(rec.brix);
+                if (rec.ph !== null && rec.ph !== undefined) $('input[name="ph[]"]').eq(idx).val(rec.ph);
+                if (rec.gross_weight !== null && rec.gross_weight !== undefined) $('input[name="gross_weight[]"]').eq(idx).val(rec.gross_weight);
+                if (rec.berat_jenis !== null && rec.berat_jenis !== undefined) $('input[name="berat_jenis[]"]').eq(idx).val(rec.berat_jenis);
+                if (rec.suhu !== null && rec.suhu !== undefined) $('input[name="suhu[]"]').eq(idx).val(rec.suhu);
+                if (rec.aw !== null && rec.aw !== undefined) $('input[name="aw[]"]').eq(idx).val(rec.aw);
+                if (rec.viskositas !== null && rec.viskositas !== undefined) $('input[name="viskositas[]"]').eq(idx).val(rec.viskositas);
+                if (rec.nacl !== null && rec.nacl !== undefined) $('input[name="%nacl[]"], input[name="nacl[]"]').eq(idx).val(rec.nacl);
+                if (rec.tn !== null && rec.tn !== undefined) $('input[name="%tn[]"], input[name="tn[]"]').eq(idx).val(rec.tn);
+                if (rec.fisik !== null && rec.fisik !== undefined) $('input[name="fisik[]"]').eq(idx).val(rec.fisik);
+
+                // 2. Dropdown / Categorical Fields
                 if (rec.warna !== null && rec.warna !== undefined && rec.warna !== '') {
                     setSelectDropdownVal($('select[name="warna[]"]').eq(idx), rec.warna, 'warna');
                 }
@@ -2790,11 +2886,60 @@
                     const $container = $('.organo-cell-container').eq(idx);
                     applyOrganoValueToCell($container, rec.organo);
                 }
+
+                // 3. Tab 2: Lembar % Kotoran (Hitungan Beaker)
+                if (rec.no_beaker) {
+                    $('select[name="no_beaker[]"]').eq(idx).html(getBeakerOptions(rec.no_beaker)).val(rec.no_beaker);
+                    const phys = getPhysicalNoFromCode(rec.no_beaker);
+                    const t500 = (glasswareData.beaker_500 && glasswareData.beaker_500[phys] !== undefined) ? glasswareData.beaker_500[phys] : rec.berat_beaker_500;
+                    const t250 = (glasswareData.beaker_250 && glasswareData.beaker_250[phys] !== undefined) ? glasswareData.beaker_250[phys] : rec.berat_beaker_250;
+                    $('input[name="berat_beaker_500[]"]').eq(idx).val(t500);
+                    $('input[name="berat_beaker_250[]"]').eq(idx).val(t250);
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-500').text(t500 ? t500 + 'g' : '-');
+                    $('#tableLembarKotoran tbody tr').eq(idx).find('.val-tare-250').text(t250 ? t250 + 'g' : '-');
+                }
+                if (rec.timbang_a !== null && rec.timbang_a !== undefined) $('input[name="timbang_a[]"]').eq(idx).val(rec.timbang_a);
+                if (rec.timbang_b !== null && rec.timbang_b !== undefined) $('input[name="timbang_b[]"]').eq(idx).val(rec.timbang_b);
+                if (rec.kotoran !== null && rec.kotoran !== undefined) {
+                    $('input[name="kotoran[]"]').eq(idx).val(rec.kotoran);
+                }
+                if (rec.rasa) $('select[name="rasa[]"]').eq(idx).val(rec.rasa);
+                if (rec.aroma_pengotor) $('select[name="aroma_pengotor[]"]').eq(idx).val(rec.aroma_pengotor);
+
+                // 4. Tab 3: Lembar % Kadar Air (Hitungan Cawan)
+                if (rec.no_cawan) {
+                    $('select[name="no_cawan[]"]').eq(idx).html(getCawanOptions(rec.no_cawan)).val(rec.no_cawan);
+                    const phys = getPhysicalNoFromCode(rec.no_cawan);
+                    const tCawan = (glasswareData.cawan && glasswareData.cawan[phys] !== undefined) ? glasswareData.cawan[phys] : rec.berat_cawan;
+                    $('input[name="berat_cawan[]"]').eq(idx).val(tCawan);
+                    $('#tableLembarKa tbody tr').eq(idx).find('.val-tare-cawan').text(tCawan ? tCawan + 'g' : '-');
+                }
+                if (rec.timbang_aa !== null && rec.timbang_aa !== undefined) $('input[name="timbang_aa[]"]').eq(idx).val(rec.timbang_aa);
+                if (rec.ka !== null && rec.ka !== undefined) {
+                    $('input[name="%ka[]"], input[name="ka[]"]').eq(idx).val(rec.ka);
+                }
+
+                // Recalculate row results
+                calculateRowKotoran(idx);
+                calculateRowKa(idx);
             });
+
             calculateStatistics();
             applyFormLockState();
         }, 100);
         return true;
+    }
+
+    function populateExistingGaramGula(customJumlah = null) {
+        return populateGgFamilyRecords(SERVER_GARAM_GULA, 'garam-gula', customJumlah);
+    }
+
+    function populateExistingBahanKering(customJumlah = null) {
+        return populateGgFamilyRecords(SERVER_BAHAN_KERING, 'bahan-kering', customJumlah);
+    }
+
+    function populateExistingBahanCair(customJumlah = null) {
+        return populateGgFamilyRecords(SERVER_BAHAN_CAIR, 'bahan-cair', customJumlah);
     }
 
     function initFormData() {
@@ -2863,17 +3008,26 @@
         $('#setupSection').show();
         $('#dividerForm, #analisaSection').hide();
 
-        const isKelapaTebu = isGulaKristalMaterial(JENIS);
-        const isGaram = JENIS.toUpperCase().includes('GARAM');
-
-        if (isKelapaTebu) {
+        if (MAT_CATEGORY === 'kelapa-tebu') {
             const activeRadio = $('input[name="analisa_type"]:checked').val() || 'incoming';
             $('#jumlahData').val(categorySampleCounts[activeRadio] || 1);
-        } else if (isGaram) {
+        } else if (MAT_CATEGORY === 'garam') {
             const count = (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0)
                 ? SERVER_GARAM_GULA.length
                 : (categorySampleCounts['garam-gula'] || 1);
             categorySampleCounts['garam-gula'] = count;
+            $('#jumlahData').val(count);
+        } else if (MAT_CATEGORY === 'kering') {
+            const count = (SERVER_BAHAN_KERING && SERVER_BAHAN_KERING.length > 0)
+                ? SERVER_BAHAN_KERING.length
+                : (categorySampleCounts['bahan-kering'] || 1);
+            categorySampleCounts['bahan-kering'] = count;
+            $('#jumlahData').val(count);
+        } else if (MAT_CATEGORY === 'cair') {
+            const count = (SERVER_BAHAN_CAIR && SERVER_BAHAN_CAIR.length > 0)
+                ? SERVER_BAHAN_CAIR.length
+                : (categorySampleCounts['bahan-cair'] || 1);
+            categorySampleCounts['bahan-cair'] = count;
             $('#jumlahData').val(count);
         } else {
             const count = (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0)
@@ -2886,13 +3040,18 @@
 
     function handleMulai(e) {
         if (e) e.preventDefault();
-        const isKelapaTebu = isGulaKristalMaterial(JENIS);
-        const isGaram = JENIS.toUpperCase().includes('GARAM');
-        let selectedVal = isKelapaTebu ? $('input[name="analisa_type"]:checked').val() : (isGaram ? 'garam-gula' : 'short-term');
-
-        if (isKelapaTebu && !selectedVal) {
-            selectedVal = 'incoming';
-            $('input[name="analisa_type"][value="incoming"]').prop('checked', true);
+        const isKelapaTebu = (MAT_CATEGORY === 'kelapa-tebu');
+        let selectedVal = 'incoming';
+        if (MAT_CATEGORY === 'kelapa-tebu') {
+            selectedVal = $('input[name="analisa_type"]:checked').val() || 'incoming';
+        } else if (MAT_CATEGORY === 'garam') {
+            selectedVal = 'garam-gula';
+        } else if (MAT_CATEGORY === 'kering') {
+            selectedVal = 'bahan-kering';
+        } else if (MAT_CATEGORY === 'cair') {
+            selectedVal = 'bahan-cair';
+        } else {
+            selectedVal = 'short-term';
         }
 
         const inputJumlah = parseInt($('#jumlahData').val()) || categorySampleCounts[selectedVal] || 1;
@@ -2928,6 +3087,50 @@
                 restoreFromDraft('garam-gula');
             } else {
                 startForm('garam-gula', inputJumlah, 'incoming');
+            }
+            return;
+        }
+
+        if (selectedVal === 'bahan-kering') {
+            let draft;
+            try {
+                draft = JSON.parse(localStorage.getItem(getDraftKey('bahan-kering')));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.type === 'bahan-kering') draft = legacy;
+                }
+            } catch (e) {}
+
+            if (SERVER_BAHAN_KERING && SERVER_BAHAN_KERING.length > 0) {
+                populateExistingBahanKering(inputJumlah);
+                if (draft && draft.fields) loadFieldsFromDraft(draft.fields);
+            } else if (draft && draft.setup && draft.setup.type === 'bahan-kering') {
+                draft.setup.jumlah = inputJumlah;
+                restoreFromDraft('bahan-kering');
+            } else {
+                startForm('bahan-kering', inputJumlah, 'incoming');
+            }
+            return;
+        }
+
+        if (selectedVal === 'bahan-cair') {
+            let draft;
+            try {
+                draft = JSON.parse(localStorage.getItem(getDraftKey('bahan-cair')));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && legacy.setup.type === 'bahan-cair') draft = legacy;
+                }
+            } catch (e) {}
+
+            if (SERVER_BAHAN_CAIR && SERVER_BAHAN_CAIR.length > 0) {
+                populateExistingBahanCair(inputJumlah);
+                if (draft && draft.fields) loadFieldsFromDraft(draft.fields);
+            } else if (draft && draft.setup && draft.setup.type === 'bahan-cair') {
+                draft.setup.jumlah = inputJumlah;
+                restoreFromDraft('bahan-cair');
+            } else {
+                startForm('bahan-cair', inputJumlah, 'incoming');
             }
             return;
         }
@@ -3282,8 +3485,14 @@
         } else if (currentType === 'long-term') {
             typeBadge = '<i class="ri-microscope-line me-1"></i> Long Term';
             $('#labelAnalisaType').removeClass().addClass('badge bg-dark text-white fs-6').html(typeBadge);
+        } else if (currentType === 'bahan-kering') {
+            typeBadge = '<i class="ri-archive-line me-1"></i> Analisa Bahan Kering (' + JENIS + ')';
+            $('#labelAnalisaType').removeClass().addClass('badge bg-primary text-white fs-6').html(typeBadge);
+        } else if (currentType === 'bahan-cair') {
+            typeBadge = '<i class="ri-drop-line me-1"></i> Analisa Bahan Cair (' + JENIS + ')';
+            $('#labelAnalisaType').removeClass().addClass('badge bg-info text-white fs-6').html(typeBadge);
         } else {
-            typeBadge = 'Analisa Standar';
+            typeBadge = 'Analisa Standar (' + JENIS + ')';
             $('#labelAnalisaType').removeClass().addClass('badge bg-primary text-white fs-6').html(typeBadge);
         }
 
@@ -3307,7 +3516,7 @@
             return;
         }
 
-        if (type === 'garam-gula') {
+        if (type === 'garam-gula' || type === 'bahan-kering' || type === 'bahan-cair') {
             $('#analisaAccordion').html(renderGaramGulaTable(jumlah));
             calculateStatistics();
             updateMainFormActionsVisibility();
@@ -3511,8 +3720,8 @@
                         <input type="hidden" name="berat_cawan[]" value="${tareCawan}">
                     </td>
                     <td style="min-width: 150px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
-                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <span class="val-tare-cawan">${tareCawan ? tareCawan + 'g' : '-'}</span></small>
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="${tareCawan ? (parseFloat(tareCawan) + 4.95).toFixed(2) : '0.00'}" autocomplete="off">
+                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <strong class="val-tare-cawan text-primary">${tareCawan ? tareCawan + 'g' : '-'}</strong> <span class="text-secondary" style="font-size:9.5px;">(AA = Cawan + sampel &gt; tare)</span></small>
                     </td>
                     <td style="min-width: 150px;" class="text-center align-middle">
                         <span class="badge badge-ka-calc bg-light text-muted fs-7">-%</span>
@@ -3937,8 +4146,8 @@
                         <input type="hidden" name="berat_cawan[]" value="${tareCawan}">
                     </td>
                     <td style="min-width: 150px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
-                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <span class="val-tare-cawan">${tareCawan ? tareCawan + 'g' : '-'}</span></small>
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="${tareCawan ? (parseFloat(tareCawan) + 4.95).toFixed(2) : '0.00'}" autocomplete="off">
+                        <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <strong class="val-tare-cawan text-primary">${tareCawan ? tareCawan + 'g' : '-'}</strong> <span class="text-secondary" style="font-size:9.5px;">(AA = Cawan + sampel &gt; tare)</span></small>
                     </td>
                     <td style="min-width: 150px;" class="text-center align-middle">
                         <span class="badge badge-ka-calc bg-light text-muted fs-7">-%</span>
@@ -4525,37 +4734,43 @@
         const b = parseRapidNumericValue(timbangBStr);
 
         const $badge = $tabKotoranRow.find('.badge-kotoran-calc');
-        const $tabRingkasanInput = (currentType === 'garam-gula')
-            ? $('#tableAnalisaGaramGula tbody tr').eq(rowIdx).find('input[name="kotoran[]"]')
-            : $('#tableAnalisaShortTerm tbody tr').eq(rowIdx).find('input[name="kotoran[]"]');
+        const $tabRingkasanInput = $('#paneRingkasan tbody tr').eq(rowIdx).find('.input-kotoran, input[name="kotoran[]"]');
         const maxKotoran = (dynamicStandards && dynamicStandards.kotoran && dynamicStandards.kotoran.max !== null) ? dynamicStandards.kotoran.max : 10.0;
         const maxKotoranLabel = (dynamicStandards && dynamicStandards.kotoran && dynamicStandards.kotoran.label) ? dynamicStandards.kotoran.label : `${maxKotoran}%`;
 
         if (!isNaN(a) && !isNaN(b) && a > 0 && b > 0) {
             if (isNaN(t500) || t500 <= 0 || isNaN(t250) || t250 <= 0) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                 $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html('<i class="ri-alert-line me-1"></i>Pilih No. Beaker');
             } else if (a <= t500) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                 $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Beaker 500g (${a}g) &le; Tare (${t500.toFixed(2)}g)`);
             } else if (b <= t250) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                 $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Beaker 250g (${b}g) &le; Tare (${t250.toFixed(2)}g)`);
             } else {
                 const netA = a - t500;
                 const netB = b - t250;
 
                 if (netA <= 0) {
-                    $tabRingkasanInput.val('');
+                    $tabRingkasanInput.val('').trigger('input').trigger('change');
+                    if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                     $badge.removeClass().addClass('badge bg-warning text-dark fs-7').text('Net Beaker 500g <= 0');
                 } else if (netB > netA) {
-                    $tabRingkasanInput.val('');
+                    $tabRingkasanInput.val('').trigger('input').trigger('change');
+                    if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                     $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Anomali (Net B250 ${netB.toFixed(2)}g > Net B500 ${netA.toFixed(2)}g)`);
                 } else {
                     const kotoranVal = ((netA - netB) / netA) * 100;
                     const formatted = kotoranVal.toFixed(2);
 
-                    $tabRingkasanInput.val(formatted);
+                    $tabRingkasanInput.val(formatted).trigger('input').trigger('change');
+                    if ($tabRingkasanInput.length) {
+                        $tabRingkasanInput[0].value = formatted;
+                    }
 
                     if (kotoranVal > maxKotoran) {
                         $badge.removeClass().addClass('badge bg-danger fs-7').html(`<i class="ri-error-warning-line me-1"></i>${formatted}% (Over Limit > ${maxKotoranLabel})`);
@@ -4568,7 +4783,8 @@
             }
         } else {
             if (timbangAStr || timbangBStr) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
             }
             $badge.removeClass().addClass('badge bg-light text-muted fs-7').text('-%');
         }
@@ -4600,30 +4816,34 @@
         const aa = parseRapidNumericValue(timbangAaStr);
 
         const $badge = $tabKaRow.find('.badge-ka-calc');
-        const $tabRingkasanInput = (currentType === 'garam-gula')
-            ? $('#tableAnalisaGaramGula tbody tr').eq(rowIdx).find('input[name="%ka[]"]')
-            : $('#tableAnalisaShortTerm tbody tr').eq(rowIdx).find('input[name="ka[]"]');
+        const $tabRingkasanInput = $('#paneRingkasan tbody tr').eq(rowIdx).find('.input-ka, input[name="%ka[]"], input[name="ka[]"]');
         const defaultKaMax = JENIS.toLowerCase().includes('garam') ? 8.0 : 3.0;
         const maxKa = (dynamicStandards && dynamicStandards.ka && dynamicStandards.ka.max !== null) ? dynamicStandards.ka.max : defaultKaMax;
         const maxKaLabel = (dynamicStandards && dynamicStandards.ka && dynamicStandards.ka.label) ? dynamicStandards.ka.label : `${maxKa}%`;
 
         if (!isNaN(aa) && aa > 0) {
             if (isNaN(tCawan) || tCawan <= 0) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                 $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html('<i class="ri-alert-line me-1"></i>Pilih No. Cawan');
             } else if (aa <= tCawan) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                 $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>AA (${aa}g) &le; Tare (${tCawan.toFixed(2)}g)`);
             } else {
                 const netBobot = aa - tCawan;
                 if (netBobot > 5.00) {
-                    $tabRingkasanInput.val('');
+                    $tabRingkasanInput.val('').trigger('input').trigger('change');
+                    if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
                     $badge.removeClass().addClass('badge bg-warning text-dark fs-7').html(`<i class="ri-alert-line me-1"></i>Anomali (Net ${netBobot.toFixed(2)}g > 5.00g)`);
                 } else {
                     const kaVal = ((5.00 - netBobot) / 5.00) * 100;
                     const formatted = kaVal.toFixed(2);
 
-                    $tabRingkasanInput.val(formatted);
+                    $tabRingkasanInput.val(formatted).trigger('input').trigger('change');
+                    if ($tabRingkasanInput.length) {
+                        $tabRingkasanInput[0].value = formatted;
+                    }
 
                     if (kaVal > maxKa) {
                         $badge.removeClass().addClass('badge bg-danger fs-7').html(`<i class="ri-error-warning-line me-1"></i>${formatted}% (Over Limit > ${maxKaLabel})`);
@@ -4636,7 +4856,8 @@
             }
         } else {
             if (timbangAaStr) {
-                $tabRingkasanInput.val('');
+                $tabRingkasanInput.val('').trigger('input').trigger('change');
+                if ($tabRingkasanInput.length) $tabRingkasanInput[0].value = '';
             }
             $badge.removeClass().addClass('badge bg-light text-muted fs-7').text('-%');
         }
@@ -4695,16 +4916,27 @@
                 $('#statOrganoPercent').html('<span class="text-muted">-</span>');
                 $('#tblOrganoPercent').html('<span class="text-muted small">-</span>');
             }
-        } else if (currentType === 'garam-gula') {
+        } else if (currentType === 'garam-gula' || currentType === 'bahan-kering' || currentType === 'bahan-cair') {
+            const avgBrix = calcColumnAvg('brix[]');
+            $('#tblAvgBrixGG').text(avgBrix !== null ? avgBrix.toFixed(2) : '-');
+            $('#statAvgBrix').text(avgBrix !== null ? avgBrix.toFixed(2) : '-');
+
+            const avgPh = calcColumnAvg('ph[]');
+            $('#tblAvgPhGG').text(avgPh !== null ? avgPh.toFixed(2) : '-');
+            $('#statAvgPh').text(avgPh !== null ? avgPh.toFixed(2) : '-');
+
             const avgKa = calcColumnAvg('%ka[]');
             $('#tblAvgKaGG').text(avgKa !== null ? avgKa.toFixed(2) + '%' : '-');
+            $('#statAvgKa').text(avgKa !== null ? avgKa.toFixed(2) + '%' : '-');
 
             const isKotoranNumberGG = GARAM_GULA_FIELDS.some(f => (f.name === 'kotoran' || f.key === 'kotoran[]') && f.type === 'number');
             if (isKotoranNumberGG) {
                 const avgKotoran = calcColumnAvg('kotoran[]');
                 $('#tblAvgKotoranGG').text(avgKotoran !== null ? avgKotoran.toFixed(2) + '%' : '-');
+                $('#statAvgKotoran').text(avgKotoran !== null ? avgKotoran.toFixed(2) + '%' : '-');
             } else {
                 $('#tblAvgKotoranGG').text('-');
+                $('#statAvgKotoran').text('-');
             }
 
             const avgNacl = calcColumnAvg('%nacl[]');
@@ -4724,8 +4956,10 @@
                     </span>`;
                 });
                 $('#tblOrganoPercentGG').html(summaryHtml);
+                $('#statOrganoPercent').html(summaryHtml);
             } else {
                 $('#tblOrganoPercentGG').html('<span class="text-muted small">-</span>');
+                $('#statOrganoPercent').html('<span class="text-muted small">-</span>');
             }
         }
     }
@@ -4733,7 +4967,15 @@
     function calcColumnAvg(colName) {
         let sum = 0;
         let count = 0;
-        $(`[name="${colName}"]`).each(function() {
+        let $targets;
+        if (colName === '%ka[]' || colName === 'ka[]') {
+            $targets = $('#paneRingkasan').find('.input-ka, input[name="%ka[]"], input[name="ka[]"]');
+        } else if (colName === 'kotoran[]') {
+            $targets = $('#paneRingkasan').find('.input-kotoran, input[name="kotoran[]"]');
+        } else {
+            $targets = $(`[name="${colName}"]`);
+        }
+        $targets.each(function() {
             let val = $(this).val();
             if (val !== undefined && val !== null && val.toString().trim() !== '') {
                 val = val.toString().replace(/,/g, '.').trim();
@@ -6002,7 +6244,7 @@
                         confirmButtonText: 'Oke',
                     });
                 }
-            } else if (currentType === 'garam-gula') {
+            } else if (currentType === 'garam-gula' || currentType === 'bahan-kering' || currentType === 'bahan-cair') {
                 const $disp = $('select[name="disposisi"]');
                 if (!$disp.val()) {
                     $disp.addClass('is-invalid');
@@ -6096,9 +6338,12 @@
         }
 
         const urlMap = {
-            'short-term': "{{ route('rmpm.store.short-term') }}",
+            'sampel': "{{ route('rmpm.store.sampel') }}",
+            'short-term': "{{ route('rmpm.store.sampel') }}",
             'long-term': "{{ route('rmpm.store.long-term') }}",
-            'garam-gula': "{{ route('rmpm.store.garam-gula') }}",
+            'garam-gula': "{{ route('rmpm.store.sampel') }}",
+            'bahan-kering': "{{ route('rmpm.store.sampel') }}",
+            'bahan-cair': "{{ route('rmpm.store.sampel') }}",
         };
 
         if (!isAutoSave) {
@@ -6256,19 +6501,31 @@
                     ph: $('input[name="ph[]"]').eq(i).val() || null,
                 });
             }
-        } else if (type === 'garam-gula') {
-            if (!Array.isArray(SERVER_GARAM_GULA)) {
-                SERVER_GARAM_GULA = [];
-            }
-            SERVER_GARAM_GULA = [];
+        } else if (type === 'garam-gula' || type === 'bahan-kering' || type === 'bahan-cair') {
+            const arr = [];
             for (let i = 0; i < jumlah; i++) {
-                SERVER_GARAM_GULA.push({
+                arr.push({
                     status: 'draft',
                     disposisi: $('select[name="disposisi"]').val() || null,
                     keterangan: $('textarea[name="keterangan"]').val() || null,
-                    fisik: $('input[name="fisik[]"]').eq(i).val() || null,
+                    brix: $('input[name="brix[]"]').eq(i).val() || null,
+                    ph: $('input[name="ph[]"]').eq(i).val() || null,
+                    ka: $('input[name="%ka[]"], input[name="ka[]"]').eq(i).val() || null,
+                    kotoran: $('input[name="kotoran[]"]').eq(i).val() || null,
+                    gross_weight: $('input[name="gross_weight[]"]').eq(i).val() || null,
+                    no_cawan: $('select[name="no_cawan[]"]').eq(i).val() || null,
+                    berat_cawan: $('input[name="berat_cawan[]"]').eq(i).val() || null,
+                    timbang_aa: $('input[name="timbang_aa[]"]').eq(i).val() || null,
+                    no_beaker: $('select[name="no_beaker[]"]').eq(i).val() || null,
+                    berat_beaker_500: $('input[name="berat_beaker_500[]"]').eq(i).val() || null,
+                    berat_beaker_250: $('input[name="berat_beaker_250[]"]').eq(i).val() || null,
+                    timbang_a: $('input[name="timbang_a[]"]').eq(i).val() || null,
+                    timbang_b: $('input[name="timbang_b[]"]').eq(i).val() || null,
                 });
             }
+            if (type === 'garam-gula') SERVER_GARAM_GULA = arr;
+            if (type === 'bahan-kering') SERVER_BAHAN_KERING = arr;
+            if (type === 'bahan-cair') SERVER_BAHAN_CAIR = arr;
         } else if (type === 'long-term') {
             if (!SERVER_EXISTING) SERVER_EXISTING = {};
             SERVER_EXISTING.status = 'draft';
@@ -6309,6 +6566,9 @@
 
         // Save per category and to legacy key
         localStorage.setItem(getDraftKey(currentKategori), JSON.stringify(draftData));
+        if (currentType && currentType !== currentKategori) {
+            localStorage.setItem(getDraftKey(currentType), JSON.stringify(draftData));
+        }
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
 
         // Schedule background auto-save to database server
@@ -6415,7 +6675,7 @@
             localStorage.removeItem(getDraftKey(targetCat));
         } else {
             localStorage.removeItem(DRAFT_KEY);
-            ['incoming', 'sta', 'monitoring', 'long-term', 'garam-gula'].forEach(cat => {
+            ['incoming', 'sta', 'monitoring', 'long-term', 'garam-gula', 'bahan-kering', 'bahan-cair'].forEach(cat => {
                 localStorage.removeItem(getDraftKey(cat));
             });
         }

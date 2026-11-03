@@ -4,10 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Exports\LaporanKalkulasiRmExport;
 use App\Http\Requests\RMPMStoreRequest;
-use App\Models\AnalisaGaramGula;
 use App\Models\AnalisaLongTerm;
 use App\Models\AnalisaLongTermHistory;
-use App\Models\AnalisaShortTerm;
+use App\Models\AnalisaRMSampel;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
 use App\Models\MasterGlassware;
@@ -44,7 +43,7 @@ class RMPMController extends Controller
     public function rm(Request $request)
     {
         if ($request->ajax()) {
-            $query = IdentitasRM::with(['analisaShortTerm', 'analisaLongTerm', 'analisaGaramGula'])
+            $query = IdentitasRM::with(['analisaSampel', 'analisaLongTerm'])
                 ->orderBy('created_at', 'desc');
 
             if ($request->filled('start_date')) {
@@ -104,19 +103,12 @@ class RMPMController extends Controller
                     $userRole = strtolower(trim(auth()->user()->role ?? ''));
                     $isSupervisor = in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
-                    $isGula = str_contains(strtoupper($data->jenis ?? ''), 'GULA');
                     $exportBtn = '';
 
-                    // Tombol Export muncul jika data bertipe Gula dan sudah ada analisa (baik simpan sementara / draft maupun final)
-                    $hasAnalisa = false;
-                    if ($isGula && (
-                        ($data->analisaShortTerm && $data->analisaShortTerm->isNotEmpty()) ||
-                        ($data->analisaGaramGula && $data->analisaGaramGula->isNotEmpty())
-                    )) {
-                        $hasAnalisa = true;
-                    }
+                    // Tombol Export selalu muncul jika data sudah memiliki sampel analisa (baik draft/simpan sementara maupun final)
+                    $hasAnalisa = $data->analisaSampel && $data->analisaSampel->isNotEmpty();
 
-                    if ($isGula && $hasAnalisa) {
+                    if ($hasAnalisa) {
                         $docRmUrl = route('doc-rm.index', ['id' => $data->id]);
                         $exportBtn = '
                             <a
@@ -161,35 +153,25 @@ class RMPMController extends Controller
 
                 ->addColumn('status', function ($item) {
                     $status = '⌛ Proses';
-                    $jenisUpper = strtoupper(trim($item->jenis ?? ''));
 
-                    if (str_contains($jenisUpper, 'GARAM')) {
-                        foreach ($item->analisaGaramGula as $analisa) {
-                            if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
-                                $status = '✅ Selesai';
-                                break;
-                            } elseif ($analisa->status === 'draft') {
-                                $status = '⌛ Draft';
-                            }
+                    // 1. Cek sampel analisa dari tabel terpadu analisa_rm_sampels
+                    foreach ($item->analisaSampel as $analisa) {
+                        if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
+                            $status = '✅ Selesai';
+                            break;
+                        } elseif ($analisa->status === 'draft') {
+                            $status = '⌛ Draft';
                         }
-                    } else {
-                        // Gula, Gula Kelapa, Gula Tebu, etc. Check long term or short term incoming
+                    }
+
+                    // 2. Jika belum selesai, cek juga analisa Long Term
+                    if ($status !== '✅ Selesai') {
                         foreach ($item->analisaLongTerm as $analisa) {
                             if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
                                 $status = '✅ Selesai';
                                 break;
-                            } elseif ($analisa->status === 'draft') {
+                            } elseif ($analisa->status === 'draft' && $status !== '⌛ Draft') {
                                 $status = '⌛ Draft';
-                            }
-                        }
-                        if ($status === '⌛ Proses') {
-                            foreach ($item->analisaShortTerm as $analisa) {
-                                if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
-                                    $status = '✅ Selesai';
-                                    break;
-                                } elseif ($analisa->status === 'draft') {
-                                    $status = '⌛ Draft';
-                                }
                             }
                         }
                     }
@@ -418,6 +400,8 @@ class RMPMController extends Controller
             'samplingFisikRaw',
             'analisaGaramGula',
             'analisaShortTerm',
+            'analisaBahanKering',
+            'analisaBahanCair',
             'analisaLongTerm.user',
             'analisaLongTerm.histories.user',
             'analisaLongTermHistories.user',
@@ -427,8 +411,11 @@ class RMPMController extends Controller
         $data_mobil = $identitas->samplingKondisiMobil;
         $data_kemasan = $identitas->samplingFisikKemasan;
         $data_raw = $identitas->samplingFisikRaw;
-        $analisa_garam_gula = $identitas->analisaGaramGula;
-        $analisa_short_term = $identitas->analisaShortTerm;
+        $analisa_sampel = $identitas->analisaSampel;
+        $analisa_garam_gula = $analisa_sampel;
+        $analisa_short_term = $analisa_sampel;
+        $analisa_bahan_kering = $analisa_sampel;
+        $analisa_bahan_cair = $analisa_sampel;
         $analisa_long_term = $identitas->analisaLongTerm;
         $analisa_long_term_histories = $identitas->analisaLongTermHistories;
 
@@ -447,8 +434,11 @@ class RMPMController extends Controller
                 'data_mobil',
                 'data_kemasan',
                 'data_raw',
+                'analisa_sampel',
                 'analisa_garam_gula',
                 'analisa_short_term',
+                'analisa_bahan_kering',
+                'analisa_bahan_cair',
                 'analisa_long_term',
                 'analisa_long_term_histories',
                 'konfirmasi',
@@ -465,11 +455,16 @@ class RMPMController extends Controller
             'analisaLongTermHistories.user',
             'analisaShortTerm',
             'analisaGaramGula',
+            'analisaBahanKering',
+            'analisaBahanCair',
         ])->findOrFail($id);
 
         $existingLongTerm = $identitas->analisaLongTerm->last();
-        $existingShortTerm = $identitas->analisaShortTerm ?? collect();
-        $existingGaramGula = $identitas->analisaGaramGula ?? collect();
+        $existingSampel = $identitas->analisaSampel ?? collect();
+        $existingShortTerm = $existingSampel;
+        $existingGaramGula = $existingSampel;
+        $existingBahanKering = $existingSampel;
+        $existingBahanCair = $existingSampel;
         $histories = $identitas->analisaLongTermHistories;
 
         // Preload Master Glassware Tare Weights & Quota
@@ -502,13 +497,13 @@ class RMPMController extends Controller
             }
         }
 
-        $beakerQuery = DB::table('analisa_short_term')
+        $beakerQuery = DB::table('analisa_rm_sampels')
             ->whereDate('created_at', today())
             ->whereNotNull('no_beaker')
             ->where('no_beaker', '!=', '')
             ->where('id_identitas', '!=', $id);
 
-        $cawanQuery = DB::table('analisa_short_term')
+        $cawanQuery = DB::table('analisa_rm_sampels')
             ->whereDate('created_at', today())
             ->whereNotNull('no_cawan')
             ->where('no_cawan', '!=', '')
@@ -562,12 +557,14 @@ class RMPMController extends Controller
             ],
         ];
 
-        // Preload Master Standards for this material
+        // Preload Master Standards for this material using SQL DISTINCT
         $cleanJenis = strtoupper(trim((string)$identitas->jenis));
         $standards = MasterStandarRm::where('status', true)
             ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
                 $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
             })
+            ->select('parameter', 'min_standar', 'max_standar', 'target_text', 'uom', 'jenis_standar')
+            ->distinct()
             ->get();
 
         $standardsMap = [];
@@ -635,8 +632,11 @@ class RMPMController extends Controller
             compact(
                 'identitas',
                 'existingLongTerm',
+                'existingSampel',
                 'existingShortTerm',
                 'existingGaramGula',
+                'existingBahanKering',
+                'existingBahanCair',
                 'histories',
                 'initialGlassware',
                 'initialStandards',
@@ -1034,11 +1034,10 @@ class RMPMController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | ANALISA SHORT TERM
+    | ANALISA SAMPEL TERPADU (SEMUA BAHAN BAKU)
     |--------------------------------------------------------------------------
     */
-
-    public function storeShortTerm(Request $request)
+    public function storeSampel(Request $request)
     {
         $kategori = $request->input('kategori', 'incoming');
         if (!in_array($kategori, ['incoming', 'sta', 'monitoring'])) {
@@ -1048,19 +1047,12 @@ class RMPMController extends Controller
         $saveAction = $request->input('save_action', 'final');
         $isDraft = ($saveAction === 'draft');
 
-        // Check if existing record for this kategori is already final (locked)
-        $existingShortTerm = AnalisaShortTerm::where('id_identitas', $request->id_identitas)
-            ->where(function ($q) use ($kategori) {
-                $q->where('kategori', $kategori)
-                    ->orWhere(function ($sub) use ($kategori) {
-                        if ($kategori === 'incoming') {
-                            $sub->whereNull('kategori');
-                        }
-                    });
-            })
+        // Cek apakah data untuk kategori ini sudah FINAL
+        $existing = AnalisaRMSampel::where('id_identitas', $request->id_identitas)
+            ->where('kategori', $kategori)
             ->first();
 
-        if ($existingShortTerm && $existingShortTerm->status && $existingShortTerm->status !== 'draft') {
+        if ($existing && $existing->status && $existing->status !== 'draft') {
             $kategoriLabels = [
                 'incoming'   => 'Incoming',
                 'sta'        => 'STA (Short Term Analisa)',
@@ -1073,99 +1065,76 @@ class RMPMController extends Controller
             ], 422);
         }
 
-        $rules = [
+        $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
             'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
             'keterangan'   => 'nullable|string',
             'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
-        ];
-
-        // Allow flexible inputs so parameters not applicable to the material can be null
-        $rules['brix']         = 'nullable|array';
-        $rules['ph']           = 'nullable|array';
-        $rules['ka']           = 'nullable|array';
-        $rules['%ka']          = 'nullable|array';
-        $rules['kotoran']      = 'nullable|array';
-        $rules['organo']       = 'nullable|array';
-        $rules['warna']        = 'nullable|array';
-        $rules['aroma']        = 'nullable|array';
-        $rules['nacl']         = 'nullable|array';
-        $rules['%nacl']        = 'nullable|array';
-        $rules['gross_weight'] = 'nullable|array';
-        $rules['fisik']        = 'nullable|array';
-        $rules['berat_jenis']  = 'nullable|array';
-        $rules['suhu']         = 'nullable|array';
-        $rules['aw']           = 'nullable|array';
-        $rules['viskositas']   = 'nullable|array';
-        $rules['tn']           = 'nullable|array';
-        $rules['%tn']          = 'nullable|array';
-
-        $request->validate($rules);
+        ]);
 
         DB::beginTransaction();
 
         try {
-            // Determine number of sample rows from whichever array is provided
-            $sampleCounts = [
-                count($request->brix ?? []),
-                count($request->ph ?? []),
-                count($request->kotoran ?? []),
-                count($request->ka ?? []),
-                count($request['%ka'] ?? []),
-                count($request->organo ?? []),
-                count($request->warna ?? []),
-                count($request->aroma ?? []),
-                count($request->timbang_a ?? []),
-                count($request->timbang_b ?? []),
-                count($request->no_beaker ?? []),
-                count($request->gross_weight ?? []),
-                count($request->suhu ?? []),
-                count($request->aw ?? []),
-                count($request->viskositas ?? []),
-                count($request->berat_jenis ?? []),
-                count($request->fisik ?? []),
-                count($request->nacl ?? []),
-                count($request['%nacl'] ?? []),
-                count($request->tn ?? []),
-                count($request['%tn'] ?? []),
+            $fieldArrays = [
+                $request->brix ?? [],
+                $request->ph ?? [],
+                $request->ka ?? [],
+                $request['%ka'] ?? [],
+                $request->kotoran ?? [],
+                $request->nacl ?? [],
+                $request['%nacl'] ?? [],
+                $request->berat_jenis ?? [],
+                $request->suhu ?? [],
+                $request->aw ?? [],
+                $request->viskositas ?? [],
+                $request->tn ?? [],
+                $request['%tn'] ?? [],
+                $request->gross_weight ?? [],
+                $request->organo ?? [],
+                $request->warna ?? [],
+                $request->aroma ?? [],
+                $request->fisik ?? [],
+                $request->rasa ?? [],
             ];
-            $jumlah = max(1, ...$sampleCounts);
+            $counts = array_map('count', $fieldArrays);
+            $jumlah = max(1, ...$counts);
 
             $dataAnalisa = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
-                $kaVal = $request->ka[$i] ?? ($request['%ka'][$i] ?? null);
-                $naclVal = $request->nacl[$i] ?? ($request['%nacl'][$i] ?? null);
-                $tnVal = $request->tn[$i] ?? ($request['%tn'][$i] ?? null);
+                $kaVal = $request['%ka'][$i] ?? ($request->ka[$i] ?? null);
+                $naclVal = $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null);
+                $tnVal = $request['%tn'][$i] ?? ($request->tn[$i] ?? null);
 
                 $dataAnalisa[] = [
                     'id_identitas'     => $request->id_identitas,
                     'kategori'         => $kategori,
+                    'sampel_ke'        => $i + 1,
                     'brix'             => $this->nullableFloat($request->brix[$i] ?? null),
                     'ph'               => $this->nullableFloat($request->ph[$i] ?? null),
-                    'no_beaker'        => $this->nullableString($request->no_beaker[$i] ?? null),
-                    'berat_beaker_500' => $this->nullableFloat($request->berat_beaker_500[$i] ?? null),
-                    'berat_beaker_250' => $this->nullableFloat($request->berat_beaker_250[$i] ?? null),
-                    'timbang_a'        => $this->nullableFloat($request->timbang_a[$i] ?? null),
-                    'timbang_b'        => $this->nullableFloat($request->timbang_b[$i] ?? null),
-                    'kotoran'          => $this->nullableFloat($request->kotoran[$i] ?? null),
-                    'rasa'             => $this->nullableString($request->rasa[$i] ?? null),
-                    'aroma_pengotor'   => $this->nullableString($request->aroma_pengotor[$i] ?? null),
-                    'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
-                    'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
-                    'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
                     'ka'               => $this->nullableFloat($kaVal),
-                    'organo'           => $this->nullableString($request->organo[$i] ?? null),
-                    'warna'            => $this->nullableString($request->warna[$i] ?? null),
-                    'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
                     'nacl'             => $this->nullableFloat($naclVal),
-                    'gross_weight'     => $this->nullableFloat($request->gross_weight[$i] ?? null),
-                    'fisik'            => $this->nullableString($request->fisik[$i] ?? null),
                     'berat_jenis'      => $this->nullableFloat($request->berat_jenis[$i] ?? null),
                     'suhu'             => $this->nullableFloat($request->suhu[$i] ?? null),
                     'aw'               => $this->nullableFloat($request->aw[$i] ?? null),
                     'viskositas'       => $this->nullableFloat($request->viskositas[$i] ?? null),
                     'tn'               => $this->nullableFloat($tnVal),
+                    'gross_weight'     => $this->nullableFloat($request->gross_weight[$i] ?? null),
+                    'no_beaker'        => $this->nullableString($request->no_beaker[$i] ?? null),
+                    'berat_beaker_500' => $this->nullableFloat($request->berat_beaker_500[$i] ?? null),
+                    'berat_beaker_250' => $this->nullableFloat($request->berat_beaker_250[$i] ?? null),
+                    'timbang_a'        => $this->nullableFloat($request->timbang_a[$i] ?? null),
+                    'timbang_b'        => $this->nullableFloat($request->timbang_b[$i] ?? null),
+                    'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
+                    'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
+                    'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
+                    'kotoran'          => $this->nullableString($request->kotoran[$i] ?? null),
+                    'organo'           => $this->nullableString($request->organo[$i] ?? null),
+                    'warna'            => $this->nullableString($request->warna[$i] ?? null),
+                    'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
+                    'fisik'            => $this->nullableString($request->fisik[$i] ?? null),
+                    'rasa'             => $this->nullableString($request->rasa[$i] ?? null),
+                    'aroma_pengotor'   => $this->nullableString($request->aroma_pengotor[$i] ?? null),
                     'disposisi'        => $request->disposisi,
                     'status'           => $isDraft ? 'draft' : 'final',
                     'keterangan'       => $request->keterangan,
@@ -1175,150 +1144,12 @@ class RMPMController extends Controller
                 ];
             }
 
-            // Remove existing records for this specific kategori so it cleanly updates
-            AnalisaShortTerm::where('id_identitas', $request->id_identitas)
-                ->where(function ($q) use ($kategori) {
-                    $q->where('kategori', $kategori)
-                        ->orWhere(function ($sub) use ($kategori) {
-                            if ($kategori === 'incoming') {
-                                $sub->whereNull('kategori');
-                            }
-                        });
-                })
+            // Simpan ke tabel analisa_rm_sampels
+            AnalisaRMSampel::where('id_identitas', $request->id_identitas)
+                ->where('kategori', $kategori)
                 ->delete();
 
-            AnalisaShortTerm::insert($dataAnalisa);
-
-            DB::commit();
-
-            $kategoriLabels = [
-                'incoming'   => 'Incoming',
-                'sta'        => 'STA (Short Term Analisa)',
-                'monitoring' => 'Monitoring',
-            ];
-            $label = $kategoriLabels[$kategori] ?? 'Analisa';
-
-            $message = $isDraft
-                ? "Data {$label} berhasil disimpan sementara (Draft)."
-                : "Berhasil menyimpan data {$label}.";
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => $message,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ANALISA GARAM DAN GULA
-    |--------------------------------------------------------------------------
-    */
-
-    public function storeGaramGula(Request $request)
-    {
-        $saveAction = $request->input('save_action', 'final');
-        $isDraft = ($saveAction === 'draft');
-
-        // Check if existing record is already final (locked)
-        $existingGaramGula = AnalisaGaramGula::where('id_identitas', $request->id_identitas)->first();
-        if ($existingGaramGula && $existingGaramGula->status && $existingGaramGula->status !== 'draft') {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data analisa sudah berstatus FINAL dan tidak dapat diubah lagi.',
-            ], 422);
-        }
-
-        $request->validate([
-            'id_identitas' => 'required|exists:identitas_rm,id',
-            'fisik'        => 'nullable|array',
-            'fisik.*'      => 'nullable|string',
-            '%ka'          => 'nullable|array',
-            'ka'           => 'nullable|array',
-            'kotoran'      => 'nullable|array',
-            'organo'       => 'nullable|array',
-            'warna'        => 'nullable|array',
-            'aroma'        => 'nullable|array',
-            '%nacl'        => 'nullable|array',
-            'nacl'         => 'nullable|array',
-            'gross_weight' => 'nullable|array',
-            'ph'           => 'nullable|array',
-            'brix'         => 'nullable|array',
-            'berat_jenis'  => 'nullable|array',
-            'suhu'         => 'nullable|array',
-            'aw'           => 'nullable|array',
-            'viskositas'   => 'nullable|array',
-            'tn'           => 'nullable|array',
-            '%tn'          => 'nullable|array',
-            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
-            'keterangan'   => 'nullable|string',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $sampleCounts = [
-                count($request->fisik ?? []),
-                count($request['%ka'] ?? []),
-                count($request->ka ?? []),
-                count($request->kotoran ?? []),
-                count($request->organo ?? []),
-                count($request->warna ?? []),
-                count($request->aroma ?? []),
-                count($request['%nacl'] ?? []),
-                count($request->nacl ?? []),
-                count($request->gross_weight ?? []),
-                count($request->ph ?? []),
-                count($request->brix ?? []),
-                count($request->berat_jenis ?? []),
-                count($request->suhu ?? []),
-                count($request->aw ?? []),
-                count($request->viskositas ?? []),
-                count($request->tn ?? []),
-                count($request['%tn'] ?? []),
-            ];
-            $jumlah = max(1, ...$sampleCounts);
-            $dataAnalisa = [];
-
-            for ($i = 0; $i < $jumlah; $i++) {
-                $kaVal = $request['%ka'][$i] ?? ($request->ka[$i] ?? null);
-                $naclVal = $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null);
-                $tnVal = $request['%tn'][$i] ?? ($request->tn[$i] ?? null);
-
-                $dataAnalisa[] = [
-                    'id_identitas' => $request->id_identitas,
-                    'fisik'        => $this->nullableString($request->fisik[$i] ?? null),
-                    '%ka'          => $this->nullableFloat($kaVal),
-                    'kotoran'      => $this->nullableFloat($request->kotoran[$i] ?? null),
-                    'organo'       => $this->nullableString($request->organo[$i] ?? null),
-                    'warna'        => $this->nullableString($request->warna[$i] ?? null),
-                    'aroma'        => $this->nullableString($request->aroma[$i] ?? null),
-                    '%nacl'        => $this->nullableFloat($naclVal),
-                    'gross_weight' => $this->nullableFloat($request->gross_weight[$i] ?? null),
-                    'ph'           => $this->nullableFloat($request->ph[$i] ?? null),
-                    'brix'         => $this->nullableFloat($request->brix[$i] ?? null),
-                    'berat_jenis'  => $this->nullableFloat($request->berat_jenis[$i] ?? null),
-                    'suhu'         => $this->nullableFloat($request->suhu[$i] ?? null),
-                    'aw'           => $this->nullableFloat($request->aw[$i] ?? null),
-                    'viskositas'   => $this->nullableFloat($request->viskositas[$i] ?? null),
-                    'tn'           => $this->nullableFloat($tnVal),
-                    'disposisi'    => $request->disposisi,
-                    'status'       => $isDraft ? 'draft' : 'final',
-                    'keterangan'   => $request->keterangan,
-                    'created_by'   => auth()->id(),
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ];
-            }
-
-            AnalisaGaramGula::where('id_identitas', $request->id_identitas)->delete();
-            AnalisaGaramGula::insert($dataAnalisa);
+            AnalisaRMSampel::insert($dataAnalisa);
 
             DB::commit();
 
@@ -1335,6 +1166,42 @@ class RMPMController extends Controller
                 'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function storeShortTerm(Request $request)
+    {
+        return $this->storeSampel($request);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA GARAM DAN GULA
+    |--------------------------------------------------------------------------
+    */
+
+        public function storeGaramGula(Request $request)
+    {
+        return $this->storeSampel($request);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA BAHAN KERING (MSG, ND, GULA RAFINASI)
+    |--------------------------------------------------------------------------
+    */
+    public function storeBahanKering(Request $request)
+    {
+        return $this->storeSampel($request);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISA BAHAN CAIR (GLUKOSA, HFCS, SARI KECAP, KARAMEL)
+    |--------------------------------------------------------------------------
+    */
+    public function storeBahanCair(Request $request)
+    {
+        return $this->storeSampel($request);
     }
 
     /*
@@ -1413,7 +1280,7 @@ class RMPMController extends Controller
     {
         try {
             // Delete all unfinalized/draft records for this identitas ID across short-term, long-term, and garam-gula
-            AnalisaShortTerm::where('id_identitas', $id)
+            AnalisaRMSampel::where('id_identitas', $id)
                 ->where(function ($q) {
                     $q->where('status', 'draft')
                         ->orWhereNull('disposisi')
@@ -1436,14 +1303,6 @@ class RMPMController extends Controller
 
             AnalisaLongTermHistory::where('id_identitas', $id)
                 ->where('action', 'Simpan Sementara')
-                ->delete();
-
-            AnalisaGaramGula::where('id_identitas', $id)
-                ->where(function ($q) {
-                    $q->where('status', 'draft')
-                        ->orWhereNull('disposisi')
-                        ->orWhere('disposisi', '');
-                })
                 ->delete();
 
             return response()->json([
@@ -1505,8 +1364,11 @@ class RMPMController extends Controller
 
         $standards = collect();
         if ($jb) {
+            // DISTINCT SQL: Ambil parameter unik dari database master standar
             $standards = MasterStandarRm::where('status', true)
                 ->where('id_jenis_bahan', $jb->id)
+                ->select('parameter', 'jenis_standar', 'min_standar', 'max_standar', 'target_text', 'uom')
+                ->distinct()
                 ->get();
         }
 

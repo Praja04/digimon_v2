@@ -79,7 +79,7 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $titleMain = $isGulaTebu ? 'GULA TEBU' : ($isGulaKelapa ? 'GULA KELAPA' : $jenisUpper);
 
         // Ambil data sampel analisa (Jika ada monitoring/long term, hitung rata-rata gabungan)
-        $samples = $identitas->analisaShortTerm ?? collect();
+        $samples = $identitas->analisaSampel ?? ($identitas->analisaShortTerm ?? collect());
         $hasMonitoring = $samples->contains(fn($s) => strtolower($s->kategori ?? '') === 'monitoring');
         if ($hasMonitoring) {
             $incomingSamples = $samples;
@@ -95,6 +95,22 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         // Jika analisa garam gula (misal Garam)
         if ($incomingSamples->isEmpty() && $identitas->analisaGaramGula->isNotEmpty()) {
             $incomingSamples = $identitas->analisaGaramGula;
+        }
+        if ($incomingSamples->isEmpty() && $identitas->analisaBahanKering && $identitas->analisaBahanKering->isNotEmpty()) {
+            $incomingSamples = $identitas->analisaBahanKering;
+        }
+        if ($incomingSamples->isEmpty() && $identitas->analisaBahanCair && $identitas->analisaBahanCair->isNotEmpty()) {
+            $incomingSamples = $identitas->analisaBahanCair;
+        }
+
+        // Jika analisa bahan kering (misal MSG, ND, Rafinasi)
+        if ($incomingSamples->isEmpty() && $identitas->analisaBahanKering && $identitas->analisaBahanKering->isNotEmpty()) {
+            $incomingSamples = $identitas->analisaBahanKering;
+        }
+
+        // Jika analisa bahan cair (misal Glukosa, HFCS, Sari Kecap, Karamel)
+        if ($incomingSamples->isEmpty() && $identitas->analisaBahanCair && $identitas->analisaBahanCair->isNotEmpty()) {
+            $incomingSamples = $identitas->analisaBahanCair;
         }
 
         $sampleCount = $incomingSamples->count();
@@ -687,7 +703,7 @@ class DataSampelRmSheetExport implements WithEvents, WithTitle
         $sheet->setShowGridlines(true);
 
         $identitas = $this->identitas;
-        $samples = $identitas->analisaShortTerm ?? collect();
+        $samples = $identitas->analisaSampel ?? ($identitas->analisaShortTerm ?? collect());
         $hasMonitoring = $samples->contains(fn($s) => strtolower($s->kategori ?? '') === 'monitoring');
         if ($hasMonitoring) {
             $incomingSamples = $samples;
@@ -701,6 +717,12 @@ class DataSampelRmSheetExport implements WithEvents, WithTitle
         }
         if ($incomingSamples->isEmpty() && $identitas->analisaGaramGula->isNotEmpty()) {
             $incomingSamples = $identitas->analisaGaramGula;
+        }
+        if ($incomingSamples->isEmpty() && $identitas->analisaBahanKering && $identitas->analisaBahanKering->isNotEmpty()) {
+            $incomingSamples = $identitas->analisaBahanKering;
+        }
+        if ($incomingSamples->isEmpty() && $identitas->analisaBahanCair && $identitas->analisaBahanCair->isNotEmpty()) {
+            $incomingSamples = $identitas->analisaBahanCair;
         }
 
         // Header sheet 2
