@@ -251,7 +251,7 @@ Route::middleware(['auth'])->group(function () {
 */
 
     Route::middleware([
-        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,Analis Field',
     ])->group(function (): void {
 
         /*

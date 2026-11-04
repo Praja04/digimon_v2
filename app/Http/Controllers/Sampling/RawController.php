@@ -12,26 +12,13 @@ class RawController extends Controller
     {
         $validated = $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
-            'leleh' => 'required',
-            'warna' => 'required',
-            'campuran' => 'required',
-            'aroma' => 'required',
-            'sesuai_std' => 'required',
-
+            'sesuai_std'   => 'required',
+            'warna'        => 'required',
+            'aroma'        => 'required',
+            'leleh'        => 'nullable',
+            'campuran'     => 'nullable',
         ]);
-        $validated['created_by'] = auth()->user()->id;
 
-        $fields = ['leleh', 'warna', 'campuran', 'aroma', 'sesuai_std'];
-        foreach ($fields as $field) {
-            if (!empty($validated[$field])) {
-                if (preg_match('/^no,\s*karena\s+(.+)$/i', $validated[$field], $matches)) {
-                    $validated[$field] = 'no';
-                    $validated['keterangan_' . $field] = $matches[1];
-                } else {
-                    $validated['keterangan_' . $field] = null;
-                }
-            }
-        }
         $existing = SamplingFisikRaw::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
@@ -43,16 +30,16 @@ class RawController extends Controller
 
         SamplingFisikRaw::create([
             'id_identitas'          => $request->id_identitas,
-            'leleh'                 => $request->leleh,
-            'keterangan_leleh'      => $request->keterangan_leleh,
-            'warna'                 => $request->warna,
-            'keterangan_warna'      => $request->keterangan_warna,
-            'campuran'              => $request->campuran,
-            'keterangan_campuran'   => $request->keterangan_campuran,
-            'aroma'                 => $request->aroma,
-            'keterangan_aroma'      => $request->keterangan_aroma,
             'sesuai_std'            => $request->sesuai_std,
             'keterangan_sesuai_std' => $request->keterangan_sesuai_std,
+            'warna'                 => $request->warna,
+            'keterangan_warna'      => $request->keterangan_warna,
+            'aroma'                 => $request->aroma,
+            'keterangan_aroma'      => $request->keterangan_aroma,
+            'leleh'                 => $request->leleh ?? null,
+            'keterangan_leleh'      => $request->keterangan_leleh ?? null,
+            'campuran'              => $request->campuran ?? null,
+            'keterangan_campuran'   => $request->keterangan_campuran ?? null,
             'created_by'            => auth()->id(),
         ]);
 
@@ -65,20 +52,23 @@ class RawController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'leleh' => 'required',
-            'warna' => 'required',
-            'campuran' => 'required',
-            'aroma' => 'required',
+            'id'         => 'required|exists:sampling_fisik_raw,id',
             'sesuai_std' => 'required',
+            'warna'      => 'required',
+            'aroma'      => 'required',
         ]);
 
         $data = SamplingFisikRaw::findOrFail($request->id);
 
-        $data->leleh = $request->leleh;
-        $data->warna = $request->warna;
-        $data->campuran = $request->campuran;
-        $data->aroma = $request->aroma;
         $data->sesuai_std = $request->sesuai_std;
+        $data->keterangan_sesuai_std = $request->keterangan_sesuai_std;
+        $data->warna = $request->warna;
+        $data->keterangan_warna = $request->keterangan_warna;
+        $data->aroma = $request->aroma;
+        $data->keterangan_aroma = $request->keterangan_aroma;
+
+        if ($request->has('leleh')) $data->leleh = $request->leleh;
+        if ($request->has('campuran')) $data->campuran = $request->campuran;
 
         $data->save();
 

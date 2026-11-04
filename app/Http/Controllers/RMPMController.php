@@ -6,7 +6,6 @@ use App\Exports\LaporanKalkulasiRmExport;
 use App\Http\Requests\RMPMStoreRequest;
 use App\Models\AnalisaLongTerm;
 use App\Models\AnalisaLongTermHistory;
-use App\Models\AnalisaRMSampel;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
 use App\Models\MasterGlassware;
@@ -14,6 +13,9 @@ use App\Models\MasterJenisBahan;
 use App\Models\MasterParameterRm;
 use App\Models\MasterStandarRm;
 use App\Models\PackagingIncoming;
+use App\Models\TransaksiAnalisaRM;
+use App\Models\AnalisaRMSampleDetail;
+use App\Models\AnalisaRMSampleGlassware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -154,12 +156,12 @@ class RMPMController extends Controller
                 ->addColumn('status', function ($item) {
                     $status = '⌛ Proses';
 
-                    // 1. Cek sampel analisa dari tabel terpadu analisa_rm_sampels
-                    foreach ($item->analisaSampel as $analisa) {
-                        if (!empty($analisa->disposisi) && $analisa->status !== 'draft') {
+                    // 1. Cek sampel analisa dari transaksi_analisa_rm
+                    foreach ($item->transaksiAnalisa as $transaksi) {
+                        if (!empty($transaksi->disposisi) && $transaksi->status !== 'draft') {
                             $status = '✅ Selesai';
                             break;
-                        } elseif ($analisa->status === 'draft') {
+                        } elseif ($transaksi->status === 'draft') {
                             $status = '⌛ Draft';
                         }
                     }
@@ -497,17 +499,19 @@ class RMPMController extends Controller
             }
         }
 
-        $beakerQuery = DB::table('analisa_rm_sampels')
-            ->whereDate('created_at', today())
+        $beakerQuery = DB::table('analisa_rm_sample_glasswares')
+            ->join('analisa_rm_transaksi', 'analisa_rm_sample_glasswares.transaksi_id', '=', 'analisa_rm_transaksi.id')
+            ->whereDate('analisa_rm_sample_glasswares.created_at', today())
             ->whereNotNull('no_beaker')
             ->where('no_beaker', '!=', '')
-            ->where('id_identitas', '!=', $id);
+            ->where('analisa_rm_transaksi.id_identitas', '!=', $id);
 
-        $cawanQuery = DB::table('analisa_rm_sampels')
-            ->whereDate('created_at', today())
+        $cawanQuery = DB::table('analisa_rm_sample_glasswares')
+            ->join('analisa_rm_transaksi', 'analisa_rm_sample_glasswares.transaksi_id', '=', 'analisa_rm_transaksi.id')
+            ->whereDate('analisa_rm_sample_glasswares.created_at', today())
             ->whereNotNull('no_cawan')
             ->where('no_cawan', '!=', '')
-            ->where('id_identitas', '!=', $id);
+            ->where('analisa_rm_transaksi.id_identitas', '!=', $id);
 
         $totalBeakerToday = (clone $beakerQuery)->count();
         $totalCawanToday = (clone $cawanQuery)->count();
@@ -846,6 +850,10 @@ class RMPMController extends Controller
     public function storeLongTerm(Request $request)
     {
         $saveAction = $request->input('save_action', 'final');
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if ($userRole === 'analis field') {
+            $saveAction = 'draft';
+        }
         $isDraft = ($saveAction === 'draft');
 
         // Check if existing record is already final (locked)
@@ -1045,10 +1053,14 @@ class RMPMController extends Controller
         }
 
         $saveAction = $request->input('save_action', 'final');
+        $userRole = strtolower(trim(auth()->user()->role ?? ''));
+        if ($userRole === 'analis field') {
+            $saveAction = 'draft';
+        }
         $isDraft = ($saveAction === 'draft');
 
         // Cek apakah data untuk kategori ini sudah FINAL
-        $existing = AnalisaRMSampel::where('id_identitas', $request->id_identitas)
+        $existing = TransaksiAnalisaRM::where('id_identitas', $request->id_identitas)
             ->where('kategori', $kategori)
             ->first();
 
@@ -1099,57 +1111,147 @@ class RMPMController extends Controller
             $counts = array_map('count', $fieldArrays);
             $jumlah = max(1, ...$counts);
 
-            $dataAnalisa = [];
+            // Simpan ke skema normalisasi dinamis (Table 2 Transaksi & Table 4 Sample Detail)
+            $transaksi = TransaksiAnalisaRM::updateOrCreate(
+                [
+                    'id_identitas' => $request->id_identitas,
+                    'kategori'     => $kategori,
+                ],
+                [
+                    'disposisi'    => $userRole === 'analis field' ? ($existing->disposisi ?? null) : $request->disposisi,
+                    'status'       => $isDraft ? 'draft' : 'final',
+                    'keterangan'   => $userRole === 'analis field' ? ($existing->keterangan ?? null) : $request->keterangan,
+                    'created_by'   => auth()->id(),
+                ]
+            );
+
+            // Hapus sampel yang melebihi jumlah baru jika jumlah sampel dikurangi
+            $transaksi->details()->where('sampel_ke', '>', $jumlah)->delete();
+            $transaksi->glasswares()->where('sampel_ke', '>', $jumlah)->delete();
+
+            $identitasObj = IdentitasRM::find($request->id_identitas);
+            $cleanJenis = strtoupper(trim((string)($identitasObj?->jenis ?? '')));
+            $masterStandards = MasterStandarRm::where('status', true)
+                ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
+                    $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
+                })
+                ->get();
+
+            $detailsBatch = [];
+            $glasswaresBatch = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
-                $kaVal = $request['%ka'][$i] ?? ($request->ka[$i] ?? null);
-                $naclVal = $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null);
-                $tnVal = $request['%tn'][$i] ?? ($request->tn[$i] ?? null);
+                $sampelKe = $i + 1;
 
-                $dataAnalisa[] = [
-                    'id_identitas'     => $request->id_identitas,
-                    'kategori'         => $kategori,
-                    'sampel_ke'        => $i + 1,
-                    'brix'             => $this->nullableFloat($request->brix[$i] ?? null),
-                    'ph'               => $this->nullableFloat($request->ph[$i] ?? null),
-                    'ka'               => $this->nullableFloat($kaVal),
-                    'nacl'             => $this->nullableFloat($naclVal),
-                    'berat_jenis'      => $this->nullableFloat($request->berat_jenis[$i] ?? null),
-                    'suhu'             => $this->nullableFloat($request->suhu[$i] ?? null),
-                    'aw'               => $this->nullableFloat($request->aw[$i] ?? null),
-                    'viskositas'       => $this->nullableFloat($request->viskositas[$i] ?? null),
-                    'tn'               => $this->nullableFloat($tnVal),
-                    'gross_weight'     => $this->nullableFloat($request->gross_weight[$i] ?? null),
-                    'no_beaker'        => $this->nullableString($request->no_beaker[$i] ?? null),
-                    'berat_beaker_500' => $this->nullableFloat($request->berat_beaker_500[$i] ?? null),
-                    'berat_beaker_250' => $this->nullableFloat($request->berat_beaker_250[$i] ?? null),
-                    'timbang_a'        => $this->nullableFloat($request->timbang_a[$i] ?? null),
-                    'timbang_b'        => $this->nullableFloat($request->timbang_b[$i] ?? null),
-                    'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
-                    'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
-                    'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
-                    'kotoran'          => $this->nullableString($request->kotoran[$i] ?? null),
-                    'organo'           => $this->nullableString($request->organo[$i] ?? null),
-                    'warna'            => $this->nullableString($request->warna[$i] ?? null),
-                    'aroma'            => $this->nullableString($request->aroma[$i] ?? null),
-                    'fisik'            => $this->nullableString($request->fisik[$i] ?? null),
-                    'rasa'             => $this->nullableString($request->rasa[$i] ?? null),
-                    'aroma_pengotor'   => $this->nullableString($request->aroma_pengotor[$i] ?? null),
-                    'disposisi'        => $request->disposisi,
-                    'status'           => $isDraft ? 'draft' : 'final',
-                    'keterangan'       => $request->keterangan,
-                    'created_by'       => auth()->id(),
-                    'created_at'       => now(),
-                    'updated_at'       => now(),
-                ];
+                // 1. Simpan setiap parameter yang didefinisikan di master standar
+                foreach ($masterStandards as $std) {
+                    $paramName = $std->parameter;
+                    $upper = strtoupper(trim($paramName));
+                    $val = null;
+
+                    if (str_contains($upper, 'BRIX')) {
+                        $val = $request->brix[$i] ?? null;
+                    } elseif ($upper === 'PH' || preg_match('/\bPH\b/i', $upper)) {
+                        $val = $request->ph[$i] ?? null;
+                    } elseif (str_contains($upper, 'KOTORAN')) {
+                        $val = $request->kotoran[$i] ?? null;
+                    } elseif (str_contains($upper, 'KADAR AIR') || $upper === 'KA' || $upper === '%KA') {
+                        $val = $request['%ka'][$i] ?? ($request->ka[$i] ?? null);
+                    } elseif (str_contains($upper, 'NACL')) {
+                        $val = $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null);
+                    } elseif (str_contains($upper, 'ORGANO') || str_contains($upper, 'RASA')) {
+                        $val = $request->organo[$i] ?? ($request->rasa[$i] ?? null);
+                    } elseif (str_contains($upper, 'WARNA')) {
+                        $val = $request->warna[$i] ?? null;
+                    } elseif (str_contains($upper, 'AROMA')) {
+                        $val = $request->aroma[$i] ?? null;
+                    } elseif (str_contains($upper, 'BERAT JENIS')) {
+                        $val = $request->berat_jenis[$i] ?? null;
+                    } elseif (str_contains($upper, 'SUHU')) {
+                        $val = $request->suhu[$i] ?? null;
+                    } elseif (str_contains($upper, 'AW')) {
+                        $val = $request->aw[$i] ?? null;
+                    } elseif (str_contains($upper, 'VISKOSITAS')) {
+                        $val = $request->viskositas[$i] ?? null;
+                    } elseif (str_contains($upper, 'TN') || str_contains($upper, 'NITROGEN')) {
+                        $val = $request['%tn'][$i] ?? ($request->tn[$i] ?? null);
+                    } elseif (str_contains($upper, 'WEIGHT') || str_contains($upper, 'GROSS')) {
+                        $val = $request->gross_weight[$i] ?? null;
+                    } elseif (str_contains($upper, 'FISIK')) {
+                        $val = $request->fisik[$i] ?? null;
+                    } else {
+                        $slug = Str::slug($paramName, '_');
+                        $val = $request->{$slug}[$i] ?? null;
+                    }
+
+                    if ($val !== null && $val !== '') {
+                        $isSesuai = true;
+                        if ($std->min_standar !== null && (float)$val < (float)$std->min_standar) {
+                            $isSesuai = false;
+                        }
+                        if ($std->max_standar !== null && (float)$val > (float)$std->max_standar) {
+                            $isSesuai = false;
+                        }
+
+                        $detailsBatch[] = [
+                            'transaksi_id'      => $transaksi->id,
+                            'sampel_ke'         => $sampelKe,
+                            'master_standar_id' => $std->id,
+                            'parameter'         => $paramName,
+                            'nilai'             => (string)$val,
+                            'is_sesuai'         => $isSesuai,
+                            'created_at'        => now(),
+                            'updated_at'        => now(),
+                        ];
+                    }
+                }
+
+                // 2. Simpan glassware jika ada
+                if (!empty($request->no_beaker[$i]) || !empty($request->no_cawan[$i])) {
+                    $glasswaresBatch[] = [
+                        'transaksi_id'     => $transaksi->id,
+                        'sampel_ke'        => $sampelKe,
+                        'no_beaker'        => $this->nullableString($request->no_beaker[$i] ?? null),
+                        'berat_beaker_500' => $this->nullableFloat($request->berat_beaker_500[$i] ?? null),
+                        'berat_beaker_250' => $this->nullableFloat($request->berat_beaker_250[$i] ?? null),
+                        'timbang_a'        => $this->nullableFloat($request->timbang_a[$i] ?? null),
+                        'timbang_b'        => $this->nullableFloat($request->timbang_b[$i] ?? null),
+                        'no_cawan'         => $this->nullableString($request->no_cawan[$i] ?? null),
+                        'berat_cawan'      => $this->nullableFloat($request->berat_cawan[$i] ?? null),
+                        'timbang_aa'       => $this->nullableFloat($request->timbang_aa[$i] ?? null),
+                        'created_at'       => now(),
+                        'updated_at'       => now(),
+                    ];
+                }
             }
 
-            // Simpan ke tabel analisa_rm_sampels
-            AnalisaRMSampel::where('id_identitas', $request->id_identitas)
-                ->where('kategori', $kategori)
-                ->delete();
-
-            AnalisaRMSampel::insert($dataAnalisa);
+            if (!empty($detailsBatch)) {
+                foreach ($detailsBatch as $d) {
+                    AnalisaRMSampleDetail::updateOrCreate(
+                        [
+                            'transaksi_id'      => $d['transaksi_id'],
+                            'sampel_ke'         => $d['sampel_ke'],
+                            'master_standar_id' => $d['master_standar_id'],
+                        ],
+                        [
+                            'parameter'  => $d['parameter'],
+                            'nilai'      => $d['nilai'],
+                            'is_sesuai'  => $d['is_sesuai'],
+                        ]
+                    );
+                }
+            }
+            if (!empty($glasswaresBatch)) {
+                foreach ($glasswaresBatch as $g) {
+                    AnalisaRMSampleGlassware::updateOrCreate(
+                        [
+                            'transaksi_id' => $g['transaksi_id'],
+                            'sampel_ke'    => $g['sampel_ke'],
+                        ],
+                        $g
+                    );
+                }
+            }
 
             DB::commit();
 
@@ -1280,7 +1382,7 @@ class RMPMController extends Controller
     {
         try {
             // Delete all unfinalized/draft records for this identitas ID across short-term, long-term, and garam-gula
-            AnalisaRMSampel::where('id_identitas', $id)
+            TransaksiAnalisaRM::where('id_identitas', $id)
                 ->where(function ($q) {
                     $q->where('status', 'draft')
                         ->orWhereNull('disposisi')

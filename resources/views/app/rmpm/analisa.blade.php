@@ -224,6 +224,20 @@
                                 </div>
                             </div>
 
+                            @if (auth()->check() && auth()->user()->role === 'Analis Field')
+                            <div class="alert alert-info border-info align-items-center mb-3" role="alert">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="ri-information-line fs-4 text-info flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="fs-6">Akses Role Analis Field (QC Field)</strong>
+                                        <div class="small mt-0.5 text-muted">
+                                            Sesuai hak akses QC Field, seluruh data input analisa bahan baku bersifat <strong>Read Only</strong> kecuali bagian <strong>Gross Weight</strong>. Anda dapat mengisi nilai Gross Weight dan menyimpannya.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
                             {{-- Edit jumlah inline --}}
                             <div id="editJumlahWrapper" class="mb-3 p-3 bg-light rounded border" style="display:none;">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -351,13 +365,32 @@
                                         <td>
                                             @php $hPhotos = $h->photos; @endphp
                                             @if (!empty($hPhotos))
+                                                @php
+                                                    $hUrls = array_map(function($p) { return asset('storage/uploads/attachment_analisa/' . $p); }, $hPhotos);
+                                                @endphp
                                                 <div class="d-flex flex-wrap gap-1 align-items-center">
                                                     @foreach ($hPhotos as $pIdx => $photoPath)
-                                                        <a href="{{ asset('storage/uploads/attachment_analisa/' . $photoPath) }}" target="_blank" class="d-inline-block border rounded overflow-hidden" style="width: 36px; height: 36px;">
-                                                            <img src="{{ asset('storage/uploads/attachment_analisa/' . $photoPath) }}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">
+                                                        @php
+                                                            $photoUrl = asset('storage/uploads/attachment_analisa/' . $photoPath);
+                                                        @endphp
+                                                        <a href="javascript:void(0)" 
+                                                           class="d-inline-block border rounded overflow-hidden btn-preview-photo position-relative shadow-sm" 
+                                                           style="width: 36px; height: 36px; cursor: pointer; transition: transform 0.15s ease;"
+                                                           data-photos='@json($hUrls)'
+                                                           data-index="{{ $pIdx }}"
+                                                           data-title="Lampiran Kristal — Riwayat Analisa ({{ \Carbon\Carbon::parse($h->created_at)->translatedFormat('d M Y H:i') }})"
+                                                           title="Lihat Foto #{{ $pIdx + 1 }}">
+                                                            <img src="{{ $photoUrl }}" alt="Foto {{ $pIdx + 1 }}" style="width: 100%; height: 100%; object-fit: cover;">
                                                         </a>
                                                     @endforeach
-                                                    <span class="badge bg-light text-muted border ms-1">{{ count($hPhotos) }} Foto</span>
+                                                    <button type="button" class="btn btn-xs btn-outline-secondary ms-1 py-1 px-2 btn-preview-photo" 
+                                                            style="font-size: 0.75rem;"
+                                                            data-photos='@json($hUrls)'
+                                                            data-index="0"
+                                                            data-title="Lampiran Kristal — Riwayat Analisa ({{ \Carbon\Carbon::parse($h->created_at)->translatedFormat('d M Y H:i') }})"
+                                                            title="Lihat Semua Foto">
+                                                        {{ count($hPhotos) }} Foto
+                                                    </button>
                                                 </div>
                                             @else
                                                 <span class="text-muted">-</span>
@@ -378,6 +411,45 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- Modal Universal Lightbox Preview Foto -->
+<div class="modal fade" id="modalUniversalImagePreview" tabindex="-1" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 920px;">
+        <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header border-bottom border-secondary py-2 px-3 bg-black bg-opacity-50 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ri-image-line fs-5 text-info"></i>
+                    <h6 class="modal-title mb-0 text-white fw-bold" id="universalImageModalTitle">Pratinjau Foto Lampiran</h6>
+                    <span class="badge bg-secondary ms-2" id="universalImageModalCounter">1 / 1</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="#" id="universalImageDownloadBtn" target="_blank" download class="btn btn-sm btn-outline-light py-1 px-2" title="Unduh Foto">
+                        <i class="ri-download-2-line me-1"></i> Unduh
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 position-relative text-center d-flex align-items-center justify-content-center" style="min-height: 400px; max-height: 72vh; background-color: #0b0f19;">
+                <!-- Nav Prev -->
+                <button type="button" id="universalImagePrevBtn" class="btn btn-dark bg-opacity-75 text-white position-absolute start-0 top-50 translate-middle-y ms-3 border border-secondary rounded-circle d-flex align-items-center justify-content-center shadow-lg" style="width: 44px; height: 44px; z-index: 10;" title="Foto Sebelumnya (Panah Kiri)">
+                    <i class="ri-arrow-left-s-line fs-2"></i>
+                </button>
+
+                <!-- Main Image -->
+                <img id="universalMainImage" src="" alt="Pratinjau Foto" class="img-fluid" style="max-height: 70vh; max-width: 95%; object-fit: contain; transition: transform 0.2s ease;">
+
+                <!-- Nav Next -->
+                <button type="button" id="universalImageNextBtn" class="btn btn-dark bg-opacity-75 text-white position-absolute end-0 top-50 translate-middle-y me-3 border border-secondary rounded-circle d-flex align-items-center justify-content-center shadow-lg" style="width: 44px; height: 44px; z-index: 10;" title="Foto Berikutnya (Panah Kanan)">
+                    <i class="ri-arrow-right-s-line fs-2"></i>
+                </button>
+            </div>
+            <!-- Bottom Thumbnail Strip -->
+            <div class="modal-footer border-top border-secondary py-2 px-3 bg-black bg-opacity-50 justify-content-center gap-2 overflow-auto" id="universalThumbnailsContainer" style="max-height: 80px;">
+                <!-- Dynamically populated thumbnails -->
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1018,6 +1090,8 @@
     const SERVER_INITIAL_STANDARDS = @json($initialStandards ?? null);
     const SERVER_INITIAL_PARAMETERS = @json($initialParameters ?? null);
     const SERVER_DYNAMIC_FIELDS = @json($dynamicFields ?? []);
+    const USER_ROLE = @json(auth()->user()->role ?? '');
+    const IS_ANALIS_FIELD = (USER_ROLE === 'Analis Field');
 
     function isGulaKristalMaterial(jenisStr) {
         return MAT_CATEGORY === 'kelapa-tebu';
@@ -2514,6 +2588,12 @@
             $('#saveAction').val('final');
             submitForm('final', false);
         });
+
+        if (IS_ANALIS_FIELD) {
+            $('#btnEditJumlah, .btn-back-to-setup, #btnReset').hide();
+            $('#btnSimpan').html('<i class="ri-save-line me-1"></i> Simpan Gross Weight');
+            $('#btnSimpanDraft').hide();
+        }
     });
 
     function populateExistingLongTerm() {
@@ -3551,7 +3631,7 @@
         $('#analisaAccordion').html(html);
     }
 
-    function renderOrganoCell(fieldKey, tabIndex = null) {
+    function renderOrganoCell(fieldKey, tabIndex = null, isDisabled = false) {
         const organoOpts = getMasterOptions('organo');
         let optHtml = `<option value="">-- Pilih Organo --</option>`;
         organoOpts.forEach(opt => {
@@ -3562,15 +3642,16 @@
         });
 
         const tabAttr = tabIndex ? `tabindex="${tabIndex}"` : '';
+        const disAttr = isDisabled ? 'disabled' : '';
 
         return `
             <div class="organo-cell-container">
-                <select class="form-select form-select-sm select-organo-dropdown calc-trigger" ${tabAttr}>
+                <select class="form-select form-select-sm select-organo-dropdown calc-trigger" ${tabAttr} ${disAttr}>
                     ${optHtml}
                 </select>
                 <div class="organo-custom-input-box mt-1" style="display:none;">
                     <div class="input-group input-group-sm">
-                        <input type="text" class="form-control form-control-sm input-organo-custom-text calc-trigger" ${tabAttr} placeholder="Tulis rincian..." />
+                        <input type="text" class="form-control form-control-sm input-organo-custom-text calc-trigger" ${tabAttr} ${disAttr} placeholder="Tulis rincian..." />
                         <button type="button" class="btn btn-outline-secondary btn-sm btn-close-organo-custom" title="Kembali ke pilihan dropdown">
                             <i class="ri-close-line"></i>
                         </button>
@@ -3580,7 +3661,7 @@
             </div>`;
     }
 
-    function renderDropdownCell(field, tabIndex = null) {
+    function renderDropdownCell(field, tabIndex = null, isDisabled = false) {
         const labelText = field.label || (field.masterKey ? (field.masterKey.charAt(0).toUpperCase() + field.masterKey.slice(1)) : 'Opsi');
         const opts = getMasterOptions(field.masterKey);
         let optHtml = `<option value="">-- Pilih ${labelText} --</option>`;
@@ -3590,8 +3671,9 @@
             optHtml += `<option value="${val}">${label}</option>`;
         });
         const tabAttr = tabIndex ? `tabindex="${tabIndex}"` : '';
+        const disAttr = isDisabled ? 'disabled' : '';
         return `
-            <select class="form-select form-select-sm select-${field.key.replace('[]','')} calc-trigger" name="${field.key}" ${tabAttr}>
+            <select class="form-select form-select-sm select-${field.key.replace('[]','')} calc-trigger" name="${field.key}" ${tabAttr} ${disAttr}>
                 ${optHtml}
             </select>`;
     }
@@ -3619,6 +3701,9 @@
             let tds = `<td class="td-sampel"><span class="sampel-badge">${i}</span></td>`;
             SHORT_TERM_FIELDS.forEach((f, cIdx) => {
                 const tabIndex = (cIdx + 1) * 100 + i;
+                const isGw = (f.name === 'gross_weight' || f.key === 'gross_weight[]');
+                const isFieldDisabled = IS_ANALIS_FIELD && !isGw;
+
                 if (f.disabled || f.type === 'readonly') {
                     tds += `
                         <td style="min-width: 90px;">
@@ -3628,19 +3713,20 @@
                                 disabled>
                         </td>`;
                 } else if (f.type === 'organo-select') {
-                    tds += `<td style="min-width: 160px;">${renderOrganoCell(f.key, tabIndex)}</td>`;
+                    tds += `<td style="min-width: 160px;">${renderOrganoCell(f.key, tabIndex, isFieldDisabled)}</td>`;
                 } else if (f.type === 'dropdown') {
-                    tds += `<td style="min-width: 130px;">${renderDropdownCell(f, tabIndex)}</td>`;
+                    tds += `<td style="min-width: 130px;">${renderDropdownCell(f, tabIndex, isFieldDisabled)}</td>`;
                 } else if (f.type === 'text') {
                     const placeholder = f.target ? f.target : `Kondisi ${f.label}...`;
                     tds += `
                         <td style="min-width: 140px;">
                             <input type="text"
-                                class="form-control form-control-sm upper-input"
+                                class="form-control form-control-sm upper-input ${isFieldDisabled ? 'bg-light text-muted' : ''}"
                                 name="${f.key}"
                                 tabindex="${tabIndex}"
                                 placeholder="${placeholder}"
-                                autocomplete="off">
+                                autocomplete="off"
+                                ${isFieldDisabled ? 'disabled' : ''}>
                         </td>`;
                 } else if ((f.name === 'kotoran' || f.key === 'kotoran[]') && f.type === 'number') {
                     tds += `
@@ -3648,11 +3734,12 @@
                             <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
-                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran ${isFieldDisabled ? 'bg-light text-muted' : ''}"
                                     name="${f.key}"
                                     tabindex="${tabIndex}"
                                     placeholder="0.00"
-                                    autocomplete="off">
+                                    autocomplete="off"
+                                    ${isFieldDisabled ? 'disabled' : ''}>
                                 <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
                             </div>
                         </td>`;
@@ -3662,46 +3749,50 @@
                             <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
-                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-ka ${isFieldDisabled ? 'bg-light text-muted' : ''}"
                                     name="${f.key}"
                                     tabindex="${tabIndex}"
                                     placeholder="0.00"
-                                    autocomplete="off">
+                                    autocomplete="off"
+                                    ${isFieldDisabled ? 'disabled' : ''}>
                                 <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kadar Air">%</span>
                             </div>
                         </td>`;
                 } else {
+                    const borderClass = (IS_ANALIS_FIELD && isGw) ? 'border-primary shadow-sm fw-bold' : '';
                     tds += `
                         <td style="min-width: 110px;">
                             <input type="text"
                                 inputmode="decimal"
-                                class="form-control form-control-sm calc-trigger numeric-clean-input input-${f.name}"
+                                class="form-control form-control-sm calc-trigger numeric-clean-input input-${f.name} ${isFieldDisabled ? 'bg-light text-muted' : ''} ${borderClass}"
                                 name="${f.key}"
                                 tabindex="${tabIndex}"
                                 placeholder="0.00"
-                                autocomplete="off">
+                                autocomplete="off"
+                                ${isFieldDisabled ? 'disabled' : ''}>
                         </td>`;
                 }
             });
             rowsRingkasan += `<tr>${tds}</tr>`;
 
             // 2. Tab 2: Lembar % Kotoran
+            const disAttrWorksheet = IS_ANALIS_FIELD ? 'disabled' : '';
             rowsKotoran += `
                 <tr>
                     <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
                     <td style="min-width: 170px;">
-                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]" tabindex="${100 + i}">
+                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]" tabindex="${100 + i}" ${disAttrWorksheet}>
                             ${getBeakerOptions(defaultBeaker)}
                         </select>
                         <input type="hidden" name="berat_beaker_500[]" value="${tare500}">
                         <input type="hidden" name="berat_beaker_250[]" value="${tare250}">
                     </td>
                     <td style="min-width: 140px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_a[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input ${IS_ANALIS_FIELD ? 'bg-light text-muted' : ''}" name="timbang_a[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off" ${disAttrWorksheet}>
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B500: <span class="val-tare-500">${tare500 ? tare500 + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 140px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_b[]" tabindex="${300 + i}" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input ${IS_ANALIS_FIELD ? 'bg-light text-muted' : ''}" name="timbang_b[]" tabindex="${300 + i}" placeholder="0.00" autocomplete="off" ${disAttrWorksheet}>
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B250: <span class="val-tare-250">${tare250 ? tare250 + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 140px;" class="text-center align-middle">
@@ -3714,13 +3805,13 @@
                 <tr>
                     <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
                     <td style="min-width: 170px;">
-                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]" tabindex="${100 + i}">
+                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]" tabindex="${100 + i}" ${disAttrWorksheet}>
                             ${getCawanOptions(defaultCawan)}
                         </select>
                         <input type="hidden" name="berat_cawan[]" value="${tareCawan}">
                     </td>
                     <td style="min-width: 150px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="${tareCawan ? (parseFloat(tareCawan) + 4.95).toFixed(2) : '0.00'}" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input ${IS_ANALIS_FIELD ? 'bg-light text-muted' : ''}" name="timbang_aa[]" tabindex="${200 + i}" placeholder="${tareCawan ? (parseFloat(tareCawan) + 4.95).toFixed(2) : '0.00'}" autocomplete="off" ${disAttrWorksheet}>
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <strong class="val-tare-cawan text-primary">${tareCawan ? tareCawan + 'g' : '-'}</strong> <span class="text-secondary" style="font-size:9.5px;">(AA = Cawan + sampel &gt; tare)</span></small>
                     </td>
                     <td style="min-width: 150px;" class="text-center align-middle">
@@ -3744,17 +3835,18 @@
                         <label class="form-label fw-semibold mb-1">
                             Disposisi <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select" name="disposisi" required>
+                        <select class="form-select" name="disposisi" required ${IS_ANALIS_FIELD ? 'disabled' : ''}>
                             <option value="">-- Pilih Disposisi --</option>
                             <option value="Release">Release</option>
                             <option value="Reject">Reject</option>
                         </select>
+                        ${IS_ANALIS_FIELD ? '<div class="form-text text-muted" style="font-size:11px;">Disposisi hanya dapat diisi oleh Analis RM / Foreman.</div>' : ''}
                     </div>
                     <div class="col-md-8">
                         <label class="form-label fw-semibold mb-1">
                             Keterangan <span class="text-muted fw-normal" style="font-size:11px;">(opsional)</span>
                         </label>
-                        <textarea class="form-control" name="keterangan" rows="2" placeholder="Tambahkan catatan hasil analisa atau disposisi..."></textarea>
+                        <textarea class="form-control" name="keterangan" rows="2" placeholder="Tambahkan catatan hasil analisa atau disposisi..." ${IS_ANALIS_FIELD ? 'disabled' : ''}></textarea>
                     </div>
                 </div>
             </div>`;
@@ -3957,7 +4049,7 @@
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             ${quickBtnsHtml}
                         </div>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-2 flex-wrap" ${IS_ANALIS_FIELD ? 'style="display:none !important;"' : ''}>
                             <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2.5" id="btnQuickSetAllOrganoOk" title="Set seluruh sampel Organo/Rasa menjadi 'OK'">
                                 <i class="ri-checkbox-circle-line me-1"></i> Set Rasa "OK"
                             </button>
@@ -3973,11 +4065,17 @@
                                 <tr>
                                     <th class="th-sampel">Sampel</th>
                                     ${SHORT_TERM_FIELDS.map((f, cIdx) => {
+                                        const isGw = (f.name === 'gross_weight' || f.key === 'gross_weight[]');
                                         const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
-                                        const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
+                                        const fillBtn = (!IS_ANALIS_FIELD || isGw)
+                                            ? `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`
+                                            : '';
+                                        const gwBadge = (IS_ANALIS_FIELD && isGw)
+                                            ? `<span class="badge bg-primary me-1"><i class="ri-scales-3-line"></i></span>`
+                                            : '';
                                         const isGroupCol = ((f.name === 'kotoran' || f.key === 'kotoran[]') && f.type === 'number') || (f.name === 'ka' || f.name === '%ka' || f.key === 'ka[]' || f.key === '%ka[]' || f.name === 'kadar_air');
                                         const colMinWidth = isGroupCol ? 'style="min-width: 135px;"' : '';
-                                        return `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+                                        return `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${gwBadge}${f.label}${unit}</span>${fillBtn}</div></th>`;
                                     }).join('')}
                                 </tr>
                             </thead>
@@ -4015,14 +4113,20 @@
     function renderGaramGulaTable(jumlah) {
         let thCols = `<th class="th-sampel">Sampel</th>`;
         GARAM_GULA_FIELDS.forEach((f, cIdx) => {
+            const isGw = (f.name === 'gross_weight' || f.key === 'gross_weight[]');
             const unit = f.unit ? `<span class="unit-badge">${f.unit}</span>` : '';
             if (f.disabled || f.type === 'readonly') {
                 thCols += `<th class="text-center text-muted" style="min-width: 90px;" title="Parameter ${f.label} (NULL)">${f.label}</th>`;
             } else {
-                const fillBtn = `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`;
+                const fillBtn = (!IS_ANALIS_FIELD || isGw)
+                    ? `<button type="button" class="btn btn-fill-col-down ms-1" data-col-idx="${cIdx}" title="Salin nilai baris 1 ke semua baris (${f.label})"><i class="ri-arrow-down-double-line"></i></button>`
+                    : '';
+                const gwBadge = (IS_ANALIS_FIELD && isGw)
+                    ? `<span class="badge bg-primary me-1"><i class="ri-scales-3-line"></i></span>`
+                    : '';
                 const isGroupCol = (f.name === 'kotoran' || f.name === 'ka' || f.name === '%ka' || f.key === 'kotoran[]' || f.key === '%ka[]' || f.name === 'kadar_air');
                 const colMinWidth = isGroupCol ? 'style="min-width: 135px;"' : '';
-                thCols += `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${f.label}${unit}</span>${fillBtn}</div></th>`;
+                thCols += `<th class="th-data-col" data-col-idx="${cIdx}" ${colMinWidth} title="Klik kolom untuk blok & copy-paste / Ctrl+D"><div class="d-flex align-items-center justify-content-between gap-1"><span>${gwBadge}${f.label}${unit}</span>${fillBtn}</div></th>`;
             }
         });
 
@@ -4044,6 +4148,9 @@
             let tds = `<td class="td-sampel"><span class="sampel-badge">${i}</span></td>`;
             GARAM_GULA_FIELDS.forEach((f, cIdx) => {
                 const tabIndex = (cIdx + 1) * 100 + i;
+                const isGw = (f.name === 'gross_weight' || f.key === 'gross_weight[]');
+                const isFieldDisabled = IS_ANALIS_FIELD && !isGw;
+
                 if (f.disabled || f.type === 'readonly') {
                     tds += `
                         <td style="min-width: 90px;">
@@ -4054,19 +4161,20 @@
                                 title="Parameter ${f.label} tidak ada di standar mutu Garam (NULL)">
                         </td>`;
                 } else if (f.type === 'organo-select') {
-                    tds += `<td>${renderOrganoCell(f.key, tabIndex)}</td>`;
+                    tds += `<td>${renderOrganoCell(f.key, tabIndex, isFieldDisabled)}</td>`;
                 } else if (f.type === 'dropdown') {
-                    tds += `<td>${renderDropdownCell(f, tabIndex)}</td>`;
+                    tds += `<td>${renderDropdownCell(f, tabIndex, isFieldDisabled)}</td>`;
                 } else if (f.type === 'text') {
                     const placeholder = f.target ? f.target : (f.label ? `Kondisi ${f.label}...` : '-');
                     tds += `
                         <td style="min-width: 140px;">
                             <input type="text"
-                                class="form-control form-control-sm upper-input"
+                                class="form-control form-control-sm upper-input ${isFieldDisabled ? 'bg-light text-muted' : ''}"
                                 name="${f.key}"
                                 tabindex="${tabIndex}"
                                 placeholder="${placeholder}"
-                                autocomplete="off">
+                                autocomplete="off"
+                                ${isFieldDisabled ? 'disabled' : ''}>
                         </td>`;
                 } else if ((f.key === 'kotoran[]' || f.name === 'kotoran') && f.type === 'number') {
                     tds += `
@@ -4074,11 +4182,12 @@
                             <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
-                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-kotoran ${isFieldDisabled ? 'bg-light text-muted' : ''}"
                                     name="kotoran[]"
                                     tabindex="${tabIndex}"
                                     placeholder="0.00"
-                                    autocomplete="off">
+                                    autocomplete="off"
+                                    ${isFieldDisabled ? 'disabled' : ''}>
                                 <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kotoran">%</span>
                             </div>
                         </td>`;
@@ -4088,46 +4197,50 @@
                             <div class="input-group input-group-sm flex-nowrap">
                                 <input type="text"
                                     inputmode="decimal"
-                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-ka"
+                                    class="form-control form-control-sm calc-trigger numeric-clean-input input-ka ${isFieldDisabled ? 'bg-light text-muted' : ''}"
                                     name="%ka[]"
                                     tabindex="${tabIndex}"
                                     placeholder="0.00"
-                                    autocomplete="off">
+                                    autocomplete="off"
+                                    ${isFieldDisabled ? 'disabled' : ''}>
                                 <span class="input-group-text px-1 text-muted" style="font-size:10px;" title="Terhitung otomatis dari Lembar % Kadar Air">%</span>
                             </div>
                         </td>`;
                 } else {
+                    const borderClass = (IS_ANALIS_FIELD && isGw) ? 'border-primary shadow-sm fw-bold' : '';
                     tds += `
                         <td>
                             <input type="text"
                                 inputmode="decimal"
-                                class="form-control form-control-sm calc-trigger numeric-clean-input"
+                                class="form-control form-control-sm calc-trigger numeric-clean-input ${isFieldDisabled ? 'bg-light text-muted' : ''} ${borderClass}"
                                 name="${f.key}"
                                 tabindex="${tabIndex}"
                                 placeholder="0.00"
-                                autocomplete="off">
+                                autocomplete="off"
+                                ${isFieldDisabled ? 'disabled' : ''}>
                         </td>`;
                 }
             });
             rowsRingkasan += `<tr>${tds}</tr>`;
 
             // 2. Tab 2: Lembar % Kotoran (Hitungan Beaker)
+            const disAttrWorksheetGG = IS_ANALIS_FIELD ? 'disabled' : '';
             rowsKotoran += `
                 <tr>
                     <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
                     <td style="min-width: 170px;">
-                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]" tabindex="${100 + i}">
+                        <select class="form-select form-select-sm select-no-beaker" name="no_beaker[]" tabindex="${100 + i}" ${disAttrWorksheetGG}>
                             ${getBeakerOptions(defaultBeaker)}
                         </select>
                         <input type="hidden" name="berat_beaker_500[]" value="${tare500}">
                         <input type="hidden" name="berat_beaker_250[]" value="${tare250}">
                     </td>
                     <td style="min-width: 140px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_a[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input ${IS_ANALIS_FIELD ? 'bg-light text-muted' : ''}" name="timbang_a[]" tabindex="${200 + i}" placeholder="0.00" autocomplete="off" ${disAttrWorksheetGG}>
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B500: <span class="val-tare-500">${tare500 ? tare500 + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 140px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input" name="timbang_b[]" tabindex="${300 + i}" placeholder="0.00" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-kotoran numeric-clean-input ${IS_ANALIS_FIELD ? 'bg-light text-muted' : ''}" name="timbang_b[]" tabindex="${300 + i}" placeholder="0.00" autocomplete="off" ${disAttrWorksheetGG}>
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare B250: <span class="val-tare-250">${tare250 ? tare250 + 'g' : '-'}</span></small>
                     </td>
                     <td style="min-width: 140px;" class="text-center align-middle">
@@ -4140,13 +4253,13 @@
                 <tr>
                     <td class="td-sampel"><span class="sampel-badge">${i}</span></td>
                     <td style="min-width: 170px;">
-                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]" tabindex="${100 + i}">
+                        <select class="form-select form-select-sm select-no-cawan" name="no_cawan[]" tabindex="${100 + i}" ${disAttrWorksheetGG}>
                             ${getCawanOptions(defaultCawan)}
                         </select>
                         <input type="hidden" name="berat_cawan[]" value="${tareCawan}">
                     </td>
                     <td style="min-width: 150px;">
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input" name="timbang_aa[]" tabindex="${200 + i}" placeholder="${tareCawan ? (parseFloat(tareCawan) + 4.95).toFixed(2) : '0.00'}" autocomplete="off">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm calc-trigger-ka numeric-clean-input ${IS_ANALIS_FIELD ? 'bg-light text-muted' : ''}" name="timbang_aa[]" tabindex="${200 + i}" placeholder="${tareCawan ? (parseFloat(tareCawan) + 4.95).toFixed(2) : '0.00'}" autocomplete="off" ${disAttrWorksheetGG}>
                         <small class="text-muted d-block" style="font-size:10px;margin-top:2px;">Tare Cawan: <strong class="val-tare-cawan text-primary">${tareCawan ? tareCawan + 'g' : '-'}</strong> <span class="text-secondary" style="font-size:9.5px;">(AA = Cawan + sampel &gt; tare)</span></small>
                     </td>
                     <td style="min-width: 150px;" class="text-center align-middle">
@@ -4189,17 +4302,18 @@
                         <label class="form-label fw-semibold mb-1">
                             Disposisi <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select form-select-sm" name="disposisi" required>
+                        <select class="form-select form-select-sm" name="disposisi" required ${IS_ANALIS_FIELD ? 'disabled' : ''}>
                             <option value="">-- Pilih Disposisi --</option>
                             <option value="Release">Release</option>
                             <option value="Reject">Reject</option>
                         </select>
+                        ${IS_ANALIS_FIELD ? '<div class="form-text text-muted" style="font-size:11px;">Disposisi hanya dapat diisi oleh Analis RM / Foreman.</div>' : ''}
                     </div>
                     <div class="col-md-8">
                         <label class="form-label fw-semibold mb-1">
                             Keterangan <span class="text-muted fw-normal" style="font-size:11px;">(opsional)</span>
                         </label>
-                        <textarea class="form-control form-control-sm" name="keterangan" rows="2" placeholder="Tambahkan catatan atau keterangan analisa..."></textarea>
+                        <textarea class="form-control form-control-sm" name="keterangan" rows="2" placeholder="Tambahkan catatan atau keterangan analisa..." ${IS_ANALIS_FIELD ? 'disabled' : ''}></textarea>
                     </div>
                 </div>
             </div>`;
@@ -6140,7 +6254,7 @@
                 : `{{ asset('storage/uploads/attachment_analisa') }}/${cleanName}`;
             const html = `
                 <div class="photo-preview-item" title="${cleanName}">
-                    <a href="${url}" target="_blank">
+                    <a href="javascript:void(0)" class="btn-preview-uploaded-item" data-idx="${currentIdx - 1}">
                         <img src="${url}" alt="Foto ${currentIdx}">
                     </a>
                     <button type="button" class="btn-remove-photo btn-remove-existing-photo" data-index="${i}" title="Hapus foto ini">
@@ -6156,7 +6270,7 @@
             const blobUrl = URL.createObjectURL(file);
             const html = `
                 <div class="photo-preview-item" title="${file.name}">
-                    <a href="${blobUrl}" target="_blank">
+                    <a href="javascript:void(0)" class="btn-preview-uploaded-item" data-idx="${currentIdx - 1}">
                         <img src="${blobUrl}" alt="Foto ${currentIdx}">
                     </a>
                     <button type="button" class="btn-remove-photo btn-remove-new-photo" data-index="${i}" title="Hapus foto ini">
@@ -6188,7 +6302,12 @@
             }
             return;
         }
-        const isDraft = (actionType === 'draft');
+        let isDraft = (actionType === 'draft');
+        if (IS_ANALIS_FIELD) {
+            isDraft = true;
+            actionType = 'draft';
+            $('#saveAction').val('draft');
+        }
 
         if (!isDraft) {
             if (currentType === 'short-term') {
@@ -6305,7 +6424,11 @@
             }
         }
 
+        // Temporarily enable disabled inputs so FormData captures their values
+        const $disabledInputs = $('#formAnalisa').find(':disabled');
+        $disabledInputs.prop('disabled', false);
         const formData = new FormData(document.getElementById('formAnalisa'));
+        $disabledInputs.prop('disabled', true);
         formData.set('save_action', actionType);
         formData.set('is_auto_save', isAutoSave ? '1' : '0');
         formData.set('kategori', currentKategori);
@@ -6680,5 +6803,135 @@
             });
         }
     }
+
+    // ── Universal Image Lightbox Preview ──
+    let activeGalleryPhotos = [];
+    let activeGalleryIndex = 0;
+
+    function showGalleryImage(index) {
+        if (!activeGalleryPhotos.length) return;
+        if (index < 0) index = activeGalleryPhotos.length - 1;
+        if (index >= activeGalleryPhotos.length) index = 0;
+        activeGalleryIndex = index;
+
+        const currentUrl = activeGalleryPhotos[activeGalleryIndex];
+        $('#universalMainImage').attr('src', currentUrl);
+        $('#universalImageDownloadBtn').attr('href', currentUrl);
+        $('#universalImageModalCounter').text(`${activeGalleryIndex + 1} / ${activeGalleryPhotos.length}`).show();
+
+        // Toggle nav buttons
+        if (activeGalleryPhotos.length <= 1) {
+            $('#universalImagePrevBtn, #universalImageNextBtn').hide();
+            $('#universalThumbnailsContainer').hide();
+        } else {
+            $('#universalImagePrevBtn, #universalImageNextBtn').show();
+            $('#universalThumbnailsContainer').show();
+        }
+
+        // Highlight thumbnail
+        $('#universalThumbnailsContainer .thumb-item')
+            .css({'opacity': '0.5', 'border': '2px solid transparent', 'transform': 'scale(1)'});
+        $(`#universalThumbnailsContainer .thumb-item[data-thumb-idx="${activeGalleryIndex}"]`)
+            .css({'opacity': '1', 'border': '2px solid #0dcaf0', 'transform': 'scale(1.08)'});
+    }
+
+    $(document).on('click', '.btn-preview-photo', function(e) {
+        e.preventDefault();
+        const photosData = $(this).attr('data-photos');
+        const title = $(this).attr('data-title') || 'Pratinjau Foto Lampiran';
+        const startIndex = parseInt($(this).attr('data-index') || 0);
+
+        try {
+            activeGalleryPhotos = JSON.parse(photosData);
+        } catch(err) {
+            activeGalleryPhotos = [];
+        }
+
+        if (!Array.isArray(activeGalleryPhotos) || activeGalleryPhotos.length === 0) {
+            const singleSrc = $(this).attr('data-src') || $(this).find('img').attr('src');
+            if (singleSrc) {
+                activeGalleryPhotos = [singleSrc];
+            } else {
+                return;
+            }
+        }
+
+        $('#universalImageModalTitle').text(title);
+
+        // Populate thumbnails
+        const thumbContainer = $('#universalThumbnailsContainer');
+        thumbContainer.empty();
+        if (activeGalleryPhotos.length > 1) {
+            activeGalleryPhotos.forEach((url, i) => {
+                const thumb = $(`
+                    <div class="thumb-item rounded overflow-hidden shadow-sm" 
+                         data-thumb-idx="${i}" 
+                         style="width: 48px; height: 48px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; opacity: 0.5;">
+                        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                `);
+                thumb.on('click', function() {
+                    showGalleryImage(i);
+                });
+                thumbContainer.append(thumb);
+            });
+        }
+
+        showGalleryImage(startIndex);
+        $('#modalUniversalImagePreview').modal('show');
+    });
+
+    $(document).on('click', '.btn-preview-uploaded-item', function(e) {
+        e.preventDefault();
+        const startIdx = parseInt($(this).attr('data-idx') || 0);
+        const allUrls = [];
+        $('#photoPreviewContainer img').each(function() {
+            allUrls.push($(this).attr('src'));
+        });
+        if (allUrls.length === 0) return;
+
+        activeGalleryPhotos = allUrls;
+        $('#universalImageModalTitle').text('Pratinjau Foto Lampiran');
+        
+        const thumbContainer = $('#universalThumbnailsContainer');
+        thumbContainer.empty();
+        if (activeGalleryPhotos.length > 1) {
+            activeGalleryPhotos.forEach((url, i) => {
+                const thumb = $(`
+                    <div class="thumb-item rounded overflow-hidden shadow-sm" 
+                         data-thumb-idx="${i}" 
+                         style="width: 48px; height: 48px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; opacity: 0.5;">
+                        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                `);
+                thumb.on('click', function() {
+                    showGalleryImage(i);
+                });
+                thumbContainer.append(thumb);
+            });
+        }
+        showGalleryImage(startIdx);
+        $('#modalUniversalImagePreview').modal('show');
+    });
+
+    $('#universalImagePrevBtn').on('click', function(e) {
+        e.preventDefault();
+        showGalleryImage(activeGalleryIndex - 1);
+    });
+
+    $('#universalImageNextBtn').on('click', function(e) {
+        e.preventDefault();
+        showGalleryImage(activeGalleryIndex + 1);
+    });
+
+    $(document).on('keydown', function(e) {
+        if ($('#modalUniversalImagePreview').is(':visible')) {
+            if (e.key === 'ArrowLeft') {
+                showGalleryImage(activeGalleryIndex - 1);
+            } else if (e.key === 'ArrowRight') {
+                showGalleryImage(activeGalleryIndex + 1);
+            }
+        }
+    });
 </script>
 @endsection

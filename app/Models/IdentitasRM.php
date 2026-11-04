@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\AnalisaLongTerm;
-use App\Models\AnalisaRMSampel;
 use App\Models\SamplingDokumen;
 use App\Models\SamplingFisikKemasan;
 use App\Models\SamplingFisikRaw;
@@ -19,26 +18,31 @@ class IdentitasRM extends Model
 
     protected $guarded = [];
 
-    public function analisaSampel()
+    public function transaksiAnalisa()
     {
-        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')
+        return $this->hasMany(TransaksiAnalisaRM::class, 'id_identitas')
             ->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END")
             ->orderBy('id', 'asc');
     }
 
+    public function analisaSampel()
+    {
+        return $this->transaksiAnalisa();
+    }
+
     public function analisaGaramGula()
     {
-        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')->orderBy('id', 'asc');
+        return $this->transaksiAnalisa();
     }
 
     public function analisaBahanKering()
     {
-        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')->orderBy('id', 'asc');
+        return $this->transaksiAnalisa();
     }
 
     public function analisaBahanCair()
     {
-        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')->orderBy('id', 'asc');
+        return $this->transaksiAnalisa();
     }
 
     public function analisaLongTerm()
@@ -53,9 +57,7 @@ class IdentitasRM extends Model
 
     public function analisaShortTerm()
     {
-        return $this->hasMany(AnalisaRMSampel::class, 'id_identitas')
-            ->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END")
-            ->orderBy('id', 'asc');
+        return $this->transaksiAnalisa();
     }
 
     public function samplingDokumen()
@@ -85,12 +87,7 @@ class IdentitasRM extends Model
 
     public function isSamplingComplete()
     {
-        $jenisUpper = strtoupper(trim($this->jenis ?? ''));
-        if (str_contains($jenisUpper, 'GARAM')) {
-            return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan;
-        } else {
-            return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan && $this->samplingFisikRaw;
-        }
+        return $this->samplingKondisiMobil && $this->samplingDokumen && $this->samplingFisikKemasan && $this->samplingFisikRaw;
     }
 
     public function getMaterialCategoryAttribute(): string

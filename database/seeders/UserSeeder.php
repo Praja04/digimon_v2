@@ -64,16 +64,16 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $user) {
-            User::create([
-                'name' => $user['name'],
-                'email' => $user['email'],
-                'role' => $user['role'],
-                'password' => Hash::make('password'), // default password
-                'email_verified_at' => now(),
-                'remember_token' => Str::random(10),
-                'created_at' => now(),  
-                'updated_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => $user['email']],
+                [
+                    'name' => $user['name'],
+                    'role' => $user['role'],
+                    'password' => 'password', // default password (akan di-hash otomatis oleh cast model)
+                    'email_verified_at' => now(),
+                    'remember_token' => Str::random(10),
+                ]
+            );
         }
     }
 }
