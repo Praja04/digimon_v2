@@ -509,7 +509,7 @@
                                             Report
                                         </a>
                                     </li>
-                                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM'], true))
+                                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM', 'Analis Field'], true))
                                         <li class="nav-item">
                                             <a href="{{ route('scan-kempu.pm.index') }}"
                                                 class="nav-link {{ request()->routeIs('scan-kempu.pm.*') ? 'active' : '' }}">
