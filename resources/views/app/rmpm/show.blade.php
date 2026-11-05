@@ -68,9 +68,19 @@
                                 <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi">
                                     Konfirmasi
                                 </button>
+                                @php
+                                    $userRole = auth()->user()->role ?? '';
+                                    $isAnalisField = ($userRole === 'Analis Field');
+                                @endphp
+                                @if ($isAnalisField)
+                                <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info" title="Akses Analis Field: Hanya input Gross Weight, parameter analisa lab read-only">
+                                    <i class="ri-scales-3-line align-bottom me-1"></i> Update Analisa (Gross Weight)
+                                </a>
+                                @else
                                 <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info">
                                     <i class="ri-edit-line align-bottom me-1"></i> Update Analisa
                                 </a>
+                                @endif
                                 @php
                                     // Tombol Export selalu muncul jika data sudah memiliki sampel analisa (baik draft maupun final)
                                     $hasAnalisaRm = $identitas->analisaSampel && $identitas->analisaSampel->isNotEmpty();
@@ -263,17 +273,13 @@
                                 <div class="card-body p-3">
                                     @if ($data_mobil)
                                     @php
-                                    // yes_good = yes berarti bagus → hijau. yes_bad = yes berarti buruk → merah/warning
                                     $mobilFields = [
-                                    'bersih' => ['label' => 'Bersih', 'type' => 'yes_good'],
-                                    'kering' => ['label' => 'Kering', 'type' => 'yes_good'],
-                                    'benda_asing' => [
-                                    'label' => 'Tidak Ada Benda Asing',
-                                    'type' => 'yes_good',
-                                    ],
-                                    'cacat' => ['label' => 'Tidak Cacat', 'type' => 'yes_good'],
-                                    'segel' => ['label' => 'Segel', 'type' => 'yes_good'],
-                                    'berbau' => ['label' => 'Berbau', 'type' => 'yes_bad'],
+                                        'bersih' => ['label_good' => 'Bersih', 'label_bad' => 'Tidak Bersih'],
+                                        'kering' => ['label_good' => 'Kering', 'label_bad' => 'Tidak Kering'],
+                                        'benda_asing' => ['label_good' => 'Tidak Ada Benda Asing', 'label_bad' => 'Ada Benda Asing'],
+                                        'cacat' => ['label_good' => 'Tidak Cacat', 'label_bad' => 'Cacat / Bolong'],
+                                        'segel' => ['label_good' => 'Segel', 'label_bad' => 'Tidak Disegel'],
+                                        'berbau' => ['label_good' => 'Tidak Berbau', 'label_bad' => 'Berbau'],
                                     ];
                                     @endphp
                                     <div class="row g-2">
@@ -282,26 +288,15 @@
                                         <div class="col-6 col-md-4">
                                             <div class="d-flex align-items-center gap-2">
                                                 @if ($val === null)
-                                                <i
-                                                    class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold"></i>
-                                                @elseif ($cfg['type'] === 'yes_good')
-                                                @if ($val === 'yes')
-                                                <i
-                                                    class="ri-checkbox-circle-fill text-success fs-4 fw-bold"></i>
+                                                <i class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold"></i>
+                                                <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                @elseif ($val === 'yes')
+                                                <i class="ri-checkbox-circle-fill text-success fs-4 fw-bold"></i>
+                                                <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
                                                 @else
-                                                <i
-                                                    class="ri-close-circle-fill text-danger fs-4 fw-bold"></i>
-                                                @endif
-                                                @else
-                                                @if ($val === 'yes')
                                                 <i class="ri-alert-fill text-warning fs-4 fw-bold"></i>
-                                                @else
-                                                <i
-                                                    class="ri-checkbox-circle-fill text-success fs-4 fw-bold"></i>
+                                                <span class="text-warning fw-semibold">{{ $cfg['label_bad'] }}</span>
                                                 @endif
-                                                @endif
-                                                <span
-                                                    class="text-muted fw-semibold">{{ $cfg['label'] }}</span>
                                             </div>
                                         </div>
                                         @endforeach
@@ -378,29 +373,17 @@
                                     $kemasanFields =
                                     $isGaram
                                     ? [
-                                    'kotor' => ['label' => 'Kotor', 'type' => 'yes_bad'],
-                                    'berair' => ['label' => 'Berair', 'type' => 'yes_bad'],
-                                    'basah' => ['label' => 'Basah', 'type' => 'yes_bad'],
-                                    'campuran' => ['label' => 'Campuran', 'type' => 'yes_bad'],
-                                    'rusak' => [
-                                    'label' => 'Rusak / Robek',
-                                    'type' => 'yes_bad',
-                                    ],
-                                    'sesuai_std' => [
-                                    'label' => 'Sesuai STD',
-                                    'type' => 'yes_good',
-                                    ],
+                                        'kotor' => ['label_good' => 'Tidak Kotor', 'label_bad' => 'Kotor', 'type' => 'yes_bad'],
+                                        'berair' => ['label_good' => 'Tidak Berair', 'label_bad' => 'Berair', 'type' => 'yes_bad'],
+                                        'basah' => ['label_good' => 'Tidak Basah', 'label_bad' => 'Basah', 'type' => 'yes_bad'],
+                                        'campuran' => ['label_good' => 'Tidak Ada Campuran', 'label_bad' => 'Campuran', 'type' => 'yes_bad'],
+                                        'rusak' => ['label_good' => 'Tidak Rusak / Robek', 'label_bad' => 'Rusak / Robek', 'type' => 'yes_bad'],
+                                        'sesuai_std' => ['label_good' => 'Sesuai STD', 'label_bad' => 'Tidak Sesuai STD', 'type' => 'yes_good'],
                                     ]
                                     : [
-                                    'kotor' => ['label' => 'Kotor', 'type' => 'yes_bad'],
-                                    'rusak' => [
-                                    'label' => 'Rusak / Sobek',
-                                    'type' => 'yes_bad',
-                                    ],
-                                    'sesuai_std' => [
-                                    'label' => 'Sesuai STD',
-                                    'type' => 'yes_good',
-                                    ],
+                                        'kotor' => ['label_good' => 'Tidak Kotor', 'label_bad' => 'Kotor', 'type' => 'yes_bad'],
+                                        'rusak' => ['label_good' => 'Tidak Rusak / Sobek', 'label_bad' => 'Rusak / Sobek', 'type' => 'yes_bad'],
+                                        'sesuai_std' => ['label_good' => 'Sesuai STD', 'label_bad' => 'Tidak Sesuai STD', 'type' => 'yes_good'],
                                     ];
                                     @endphp
                                     <div class="row g-2">
@@ -413,35 +396,49 @@
                                             <div
                                                 class="d-flex {{ !empty(optional($data_kemasan)->$keterangan_key) ? 'align-items-start' : 'align-items-center' }} gap-2">
                                                 @if ($val === null)
-                                                <i
-                                                    class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold mt-1"></i>
+                                                <i class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
                                                 @elseif ($cfg['type'] === 'yes_good')
                                                 @if ($val === 'yes')
-                                                <i
-                                                    class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
-                                                @else
-                                                <i
-                                                    class="ri-close-circle-fill text-danger fs-4 fw-bold mt-1"></i>
-                                                @endif
-                                                @else
-                                                @if ($val === 'yes')
-                                                <i
-                                                    class="ri-alert-fill text-warning fs-4 fw-bold mt-1"></i>
-                                                @else
-                                                <i
-                                                    class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
-                                                @endif
-                                                @endif
+                                                <i class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
                                                 <div>
-                                                    <span
-                                                        class="text-muted fw-semibold">{{ $cfg['label'] }}</span>
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
+                                                @else
+                                                <i class="ri-close-circle-fill text-danger fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-danger fw-semibold">{{ $cfg['label_bad'] }}</span>
                                                     @if (!empty(optional($data_kemasan)->$keterangan_key))
-                                                    <div class="text-warning small fst-italic mt-1">
+                                                    @php $ketValKemasan = optional($data_kemasan)->$keterangan_key; @endphp
+                                                    <div class="text-danger small fst-italic mt-1">
                                                         <i class="ri-error-warning-line"></i>
-                                                        {{ $data_kemasan->$keterangan_key }} Zak
+                                                        ({{ is_numeric($ketValKemasan) ? $ketValKemasan . ' Zak' : $ketValKemasan }})
                                                     </div>
                                                     @endif
                                                 </div>
+                                                @endif
+                                                @else
+                                                @if ($val === 'yes')
+                                                <i class="ri-alert-fill text-warning fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-warning fw-semibold">{{ $cfg['label_bad'] }}</span>
+                                                    @if (!empty(optional($data_kemasan)->$keterangan_key))
+                                                    @php $ketValKemasan = optional($data_kemasan)->$keterangan_key; @endphp
+                                                    <div class="text-warning small fst-italic mt-1">
+                                                        <i class="ri-error-warning-line"></i>
+                                                        ({{ is_numeric($ketValKemasan) ? $ketValKemasan . ' Zak' : $ketValKemasan }})
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                @else
+                                                <i class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
+                                                @endif
+                                                @endif
                                             </div>
                                         </div>
                                         @endforeach
@@ -483,17 +480,9 @@
                                     @if ($data_raw)
                                     @php
                                     $rawFields = [
-                                    'leleh' => ['label' => 'Leleh', 'type' => 'yes_bad'],
-                                    'warna' => [
-                                    'label' => 'Warna Tidak Sesuai Standar',
-                                    'type' => 'yes_bad',
-                                    ],
-                                    'campuran' => ['label' => 'Campuran', 'type' => 'yes_bad'],
-                                    'aroma' => [
-                                    'label' => 'Aroma Tidak Sesuai Standar',
-                                    'type' => 'yes_bad',
-                                    ],
-                                    'sesuai_std' => ['label' => 'Sesuai Standar', 'type' => 'yes_good'],
+                                        'sesuai_std' => ['label_good' => 'Fisik Sesuai Standar', 'label_bad' => 'Fisik Tidak Sesuai Standar'],
+                                        'warna' => ['label_good' => 'Warna Sesuai Standar', 'label_bad' => 'Warna Tidak Sesuai Standar'],
+                                        'aroma' => ['label_good' => 'Aroma Sesuai Standar', 'label_bad' => 'Aroma Tidak Sesuai Standar'],
                                     ];
                                     @endphp
                                     <div class="row g-2">
@@ -501,40 +490,33 @@
                                         @php
                                         $val = optional($data_raw)->$key;
                                         $keterangan_key = 'keterangan_' . $key;
+                                        $ketValRaw = optional($data_raw)->$keterangan_key;
                                         @endphp
                                         <div class="col-6 col-md-4">
                                             <div
-                                                class="d-flex {{ !empty(optional($data_raw)->$keterangan_key) ? 'align-items-start' : 'align-items-center' }} gap-2">
+                                                class="d-flex {{ !empty($ketValRaw) ? 'align-items-start' : 'align-items-center' }} gap-2">
                                                 @if ($val === null)
-                                                <i
-                                                    class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold mt-1"></i>
-                                                @elseif ($cfg['type'] === 'yes_good')
-                                                @if ($val === 'yes')
-                                                <i
-                                                    class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
-                                                @else
-                                                <i
-                                                    class="ri-close-circle-fill text-danger fs-4 fw-bold mt-1"></i>
-                                                @endif
-                                                @else
-                                                @if ($val === 'yes')
-                                                <i
-                                                    class="ri-alert-fill text-warning fs-4 fw-bold mt-1"></i>
-                                                @else
-                                                <i
-                                                    class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
-                                                @endif
-                                                @endif
+                                                <i class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold mt-1"></i>
                                                 <div>
-                                                    <span
-                                                        class="text-muted fw-semibold">{{ $cfg['label'] }}</span>
-                                                    @if (!empty(optional($data_raw)->$keterangan_key))
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
+                                                @elseif ($val === 'yes')
+                                                <i class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
+                                                @else
+                                                <i class="ri-alert-fill text-warning fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-warning fw-semibold">{{ $cfg['label_bad'] }}</span>
+                                                    @if (!empty($ketValRaw))
                                                     <div class="text-warning small fst-italic mt-1">
                                                         <i class="ri-error-warning-line"></i>
-                                                        {{ $data_raw->$keterangan_key }} Zak
+                                                        ({{ is_numeric($ketValRaw) ? $ketValRaw . ' Zak' : $ketValRaw }})
                                                     </div>
                                                     @endif
                                                 </div>
+                                                @endif
                                             </div>
                                         </div>
                                         @endforeach
@@ -593,9 +575,15 @@
                                                 0 Sampel
                                             </span>
                                         @endif
+                                        @if ($isAnalisField)
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
+                                            <i class="ri-scales-3-line me-1"></i> Update Gross Weight
+                                        </a>
+                                        @else
                                         <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
                                             <i class="ri-edit-box-line me-1"></i> Update Analisa
                                         </a>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -862,44 +850,16 @@
                                                     </td>
                                                     <td>
                                                         @if (!empty($photos))
-                                                        <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#imageModal{{ $long->id }}">
+                                                        @php
+                                                            $pUrls = array_map(function($p) { return asset('storage/uploads/attachment_analisa/' . $p); }, $photos);
+                                                        @endphp
+                                                        <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-preview-photo"
+                                                            data-photos='@json($pUrls)'
+                                                            data-index="0"
+                                                            data-title="Lampiran Kristal — Long Term">
                                                             <i class="mdi mdi-image-multiple-outline me-1"></i>
                                                             Lihat ({{ count($photos) }} Foto)
                                                         </button>
-
-                                                        <div class="modal fade"
-                                                            id="imageModal{{ $long->id }}"
-                                                            tabindex="-1" aria-hidden="true">
-                                                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                                <div class="modal-content">
-                                                                  <div class="modal-header">
-                                                                        <h5 class="modal-title">
-                                                                            <i class="mdi mdi-image-outline me-1"></i> Lampiran Kristal — ({{ count($photos) }} Foto)
-                                                                        </h5>
-                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                                    </div>
-                                                                    <div class="modal-body">
-                                                                        <div class="row g-3 justify-content-center">
-                                                                            @foreach ($photos as $pIdx => $imgName)
-                                                                            <div class="col-md-6 text-center">
-                                                                                <div class="border rounded p-2 bg-light">
-                                                                                    <a href="{{ asset('storage/uploads/attachment_analisa/' . $imgName) }}" target="_blank">
-                                                                                        <img src="{{ asset('storage/uploads/attachment_analisa/' . $imgName) }}"
-                                                                                            alt="Foto {{ $pIdx + 1 }}"
-                                                                                            class="img-fluid rounded shadow-sm"
-                                                                                            style="max-height: 250px; object-fit: cover; width: 100%;">
-                                                                                    </a>
-                                                                                    <div class="small text-muted mt-2 fw-semibold">Foto #{{ $pIdx + 1 }}</div>
-                                                                                </div>
-                                                                            </div>
-                                                                            @endforeach
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
                                                         @else
                                                         <span class="text-muted small">-</span>
                                                         @endif
@@ -1018,13 +978,32 @@
                                                     </td>
                                                     <td>
                                                         @if (!empty($hPhotos))
+                                                        @php
+                                                            $hUrls = array_map(function($p) { return asset('storage/uploads/attachment_analisa/' . $p); }, $hPhotos);
+                                                        @endphp
                                                         <div class="d-flex flex-wrap gap-1 align-items-center">
                                                             @foreach ($hPhotos as $pIdx => $photoPath)
-                                                            <a href="{{ asset('storage/uploads/attachment_analisa/' . $photoPath) }}" target="_blank" class="d-inline-block border rounded overflow-hidden" style="width: 32px; height: 32px;">
-                                                                <img src="{{ asset('storage/uploads/attachment_analisa/' . $photoPath) }}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">
+                                                            @php
+                                                                $photoUrl = asset('storage/uploads/attachment_analisa/' . $photoPath);
+                                                            @endphp
+                                                            <a href="javascript:void(0)" 
+                                                               class="d-inline-block border rounded overflow-hidden btn-preview-photo position-relative shadow-sm" 
+                                                               style="width: 34px; height: 34px; cursor: pointer; transition: transform 0.15s ease;"
+                                                               data-photos='@json($hUrls)'
+                                                               data-index="{{ $pIdx }}"
+                                                               data-title="Lampiran Kristal — Riwayat Analisa ({{ \Carbon\Carbon::parse($hist->created_at)->translatedFormat('d M Y H:i') }})"
+                                                               title="Lihat Foto #{{ $pIdx + 1 }}">
+                                                                <img src="{{ $photoUrl }}" alt="Foto {{ $pIdx + 1 }}" style="width: 100%; height: 100%; object-fit: cover;">
                                                             </a>
                                                             @endforeach
-                                                            <span class="badge bg-light text-muted border ms-1">{{ count($hPhotos) }} Foto</span>
+                                                            <button type="button" class="btn btn-xs btn-outline-secondary ms-1 py-1 px-2 btn-preview-photo" 
+                                                                    style="font-size: 0.75rem;"
+                                                                    data-photos='@json($hUrls)'
+                                                                    data-index="0"
+                                                                    data-title="Lampiran Kristal — Riwayat Analisa ({{ \Carbon\Carbon::parse($hist->created_at)->translatedFormat('d M Y H:i') }})"
+                                                                    title="Lihat Semua Foto">
+                                                                {{ count($hPhotos) }} Foto
+                                                            </button>
                                                         </div>
                                                         @else
                                                         <span class="text-muted">-</span>
@@ -1050,9 +1029,15 @@
                                     <h5 class="mb-0 fw-semibold text-dark">
                                         <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa (Garam)
                                     </h5>
+                                    @if ($isAnalisField)
+                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
+                                        <i class="ri-scales-3-line me-1"></i> Update Gross Weight
+                                    </a>
+                                    @else
                                     <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
                                         <i class="ri-edit-box-line me-1"></i> Update Analisa
                                     </a>
+                                    @endif
                                 </div>
                                 <div class="card-body p-3">
                                     <div class="table-responsive">
@@ -1183,9 +1168,15 @@
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             Total: {{ $analisa_bahan_kering->count() }} Sampel
                                         </span>
+                                        @if ($isAnalisField)
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
+                                            <i class="ri-scales-3-line me-1"></i> Update Gross Weight
+                                        </a>
+                                        @else
                                         <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
                                             <i class="ri-edit-box-line me-1"></i> Update Analisa
                                         </a>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -1283,9 +1274,15 @@
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             Total: {{ $analisa_bahan_cair->count() }} Sampel
                                         </span>
+                                        @if ($isAnalisField)
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
+                                            <i class="ri-scales-3-line me-1"></i> Update Gross Weight
+                                        </a>
+                                        @else
                                         <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
                                             <i class="ri-edit-box-line me-1"></i> Update Analisa
                                         </a>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -1383,9 +1380,15 @@
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             Short Term: {{ $analisa_short_term->count() }} Sampel
                                         </span>
+                                        @if ($isAnalisField)
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
+                                            <i class="ri-scales-3-line me-1"></i> Update Gross Weight
+                                        </a>
+                                        @else
                                         <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
                                             <i class="ri-edit-box-line me-1"></i> Update Analisa
                                         </a>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
@@ -1568,7 +1571,7 @@
                 !is_null($data_mobil) &&
                 !is_null($data_dokumen) &&
                 !is_null($data_kemasan) &&
-                ($isGaram || !is_null($data_raw));
+                !is_null($data_raw);
                 @endphp
                 @if ($samplingComplete)
                 <div class="alert alert-info text-center">Anda sudah mengisi semua sampling.</div>
@@ -1593,7 +1596,7 @@
                         <i class="ri-inbox-line me-2 text-warning"></i> Sampling Kemasan
                     </button>
                     @endif
-                    @if (!$isGaram && is_null($data_raw))
+                    @if (is_null($data_raw))
                     <button type="button" class="list-group-item list-group-item-action btn-open-sampling-modal"
                         data-target-modal="#modalRaw" data-bs-target="#modalRaw">
                         <i class="ri-flask-line me-2 text-danger"></i> Sampling Raw
@@ -1657,7 +1660,7 @@
                 <form id="editMobilForm">
                     @csrf
                     <input type="hidden" name="id_mobil" value="{{ $data_mobil->id ?? null }}">
-                    @foreach (['bersih' => 'a. Bersih', 'kering' => 'b. Kering', 'benda_asing' => 'c. Tidak Ada Benda Asing', 'cacat' => 'd. Tidak Cacat', 'segel' => 'e. Segel', 'berbau' => 'f. Berbau'] as $field => $label)
+                    @foreach (['bersih' => 'a. Bersih', 'kering' => 'b. Kering', 'benda_asing' => 'c. Tidak Ada Benda Asing', 'cacat' => 'd. Tidak Cacat', 'segel' => 'e. Segel', 'berbau' => 'f. Tidak Berbau'] as $field => $label)
                     <div class="mb-3 d-flex justify-content-between align-items-center">
                         <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
                         <div>
@@ -1796,9 +1799,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak kotor?</label>
-                            <input type="number" class="form-control form-control-sm" name="keterangan_kotor"
-                                placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / jumlah zak:</label>
+                            <input type="text" class="form-control form-control-sm" name="keterangan_kotor"
+                                placeholder="Contoh: 5 zak kotor terkena noda / kotoran">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -1867,9 +1870,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak rusak / sobek?</label>
-                            <input type="number" class="form-control form-control-sm" name="keterangan_rusak"
-                                placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / jumlah zak:</label>
+                            <input type="text" class="form-control form-control-sm" name="keterangan_rusak"
+                                placeholder="Contoh: 3 zak sobek samping / bocor halus">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -1890,9 +1893,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak tidak standar?</label>
-                            <input type="number" class="form-control form-control-sm"
-                                name="keterangan_sesuai_std" placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / jumlah zak:</label>
+                            <input type="text" class="form-control form-control-sm"
+                                name="keterangan_sesuai_std" placeholder="Contoh: 5 zak kemasan basah / tidak rapi">
                         </div>
                     </div>
                     @else
@@ -1913,9 +1916,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak kotor?</label>
-                            <input type="number" class="form-control form-control-sm" name="keterangan_kotor"
-                                placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / jumlah zak:</label>
+                            <input type="text" class="form-control form-control-sm" name="keterangan_kotor"
+                                placeholder="Contoh: 5 zak kotor terkena noda / kotoran">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -1936,9 +1939,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak rusak / sobek?</label>
-                            <input type="number" class="form-control form-control-sm" name="keterangan_rusak"
-                                placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / jumlah zak:</label>
+                            <input type="text" class="form-control form-control-sm" name="keterangan_rusak"
+                                placeholder="Contoh: 3 zak sobek samping / bocor halus">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -1959,9 +1962,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak tidak standar?</label>
-                            <input type="number" class="form-control form-control-sm"
-                                name="keterangan_sesuai_std" placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / jumlah zak:</label>
+                            <input type="text" class="form-control form-control-sm"
+                                name="keterangan_sesuai_std" placeholder="Contoh: 5 zak kemasan basah / tidak rapi">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -2048,14 +2051,18 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Sampling Raw — {{ $identitas->jenis }}</h5>
+                <h5 class="modal-title">Sampling Raw Material — {{ $identitas->jenis }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form class="form-sampling" id="form-raw">
                     @csrf
                     <input type="hidden" name="id_identitas" value="{{ $identitas->id }}">
-                    @foreach (['leleh' => 'a. Leleh', 'warna' => 'b. Warna tidak sesuai STD', 'campuran' => 'c. Campuran', 'aroma' => 'd. Aroma tidak STD', 'sesuai_std' => 'e. Sesuai STD'] as $field => $label)
+                    @foreach ([
+                        'sesuai_std' => 'a. Fisik Sesuai Standar',
+                        'warna' => 'b. Warna Sesuai Standar',
+                        'aroma' => 'c. Aroma Sesuai Standar'
+                    ] as $field => $label)
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
@@ -2073,9 +2080,9 @@
                             </div>
                         </div>
                         <div class="zak-input-wrapper mt-2" style="display:none;">
-                            <label class="form-label small text-muted">Jumlah zak?</label>
-                            <input type="number" class="form-control form-control-sm"
-                                name="keterangan_{{ $field }}" placeholder="Contoh: 5" min="0">
+                            <label class="form-label small text-muted">Keterangan temuan / alasan tidak sesuai:</label>
+                            <input type="text" class="form-control form-control-sm"
+                                name="keterangan_{{ $field }}" placeholder="Contoh: 5 zak leleh / warna kecoklatan / aroma apek">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -2101,26 +2108,38 @@
                 <form id="editRawForm">
                     @csrf
                     <input type="hidden" name="id_raw" value="{{ $data_raw->id ?? null }}">
-                    @foreach (['leleh' => 'a. Leleh', 'warna' => 'b. Warna Sesuai Standar', 'aroma' => 'c. Aroma Tidak Sesuai Standar', 'sesuai_std_raw' => 'd. Sesuai Standar', 'campuran_raw' => 'e. Campuran'] as $field => $label)
+                    @foreach ([
+                        'sesuai_std' => 'a. Fisik Sesuai Standar',
+                        'warna' => 'b. Warna Sesuai Standar',
+                        'aroma' => 'c. Aroma Sesuai Standar'
+                    ] as $field => $label)
                     @php
-                    $fieldName = str_replace('_raw', '', $field);
-                    $value = optional($data_raw)->$fieldName;
+                    $value = optional($data_raw)->$field;
+                    $ketField = 'keterangan_' . $field;
+                    $ketValue = optional($data_raw)->$ketField;
                     @endphp
-                    <div class="mb-3 d-flex justify-content-between align-items-center">
-                        <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
-                        <div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_yes_edit" value="yes"
-                                    {{ $value === 'yes' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_yes_edit">Iya</label>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="{{ $field }}"
+                                        id="{{ $field }}_yes_edit" value="yes"
+                                        {{ $value === 'yes' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="{{ $field }}_yes_edit">Iya</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="{{ $field }}"
+                                        id="{{ $field }}_no_edit" value="no"
+                                        {{ $value === 'no' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="{{ $field }}_no_edit">Tidak</label>
+                                </div>
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_no_edit" value="no"
-                                    {{ $value === 'no' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_no_edit">Tidak</label>
-                            </div>
+                        </div>
+                        <div class="zak-input-wrapper-edit mt-2" style="{{ $value === 'no' ? '' : 'display:none;' }}">
+                            <label class="form-label small text-muted">Keterangan temuan / alasan tidak sesuai:</label>
+                            <input type="text" class="form-control form-control-sm"
+                                name="keterangan_{{ $field }}" value="{{ $ketValue }}" placeholder="Contoh: 5 zak leleh / warna kecoklatan / aroma apek">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -2155,6 +2174,45 @@
                 <button type="button" id="btnSimpanJam" class="btn btn-primary">
                     <i class="ri-save-line me-1"></i> Simpan
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Universal Lightbox Preview Foto --}}
+<div class="modal fade" id="modalUniversalImagePreview" tabindex="-1" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 920px;">
+        <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header border-bottom border-secondary py-2 px-3 bg-black bg-opacity-50 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ri-image-line fs-5 text-info"></i>
+                    <h6 class="modal-title mb-0 text-white fw-bold" id="universalImageModalTitle">Pratinjau Foto Lampiran</h6>
+                    <span class="badge bg-secondary ms-2" id="universalImageModalCounter">1 / 1</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="#" id="universalImageDownloadBtn" target="_blank" download class="btn btn-sm btn-outline-light py-1 px-2" title="Unduh Foto">
+                        <i class="ri-download-2-line me-1"></i> Unduh
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 position-relative text-center d-flex align-items-center justify-content-center" style="min-height: 400px; max-height: 72vh; background-color: #0b0f19;">
+                <!-- Nav Prev -->
+                <button type="button" id="universalImagePrevBtn" class="btn btn-dark bg-opacity-75 text-white position-absolute start-0 top-50 translate-middle-y ms-3 border border-secondary rounded-circle d-flex align-items-center justify-content-center shadow-lg" style="width: 44px; height: 44px; z-index: 10;" title="Foto Sebelumnya (Panah Kiri)">
+                    <i class="ri-arrow-left-s-line fs-2"></i>
+                </button>
+
+                <!-- Main Image -->
+                <img id="universalMainImage" src="" alt="Pratinjau Foto" class="img-fluid" style="max-height: 70vh; max-width: 95%; object-fit: contain; transition: transform 0.2s ease;">
+
+                <!-- Nav Next -->
+                <button type="button" id="universalImageNextBtn" class="btn btn-dark bg-opacity-75 text-white position-absolute end-0 top-50 translate-middle-y me-3 border border-secondary rounded-circle d-flex align-items-center justify-content-center shadow-lg" style="width: 44px; height: 44px; z-index: 10;" title="Foto Berikutnya (Panah Kanan)">
+                    <i class="ri-arrow-right-s-line fs-2"></i>
+                </button>
+            </div>
+            <!-- Bottom Thumbnail Strip -->
+            <div class="modal-footer border-top border-secondary py-2 px-3 bg-black bg-opacity-50 justify-content-center gap-2 overflow-auto" id="universalThumbnailsContainer" style="max-height: 80px;">
+                <!-- Dynamically populated thumbnails -->
             </div>
         </div>
     </div>
@@ -2213,12 +2271,22 @@
         $('form.form-sampling input[type=radio]').on('change', function() {
             const $parent = $(this).closest('.mb-3');
             const $wrapper = $parent.find('.zak-input-wrapper');
-            $wrapper.hide().find('input[type=number]').val('');
+            $wrapper.hide().find('input').val('');
             const name = $(this).attr('name');
-            if (name === 'sesuai_std') {
+            if (name === 'sesuai_std' || name === 'warna' || name === 'aroma') {
                 if ($(this).val() === 'no') $wrapper.show();
             } else {
                 if ($(this).val() === 'yes') $wrapper.show();
+            }
+        });
+
+        $('#editRawForm input[type=radio]').on('change', function() {
+            const $parent = $(this).closest('.mb-3');
+            const $wrapper = $parent.find('.zak-input-wrapper-edit');
+            if ($(this).val() === 'no') {
+                $wrapper.show();
+            } else {
+                $wrapper.hide().find('input').val('');
             }
         });
 
@@ -2368,12 +2436,14 @@
                 type: 'POST',
                 url: "{{ route('sampling-raw.update') }}",
                 data: {
+                    _token: "{{ csrf_token() }}",
                     id: $('[name="id_raw"]').val(),
-                    leleh: $('[name="leleh"]:checked').val(),
-                    warna: $('[name="warna"]:checked').val(),
-                    campuran: $('[name="campuran_raw"]:checked').val(),
-                    aroma: $('[name="aroma"]:checked').val(),
-                    sesuai_std: $('[name="sesuai_std_raw"]:checked').val(),
+                    sesuai_std: $('#editRawForm [name="sesuai_std"]:checked').val(),
+                    keterangan_sesuai_std: $('#editRawForm [name="keterangan_sesuai_std"]').val(),
+                    warna: $('#editRawForm [name="warna"]:checked').val(),
+                    keterangan_warna: $('#editRawForm [name="keterangan_warna"]').val(),
+                    aroma: $('#editRawForm [name="aroma"]:checked').val(),
+                    keterangan_aroma: $('#editRawForm [name="keterangan_aroma"]').val(),
                 },
                 success: r => {
                     $('#editModalRaw').modal('hide');
@@ -2506,6 +2576,103 @@
                     });
                 }
             });
+        });
+
+        // ── Universal Image Lightbox Preview ──
+        let activeGalleryPhotos = [];
+        let activeGalleryIndex = 0;
+
+        function showGalleryImage(index) {
+            if (!activeGalleryPhotos.length) return;
+            if (index < 0) index = activeGalleryPhotos.length - 1;
+            if (index >= activeGalleryPhotos.length) index = 0;
+            activeGalleryIndex = index;
+
+            const currentUrl = activeGalleryPhotos[activeGalleryIndex];
+            $('#universalMainImage').attr('src', currentUrl);
+            $('#universalImageDownloadBtn').attr('href', currentUrl);
+            $('#universalImageModalCounter').text(`${activeGalleryIndex + 1} / ${activeGalleryPhotos.length}`).show();
+
+            // Toggle nav buttons
+            if (activeGalleryPhotos.length <= 1) {
+                $('#universalImagePrevBtn, #universalImageNextBtn').hide();
+                $('#universalThumbnailsContainer').hide();
+            } else {
+                $('#universalImagePrevBtn, #universalImageNextBtn').show();
+                $('#universalThumbnailsContainer').show();
+            }
+
+            // Highlight thumbnail
+            $('#universalThumbnailsContainer .thumb-item')
+                .css({'opacity': '0.5', 'border': '2px solid transparent', 'transform': 'scale(1)'});
+            $(`#universalThumbnailsContainer .thumb-item[data-thumb-idx="${activeGalleryIndex}"]`)
+                .css({'opacity': '1', 'border': '2px solid #0dcaf0', 'transform': 'scale(1.08)'});
+        }
+
+        $(document).on('click', '.btn-preview-photo', function(e) {
+            e.preventDefault();
+            const photosData = $(this).attr('data-photos');
+            const title = $(this).attr('data-title') || 'Pratinjau Foto Lampiran';
+            const startIndex = parseInt($(this).attr('data-index') || 0);
+
+            try {
+                activeGalleryPhotos = JSON.parse(photosData);
+            } catch(err) {
+                activeGalleryPhotos = [];
+            }
+
+            if (!Array.isArray(activeGalleryPhotos) || activeGalleryPhotos.length === 0) {
+                const singleSrc = $(this).attr('data-src') || $(this).find('img').attr('src');
+                if (singleSrc) {
+                    activeGalleryPhotos = [singleSrc];
+                } else {
+                    return;
+                }
+            }
+
+            $('#universalImageModalTitle').text(title);
+
+            // Populate thumbnails
+            const thumbContainer = $('#universalThumbnailsContainer');
+            thumbContainer.empty();
+            if (activeGalleryPhotos.length > 1) {
+                activeGalleryPhotos.forEach((url, i) => {
+                    const thumb = $(`
+                        <div class="thumb-item rounded overflow-hidden shadow-sm" 
+                             data-thumb-idx="${i}" 
+                             style="width: 48px; height: 48px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; opacity: 0.5;">
+                            <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    `);
+                    thumb.on('click', function() {
+                        showGalleryImage(i);
+                    });
+                    thumbContainer.append(thumb);
+                });
+            }
+
+            showGalleryImage(startIndex);
+            $('#modalUniversalImagePreview').modal('show');
+        });
+
+        $('#universalImagePrevBtn').on('click', function(e) {
+            e.preventDefault();
+            showGalleryImage(activeGalleryIndex - 1);
+        });
+
+        $('#universalImageNextBtn').on('click', function(e) {
+            e.preventDefault();
+            showGalleryImage(activeGalleryIndex + 1);
+        });
+
+        $(document).on('keydown', function(e) {
+            if ($('#modalUniversalImagePreview').is(':visible')) {
+                if (e.key === 'ArrowLeft') {
+                    showGalleryImage(activeGalleryIndex - 1);
+                } else if (e.key === 'ArrowRight') {
+                    showGalleryImage(activeGalleryIndex + 1);
+                }
+            }
         });
     });
 </script>

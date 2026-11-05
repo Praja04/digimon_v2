@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -9,25 +8,24 @@ class JenisIncomingSeeder extends Seeder
 {
     public function run(): void
     {
-        // kosongkan dulu biar gak duplicate
-        DB::table('jenis_incomings')->truncate();
+        $jenisIncomings = [
+            'Inner / Outer',
+            'Kardus',
+            'Outers',
+        ];
 
-        DB::table('jenis_incomings')->insert([
-            [
-                'nama' => 'Inner / Outer',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama' => 'Kardus',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama' => 'Outers',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        foreach ($jenisIncomings as $nama) {
+            DB::table('jenis_incomings')->updateOrInsert(
+                [
+                    'kategori' => 'PM',
+                    'nama' => $nama,
+                ],
+                [
+                    'status' => true,
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        }
     }
 }

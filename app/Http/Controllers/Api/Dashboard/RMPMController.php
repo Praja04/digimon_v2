@@ -259,10 +259,10 @@ class RMPMController extends Controller
                 'values' => [
                     round(($conditions->where('bersih', 'yes')->count() / $total) * 100, 1),
                     round(($conditions->where('kering', 'yes')->count() / $total) * 100, 1),
-                    round(($conditions->where('benda_asing', 'no')->count() / $total) * 100, 1),
-                    round(($conditions->where('cacat', 'no')->count() / $total) * 100, 1),
+                    round(($conditions->where('benda_asing', 'yes')->count() / $total) * 100, 1),
+                    round(($conditions->where('cacat', 'yes')->count() / $total) * 100, 1),
                     round(($conditions->where('segel', 'yes')->count() / $total) * 100, 1),
-                    round(($conditions->where('berbau', 'no')->count() / $total) * 100, 1),
+                    round(($conditions->where('berbau', 'yes')->count() / $total) * 100, 1),
                 ]
             ]
         ]);
