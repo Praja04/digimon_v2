@@ -400,10 +400,6 @@ class RMPMController extends Controller
             'samplingKondisiMobil',
             'samplingFisikKemasan',
             'samplingFisikRaw',
-            'analisaGaramGula',
-            'analisaShortTerm',
-            'analisaBahanKering',
-            'analisaBahanCair',
             'analisaLongTerm.user',
             'analisaLongTerm.histories.user',
             'analisaLongTermHistories.user',
@@ -413,7 +409,7 @@ class RMPMController extends Controller
         $data_mobil = $identitas->samplingKondisiMobil;
         $data_kemasan = $identitas->samplingFisikKemasan;
         $data_raw = $identitas->samplingFisikRaw;
-        $analisa_sampel = $identitas->analisaSampel;
+        $analisa_sampel = $this->getFlattenedSamplesForIdentitas($id);
         $analisa_garam_gula = $analisa_sampel;
         $analisa_short_term = $analisa_sampel;
         $analisa_bahan_kering = $analisa_sampel;
@@ -421,10 +417,9 @@ class RMPMController extends Controller
         $analisa_long_term = $identitas->analisaLongTerm;
         $analisa_long_term_histories = $identitas->analisaLongTermHistories;
 
-        $konfirmasi = KonfirmasiKedatangan::where(
-            'id_identitas',
-            $id
-        )->first();
+        $konfirmasi = KonfirmasiKedatangan::with(['diterimaBy', 'dianalisaBy'])
+            ->where('id_identitas', $id)
+            ->first();
 
         $dynamicFields = $this->getDynamicFieldsForMaterial($identitas->jenis);
 
@@ -462,7 +457,7 @@ class RMPMController extends Controller
         ])->findOrFail($id);
 
         $existingLongTerm = $identitas->analisaLongTerm->last();
-        $existingSampel = $identitas->analisaSampel ?? collect();
+        $existingSampel = $this->getFlattenedSamplesForIdentitas($id);
         $existingShortTerm = $existingSampel;
         $existingGaramGula = $existingSampel;
         $existingBahanKering = $existingSampel;
@@ -562,14 +557,14 @@ class RMPMController extends Controller
         ];
 
         // Preload Master Standards for this material using SQL DISTINCT
-        $cleanJenis = strtoupper(trim((string)$identitas->jenis));
-        $standards = MasterStandarRm::where('status', true)
-            ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
-                $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
-            })
-            ->select('parameter', 'min_standar', 'max_standar', 'target_text', 'uom', 'jenis_standar')
-            ->distinct()
-            ->get();
+        $jb = $this->resolveMasterJenisBahan($identitas->jenis);
+        $standards = $jb
+            ? MasterStandarRm::where('status', true)
+                ->where('id_jenis_bahan', $jb->id)
+                ->select('parameter', 'min_standar', 'max_standar', 'target_text', 'uom', 'jenis_standar')
+                ->distinct()
+                ->get()
+            : collect();
 
         $standardsMap = [];
         foreach ($standards as $s) {
@@ -589,7 +584,6 @@ class RMPMController extends Controller
         ];
 
         // Preload Master Parameters (Warna, Aroma, Organo)
-        $jb = MasterJenisBahan::where('nama', 'LIKE', '%' . trim((string)$identitas->jenis) . '%')->first();
         $paramQuery = MasterParameterRm::where('status', true);
         if ($jb) {
             $paramQuery->where(function ($q) use ($jb) {
@@ -764,16 +758,35 @@ class RMPMController extends Controller
                 'samplingFisikRaw',
             ])->findOrFail($id);
 
-            $konfirmasi = KonfirmasiKedatangan::where('id_identitas', $id)->first();
+            $konfirmasi = KonfirmasiKedatangan::with(['diterimaBy', 'dianalisaBy'])
+                ->where('id_identitas', $id)
+                ->first();
 
+            $user = auth()->user();
+            $rawRole = $user->role ?? '';
+            $roleNorm = strtolower(trim($rawRole));
+
+            $canEditSampling = in_array($roleNorm, ['analis field', 'qc field', 'supervisor', 'head of dapartement', 'dept head'], true);
+            $canEditAnalisa = in_array($roleNorm, ['analis rm', 'analis kimia', 'analis mikro', 'foreman', 'supervisor', 'head of dapartement', 'dept head'], true);
+
+            $jamSamplingExist = !empty($konfirmasi?->waktu_kedatangan);
             $jamAnalisaExist = !empty($konfirmasi?->waktu_analisa);
-            $jamKedatanganExist = !empty($konfirmasi?->waktu_kedatangan);
 
             return response()->json([
+                'status' => 'success',
                 'jam_analisa_exists' => $jamAnalisaExist,
-                'jam_kedatangan_exists' => $jamKedatanganExist,
+                'jam_kedatangan_exists' => $jamSamplingExist,
+                'jam_sampling_exists' => $jamSamplingExist,
                 'jam_analisa' => $konfirmasi?->waktu_analisa ? \Carbon\Carbon::parse($konfirmasi->waktu_analisa)->format('Y-m-d\TH:i') : null,
+                'jam_analisa_formatted' => $konfirmasi?->waktu_analisa ? \Carbon\Carbon::parse($konfirmasi->waktu_analisa)->translatedFormat('d/m/Y H:i') : null,
                 'jam_kedatangan' => $konfirmasi?->waktu_kedatangan ? \Carbon\Carbon::parse($konfirmasi->waktu_kedatangan)->format('Y-m-d\TH:i') : null,
+                'jam_sampling' => $konfirmasi?->waktu_kedatangan ? \Carbon\Carbon::parse($konfirmasi->waktu_kedatangan)->format('Y-m-d\TH:i') : null,
+                'jam_sampling_formatted' => $konfirmasi?->waktu_kedatangan ? \Carbon\Carbon::parse($konfirmasi->waktu_kedatangan)->translatedFormat('d/m/Y H:i') : null,
+                'sampling_by' => $konfirmasi?->diterimaBy?->name ?? null,
+                'analisa_by' => $konfirmasi?->dianalisaBy?->name ?? null,
+                'user_role' => $rawRole,
+                'can_edit_sampling' => $canEditSampling,
+                'can_edit_analisa' => $canEditAnalisa,
                 'sampling_complete' => (bool) $identitas->isSamplingComplete(),
             ]);
         } catch (\Exception $e) {
@@ -796,48 +809,53 @@ class RMPMController extends Controller
             ],
             'tipe' => [
                 'nullable',
-                'in:kedatangan,analisa',
+                'in:kedatangan,sampling,analisa',
             ],
         ]);
 
-        $tipe = $request->input('tipe', 'kedatangan');
+        $user = auth()->user();
+        $rawRole = $user->role ?? '';
+        $roleNorm = strtolower(trim($rawRole));
 
-        $konfirmasi = KonfirmasiKedatangan::where(
-            'id_identitas',
-            $request->id
-        )->first();
+        $isQcField = in_array($roleNorm, ['analis field', 'qc field'], true);
+        $isAnalis = in_array($roleNorm, ['analis rm', 'analis kimia', 'analis mikro', 'foreman'], true);
+        $isSupervisor = in_array($roleNorm, ['supervisor', 'head of dapartement', 'dept head'], true);
 
-        if ($konfirmasi) {
-            if ($tipe === 'analisa') {
-                $konfirmasi->update([
-                    'waktu_analisa' => $request->jam,
-                    'dianalisa_by' => auth()->id(),
-                ]);
-            } else {
-                $konfirmasi->update([
-                    'waktu_kedatangan' => $request->jam,
-                    'diterima_by' => auth()->id(),
-                ]);
-            }
+        $inputTipe = $request->input('tipe', 'sampling');
+        $tipe = ($inputTipe === 'analisa') ? 'analisa' : 'sampling';
+
+        // Otoritas Gating
+        if ($tipe === 'sampling' && !$isQcField && !$isSupervisor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akses ditolak: Hanya QC Field (Analis Field) atau Supervisor yang berhak mengonfirmasi Jam Sampling.',
+            ], 403);
+        }
+
+        if ($tipe === 'analisa' && !$isAnalis && !$isSupervisor) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akses ditolak: Hanya Analis Laboratorium atau Supervisor yang berhak mengonfirmasi Jam Selesai Analisa.',
+            ], 403);
+        }
+
+        $konfirmasi = KonfirmasiKedatangan::firstOrNew(['id_identitas' => $request->id]);
+
+        if ($tipe === 'analisa') {
+            $konfirmasi->waktu_analisa = $request->jam;
+            $konfirmasi->dianalisa_by = $user->id;
+            $konfirmasi->save();
+            $message = 'Konfirmasi Jam Selesai Analisa berhasil disimpan.';
         } else {
-            if ($tipe === 'analisa') {
-                KonfirmasiKedatangan::create([
-                    'id_identitas' => $request->id,
-                    'waktu_analisa' => $request->jam,
-                    'dianalisa_by' => auth()->id(),
-                ]);
-            } else {
-                KonfirmasiKedatangan::create([
-                    'id_identitas' => $request->id,
-                    'waktu_kedatangan' => $request->jam,
-                    'diterima_by' => auth()->id(),
-                ]);
-            }
+            $konfirmasi->waktu_kedatangan = $request->jam;
+            $konfirmasi->diterima_by = $user->id;
+            $konfirmasi->save();
+            $message = 'Konfirmasi Jam Sampling berhasil disimpan.';
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Data konfirmasi berhasil disimpan.',
+            'message' => $message,
         ], 200);
     }
 
@@ -1064,7 +1082,7 @@ class RMPMController extends Controller
             ->where('kategori', $kategori)
             ->first();
 
-        if ($existing && $existing->status && $existing->status !== 'draft') {
+        if ($existing && $existing->status && $existing->status !== 'draft' && $userRole !== 'analis field') {
             $kategoriLabels = [
                 'incoming'   => 'Incoming',
                 'sta'        => 'STA (Short Term Analisa)',
@@ -1107,9 +1125,16 @@ class RMPMController extends Controller
                 $request->aroma ?? [],
                 $request->fisik ?? [],
                 $request->rasa ?? [],
+                $request->no_beaker ?? [],
+                $request->no_cawan ?? [],
             ];
             $counts = array_map('count', $fieldArrays);
             $jumlah = max(1, ...$counts);
+
+            $statusToSave = $isDraft ? 'draft' : 'final';
+            if ($userRole === 'analis field' && $existing) {
+                $statusToSave = $existing->status;
+            }
 
             // Simpan ke skema normalisasi dinamis (Table 2 Transaksi & Table 4 Sample Detail)
             $transaksi = TransaksiAnalisaRM::updateOrCreate(
@@ -1119,7 +1144,7 @@ class RMPMController extends Controller
                 ],
                 [
                     'disposisi'    => $userRole === 'analis field' ? ($existing->disposisi ?? null) : $request->disposisi,
-                    'status'       => $isDraft ? 'draft' : 'final',
+                    'status'       => $statusToSave,
                     'keterangan'   => $userRole === 'analis field' ? ($existing->keterangan ?? null) : $request->keterangan,
                     'created_by'   => auth()->id(),
                 ]
@@ -1130,18 +1155,17 @@ class RMPMController extends Controller
             $transaksi->glasswares()->where('sampel_ke', '>', $jumlah)->delete();
 
             $identitasObj = IdentitasRM::find($request->id_identitas);
-            $cleanJenis = strtoupper(trim((string)($identitasObj?->jenis ?? '')));
-            $masterStandards = MasterStandarRm::where('status', true)
-                ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
-                    $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
-                })
-                ->get();
+            $jb = $this->resolveMasterJenisBahan($identitasObj?->jenis);
+            $masterStandards = $jb
+                ? MasterStandarRm::where('status', true)->where('id_jenis_bahan', $jb->id)->get()
+                : collect();
 
             $detailsBatch = [];
             $glasswaresBatch = [];
 
             for ($i = 0; $i < $jumlah; $i++) {
                 $sampelKe = $i + 1;
+                $savedParams = [];
 
                 // 1. Simpan setiap parameter yang didefinisikan di master standar
                 foreach ($masterStandards as $std) {
@@ -1186,10 +1210,10 @@ class RMPMController extends Controller
 
                     if ($val !== null && $val !== '') {
                         $isSesuai = true;
-                        if ($std->min_standar !== null && (float)$val < (float)$std->min_standar) {
+                        if ($std->min_standar !== null && is_numeric($val) && (float)$val < (float)$std->min_standar) {
                             $isSesuai = false;
                         }
-                        if ($std->max_standar !== null && (float)$val > (float)$std->max_standar) {
+                        if ($std->max_standar !== null && is_numeric($val) && (float)$val > (float)$std->max_standar) {
                             $isSesuai = false;
                         }
 
@@ -1203,11 +1227,74 @@ class RMPMController extends Controller
                             'created_at'        => now(),
                             'updated_at'        => now(),
                         ];
+
+                        $savedParams[strtoupper(trim($paramName))] = true;
+                        if (str_contains($upper, 'KADAR AIR') || $upper === 'KA' || $upper === '%KA') {
+                            $savedParams['KA'] = true;
+                            $savedParams['%KA'] = true;
+                        }
+                        if (str_contains($upper, 'NACL')) {
+                            $savedParams['NACL'] = true;
+                            $savedParams['%NACL'] = true;
+                        }
+                        if (str_contains($upper, 'TN')) {
+                            $savedParams['TN'] = true;
+                            $savedParams['%TN'] = true;
+                        }
+                        if (str_contains($upper, 'WEIGHT') || str_contains($upper, 'GROSS')) {
+                            $savedParams['GROSS_WEIGHT'] = true;
+                        }
+                        if (str_contains($upper, 'BERAT JENIS')) {
+                            $savedParams['BERAT_JENIS'] = true;
+                        }
                     }
                 }
 
-                // 2. Simpan glassware jika ada
-                if (!empty($request->no_beaker[$i]) || !empty($request->no_cawan[$i])) {
+                // 2. Simpan parameter tambahan form jika ada nilai tapi belum masuk master standar
+                $extraParams = [
+                    'Brix'         => $request->brix[$i] ?? null,
+                    'pH'           => $request->ph[$i] ?? null,
+                    '%KA'          => $request['%ka'][$i] ?? ($request->ka[$i] ?? null),
+                    '%NaCl'        => $request['%nacl'][$i] ?? ($request->nacl[$i] ?? null),
+                    'Kotoran'      => $request->kotoran[$i] ?? null,
+                    'Organo'       => $request->organo[$i] ?? ($request->rasa[$i] ?? null),
+                    'Warna'        => $request->warna[$i] ?? null,
+                    'Aroma'        => $request->aroma[$i] ?? null,
+                    'Berat Jenis'  => $request->berat_jenis[$i] ?? null,
+                    'Suhu'         => $request->suhu[$i] ?? null,
+                    'Aw'           => $request->aw[$i] ?? null,
+                    'Viskositas'   => $request->viskositas[$i] ?? null,
+                    '%TN'          => $request['%tn'][$i] ?? ($request->tn[$i] ?? null),
+                    'Gross Weight' => $request->gross_weight[$i] ?? null,
+                    'Fisik'        => $request->fisik[$i] ?? null,
+                ];
+
+                foreach ($extraParams as $pName => $pVal) {
+                    $uKey = strtoupper(trim(str_replace(['%', ' '], '', $pName)));
+                    $isAlreadySaved = false;
+                    foreach (array_keys($savedParams) as $sp) {
+                        $spKey = strtoupper(trim(str_replace(['%', ' '], '', $sp)));
+                        if ($spKey === $uKey || str_contains($spKey, $uKey) || str_contains($uKey, $spKey)) {
+                            $isAlreadySaved = true;
+                            break;
+                        }
+                    }
+                    if (!$isAlreadySaved && $pVal !== null && $pVal !== '') {
+                        $detailsBatch[] = [
+                            'transaksi_id'      => $transaksi->id,
+                            'sampel_ke'         => $sampelKe,
+                            'master_standar_id' => null,
+                            'parameter'         => $pName,
+                            'nilai'             => (string)$pVal,
+                            'is_sesuai'         => true,
+                            'created_at'        => now(),
+                            'updated_at'        => now(),
+                        ];
+                    }
+                }
+
+                // 3. Simpan glassware jika ada
+                if (!empty($request->no_beaker[$i]) || !empty($request->no_cawan[$i]) || !empty($request->timbang_a[$i]) || !empty($request->timbang_aa[$i])) {
                     $glasswaresBatch[] = [
                         'transaksi_id'     => $transaksi->id,
                         'sampel_ke'        => $sampelKe,
@@ -1225,18 +1312,26 @@ class RMPMController extends Controller
                 }
             }
 
+            // Hapus parameter yang dikosongkan pada sampel aktif jika QC
+            if ($userRole !== 'analis field') {
+                for ($s = 1; $s <= $jumlah; $s++) {
+                    $activeParams = collect($detailsBatch)->where('sampel_ke', $s)->pluck('parameter')->toArray();
+                    $transaksi->details()->where('sampel_ke', $s)->whereNotIn('parameter', $activeParams)->delete();
+                }
+            }
+
             if (!empty($detailsBatch)) {
                 foreach ($detailsBatch as $d) {
                     AnalisaRMSampleDetail::updateOrCreate(
                         [
-                            'transaksi_id'      => $d['transaksi_id'],
-                            'sampel_ke'         => $d['sampel_ke'],
-                            'master_standar_id' => $d['master_standar_id'],
+                            'transaksi_id' => $d['transaksi_id'],
+                            'sampel_ke'    => $d['sampel_ke'],
+                            'parameter'    => $d['parameter'],
                         ],
                         [
-                            'parameter'  => $d['parameter'],
-                            'nilai'      => $d['nilai'],
-                            'is_sesuai'  => $d['is_sesuai'],
+                            'master_standar_id' => $d['master_standar_id'],
+                            'nilai'             => $d['nilai'],
+                            'is_sesuai'         => $d['is_sesuai'],
                         ]
                     );
                 }
@@ -1457,12 +1552,52 @@ class RMPMController extends Controller
         );
     }
 
+    public function resolveMasterJenisBahan(?string $jenis): ?MasterJenisBahan
+    {
+        if (!$jenis) {
+            return null;
+        }
+
+        $cleanJenis = strtoupper(trim($jenis));
+
+        // 1. Exact match
+        $jb = MasterJenisBahan::whereRaw('UPPER(nama) = ?', [$cleanJenis])->first();
+        if ($jb) {
+            return $jb;
+        }
+
+        // 2. Substring or LIKE match
+        $jb = MasterJenisBahan::where('nama', 'LIKE', '%' . trim($jenis) . '%')
+            ->orWhereRaw('? LIKE CONCAT("%", UPPER(nama), "%")', [$cleanJenis])
+            ->first();
+        if ($jb) {
+            return $jb;
+        }
+
+        // 3. Fallbacks for specific common material aliases
+        if (str_contains($cleanJenis, 'GARAM')) {
+            return MasterJenisBahan::where('nama', 'LIKE', '%GARAM%')->first();
+        }
+        if (str_contains($cleanJenis, 'RAFINASI') || (str_contains($cleanJenis, 'GULA') && !str_contains($cleanJenis, 'KELAPA') && !str_contains($cleanJenis, 'TEBU'))) {
+            return MasterJenisBahan::where('nama', 'LIKE', '%RAFINASI%')->first();
+        }
+        if (str_contains($cleanJenis, 'CARAMEL') || str_contains($cleanJenis, 'KARAMEL')) {
+            return MasterJenisBahan::where('nama', 'LIKE', '%CARAMEL%')->first();
+        }
+        if (str_contains($cleanJenis, 'FRUC') || str_contains($cleanJenis, 'FRUKTOSA') || str_contains($cleanJenis, 'HFCS')) {
+            return MasterJenisBahan::where('nama', 'LIKE', '%FRUC%')->first();
+        }
+        if (str_contains($cleanJenis, 'SARI KECAP') || str_contains($cleanJenis, 'SKM')) {
+            return MasterJenisBahan::where('nama', 'LIKE', '%SARI KECAP%')->first();
+        }
+
+        return null;
+    }
+
     public function getDynamicFieldsForMaterial($jenis): array
     {
         $cleanJenis = strtoupper(trim((string)$jenis));
-        $jb = MasterJenisBahan::whereRaw('UPPER(nama) = ?', [$cleanJenis])
-            ->orWhere('nama', 'LIKE', '%' . trim((string)$jenis) . '%')
-            ->first();
+        $jb = $this->resolveMasterJenisBahan($jenis);
 
         $standards = collect();
         if ($jb) {
@@ -1493,6 +1628,7 @@ class RMPMController extends Controller
             $paramRaw = trim($std->parameter);
             $upper = strtoupper($paramRaw);
             $uom = trim((string)$std->uom);
+            $isKuanti = (strtolower(trim((string)$std->jenis_standar)) === 'kuanti');
 
             if (str_contains($upper, 'BRIX')) {
                 $fields[] = [
@@ -1516,7 +1652,7 @@ class RMPMController extends Controller
                 ];
             } elseif (str_contains($upper, 'KOTORAN')) {
                 $isKuali = (strtolower((string)$std->jenis_standar) === 'kuali')
-                    || ($std->min_standar === null && $std->max_standar === null && !str_contains($upper, '%') && ($uom === '' || $uom === null));
+                    || (!$isKuanti && $std->min_standar === null && $std->max_standar === null && !str_contains($upper, '%') && ($uom === '' || $uom === null));
 
                 if ($isKuali) {
                     $fields[] = [
@@ -1559,23 +1695,51 @@ class RMPMController extends Controller
                     'unit' => '',
                 ];
             } elseif (str_contains($upper, 'WARNA')) {
-                $fields[] = [
-                    'name' => 'warna',
-                    'key' => 'warna[]',
-                    'label' => 'Warna',
-                    'type' => 'dropdown',
-                    'masterKey' => 'warna',
-                    'unit' => '',
-                ];
+                $isWarnaKuanti = $isKuanti || strtoupper($uom) === 'UP' || $std->min_standar !== null || $std->max_standar !== null;
+                if ($isWarnaKuanti) {
+                    $fields[] = [
+                        'name' => 'warna',
+                        'key' => 'warna[]',
+                        'label' => 'Warna',
+                        'type' => 'number',
+                        'unit' => $uom ?: 'UP',
+                        'min' => $std->min_standar,
+                        'max' => $std->max_standar,
+                    ];
+                } else {
+                    $fields[] = [
+                        'name' => 'warna',
+                        'key' => 'warna[]',
+                        'label' => 'Warna',
+                        'type' => 'dropdown',
+                        'masterKey' => 'warna',
+                        'unit' => '',
+                        'target' => $std->target_text,
+                    ];
+                }
             } elseif (str_contains($upper, 'AROMA')) {
-                $fields[] = [
-                    'name' => 'aroma',
-                    'key' => 'aroma[]',
-                    'label' => 'Aroma',
-                    'type' => 'dropdown',
-                    'masterKey' => 'aroma',
-                    'unit' => '',
-                ];
+                $isAromaKuanti = $isKuanti || $std->min_standar !== null || $std->max_standar !== null;
+                if ($isAromaKuanti) {
+                    $fields[] = [
+                        'name' => 'aroma',
+                        'key' => 'aroma[]',
+                        'label' => 'Aroma',
+                        'type' => 'number',
+                        'unit' => $uom ?: '',
+                        'min' => $std->min_standar,
+                        'max' => $std->max_standar,
+                    ];
+                } else {
+                    $fields[] = [
+                        'name' => 'aroma',
+                        'key' => 'aroma[]',
+                        'label' => 'Aroma',
+                        'type' => 'dropdown',
+                        'masterKey' => 'aroma',
+                        'unit' => '',
+                        'target' => $std->target_text,
+                    ];
+                }
             } elseif (str_contains($upper, 'NACL')) {
                 $fields[] = [
                     'name' => '%nacl',
@@ -1592,7 +1756,7 @@ class RMPMController extends Controller
                     'key' => 'berat_jenis[]',
                     'label' => 'Berat Jenis',
                     'type' => 'number',
-                    'unit' => $uom ?: '',
+                    'unit' => $uom ?: 'g/ml',
                     'min' => $std->min_standar,
                     'max' => $std->max_standar,
                 ];
@@ -1603,6 +1767,46 @@ class RMPMController extends Controller
                     'label' => 'Gross Weight',
                     'type' => 'number',
                     'unit' => 'kg',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'SUHU') || str_contains($upper, 'TEMPERATURE')) {
+                $fields[] = [
+                    'name' => 'suhu',
+                    'key' => 'suhu[]',
+                    'label' => 'Suhu',
+                    'type' => 'number',
+                    'unit' => $uom ?: '°C',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif ($upper === 'AW' || str_contains($upper, 'WATER ACTIVITY')) {
+                $fields[] = [
+                    'name' => 'aw',
+                    'key' => 'aw[]',
+                    'label' => 'Aw',
+                    'type' => 'number',
+                    'unit' => $uom ?: '',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'VISKOSITAS') || str_contains($upper, 'VISCOSITY')) {
+                $fields[] = [
+                    'name' => 'viskositas',
+                    'key' => 'viskositas[]',
+                    'label' => 'Viskositas',
+                    'type' => 'number',
+                    'unit' => $uom ?: 'Ps',
+                    'min' => $std->min_standar,
+                    'max' => $std->max_standar,
+                ];
+            } elseif (str_contains($upper, 'TN') || str_contains($upper, 'NITROGEN')) {
+                $fields[] = [
+                    'name' => 'tn',
+                    'key' => 'tn[]',
+                    'label' => '%TN',
+                    'type' => 'number',
+                    'unit' => '%',
                     'min' => $std->min_standar,
                     'max' => $std->max_standar,
                 ];
@@ -1617,7 +1821,7 @@ class RMPMController extends Controller
                 ];
             } else {
                 $slug = Str::slug($paramRaw, '_');
-                $isNumeric = ($std->min_standar !== null || $std->max_standar !== null || is_numeric($std->target_text));
+                $isNumeric = $isKuanti || ($std->min_standar !== null || $std->max_standar !== null || is_numeric($std->target_text));
                 $fields[] = [
                     'name' => $slug,
                     'key' => $slug . '[]',
@@ -1626,17 +1830,17 @@ class RMPMController extends Controller
                     'unit' => $uom ?: '',
                     'min' => $std->min_standar,
                     'max' => $std->max_standar,
+                    'target' => $std->target_text,
                 ];
             }
         }
 
-        // Keep sensory parameters (Organo, Warna, Aroma) at the end of the table
+        // Keep qualitative sensory parameters (Organo, Warna dropdown, Aroma dropdown) at the end of the table
         $measurementFields = [];
         $sensoryFields = [];
-        $sensoryNames = ['organo', 'warna', 'aroma'];
 
         foreach ($fields as $f) {
-            if (in_array($f['name'], $sensoryNames)) {
+            if ($f['type'] === 'dropdown' || $f['type'] === 'organo-select') {
                 $sensoryFields[] = $f;
             } else {
                 $measurementFields[] = $f;
@@ -1647,5 +1851,128 @@ class RMPMController extends Controller
             ->unique('name')
             ->values()
             ->all();
+    }
+
+    public function getFlattenedSamplesForIdentitas($idIdentitas, $kategori = null)
+    {
+        $query = TransaksiAnalisaRM::with(['details', 'glasswares'])
+            ->where('id_identitas', $idIdentitas);
+
+        if ($kategori) {
+            $query->where('kategori', $kategori);
+        } else {
+            $query->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END, id ASC");
+        }
+
+        $transaksis = $query->get();
+        $samples = collect();
+
+        foreach ($transaksis as $tx) {
+            $detailsBySample = $tx->details->groupBy('sampel_ke');
+            $glasswaresBySample = $tx->glasswares->keyBy('sampel_ke');
+
+            $maxSampel = $tx->details->max('sampel_ke') ?: 1;
+            if ($tx->glasswares->isNotEmpty()) {
+                $maxSampel = max($maxSampel, $tx->glasswares->max('sampel_ke'));
+            }
+
+            for ($s = 1; $s <= $maxSampel; $s++) {
+                $detList = $detailsBySample->get($s, collect());
+                $gw = $glasswaresBySample->get($s);
+
+                $obj = (object) [
+                    'id'           => $tx->id,
+                    'transaksi_id' => $tx->id,
+                    'id_identitas' => $tx->id_identitas,
+                    'sampel_ke'    => $s,
+                    'kategori'     => $tx->kategori ?: 'incoming',
+                    'disposisi'    => $tx->disposisi,
+                    'status'       => $tx->status,
+                    'keterangan'   => $tx->keterangan,
+                    'created_by'   => $tx->created_by,
+                    'created_at'   => $tx->created_at,
+                    'updated_at'   => $tx->updated_at,
+                    // Parameters
+                    'brix'         => null,
+                    'ph'           => null,
+                    'kotoran'      => null,
+                    'ka'           => null,
+                    '%ka'          => null,
+                    'nacl'         => null,
+                    '%nacl'        => null,
+                    'organo'       => null,
+                    'rasa'         => null,
+                    'warna'        => null,
+                    'aroma'        => null,
+                    'berat_jenis'  => null,
+                    'suhu'         => null,
+                    'aw'           => null,
+                    'viskositas'   => null,
+                    'tn'           => null,
+                    '%tn'          => null,
+                    'gross_weight' => null,
+                    'fisik'        => null,
+                    'aroma_pengotor' => null,
+                    // Glassware
+                    'no_beaker'        => $gw?->no_beaker,
+                    'berat_beaker_500' => $gw?->berat_beaker_500,
+                    'berat_beaker_250' => $gw?->berat_beaker_250,
+                    'timbang_a'        => $gw?->timbang_a,
+                    'timbang_b'        => $gw?->timbang_b,
+                    'no_cawan'         => $gw?->no_cawan,
+                    'berat_cawan'      => $gw?->berat_cawan,
+                    'timbang_aa'       => $gw?->timbang_aa,
+                ];
+
+                foreach ($detList as $d) {
+                    $cleanParam = strtolower(trim((string)$d->parameter));
+                    $slug = Str::slug($cleanParam, '_');
+                    $val = $d->nilai;
+                    $numVal = (is_numeric($val) && trim((string)$val) !== '') ? (float)$val : $val;
+
+                    $obj->{$slug} = $numVal;
+
+                    if (str_contains($cleanParam, 'brix')) {
+                        $obj->brix = $numVal;
+                    } elseif ($cleanParam === 'ph' || preg_match('/\bph\b/i', $cleanParam)) {
+                        $obj->ph = $numVal;
+                    } elseif (str_contains($cleanParam, 'kadar air') || $cleanParam === 'ka' || $cleanParam === '%ka') {
+                        $obj->ka = $numVal;
+                        $obj->{'%ka'} = $numVal;
+                    } elseif (str_contains($cleanParam, 'nacl')) {
+                        $obj->nacl = $numVal;
+                        $obj->{'%nacl'} = $numVal;
+                    } elseif (str_contains($cleanParam, 'kotoran')) {
+                        $obj->kotoran = $numVal;
+                    } elseif (str_contains($cleanParam, 'berat jenis')) {
+                        $obj->berat_jenis = $numVal;
+                    } elseif (str_contains($cleanParam, 'gross weight') || str_contains($cleanParam, 'weight')) {
+                        $obj->gross_weight = $numVal;
+                    } elseif (str_contains($cleanParam, 'tn') || str_contains($cleanParam, 'nitrogen')) {
+                        $obj->tn = $numVal;
+                        $obj->{'%tn'} = $numVal;
+                    } elseif (str_contains($cleanParam, 'organo') || str_contains($cleanParam, 'rasa')) {
+                        $obj->organo = $val;
+                        $obj->rasa = $val;
+                    } elseif (str_contains($cleanParam, 'warna')) {
+                        $obj->warna = $val;
+                    } elseif (str_contains($cleanParam, 'aroma')) {
+                        $obj->aroma = $val;
+                    } elseif (str_contains($cleanParam, 'suhu')) {
+                        $obj->suhu = $numVal;
+                    } elseif (str_contains($cleanParam, 'aw')) {
+                        $obj->aw = $numVal;
+                    } elseif (str_contains($cleanParam, 'viskositas')) {
+                        $obj->viskositas = $numVal;
+                    } elseif (str_contains($cleanParam, 'fisik')) {
+                        $obj->fisik = $val;
+                    }
+                }
+
+                $samples->push($obj);
+            }
+        }
+
+        return $samples;
     }
 }
