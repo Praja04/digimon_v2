@@ -29,6 +29,8 @@ class TimbanganRetailMesinSeeder extends Seeder
         'Pouch YB 1000gr'          => ['min' => 1007.50, 'std' => 1012.50, 'max' => 1017.50, 'tu1' =>  997.50, 'tu2' =>  982.50],
         'Sachet BB 40gr RENCENG (6+1)' => ['min' =>  569.40, 'std' =>  575.40, 'max' =>  589.40, 'tu1' =>  525.00, 'tu2' =>  474.60],
         'Sachet YB 20gr RENCENG (6+1)' => ['min' =>  284.46, 'std' =>  288.96, 'max' =>  302.96, 'tu1' =>  263.76, 'tu2' =>  238.56],
+        'Sachet YB 20gr RENCENG (12+1)' => ['min' =>  268.32, 'std' =>  268.32, 'max' =>  281.32, 'tu1' =>  244.92, 'tu2' =>  221.52],
+        'Pouch BB 430gr'                => ['min' =>  434.50, 'std' =>  439.50, 'max' =>  444.50, 'tu1' =>  426.60, 'tu2' =>  413.70],
     ];
 
     /**

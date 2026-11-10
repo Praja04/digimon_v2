@@ -927,6 +927,22 @@
             tu2: 238.56,
             code: "S20G-R(6+1)"
         },
+        "Sachet YB 20gr RENCENG (12+1)": {
+            min: 268.32,
+            std: 268.32,
+            max: 281.32,
+            tu1: 244.92,
+            tu2: 221.52,
+            code: "S20G-R(12+1)"
+        },
+        "Pouch BB 430gr": {
+            min: 434.50,
+            std: 439.50,
+            max: 444.50,
+            tu1: 426.60,
+            tu2: 413.70,
+            code: "P430G"
+        },
     };
 
     const VARIANT_MESIN = {
@@ -946,6 +962,8 @@
         "Pouch YB 1000gr": ["A", "U", "V"],
         "Sachet BB 40gr RENCENG (6+1)": ["Q", "R"],
         "Sachet YB 20gr RENCENG (6+1)": ["O", "P", "W", "X"],
+        "Sachet YB 20gr RENCENG (12+1)": ["O", "P", "W", "X"],
+        "Pouch BB 430gr": ["A", "U", "V"],
     };
 
     // Reverse map: mesin → variants
