@@ -1533,17 +1533,26 @@
         'default': {
             organo: [
                 { label: 'OK', value: 'OK', isCustom: false },
+                { label: 'Sesuai Standar', value: 'Sesuai Standar', isCustom: false },
                 { label: 'Tidak Sesuai', value: 'Tidak Sesuai', isCustom: false },
                 { label: 'Lain-lain (bisa input teks)', value: 'Lain-lain', isCustom: true }
             ],
             warna: [
+                'OK',
+                'OK, agak kuning',
+                'Kuning',
+                'Putih',
+                'Bening',
+                'Jernih',
+                'Standar',
                 'Coklat',
-                'Coklat tua',
                 'Coklat muda',
+                'Coklat tua',
                 'Gelap'
             ],
             aroma: [
                 'OK',
+                'Khas',
                 'Kurang',
                 'Tidak Ada',
                 'Tidak Sesuai'
@@ -2103,8 +2112,17 @@
         });
 
         $(document).on('click', '#btnQuickSetAllWarnaAroma', function() {
+            // Deteksi default warna yang sesuai material
+            const rawJenis = (typeof JENIS !== 'undefined' ? JENIS : '').trim().toUpperCase();
+            let defaultWarna = 'Coklat';
+            if (rawJenis.includes('FRUC') || rawJenis.includes('FRUKTOSA')) {
+                defaultWarna = 'OK, agak kuning';
+            } else if (rawJenis.includes('GARAM') || rawJenis.includes('MSG') || rawJenis.includes('RAFINASI') || rawJenis.includes('GLUKOSA')) {
+                defaultWarna = 'OK';
+            }
+
             $('select[name="warna[]"]').each(function() {
-                setSelectDropdownVal($(this), 'Coklat', 'warna');
+                setSelectDropdownVal($(this), defaultWarna, 'warna');
             });
             $('select[name="aroma[]"]').each(function() {
                 setSelectDropdownVal($(this), 'OK', 'aroma');
@@ -2115,7 +2133,7 @@
                 toast: true,
                 position: 'top-end',
                 icon: 'success',
-                title: 'Warna diset "Coklat" & Aroma diset "OK"',
+                title: `Warna diset "${defaultWarna}" & Aroma diset "OK"`,
                 showConfirmButton: false,
                 timer: 1800
             });
@@ -2898,10 +2916,12 @@
                     $('input[name="ka[]"]').eq(idx).val(rec.ka);
                 }
                 if (rec.warna !== null && rec.warna !== undefined && rec.warna !== '') {
-                    setSelectDropdownVal($('select[name="warna[]"]').eq(idx), rec.warna, 'warna');
+                    if ($('select[name="warna[]"]').length) setSelectDropdownVal($('select[name="warna[]"]').eq(idx), rec.warna, 'warna');
+                    if ($('input[name="warna[]"]').length) $('input[name="warna[]"]').eq(idx).val(rec.warna);
                 }
                 if (rec.aroma !== null && rec.aroma !== undefined && rec.aroma !== '') {
-                    setSelectDropdownVal($('select[name="aroma[]"]').eq(idx), rec.aroma, 'aroma');
+                    if ($('select[name="aroma[]"]').length) setSelectDropdownVal($('select[name="aroma[]"]').eq(idx), rec.aroma, 'aroma');
+                    if ($('input[name="aroma[]"]').length) $('input[name="aroma[]"]').eq(idx).val(rec.aroma);
                 }
                 if (rec.organo) {
                     const $container = $('.organo-cell-container').eq(idx);
@@ -2957,10 +2977,12 @@
 
                 // 2. Dropdown / Categorical Fields
                 if (rec.warna !== null && rec.warna !== undefined && rec.warna !== '') {
-                    setSelectDropdownVal($('select[name="warna[]"]').eq(idx), rec.warna, 'warna');
+                    if ($('select[name="warna[]"]').length) setSelectDropdownVal($('select[name="warna[]"]').eq(idx), rec.warna, 'warna');
+                    if ($('input[name="warna[]"]').length) $('input[name="warna[]"]').eq(idx).val(rec.warna);
                 }
                 if (rec.aroma !== null && rec.aroma !== undefined && rec.aroma !== '') {
-                    setSelectDropdownVal($('select[name="aroma[]"]').eq(idx), rec.aroma, 'aroma');
+                    if ($('select[name="aroma[]"]').length) setSelectDropdownVal($('select[name="aroma[]"]').eq(idx), rec.aroma, 'aroma');
+                    if ($('input[name="aroma[]"]').length) $('input[name="aroma[]"]').eq(idx).val(rec.aroma);
                 }
                 if (rec.organo) {
                     const $container = $('.organo-cell-container').eq(idx);
@@ -3663,7 +3685,15 @@
 
     function renderDropdownCell(field, tabIndex = null, isDisabled = false) {
         const labelText = field.label || (field.masterKey ? (field.masterKey.charAt(0).toUpperCase() + field.masterKey.slice(1)) : 'Opsi');
-        const opts = getMasterOptions(field.masterKey);
+        const rawOpts = getMasterOptions(field.masterKey);
+        const opts = Array.isArray(rawOpts) ? [...rawOpts] : [];
+        if (field.target && typeof field.target === 'string' && field.target.trim() !== '') {
+            const targetVal = field.target.trim();
+            const exists = opts.some(o => (typeof o === 'object' ? o.value : o) === targetVal);
+            if (!exists) {
+                opts.unshift(targetVal);
+            }
+        }
         let optHtml = `<option value="">-- Pilih ${labelText} --</option>`;
         opts.forEach(opt => {
             const val = typeof opt === 'object' ? opt.value : opt;

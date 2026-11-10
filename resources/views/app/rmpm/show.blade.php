@@ -30,6 +30,13 @@
     $isBahanKering = ($matCategory === 'kering');
     $isBahanCair = ($matCategory === 'cair');
     $isGulaKristal = $isKelapaTebu;
+
+    $userRole = auth()->user()->role ?? '';
+    $userRoleNorm = strtolower(trim($userRole));
+    $isQcField = in_array($userRoleNorm, ['analis field', 'qc field'], true);
+    $isAnalisField = $isQcField;
+    $isAnalisLab = in_array($userRoleNorm, ['analis rm', 'analis kimia', 'analis mikro', 'foreman'], true);
+    $isSupervisor = in_array($userRoleNorm, ['supervisor', 'head of dapartement', 'dept head'], true);
 @endphp
 <div class="page-content">
     <div class="container-fluid">
@@ -65,14 +72,12 @@
                                     data-bs-target="#samplingModal">
                                     <i class="ri-add-line align-bottom me-1"></i> Sampling
                                 </button>
-                                <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi">
-                                    Konfirmasi
+
+                                <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi" title="Konfirmasi Waktu Sampling & Analisa">
+                                    <i class="ri-checkbox-circle-line align-bottom me-1"></i> Konfirmasi
                                 </button>
-                                @php
-                                    $userRole = auth()->user()->role ?? '';
-                                    $isAnalisField = ($userRole === 'Analis Field');
-                                @endphp
-                                @if ($isAnalisField)
+
+                                @if ($isQcField)
                                 <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info" title="Akses Analis Field: Hanya input Gross Weight, parameter analisa lab read-only">
                                     <i class="ri-scales-3-line align-bottom me-1"></i> Update Analisa (Gross Weight)
                                 </a>
@@ -97,31 +102,55 @@
             </div>
         </div>
 
-        {{-- Konfirmasi Jam --}}
+        {{-- Konfirmasi Jam Sampling & Jam Selesai Analisa --}}
         @php $konfirmasi = $konfirmasi ?? null; @endphp
-        @if ($konfirmasi)
         <div class="row">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body py-3">
                         <div class="d-flex flex-wrap gap-4 align-items-center">
-                            <strong class="text-muted"><i class="ri-time-line me-1"></i> Konfirmasi Waktu</strong>
-                            @if ($konfirmasi->waktu_kedatangan)
+                            <strong class="text-muted"><i class="ri-time-line me-1"></i> Konfirmasi Waktu:</strong>
+                            
+                            {{-- Status Jam Sampling (QC Field) --}}
+                            @if ($konfirmasi && $konfirmasi->waktu_kedatangan)
                             <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-success-subtle text-success fs-6">
-                                    <i class="ri-truck-line me-1"></i>
-                                    {{ \Carbon\Carbon::parse($konfirmasi->waktu_kedatangan)->format('d M Y, H:i') }}
-                                    WIB
+                                    <i class="ri-time-line me-1"></i>
+                                    Jam Sampling: {{ \Carbon\Carbon::parse($konfirmasi->waktu_kedatangan)->format('d M Y, H:i') }} WIB
+                                </span>
+                                @if ($konfirmasi->diterimaBy)
+                                <small class="text-muted">
+                                    <i class="ri-user-follow-line me-1"></i> QC Field: {{ $konfirmasi->diterimaBy->name }}
+                                </small>
+                                @endif
+                            </div>
+                            @else
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle fs-6">
+                                    <i class="ri-time-line me-1"></i>
+                                    Jam Sampling: Belum Dikonfirmasi
                                 </span>
                             </div>
                             @endif
-                            @if ($konfirmasi->waktu_analisa)
+
+                            {{-- Status Jam Selesai Analisa (Analis) --}}
+                            @if ($konfirmasi && $konfirmasi->waktu_analisa)
                             <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-info-subtle text-info fs-6">
                                     <i class="ri-flask-line me-1"></i>
-                                    Analisa:
-                                    {{ \Carbon\Carbon::parse($konfirmasi->waktu_analisa)->format('d M Y, H:i') }}
-                                    WIB
+                                    Jam Selesai Analisa: {{ \Carbon\Carbon::parse($konfirmasi->waktu_analisa)->format('d M Y, H:i') }} WIB
+                                </span>
+                                @if ($konfirmasi->dianalisaBy)
+                                <small class="text-muted">
+                                    <i class="ri-user-star-line me-1"></i> Analis: {{ $konfirmasi->dianalisaBy->name }}
+                                </small>
+                                @endif
+                            </div>
+                            @else
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary-subtle text-secondary border fs-6">
+                                    <i class="ri-flask-line me-1"></i>
+                                    Jam Selesai Analisa: Belum Dikonfirmasi
                                 </span>
                             </div>
                             @endif
@@ -130,7 +159,6 @@
                 </div>
             </div>
         </div>
-        @endif
 
         {{-- Main Detail Card --}}
         <div class="row justify-content-center">
@@ -710,10 +738,10 @@
                                                 $avgTooltip = 'Rata-rata Short Term - ' . $calcItems->count() . ' Sampel';
                                             }
 
-                                            $avgBrix = $calcItems->whereNotNull('brix')->avg('brix');
-                                            $avgPh = $calcItems->whereNotNull('ph')->avg('ph');
-                                            $avgKotoran = $calcItems->whereNotNull('kotoran')->avg('kotoran');
-                                            $avgKa = $calcItems->whereNotNull('ka')->avg('ka');
+                                            $avgBrix = $calcItems->pluck('brix')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
+                                            $avgPh = $calcItems->pluck('ph')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
+                                            $avgKotoran = $calcItems->pluck('kotoran')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
+                                            $avgKa = $calcItems->pluck('ka')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
                                             $totalOrgano = $calcItems->whereNotNull('organo')->count();
                                             $organoCounts = [];
                                             foreach ($calcItems as $cItem) {
@@ -761,12 +789,15 @@
                                                                 </div>
                                                             </td>
                                                         @elseif ($f['name'] === '%nacl')
-                                                            <td class="text-primary">{{ $calcItems->whereNotNull('%nacl')->avg('%nacl') !== null ? number_format($calcItems->whereNotNull('%nacl')->avg('%nacl'), 2) . '%' : '-' }}</td>
+                                                            @php $avgNaclVal = $calcItems->pluck('%nacl')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg(); @endphp
+                                                            <td class="text-primary">{{ $avgNaclVal !== null ? number_format($avgNaclVal, 2) . '%' : '-' }}</td>
                                                         @elseif ($f['name'] === 'gross_weight')
-                                                            <td class="text-primary">{{ $calcItems->whereNotNull('gross_weight')->avg('gross_weight') !== null ? number_format($calcItems->whereNotNull('gross_weight')->avg('gross_weight'), 2) . ' kg' : '-' }}</td>
+                                                            @php $avgGwVal = $calcItems->pluck('gross_weight')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg(); @endphp
+                                                            <td class="text-primary">{{ $avgGwVal !== null ? number_format($avgGwVal, 2) . ' kg' : '-' }}</td>
                                                         @elseif ($f['type'] === 'number')
                                                             @php
-                                                            $avgCol = $calcItems->whereNotNull($f['name'])->avg($f['name']);
+                                                            $numColVals = $calcItems->pluck($f['name'])->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v);
+                                                            $avgCol = $numColVals->isNotEmpty() ? $numColVals->avg() : null;
                                                             @endphp
                                                             <td class="text-primary">
                                                                 @if ($avgCol !== null)
@@ -1029,15 +1060,25 @@
                                     <h5 class="mb-0 fw-semibold text-dark">
                                         <i class="ri-flask-line text-primary me-1"></i> Hasil Analisa (Garam)
                                     </h5>
-                                    @if ($isAnalisField)
-                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
-                                        <i class="ri-scales-3-line me-1"></i> Update Gross Weight
-                                    </a>
-                                    @else
-                                    <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
-                                        <i class="ri-edit-box-line me-1"></i> Update Analisa
-                                    </a>
-                                    @endif
+                                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
+                                            Total: {{ $analisa_garam_gula->count() }} Sampel
+                                        </span>
+                                        @if ($analisa_garam_gula->first() && ($analisa_garam_gula->first()->status ?? '') === 'draft')
+                                        <span class="badge bg-warning text-dark border border-warning-subtle fs-7 py-1 px-2">
+                                            <i class="mdi mdi-file-document-edit-outline me-1"></i> Draft
+                                        </span>
+                                        @endif
+                                        @if ($isAnalisField)
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
+                                            <i class="ri-scales-3-line me-1"></i> Update Gross Weight
+                                        </a>
+                                        @else
+                                        <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                            <i class="ri-edit-box-line me-1"></i> Update Analisa
+                                        </a>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="card-body p-3">
                                     <div class="table-responsive">
@@ -1080,7 +1121,13 @@
                                                             <td>{{ $colVal ?? '-' }}</td>
                                                         @endif
                                                     @endforeach
-                                                    <td>{{ $gg->disposisi ?? '-' }}</td>
+                                                    <td>
+                                                        @if (($gg->status ?? '') === 'draft' || empty($gg->disposisi) || $gg->disposisi === '-')
+                                                            <span class="badge bg-warning text-dark"><i class="mdi mdi-content-save-edit-outline me-1"></i>Draft</span>
+                                                        @else
+                                                            <span class="badge {{ $gg->disposisi === 'Release' ? 'bg-success' : 'bg-danger' }}">{{ $gg->disposisi }}</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $gg->keterangan ?? '-' }}</td>
                                                 </tr>
                                                 @empty
@@ -1093,10 +1140,10 @@
                                             </tbody>
                                             @if ($analisa_garam_gula->isNotEmpty())
                                             @php
-                                            $avgKaGG = $analisa_garam_gula->whereNotNull('%ka')->avg('%ka');
-                                            $avgKotoranGG = $analisa_garam_gula->whereNotNull('kotoran')->avg('kotoran');
-                                            $avgNaclGG = $analisa_garam_gula->whereNotNull('%nacl')->avg('%nacl');
-                                            $avgWeightGG = $analisa_garam_gula->whereNotNull('gross_weight')->avg('gross_weight');
+                                            $avgKaGG = $analisa_garam_gula->pluck('%ka')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
+                                            $avgKotoranGG = $analisa_garam_gula->pluck('kotoran')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
+                                            $avgNaclGG = $analisa_garam_gula->pluck('%nacl')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
+                                            $avgWeightGG = $analisa_garam_gula->pluck('gross_weight')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg();
                                             $totalOrganoGG = $analisa_garam_gula->count();
                                             $organoCountsGG = [];
                                             foreach ($analisa_garam_gula as $item) {
@@ -1115,9 +1162,11 @@
                                                     <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
                                                     @foreach ($displayFields as $f)
                                                         @if ($f['name'] === 'brix')
-                                                            <td class="text-primary">{{ $analisa_garam_gula->whereNotNull('brix')->avg('brix') !== null ? number_format($analisa_garam_gula->whereNotNull('brix')->avg('brix'), 2) : '-' }}</td>
+                                                            @php $avgBrixGG = $analisa_garam_gula->pluck('brix')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg(); @endphp
+                                                            <td class="text-primary">{{ $avgBrixGG !== null ? number_format($avgBrixGG, 2) : '-' }}</td>
                                                         @elseif ($f['name'] === 'ph')
-                                                            <td class="text-primary">{{ $analisa_garam_gula->whereNotNull('ph')->avg('ph') !== null ? number_format($analisa_garam_gula->whereNotNull('ph')->avg('ph'), 2) : '-' }}</td>
+                                                            @php $avgPhGG = $analisa_garam_gula->pluck('ph')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->avg(); @endphp
+                                                            <td class="text-primary">{{ $avgPhGG !== null ? number_format($avgPhGG, 2) : '-' }}</td>
                                                         @elseif ($f['name'] === 'kotoran')
                                                             <td class="text-primary">{{ $avgKotoranGG !== null ? number_format($avgKotoranGG, 3) : '-' }}</td>
                                                         @elseif ($f['name'] === 'ka' || $f['name'] === '%ka')
@@ -1168,6 +1217,11 @@
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             Total: {{ $analisa_bahan_kering->count() }} Sampel
                                         </span>
+                                        @if ($analisa_bahan_kering->first() && ($analisa_bahan_kering->first()->status ?? '') === 'draft')
+                                        <span class="badge bg-warning text-dark border border-warning-subtle fs-7 py-1 px-2">
+                                            <i class="mdi mdi-file-document-edit-outline me-1"></i> Draft
+                                        </span>
+                                        @endif
                                         @if ($isAnalisField)
                                         <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
                                             <i class="ri-scales-3-line me-1"></i> Update Gross Weight
@@ -1220,7 +1274,13 @@
                                                             <td>{{ $colVal ?? '-' }}</td>
                                                         @endif
                                                     @endforeach
-                                                    <td>{{ $bk->disposisi ?? '-' }}</td>
+                                                    <td>
+                                                        @if (($bk->status ?? '') === 'draft' || empty($bk->disposisi) || $bk->disposisi === '-')
+                                                            <span class="badge bg-warning text-dark"><i class="mdi mdi-content-save-edit-outline me-1"></i>Draft</span>
+                                                        @else
+                                                            <span class="badge {{ $bk->disposisi === 'Release' ? 'bg-success' : 'bg-danger' }}">{{ $bk->disposisi }}</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $bk->keterangan ?? '-' }}</td>
                                                 </tr>
                                                 @empty
@@ -1237,7 +1297,10 @@
                                                     <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
                                                     @foreach ($displayFields as $f)
                                                         @if ($f['type'] === 'number')
-                                                            @php $avgVal = $analisa_bahan_kering->whereNotNull($f['name'])->avg($f['name']); @endphp
+                                                            @php
+                                                            $numValsBK = $analisa_bahan_kering->pluck($f['name'])->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v);
+                                                            $avgVal = $numValsBK->isNotEmpty() ? $numValsBK->avg() : null;
+                                                            @endphp
                                                             <td class="text-primary">{{ $avgVal !== null ? number_format($avgVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') : '-' }}</td>
                                                         @elseif ($f['name'] === 'organo')
                                                             <td>
@@ -1274,6 +1337,11 @@
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 py-1 px-2">
                                             Total: {{ $analisa_bahan_cair->count() }} Sampel
                                         </span>
+                                        @if ($analisa_bahan_cair->first() && ($analisa_bahan_cair->first()->status ?? '') === 'draft')
+                                        <span class="badge bg-warning text-dark border border-warning-subtle fs-7 py-1 px-2">
+                                            <i class="mdi mdi-file-document-edit-outline me-1"></i> Draft
+                                        </span>
+                                        @endif
                                         @if ($isAnalisField)
                                         <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-sm btn-outline-primary shadow-sm" title="Akses Analis Field: Input Gross Weight">
                                             <i class="ri-scales-3-line me-1"></i> Update Gross Weight
@@ -1326,7 +1394,13 @@
                                                             <td>{{ $colVal ?? '-' }}</td>
                                                         @endif
                                                     @endforeach
-                                                    <td>{{ $bc->disposisi ?? '-' }}</td>
+                                                    <td>
+                                                        @if (($bc->status ?? '') === 'draft' || empty($bc->disposisi) || $bc->disposisi === '-')
+                                                            <span class="badge bg-warning text-dark"><i class="mdi mdi-content-save-edit-outline me-1"></i>Draft</span>
+                                                        @else
+                                                            <span class="badge {{ $bc->disposisi === 'Release' ? 'bg-success' : 'bg-danger' }}">{{ $bc->disposisi }}</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $bc->keterangan ?? '-' }}</td>
                                                 </tr>
                                                 @empty
@@ -1343,7 +1417,10 @@
                                                     <td class="text-center"><span class="badge bg-primary px-2 py-1">AVERAGE</span></td>
                                                     @foreach ($displayFields as $f)
                                                         @if ($f['type'] === 'number')
-                                                            @php $avgVal = $analisa_bahan_cair->whereNotNull($f['name'])->avg($f['name']); @endphp
+                                                            @php
+                                                            $numValsBC = $analisa_bahan_cair->pluck($f['name'])->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v);
+                                                            $avgVal = $numValsBC->isNotEmpty() ? $numValsBC->avg() : null;
+                                                            @endphp
                                                             <td class="text-primary">{{ $avgVal !== null ? number_format($avgVal, ($f['name'] === 'kotoran' ? 3 : 2)) . (!empty($f['unit']) ? ($f['unit'] === '%' ? '%' : ' ' . $f['unit']) : '') : '-' }}</td>
                                                         @elseif ($f['name'] === 'organo')
                                                             <td>
@@ -1523,7 +1600,8 @@
                                                             </td>
                                                         @elseif ($f['type'] === 'number')
                                                             @php
-                                                            $avgCol = $calcItemsST->whereNotNull($f['name'])->avg($f['name']);
+                                                            $numColValsST = $calcItemsST->pluck($f['name'])->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v);
+                                                            $avgCol = $numColValsST->isNotEmpty() ? $numColValsST->avg() : null;
                                                             @endphp
                                                             <td class="text-primary">
                                                                 @if ($avgCol !== null)
@@ -2153,27 +2231,77 @@
     </div>
 </div>
 
-{{-- Konfirmasi Jam --}}
+{{-- Modal Konfirmasi Waktu Sampling & Analisa (2 Card dengan Otoritas Role) --}}
 <div class="modal fade" id="modalKonfirmasi" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalKonfirmasiTitle">Konfirmasi Jam</h5>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light py-2">
+                <h5 class="modal-title fw-bold text-dark fs-6" id="modalKonfirmasiTitle">
+                    <i class="ri-checkbox-circle-line text-warning me-1"></i> Konfirmasi Waktu Sampling & Analisa
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="konfirmasiTipe" value="kedatangan">
-                <div class="mb-3">
-                    <label for="jamInput" class="form-label fw-semibold" id="labelJam">Jam Kedatangan</label>
-                    <input type="datetime-local" class="form-control" id="jamInput">
-                    <div class="form-text mt-2" id="konfirmasiHelpText"></div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    {{-- Bagian 1: Jam Sampling (QC Field) --}}
+                    <div class="col-md-6">
+                        <div class="card h-100 border border-warning-subtle shadow-none mb-0">
+                            <div class="card-header bg-warning-subtle py-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark small">
+                                    <i class="ri-time-line text-warning me-1"></i> Jam Sampling
+                                </span>
+                                <span class="badge bg-warning text-dark small">QC Field</span>
+                            </div>
+                            <div class="card-body d-flex flex-column justify-content-between p-3">
+                                <div class="mb-3">
+                                    <label for="jamSamplingInput" class="form-label fw-semibold small text-muted">Tanggal & Jam Sampling</label>
+                                    <input type="datetime-local" class="form-control" id="jamSamplingInput">
+                                    <div class="mt-2 small" id="jamSamplingStatus"></div>
+                                </div>
+                                <div id="btnSamplingContainer">
+                                    <button type="button" class="btn btn-warning btn-sm w-100 fw-semibold" id="btnSimpanSampling">
+                                        <i class="ri-save-line me-1"></i> Simpan Jam Sampling
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Bagian 2: Jam Selesai Analisa (Analis Lab) --}}
+                    <div class="col-md-6">
+                        <div class="card h-100 border border-info-subtle shadow-none mb-0">
+                            <div class="card-header bg-info-subtle py-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark small">
+                                    <i class="ri-flask-line text-info me-1"></i> Jam Selesai Analisa
+                                </span>
+                                <span class="badge bg-info text-white small">Analis Lab</span>
+                            </div>
+                            <div class="card-body d-flex flex-column justify-content-between p-3">
+                                <div class="mb-3">
+                                    <label for="jamAnalisaInput" class="form-label fw-semibold small text-muted">Tanggal & Jam Selesai Analisa</label>
+                                    <input type="datetime-local" class="form-control" id="jamAnalisaInput">
+                                    <div class="mt-2 small" id="jamAnalisaStatus"></div>
+                                </div>
+                                <div id="btnAnalisaContainer">
+                                    <button type="button" class="btn btn-info btn-sm w-100 fw-semibold text-white" id="btnSimpanAnalisa">
+                                        <i class="ri-save-line me-1"></i> Simpan Jam Selesai Analisa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Ketentuan Otoritas --}}
+                <div class="alert alert-light border mt-3 mb-0 small text-muted d-flex align-items-center">
+                    <i class="ri-shield-user-line fs-5 me-2 text-primary flex-shrink-0"></i>
+                    <div>
+                        <strong>Ketentuan Otoritas:</strong> Jam Sampling dikonfirmasi oleh <strong>QC Field</strong>. Jam Selesai Analisa dikonfirmasi oleh <strong>Analis Lab</strong>. Supervisor / Dept Head memiliki wewenang mengonfirmasi keduanya.
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" id="btnSimpanJam" class="btn btn-primary">
-                    <i class="ri-save-line me-1"></i> Simpan
-                </button>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -2472,7 +2600,7 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        // ── Konfirmasi Jam ──
+        // ── Konfirmasi Jam (Role-Based: QC Field vs Analis vs Supervisor) ──
         $('#btnBukaModalKonfirmasi').on('click', function() {
             const defaultNow = getCurrentDateTimeLocal();
 
@@ -2487,38 +2615,87 @@
                     $('#btnBukaModalKonfirmasi').prop('disabled', false);
                 },
                 success: function(r) {
-                    if (!r.jam_kedatangan_exists) {
-                        // Belum ada jam kedatangan
-                        $('#modalKonfirmasiTitle').html('<i class="ri-truck-line text-warning me-1"></i> Konfirmasi Jam Kedatangan');
-                        $('#labelJam').text('Jam Kedatangan');
-                        $('#konfirmasiTipe').val('kedatangan');
-                        $('#jamInput').val(defaultNow);
-                        $('#konfirmasiHelpText').html('<span class="text-muted">Silakan tentukan waktu kedatangan bahan baku.</span>');
-                        $('#btnSimpanJam').show();
-                    } else if (r.sampling_complete && !r.jam_analisa_exists) {
-                        // Sampling selesai & belum konfirmasi jam analisa
-                        $('#modalKonfirmasiTitle').html('<i class="ri-flask-line text-info me-1"></i> Konfirmasi Jam Analisa');
-                        $('#labelJam').text('Jam Analisa');
-                        $('#konfirmasiTipe').val('analisa');
-                        $('#jamInput').val(defaultNow);
-                        $('#konfirmasiHelpText').html('<span class="text-muted">Sampling telah lengkap. Silakan masukkan waktu mulai analisa.</span>');
-                        $('#btnSimpanJam').show();
-                    } else if (r.jam_kedatangan_exists && !r.sampling_complete) {
-                        // Jam kedatangan sudah ada, tapi sampling belum lengkap
-                        $('#modalKonfirmasiTitle').html('<i class="ri-truck-line text-warning me-1"></i> Edit Jam Kedatangan');
-                        $('#labelJam').text('Jam Kedatangan');
-                        $('#konfirmasiTipe').val('kedatangan');
-                        $('#jamInput').val(r.jam_kedatangan || defaultNow);
-                        $('#konfirmasiHelpText').html('<span class="text-warning"><i class="ri-information-line me-1"></i> Jam Kedatangan sudah tersimpan. Lengkapi data Sampling untuk mengisi Jam Analisa.</span>');
-                        $('#btnSimpanJam').show();
-                    } else if (r.jam_analisa_exists) {
-                        // Keduanya sudah ada
-                        $('#modalKonfirmasiTitle').html('<i class="ri-checkbox-circle-line text-success me-1"></i> Edit Jam Analisa');
-                        $('#labelJam').text('Jam Analisa');
-                        $('#konfirmasiTipe').val('analisa');
-                        $('#jamInput').val(r.jam_analisa || defaultNow);
-                        $('#konfirmasiHelpText').html('<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Jam Kedatangan & Jam Analisa sudah lengkap. Anda dapat memperbarui jam analisa jika diperlukan.</span>');
-                        $('#btnSimpanJam').show();
+                    // 1. Populate Jam Sampling
+                    if ($('#jamSamplingInput').length) {
+                        $('#jamSamplingInput').val(r.jam_sampling || defaultNow);
+                    }
+                    if ($('#jamSamplingStatus').length) {
+                        if (r.sampling_by) {
+                            $('#jamSamplingStatus').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Dikonfirmasi oleh: <strong>${r.sampling_by}</strong></span>`);
+                        } else {
+                            $('#jamSamplingStatus').html(`<span class="text-warning"><i class="ri-time-line me-1"></i> Belum dikonfirmasi (QC Field)</span>`);
+                        }
+                    }
+
+                    // Info box Jam Sampling (di modal Analis)
+                    if ($('#infoSamplingQCVal').length) {
+                        if (r.jam_sampling) {
+                            $('#infoSamplingQCVal').html(`<strong>${r.jam_sampling_formatted || r.jam_sampling}</strong> ${r.sampling_by ? '(' + r.sampling_by + ')' : ''}`);
+                            $('#badgeSamplingQC').html('<i class="ri-checkbox-circle-fill me-1"></i>Telah Dikonfirmasi').removeClass('bg-secondary-subtle text-muted').addClass('bg-success-subtle text-success');
+                        } else {
+                            $('#infoSamplingQCVal').html('<span class="text-muted fst-italic">Belum dikonfirmasi</span>');
+                            $('#badgeSamplingQC').html('<i class="ri-time-line me-1"></i>Menunggu QC Field').removeClass('bg-success-subtle text-success').addClass('bg-warning-subtle text-warning');
+                        }
+                    }
+
+                    // 2. Populate Jam Selesai Analisa
+                    if ($('#jamAnalisaInput').length) {
+                        $('#jamAnalisaInput').val(r.jam_analisa || defaultNow);
+                    }
+                    if ($('#jamAnalisaStatus').length) {
+                        if (r.analisa_by) {
+                            $('#jamAnalisaStatus').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Dikonfirmasi oleh: <strong>${r.analisa_by}</strong></span>`);
+                        } else {
+                            $('#jamAnalisaStatus').html(`<span class="text-info"><i class="ri-flask-line me-1"></i> Belum dikonfirmasi (Analis)</span>`);
+                        }
+                    }
+
+                    // Info box Jam Analisa Lab (di modal QC Field)
+                    if ($('#infoAnalisaLabVal').length) {
+                        if (r.jam_analisa) {
+                            $('#infoAnalisaLabVal').html(`<strong>${r.jam_analisa_formatted || r.jam_analisa}</strong> ${r.analisa_by ? '(' + r.analisa_by + ')' : ''}`);
+                            $('#badgeAnalisaLab').html('<i class="ri-checkbox-circle-fill me-1"></i>Telah Selesai').removeClass('bg-secondary-subtle text-muted').addClass('bg-success-subtle text-success');
+                        } else {
+                            $('#infoAnalisaLabVal').html('<span class="text-muted fst-italic">Belum dikonfirmasi</span>');
+                            $('#badgeAnalisaLab').html('<i class="ri-flask-line me-1"></i>Dalam Proses Lab').removeClass('bg-success-subtle text-success').addClass('bg-secondary-subtle text-muted');
+                        }
+                    }
+
+                    // Otoritas Gating: Jam Sampling (QC Field) & Jam Selesai Analisa (Analis)
+                    if ($('#btnSamplingContainer').length) {
+                        if (!r.can_edit_sampling) {
+                            $('#jamSamplingInput').prop('disabled', true);
+                            $('#btnSamplingContainer').html(`
+                                <button type="button" class="btn btn-light btn-sm w-100 text-muted" disabled>
+                                    <i class="ri-lock-line me-1"></i> Akses Terbatas (Khusus QC Field)
+                                </button>
+                            `);
+                        } else {
+                            $('#jamSamplingInput').prop('disabled', false);
+                            $('#btnSamplingContainer').html(`
+                                <button type="button" class="btn btn-warning btn-sm w-100 fw-semibold" id="btnSimpanSampling">
+                                    <i class="ri-save-line me-1"></i> Simpan Jam Sampling
+                                </button>
+                            `);
+                        }
+                    }
+
+                    if ($('#btnAnalisaContainer').length) {
+                        if (!r.can_edit_analisa) {
+                            $('#jamAnalisaInput').prop('disabled', true);
+                            $('#btnAnalisaContainer').html(`
+                                <button type="button" class="btn btn-light btn-sm w-100 text-muted" disabled>
+                                    <i class="ri-lock-line me-1"></i> Akses Terbatas (Khusus Analis)
+                                </button>
+                            `);
+                        } else {
+                            $('#jamAnalisaInput').prop('disabled', false);
+                            $('#btnAnalisaContainer').html(`
+                                <button type="button" class="btn btn-info btn-sm w-100 fw-semibold text-white" id="btnSimpanAnalisa">
+                                    <i class="ri-save-line me-1"></i> Simpan Jam Selesai Analisa
+                                </button>
+                            `);
+                        }
                     }
 
                     $('#modalKonfirmasi').modal('show');
@@ -2533,19 +2710,18 @@
             });
         });
 
-        $('#btnSimpanJam').on('click', function() {
-            const jamVal = $('#jamInput').val();
-            const tipeVal = $('#konfirmasiTipe').val();
-
+        // Simpan Jam Sampling (QC Field)
+        $(document).on('click', '#btnSimpanSampling', function() {
+            const jamVal = $('#jamSamplingInput').val();
             if (!jamVal) {
                 return Swal.fire({
                     icon: 'warning',
-                    text: 'Silakan isi tanggal dan jam terlebih dahulu.'
+                    text: 'Silakan isi tanggal & jam sampling terlebih dahulu.'
                 });
             }
 
             Swal.fire({
-                title: 'Menyimpan Konfirmasi...',
+                title: 'Menyimpan Jam Sampling...',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -2557,7 +2733,7 @@
                 data: {
                     _token: "{{ csrf_token() }}",
                     id: "{{ $identitas->id }}",
-                    tipe: tipeVal,
+                    tipe: 'sampling',
                     jam: jamVal,
                 },
                 success: function(r) {
@@ -2565,14 +2741,58 @@
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
-                        text: r.message || 'Data konfirmasi berhasil disimpan!'
+                        text: r.message || 'Jam Sampling berhasil dikonfirmasi!'
                     }).then(() => location.reload());
                 },
                 error: function(xhr) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
-                        text: xhr.responseJSON?.message || 'Gagal menyimpan data konfirmasi.'
+                        text: xhr.responseJSON?.message || 'Gagal menyimpan konfirmasi sampling.'
+                    });
+                }
+            });
+        });
+
+        // Simpan Jam Selesai Analisa (Analis)
+        $(document).on('click', '#btnSimpanAnalisa', function() {
+            const jamVal = $('#jamAnalisaInput').val();
+            if (!jamVal) {
+                return Swal.fire({
+                    icon: 'warning',
+                    text: 'Silakan isi tanggal & jam selesai analisa terlebih dahulu.'
+                });
+            }
+
+            Swal.fire({
+                title: 'Menyimpan Jam Selesai Analisa...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            $.ajax({
+                url: "{{ route('rmpm.konfirmasi.update') }}",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: "{{ $identitas->id }}",
+                    tipe: 'analisa',
+                    jam: jamVal,
+                },
+                success: function(r) {
+                    $('#modalKonfirmasi').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: r.message || 'Jam Selesai Analisa berhasil dikonfirmasi!'
+                    }).then(() => location.reload());
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Gagal menyimpan konfirmasi analisa.'
                     });
                 }
             });
