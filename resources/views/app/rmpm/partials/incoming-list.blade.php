@@ -1,7 +1,7 @@
 @php
     $canManageIncoming =
         auth()->check()
-        && auth()->user()?->role === 'Foreman';
+        && in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
 @endphp
 
 <div class="card border-0 shadow-sm incoming-list-card">

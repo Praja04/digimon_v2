@@ -291,7 +291,7 @@
                             <div class="card shadow-sm">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0 fw-semibold text-muted">Sample Kondisi Mobil</h5>
-                                    @if ($data_mobil && auth()->user()->role == 'Foreman')
+                                    @if ($data_mobil && in_array(auth()->user()->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
                                     <button class="btn btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editModalMobil">
                                         <i class="ri-edit-box-line me-1"></i>Update
@@ -340,7 +340,7 @@
                             <div class="card shadow-sm">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0 fw-semibold text-muted">Dokumen Pendukung</h5>
-                                    @if ($data_dokumen && auth()->user()->role == 'Foreman')
+                                    @if ($data_dokumen && in_array(auth()->user()->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
                                     <button class="btn btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editModalDokumen">
                                         <i class="ri-edit-box-line me-1"></i>Update
@@ -388,7 +388,7 @@
                             <div class="card shadow-sm">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0 fw-semibold text-muted">Sample Fisik Kemasan</h5>
-                                    @if ($data_kemasan && auth()->user()->role == 'Foreman')
+                                    @if ($data_kemasan && in_array(auth()->user()->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
                                     <button class="btn btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editModalKemasan">
                                         <i class="ri-edit-box-line me-1"></i>Update
@@ -497,7 +497,7 @@
                             <div class="card shadow-sm">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0 fw-semibold text-muted">Sample Fisik Raw</h5>
-                                    @if ($data_raw && auth()->user()->role == 'Foreman')
+                                    @if ($data_raw && in_array(auth()->user()->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true))
                                     <button class="btn btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editModalRaw">
                                         <i class="ri-edit-box-line me-1"></i>Update
