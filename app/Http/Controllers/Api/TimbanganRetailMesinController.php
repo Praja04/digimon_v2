@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\TimbanganRetailMesin;
+use App\Models\TimbanganRetailBdkt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -598,6 +599,7 @@ class TimbanganRetailMesinController extends Controller
             'variant' => 'required|string|max:255',
             'waktu'   => 'required|date',
             'status'  => 'required|string',
+            'filler'  => 'nullable|string|max:255',
             'berat'   => 'required|numeric',
             'unit'    => 'required|string|max:50',
         ]);
@@ -606,9 +608,9 @@ class TimbanganRetailMesinController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $mesin = TimbanganRetailMesin::create($request->only(['nik', 'mesin', 'variant', 'waktu', 'status', 'berat', 'unit']));
+        $bdkt = TimbanganRetailBdkt::create($request->only(['nik', 'mesin', 'variant', 'waktu', 'status', 'filler', 'berat', 'unit']));
 
-        return response()->json(['success' => true, 'data' => $mesin], 201);
+        return response()->json(['success' => true, 'data' => $bdkt], 201);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -619,21 +621,29 @@ class TimbanganRetailMesinController extends Controller
         $validVariants = array_keys(self::VARIANT_STANDARDS);
 
         $validator = Validator::make($request->all(), [
-            'nik'     => 'required|string|max:50',
-            'mesin'   => 'required|string|max:255',
-            'variant' => ['required', 'string', 'max:255', 'in:' . implode(',', $validVariants)],
-            'waktu'   => 'required|date',
-            'status'  => 'required|in:OK,NOT OK',
-            'filler'  => 'nullable|in:1,2,3,4,5,6,7,8',
-            'berat'   => 'required|numeric|between:0,999999',
-            'unit'    => 'required|in:g,kg',
+            'nik'        => 'required|string|max:50',
+            'mesin'      => 'required|string|max:255',
+            'variant'    => ['required', 'string', 'max:255', 'in:' . implode(',', $validVariants)],
+            'waktu'      => 'required|date',
+            'status'     => 'required|in:OK,NOT OK',
+            'filler'     => 'nullable|in:1,2,3,4,5,6,7,8',
+            'berat'      => 'required|numeric|between:0,999999',
+            'unit'       => 'required|in:g,kg',
+            'resampling' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $mesin = TimbanganRetailMesin::create($request->only(['nik', 'mesin', 'variant', 'waktu', 'status', 'filler', 'berat', 'unit']));
+        $data = $request->only(['nik', 'mesin', 'variant', 'waktu', 'status', 'filler', 'berat', 'unit']);
+        $data['resampling'] = $request->boolean('resampling', false);
+
+        $mesin = new TimbanganRetailMesin($data);
+        if ($data['resampling'] && $request->filled('waktu')) {
+            $mesin->created_at = $request->waktu;
+        }
+        $mesin->save();
 
         return response()->json(['success' => true, 'data' => $mesin], 201);
     }
