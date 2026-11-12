@@ -529,27 +529,25 @@
                                             <i class="mdi mdi-pencil"></i>
                                         </button>
 
-                                        @if (! $isDraft && ! $isFinished)
-                                            <form
-                                                method="POST"
-                                                action="{{ route(
-                                                    'rmpm.pm.incoming.destroy',
-                                                    $incoming
-                                                ) }}"
-                                                class="deleteForm"
-                                            >
-                                                @csrf
-                                                @method('DELETE')
+                                        <form
+                                            method="POST"
+                                            action="{{ route(
+                                                'rmpm.pm.incoming.destroy',
+                                                $incoming
+                                            ) }}"
+                                            class="deleteForm"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
 
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-outline-danger btn-sm"
-                                                    title="Hapus Incoming"
-                                                >
-                                                    <i class="mdi mdi-delete"></i>
-                                                </button>
-                                            </form>
-                                        @endif
+                                            <button
+                                                type="submit"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Hapus Incoming"
+                                            >
+                                                <i class="mdi mdi-delete"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             @endif
