@@ -1054,9 +1054,9 @@ class PackagingIncomingController extends Controller
     {
         abort_unless(
             auth()->check()
-            && auth()->user()?->role === 'Foreman',
+            && in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true),
             403,
-            'Kelola data incoming hanya dapat dilakukan oleh Foreman.'
+            'Kelola data incoming hanya dapat dilakukan oleh Foreman, Supervisor, atau Head Of Dapartement.'
         );
     }
 

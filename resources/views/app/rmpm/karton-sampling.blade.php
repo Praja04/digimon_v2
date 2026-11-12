@@ -122,7 +122,7 @@
 
     $isForeman =
         auth()->check()
-        && auth()->user()?->role === 'Foreman';
+        && in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
 
     /*
      * Pada Karton, data Draft dan Final disimpan di tabel terpisah.

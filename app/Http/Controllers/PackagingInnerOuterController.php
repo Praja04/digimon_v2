@@ -1110,7 +1110,7 @@ class PackagingInnerOuterController extends Controller
     private function isForeman(): bool
     {
         return auth()->check()
-            && auth()->user()?->role === 'Foreman';
+            && in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
     }
 
     private function ensureFinalCanBeChanged(
@@ -1122,7 +1122,7 @@ class PackagingInnerOuterController extends Controller
         ) {
             abort(
                 403,
-                'Data sampling yang sudah final hanya dapat dikoreksi oleh Foreman.'
+                'Data sampling yang sudah final hanya dapat dikoreksi oleh Foreman, Supervisor, atau Head Of Dapartement.'
             );
         }
     }
