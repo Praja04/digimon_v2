@@ -366,10 +366,7 @@
                                                     $statusName = $rekomendasi ?: 'Diterima';
                                                     $statusClass = 'bg-success';
                                                     $statusIcon = 'mdi-check-circle-outline';
-                                                } elseif ($rekomendasiLower === 'wip') {
-                                                    $statusName = 'WIP';
-                                                    $statusClass = 'bg-secondary';
-                                                    $statusIcon = 'mdi-progress-clock';
+
                                                 } else {
                                                     $statusName = $rekomendasi ?: ($incoming->samplingStatus?->nama ?: 'Sudah Sampling');
                                                     $statusClass = 'bg-success';

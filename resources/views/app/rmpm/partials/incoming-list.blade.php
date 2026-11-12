@@ -190,11 +190,6 @@
                 <i class="process-dot process-dot-danger"></i>
                 Ditolak (Reject)
             </span>
-
-            <span>
-                <i class="process-dot process-dot-secondary"></i>
-                WIP
-            </span>
         </div>
 
         <div class="table-responsive">
@@ -279,10 +274,6 @@
                                     $statusName = $rekomendasi ?: 'Diterima';
                                     $statusClass = 'bg-success';
                                     $statusIcon = 'mdi-check-circle-outline';
-                                } elseif ($rekomendasiLower === 'wip') {
-                                    $statusName = 'WIP';
-                                    $statusClass = 'bg-secondary';
-                                    $statusIcon = 'mdi-progress-clock';
                                 } else {
                                     $statusName = $rekomendasi ?: ($databaseStatusName ?: 'Sudah Sampling');
                                     $statusClass = 'bg-success';
@@ -687,9 +678,5 @@
 
 .process-dot-danger {
     background: #ef4444;
-}
-
-.process-dot-secondary {
-    background: #64748b;
 }
 </style>

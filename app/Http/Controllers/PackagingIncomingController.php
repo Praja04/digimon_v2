@@ -155,7 +155,7 @@ class PackagingIncomingController extends Controller
                     'id',
                     $draftIncomingIds
                 );
-            } elseif (in_array($statusFilter, ['Diterima', 'Diterima Bersyarat', 'Ditolak', 'WIP', 'Release', 'Reject', 'Release Bersyarat'], true)) {
+            } elseif (in_array($statusFilter, ['Diterima', 'Diterima Bersyarat', 'Ditolak', 'Release', 'Reject', 'Release Bersyarat'], true)) {
                 $normalizedRekomendasi = match ($statusFilter) {
                     'Release' => 'Diterima',
                     'Release Bersyarat' => 'Diterima Bersyarat',
