@@ -6,9 +6,11 @@ use App\Models\JenisIncoming;
 use App\Models\JenisMaterial;
 use App\Models\PackagingIncoming;
 use App\Models\PackagingInnerOuterSampling;
+use App\Models\PackagingInnerOuterSamplingDraft;
 use App\Models\PackagingKartonSampling;
 use App\Models\PackagingKartonSamplingDraft;
 use App\Models\PackagingPouchSampling;
+use App\Models\PackagingPouchSamplingDraft;
 use App\Models\SamplingStatus;
 use App\Models\Supplier;
 use App\Services\WpmApiService;
@@ -16,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -155,7 +158,7 @@ class PackagingIncomingController extends Controller
                     'id',
                     $draftIncomingIds
                 );
-            } elseif (in_array($statusFilter, ['Diterima', 'Diterima Bersyarat', 'Ditolak', 'WIP', 'Release', 'Reject', 'Release Bersyarat'], true)) {
+            } elseif (in_array($statusFilter, ['Diterima', 'Diterima Bersyarat', 'Ditolak', 'Release', 'Reject', 'Release Bersyarat'], true)) {
                 $normalizedRekomendasi = match ($statusFilter) {
                     'Release' => 'Diterima',
                     'Release Bersyarat' => 'Diterima Bersyarat',
@@ -547,77 +550,62 @@ class PackagingIncomingController extends Controller
         PackagingIncoming $packagingIncoming
     ): JsonResponse|RedirectResponse {
         $this->ensureForeman();
-        $statusName = strtolower(
-            $packagingIncoming
-                ->samplingStatus
-                ?->nama
-            ?? ''
-        );
 
-        $hasDraftSampling =
-            PackagingPouchSampling::query()
-                ->where(
-                    'packaging_incoming_id',
-                    $packagingIncoming->id
-                )
-                ->where(
-                    'status_proses',
-                    'draft'
-                )
-                ->exists()
-            || PackagingInnerOuterSampling::query()
-                ->where(
-                    'packaging_incoming_id',
-                    $packagingIncoming->id
-                )
-                ->where(
-                    'status_proses',
-                    'draft'
-                )
-                ->exists()
-            || PackagingKartonSamplingDraft::query()
-                ->where(
-                    'packaging_incoming_id',
-                    $packagingIncoming->id
-                )
-                ->exists();
+        try {
+            DB::transaction(function () use ($packagingIncoming) {
+                PackagingPouchSamplingDraft::query()
+                    ->where('packaging_incoming_id', $packagingIncoming->id)
+                    ->delete();
 
-        if (
-            str_contains($statusName, 'sudah')
-            || str_contains($statusName, 'selesai')
-            || $hasDraftSampling
-        ) {
-            $message = $hasDraftSampling
-                ? 'Data memiliki draft sampling. Lanjutkan proses sampling terlebih dahulu.'
-                : 'Data yang sudah sampling tidak dapat dihapus.';
+                PackagingInnerOuterSamplingDraft::query()
+                    ->where('packaging_incoming_id', $packagingIncoming->id)
+                    ->delete();
+
+                PackagingKartonSamplingDraft::query()
+                    ->where('packaging_incoming_id', $packagingIncoming->id)
+                    ->delete();
+
+                PackagingPouchSampling::query()
+                    ->where('packaging_incoming_id', $packagingIncoming->id)
+                    ->delete();
+
+                PackagingInnerOuterSampling::query()
+                    ->where('packaging_incoming_id', $packagingIncoming->id)
+                    ->delete();
+
+                PackagingKartonSampling::query()
+                    ->where('packaging_incoming_id', $packagingIncoming->id)
+                    ->delete();
+
+                $packagingIncoming->delete();
+            });
+
+            $message = 'Data incoming berhasil dihapus.';
 
             if ($request->expectsJson()) {
                 return response()->json([
-                    'success' => false,
+                    'success' => true,
                     'message' => $message,
-                ], 422);
+                ]);
             }
 
             return redirect()
                 ->route('rmpm.pm.incoming.create')
-                ->with('error', $message);
+                ->with('success', $message);
+        } catch (Throwable $e) {
+            $errorMessage = 'Gagal menghapus data incoming: ' . $e->getMessage();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                ], 500);
+            }
+
+            return redirect()
+                ->route('rmpm.pm.incoming.create')
+                ->with('error', $errorMessage);
         }
-
-        $packagingIncoming->delete();
-
-        $message =
-            'Data incoming berhasil dihapus.';
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-            ]);
-        }
-
-        return redirect()
-            ->route('rmpm.pm.incoming.create')
-            ->with('success', $message);
     }
 
     private function attachSamplingProcessStatus(

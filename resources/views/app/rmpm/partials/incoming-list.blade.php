@@ -190,11 +190,6 @@
                 <i class="process-dot process-dot-danger"></i>
                 Ditolak (Reject)
             </span>
-
-            <span>
-                <i class="process-dot process-dot-secondary"></i>
-                WIP
-            </span>
         </div>
 
         <div class="table-responsive">
@@ -279,10 +274,6 @@
                                     $statusName = $rekomendasi ?: 'Diterima';
                                     $statusClass = 'bg-success';
                                     $statusIcon = 'mdi-check-circle-outline';
-                                } elseif ($rekomendasiLower === 'wip') {
-                                    $statusName = 'WIP';
-                                    $statusClass = 'bg-secondary';
-                                    $statusIcon = 'mdi-progress-clock';
                                 } else {
                                     $statusName = $rekomendasi ?: ($databaseStatusName ?: 'Sudah Sampling');
                                     $statusClass = 'bg-success';
@@ -538,27 +529,25 @@
                                             <i class="mdi mdi-pencil"></i>
                                         </button>
 
-                                        @if (! $isDraft && ! $isFinished)
-                                            <form
-                                                method="POST"
-                                                action="{{ route(
-                                                    'rmpm.pm.incoming.destroy',
-                                                    $incoming
-                                                ) }}"
-                                                class="deleteForm"
-                                            >
-                                                @csrf
-                                                @method('DELETE')
+                                        <form
+                                            method="POST"
+                                            action="{{ route(
+                                                'rmpm.pm.incoming.destroy',
+                                                $incoming
+                                            ) }}"
+                                            class="deleteForm"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
 
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-outline-danger btn-sm"
-                                                    title="Hapus Incoming"
-                                                >
-                                                    <i class="mdi mdi-delete"></i>
-                                                </button>
-                                            </form>
-                                        @endif
+                                            <button
+                                                type="submit"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Hapus Incoming"
+                                            >
+                                                <i class="mdi mdi-delete"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             @endif
@@ -687,9 +676,5 @@
 
 .process-dot-danger {
     background: #ef4444;
-}
-
-.process-dot-secondary {
-    background: #64748b;
 }
 </style>
