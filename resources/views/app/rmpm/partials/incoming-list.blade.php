@@ -210,7 +210,7 @@
                         </th>
 
                         @if ($canManageIncoming)
-                            <th class="text-center" style="width: 105px;">
+                            <th class="text-center sticky-col" style="width: 105px;">
                                 Kelola Data
                             </th>
                         @endif
@@ -515,7 +515,7 @@
                             </td>
 
                             @if ($canManageIncoming)
-                                <td class="text-center">
+                                <td class="text-center sticky-col">
                                     <div class="d-flex justify-content-center gap-1">
                                         <button
                                             type="button"
@@ -589,6 +589,36 @@
 .incoming-list-card {
     border-radius: 18px;
     overflow: hidden;
+}
+
+.incoming-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.sticky-col {
+    position: sticky;
+    right: 0;
+    background-color: #ffffff;
+    z-index: 2;
+    box-shadow: -3px 0 6px -2px rgba(0, 0, 0, 0.08);
+}
+
+.incoming-table thead th.sticky-col {
+    background-color: #f8fafc;
+    z-index: 3;
+}
+
+.incoming-table tbody tr:hover td.sticky-col {
+    background-color: #f8fafc;
+}
+
+.incoming-table tbody tr.incoming-row-draft td.sticky-col {
+    background-color: #fffdf5;
+}
+
+.incoming-table tbody tr.incoming-row-draft:hover td.sticky-col {
+    background-color: #fffbeb !important;
 }
 
 .incoming-table thead th {

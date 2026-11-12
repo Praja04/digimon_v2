@@ -1013,6 +1013,9 @@
                 setListLoading(true);
 
                 try {
+                    const prevScrollLeft =
+                        listContainer.querySelector('.table-responsive')?.scrollLeft || 0;
+
                     const requestUrl =
                         new URL(url, window.location.origin);
 
@@ -1039,6 +1042,12 @@
 
                     listContainer.innerHTML =
                         await response.text();
+
+                    const newTableResponsive =
+                        listContainer.querySelector('.table-responsive');
+                    if (newTableResponsive && prevScrollLeft > 0) {
+                        newTableResponsive.scrollLeft = prevScrollLeft;
+                    }
 
                     if (updateBrowserUrl) {
                         requestUrl.searchParams.delete(
@@ -2265,9 +2274,69 @@
 
                 event.preventDefault();
 
+                const executeDelete = async () => {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Menghapus data...',
+                            allowOutsideClick: false,
+                            didOpen: function() {
+                                Swal.showLoading();
+                            }
+                        });
+                    }
+
+                    try {
+                        const formData = new FormData(deleteForm);
+                        const response = await fetch(deleteForm.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        const resData = await response.json().catch(() => null);
+
+                        if (!response.ok || (resData && !resData.success)) {
+                            const errText = resData?.message || 'Gagal menghapus data incoming.';
+                            throw new Error(errText);
+                        }
+
+                        // Simpan posisi scroll vertikal halaman agar tidak meloncat ke atas
+                        const scrollY = window.scrollY;
+
+                        // Muat ulang daftar incoming secara AJAX tanpa reload halaman
+                        await loadIncomingList(window.location.href, false);
+
+                        // Kembalikan posisi scroll vertikal
+                        window.scrollTo({ top: scrollY, behavior: 'instant' });
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: resData?.message || 'Data incoming berhasil dihapus.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        }
+                    } catch (error) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Menghapus',
+                                text: error.message || 'Terjadi kesalahan saat menghapus data.'
+                            });
+                        } else {
+                            alert(error.message || 'Terjadi kesalahan saat menghapus data.');
+                        }
+                    }
+                };
+
                 if (typeof Swal === 'undefined') {
-                    if (confirm('Hapus data incoming?')) {
-                        deleteForm.submit();
+                    if (confirm('Hapus data incoming? Data yang dihapus tidak dapat dikembalikan.')) {
+                        executeDelete();
                     }
                     return;
                 }
@@ -2277,12 +2346,13 @@
                     title: 'Hapus data incoming?',
                     text: 'Data yang dihapus tidak dapat dikembalikan.',
                     showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
+                    confirmButtonText: '<i class="mdi mdi-delete me-1"></i> Ya, hapus',
                     cancelButtonText: 'Batal',
-                    confirmButtonColor: '#dc3545'
+                    confirmButtonColor: '#dc3545',
+                    reverseButtons: true
                 }).then(function(result) {
                     if (result.isConfirmed) {
-                        deleteForm.submit();
+                        executeDelete();
                     }
                 });
             });
