@@ -177,17 +177,25 @@
 
             <!-- Filter Section -->
             <div class="filter-card">
-                <div class="row g-3 justify-content-end">
-                    <div class="col-md-4">
-                        <label class="form-label">Tanggal Kedatangan</label>
-                        <input type="date" class="form-control" id="dateFilter" value="">
+                <div class="row g-3 justify-content-end align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Kategori Bahan</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="all" selected>Semua (RM & PM)</option>
+                            <option value="rm">Raw Material (RM)</option>
+                            <option value="pm">Packaging Material (PM)</option>
+                        </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal Kedatangan</label>
+                        <input type="date" class="form-control" id="dateFilter" value="{{ $defaultDate ?? date('Y-m-d') }}">
+                    </div>
+                    <div class="col-md-2">
                         <button class="btn btn-primary w-100" id="applyFilter">
                             <i class="mdi mdi-filter me-1"></i>Apply Filter
                         </button>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-2">
                         <button class="btn btn-light w-100" id="resetFilter">
                             <i class="ri-restart-line me-1"></i> Reset
                         </button>
@@ -447,10 +455,13 @@
         let trendChart, dispositionChart, topMaterialsChart, supplierChart,
             vehicleChart, packagingFindingsChart;
 
+        const defaultFilterDate = '{{ $defaultDate ?? date('Y-m-d') }}';
+
         // Initialize on page load
         $(document).ready(function() {
-            // Set default date to today
-            $('#dateFilter').val(new Date().toISOString().split('T')[0]);
+            if (!$('#dateFilter').val()) {
+                $('#dateFilter').val(defaultFilterDate);
+            }
 
             loadAllData();
 
@@ -459,8 +470,13 @@
                 loadAllData();
             });
 
+            $('#categoryFilter').on('change', function() {
+                loadAllData();
+            });
+
             $('#resetFilter').on('click', function() {
-                $('#dateFilter').val('');
+                $('#dateFilter').val(defaultFilterDate);
+                $('#categoryFilter').val('all');
                 loadAllData();
             });
         });
@@ -493,9 +509,14 @@
         // Get filter parameters
         function getFilterParams() {
             const date = $('#dateFilter').val();
-            return date ? {
-                date: date
-            } : {};
+            const category = $('#categoryFilter').val() || 'all';
+            const params = {
+                category: category
+            };
+            if (date) {
+                params.date = date;
+            }
+            return params;
         }
 
         // Load Statistics
