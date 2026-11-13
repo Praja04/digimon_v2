@@ -13,6 +13,9 @@ Route::get('/dashboard/rmpm/supplier-performance', [App\Http\Controllers\Api\Das
 Route::get('/dashboard/rmpm/vehicle-condition', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getVehicleCondition'])->name('api.dashboard.rmpm.vehicle-condition');
 Route::get('/dashboard/rmpm/packaging-findings', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getPackagingFindings'])->name('api.dashboard.rmpm.packaging-findings');
 Route::get('/dashboard/rmpm/recent-data', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getRecentData'])->name('api.dashboard.rmpm.recent-data');
+Route::get('/dashboard/rmpm/transaction-standards', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getTransactionStandards'])->name('api.dashboard.rmpm.transaction-standards');
+Route::get('/dashboard/rmpm/material-quality-trends', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getMaterialQualityTrends'])->name('api.dashboard.rmpm.material-quality-trends');
+Route::get('/dashboard/rmpm/sugar-stability', [App\Http\Controllers\Api\Dashboard\RMPMController::class, 'getSugarStability'])->name('api.dashboard.rmpm.sugar-stability');
 
 // Dashboard - Pelarutan
 Route::get('/dashboard/pelarutan/analisa', [App\Http\Controllers\Api\Dashboard\PelarutanController::class, 'analisaPelarutan'])->name('api.dashboard.pelarutan.analisa');

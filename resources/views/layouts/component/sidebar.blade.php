@@ -70,6 +70,12 @@
 
                 $timbanganRetailActive = request()->routeIs('dashboard.timbangan-retail.*');
 
+                $dashboardRmpmActive = request()->routeIs([
+                    'dashboard.rm.*',
+                    'dashboard.pm.*',
+                    'dashboard.rmpm.*',
+                ]);
+
                 $masterDataPmActive = request()->routeIs([
                     'jenis-incoming.*',
                     'jenis-material.*',
@@ -200,12 +206,36 @@
                                     </a>
                                 </li>
 
+                                {{-- RMPM (SUB-COLLAPSE DI DASHBOARD) --}}
                                 <li class="nav-item">
-                                    <a href="{{ route('dashboard.rmpm.index') }}"
-                                        class="nav-link {{ request()->routeIs('dashboard.rmpm.index') ? 'active' : '' }}">
+                                    <a class="nav-link {{ $dashboardRmpmActive ? 'active' : '' }}"
+                                        href="#DashboardRmpm" data-bs-toggle="collapse" role="button"
+                                        aria-expanded="{{ $dashboardRmpmActive ? 'true' : 'false' }}"
+                                        aria-controls="DashboardRmpm">
                                         <i class="mdi mdi-chemical-weapon"></i>
                                         RMPM
                                     </a>
+
+                                    <div id="DashboardRmpm"
+                                        class="collapse menu-dropdown {{ $dashboardRmpmActive ? 'show' : '' }}">
+                                        <ul class="nav nav-sm flex-column">
+                                            <li class="nav-item">
+                                                <a href="{{ route('dashboard.rm.index') }}"
+                                                    class="nav-link {{ request()->routeIs('dashboard.rm.index') ? 'active' : '' }}">
+                                                    <i class="mdi mdi-flask-outline"></i>
+                                                    Raw Material (RM)
+                                                </a>
+                                            </li>
+
+                                            <li class="nav-item">
+                                                <a href="{{ route('dashboard.pm.index') }}"
+                                                    class="nav-link {{ request()->routeIs('dashboard.pm.index') ? 'active' : '' }}">
+                                                    <i class="mdi mdi-package-variant-closed"></i>
+                                                    Packaging Material (PM)
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </li>
 
                                 <li class="nav-item">

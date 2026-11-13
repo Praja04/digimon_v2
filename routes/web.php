@@ -82,8 +82,14 @@ Route::middleware(['auth'])->group(function () {
     Roles: Head Of Dapartement, Supervisor, Foreman
     --------------------------------------------*/
     Route::middleware(['user-access:Head Of Dapartement,Supervisor,Foreman'])->group(function () {
-        // Dashboard - RMPM
+        // Dashboard - RMPM (Redirect ke Dashboard RM)
         Route::get('/dashboard/rmpm', [App\Http\Controllers\Dashboard\RMPMController::class, 'index'])->name('dashboard.rmpm.index');
+
+        // Dashboard - Raw Material (RM)
+        Route::get('/dashboard/rm', [App\Http\Controllers\Dashboard\RMPMController::class, 'rm'])->name('dashboard.rm.index');
+
+        // Dashboard - Packaging Material (PM)
+        Route::get('/dashboard/pm', [App\Http\Controllers\Dashboard\RMPMController::class, 'pm'])->name('dashboard.pm.index');
 
         // Dashboard - Analisis Pelarutan
         Route::get('/dashboard/pelarutan', [App\Http\Controllers\Dashboard\PelarutanController::class, 'index'])->name('dashboard.pelarutan.index');
