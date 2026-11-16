@@ -205,18 +205,18 @@
                                     <th>No.</th>
                                     <th>Panjang (mm)</th>
                                     <th>Lebar (mm)</th>
-                                    <th>Thickness 1 (mikron)</th>
-                                    <th>Thickness 2 (mikron)</th>
-                                    <th>Berat (g)</th>
                                     <th>Side Seal 1 (mm)</th>
                                     <th>Side Seal 2 (mm)</th>
                                     <th>Bottom Seal (mm)</th>
                                     <th>Bottom High (mm)</th>
+                                    <th>Thickness 1 (mikron)</th>
+                                    <th>Thickness 2 (mikron)</th>
+                                    <th>Berat (g)</th>
                                     <th>Design</th>
                                     <th>Warna</th>
                                     <th>Tulisan</th>
-                                    <th>Drop Test</th>
                                     <th>Press Test</th>
+                                    <th>Drop Test</th>
                                 </tr>
                             </thead>
 
@@ -228,20 +228,20 @@
                                         </td>
                                         <td>{{ $sample['panjang'] ?? '-' }}</td>
                                         <td>{{ $sample['lebar'] ?? '-' }}</td>
-                                        <td>{{ $sample['thickness_1'] ?? $sample['thickness'] ?? '-' }}</td>
-                                        <td>{{ $sample['thickness_2'] ?? '-' }}</td>
-                                        <td>{{ is_numeric($sample['berat'] ?? null) ? number_format((float) $sample['berat'], 2, '.', '') : ($sample['berat'] ?? '-') }}</td>
                                         <td>{{ $sample['side_seal_1'] ?? '-' }}</td>
                                         <td>{{ $sample['side_seal_2'] ?? '-' }}</td>
                                         <td>{{ $sample['bottom_seal'] ?? '-' }}</td>
                                         <td>{{ $sample['bottom_high'] ?? '-' }}</td>
+                                        <td>{{ $sample['thickness_1'] ?? $sample['thickness'] ?? '-' }}</td>
+                                        <td>{{ $sample['thickness_2'] ?? '-' }}</td>
+                                        <td>{{ is_numeric($sample['berat'] ?? null) ? number_format((float) $sample['berat'], 2, '.', '') : ($sample['berat'] ?? '-') }}</td>
 
                                         @foreach ([
                                             'design',
                                             'warna',
                                             'tulisan',
-                                            'drop_test',
                                             'pretest',
+                                            'drop_test',
                                         ] as $field)
                                             @php
                                                 $value = $sample[$field] ?? null;

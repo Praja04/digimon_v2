@@ -37,14 +37,17 @@ class PackagingIncomingController extends Controller
             ->get();
 
         $jenisMaterials = JenisMaterial::query()
+            ->where('status', 1)
             ->orderBy('id')
             ->get();
 
         $suppliers = Supplier::query()
+            ->where('status', 1)
             ->orderBy('id')
             ->get();
 
         $samplingStatuses = SamplingStatus::query()
+            ->where('status', 1)
             ->orderBy('id')
             ->get();
 
@@ -394,6 +397,12 @@ class PackagingIncomingController extends Controller
         PackagingIncoming $packagingIncoming
     ): JsonResponse {
         $this->ensureForeman();
+        $packagingIncoming->loadMissing([
+            'supplier',
+            'jenisMaterial',
+            'jenisIncoming',
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -407,6 +416,9 @@ class PackagingIncomingController extends Controller
                     $packagingIncoming
                         ->jenis_incoming_id,
 
+                'jenis_incoming_nama' =>
+                    $packagingIncoming->jenisIncoming?->nama,
+
                 'jenis_incoming_lainnya' =>
                     $packagingIncoming
                         ->jenis_incoming_lainnya,
@@ -415,6 +427,10 @@ class PackagingIncomingController extends Controller
                     $packagingIncoming
                         ->supplier_id,
 
+                'supplier_nama' =>
+                    $packagingIncoming->supplier?->nama
+                    ?? $packagingIncoming->supplier?->nama_supplier,
+
                 'supplier_lainnya' =>
                     $packagingIncoming
                         ->supplier_lainnya,
@@ -422,6 +438,9 @@ class PackagingIncomingController extends Controller
                 'jenis_material_id' =>
                     $packagingIncoming
                         ->jenis_material_id,
+
+                'jenis_material_nama' =>
+                    $packagingIncoming->jenisMaterial?->nama,
 
                 'mid' =>
                     $packagingIncoming->mid,

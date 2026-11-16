@@ -38,6 +38,22 @@ class NonconformityTypeController extends Controller
                 })
 
                 ->addColumn('action', function (NonconformityType $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -48,16 +64,7 @@ class NonconformityTypeController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -170,11 +177,25 @@ class NonconformityTypeController extends Controller
     public function destroy(
         NonconformityType $nonconformityType
     ): JsonResponse {
-        $nonconformityType->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Jenis Ketidaksesuaian berhasil dihapus.',
-        ]);
+        try {
+            $nonconformityType->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jenis Ketidaksesuaian berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus Jenis Ketidaksesuaian: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

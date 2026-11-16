@@ -213,17 +213,17 @@
                                     <th rowspan="2">No. Sampel</th>
                                     <th rowspan="2">Panjang (mm)</th>
                                     <th rowspan="2">Lebar (mm)</th>
-                                    <th colspan="2">Thickness</th>
-                                    <th rowspan="2">Berat (g)</th>
                                     <th rowspan="2">Side Seal 1 (mm)</th>
                                     <th rowspan="2">Side Seal 2 (mm)</th>
                                     <th rowspan="2">Bottom Seal (mm)</th>
                                     <th rowspan="2">Bottom High (mm)</th>
+                                    <th colspan="2">Thickness</th>
+                                    <th rowspan="2">Berat (g)</th>
                                     <th rowspan="2">Design</th>
                                     <th rowspan="2">Warna</th>
                                     <th rowspan="2">Tulisan</th>
-                                    <th rowspan="2">Drop Test</th>
                                     <th rowspan="2">Press Test</th>
+                                    <th rowspan="2">Drop Test</th>
                                 </tr>
                                 <tr>
                                     <th>1</th>
@@ -737,7 +737,13 @@
             </div>
             </fieldset>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
+            <div class="d-flex justify-content-end align-items-center gap-2 mt-4">
+                <span id="autoSaveIndicator" class="small text-muted me-2 d-none">
+                    <span class="status-saving text-primary d-none"><i class="mdi mdi-cloud-sync-outline me-1"></i>Menyimpan otomatis...</span>
+                    <span class="status-saved text-success d-none"><i class="mdi mdi-cloud-check-outline me-1"></i>Tersimpan otomatis</span>
+                    <span class="status-offline text-muted d-none"><i class="mdi mdi-cloud-outline me-1"></i>Tersimpan di perangkat lokal</span>
+                </span>
+
                 <a href="{{ route('rmpm.pm.pouch') }}" class="btn btn-light">
                     <i class="mdi mdi-arrow-left me-1"></i>
                     Kembali
@@ -1067,23 +1073,6 @@ document.addEventListener('DOMContentLoaded', function () {
         samples = samples.slice(0, safeTotal);
         rowsContainer.innerHTML = '';
 
-        const fieldOrder = [
-            'panjang',
-            'lebar',
-            'thickness_1',
-            'thickness_2',
-            'berat',
-            'side_seal_1',
-            'side_seal_2',
-            'bottom_seal',
-            'bottom_high',
-            'design',
-            'warna',
-            'tulisan',
-            'drop_test',
-            'pretest'
-        ];
-
         for (let index = 0; index < safeTotal; index++) {
             const sample = samples[index] ?? {};
 
@@ -1101,18 +1090,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                     <td>${inputHtml(index, 'panjang', sample.panjang)}</td>
                     <td>${inputHtml(index, 'lebar', sample.lebar)}</td>
-                    <td>${inputHtml(index, 'thickness_1', sample.thickness_1 ?? sample.thickness)}</td>
-                    <td>${inputHtml(index, 'thickness_2', sample.thickness_2)}</td>
-                    <td>${inputHtml(index, 'berat', sample.berat)}</td>
                     <td>${inputHtml(index, 'side_seal_1', sample.side_seal_1)}</td>
                     <td>${inputHtml(index, 'side_seal_2', sample.side_seal_2)}</td>
                     <td>${inputHtml(index, 'bottom_seal', sample.bottom_seal)}</td>
                     <td>${inputHtml(index, 'bottom_high', sample.bottom_high)}</td>
+                    <td>${inputHtml(index, 'thickness_1', sample.thickness_1 ?? sample.thickness)}</td>
+                    <td>${inputHtml(index, 'thickness_2', sample.thickness_2)}</td>
+                    <td>${inputHtml(index, 'berat', sample.berat)}</td>
                     <td>${radioHtml(`samples[${index}][design]`, sample.design)}</td>
                     <td>${radioHtml(`samples[${index}][warna]`, sample.warna)}</td>
                     <td>${radioHtml(`samples[${index}][tulisan]`, sample.tulisan)}</td>
-                    <td>${radioHtml(`samples[${index}][drop_test]`, sample.drop_test)}</td>
                     <td>${radioHtml(`samples[${index}][pretest]`, sample.pretest)}</td>
+                    <td>${radioHtml(`samples[${index}][drop_test]`, sample.drop_test)}</td>
                 </tr>`
             );
         }
@@ -1818,10 +1807,135 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     );
 
+    function collectSamplesData() {
+        const collectedSamples = [];
+        const trList = rowsContainer.querySelectorAll('tr');
+        trList.forEach(function (tr) {
+            const sampleObj = {};
+            tr.querySelectorAll('input').forEach(function (input) {
+                const match = input.name && input.name.match(/^samples\[\d+\]\[([^\]]+)\]$/);
+                if (match) {
+                    const field = match[1];
+                    if (input.type === 'radio') {
+                        if (input.checked) {
+                            sampleObj[field] = input.value;
+                        }
+                    } else {
+                        sampleObj[field] = input.value;
+                    }
+                }
+            });
+            collectedSamples.push(sampleObj);
+        });
+        return collectedSamples;
+    }
+
+    // ─────────────────────────────────────────────
+    // AUTO-SAVE DRAFT IN BACKGROUND
+    // ─────────────────────────────────────────────
+    let autoSaveTimer = null;
+    let isAutoSaving = false;
+    let pendingAutoSave = false;
+
+    const autoSaveIndicator = document.getElementById('autoSaveIndicator');
+    function setAutoSaveStatus(status) {
+        if (!autoSaveIndicator) return;
+        autoSaveIndicator.classList.remove('d-none');
+        const saving = autoSaveIndicator.querySelector('.status-saving');
+        const saved = autoSaveIndicator.querySelector('.status-saved');
+        const offline = autoSaveIndicator.querySelector('.status-offline');
+        if (saving) saving.classList.toggle('d-none', status !== 'saving');
+        if (saved) saved.classList.toggle('d-none', status !== 'saved');
+        if (offline) offline.classList.toggle('d-none', status !== 'offline');
+    }
+
+    function scheduleAutoSave() {
+        if (isSamplingLocked) return;
+
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+        }
+
+        autoSaveTimer = setTimeout(function () {
+            executeAutoSave();
+        }, 1800);
+    }
+
+    async function executeAutoSave() {
+        if (isSamplingLocked) return;
+        if (isAutoSaving) {
+            pendingAutoSave = true;
+            return;
+        }
+
+        isAutoSaving = true;
+        setAutoSaveStatus('saving');
+
+        const formData = new FormData(form);
+        formData.set('save_mode', 'draft');
+        formData.set('is_auto_save', '1');
+
+        const collectedSamples = collectSamplesData();
+        for (const key of Array.from(formData.keys())) {
+            if (key.startsWith('samples[')) {
+                formData.delete(key);
+            }
+        }
+        formData.set('samples_json', JSON.stringify(collectedSamples));
+
+        // Hindari re-upload foto berulang pada background auto-save teks
+        formData.delete('foto_pengecekan');
+        for (const key of Array.from(formData.keys())) {
+            if (key.startsWith('foto[')) {
+                formData.delete(key);
+            }
+        }
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                setAutoSaveStatus('saved');
+            } else {
+                setAutoSaveStatus('offline');
+            }
+        } catch (err) {
+            setAutoSaveStatus('offline');
+        } finally {
+            isAutoSaving = false;
+            if (pendingAutoSave) {
+                pendingAutoSave = false;
+                scheduleAutoSave();
+            }
+        }
+    }
+
+    // Trigger auto-save on user typing or select change
+    form.addEventListener('input', function (event) {
+        if (event.target.type === 'file' || event.target.type === 'submit') return;
+        scheduleAutoSave();
+    });
+
+    form.addEventListener('change', function (event) {
+        if (event.target.type === 'file' || event.target.type === 'submit') return;
+        scheduleAutoSave();
+    });
+
     form.addEventListener(
         'submit',
         async function (event) {
             event.preventDefault();
+
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
 
             if (isSamplingLocked) {
                 showAlert(
@@ -1895,25 +2009,7 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
             // Kumpulkan data sample ke JSON untuk mencegah batas PHP max_input_vars (default 1000)
-            const collectedSamples = [];
-            const trList = rowsContainer.querySelectorAll('tr');
-            trList.forEach(function (tr) {
-                const sampleObj = {};
-                tr.querySelectorAll('input').forEach(function (input) {
-                    const match = input.name && input.name.match(/^samples\[\d+\]\[([^\]]+)\]$/);
-                    if (match) {
-                        const field = match[1];
-                        if (input.type === 'radio') {
-                            if (input.checked) {
-                                sampleObj[field] = input.value;
-                            }
-                        } else {
-                            sampleObj[field] = input.value;
-                        }
-                    }
-                });
-                collectedSamples.push(sampleObj);
-            });
+            const collectedSamples = collectSamplesData();
 
             for (const key of Array.from(formData.keys())) {
                 if (key.startsWith('samples[')) {
@@ -1965,6 +2061,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     );
                 }
 
+                setAutoSaveStatus('saved');
                 showAlert(
                     'success',
                     result.message
@@ -1983,6 +2080,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     error.message
                     ?? 'Terjadi kesalahan.'
                 );
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Tidak dapat disimpan',
+                        text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
+                    });
+                }
             } finally {
                 document
                     .querySelectorAll('.save-button')

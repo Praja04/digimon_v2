@@ -1730,9 +1730,17 @@ document.addEventListener(
                 + input.files.length
                 > 10
             ) {
-                alert(
-                    'Maksimal total 10 foto.'
-                );
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Maksimal total 10 foto.'
+                    });
+                } else {
+                    alert(
+                        'Maksimal total 10 foto.'
+                    );
+                }
 
                 input.value = '';
 
@@ -1967,7 +1975,15 @@ document.addEventListener(
 
                 const existingCount = targetInputId === 'foto' ? existingFotoCount : existingFotoKetidaksesuaianCount;
                 if (existingCount + targetInput.files.length >= 10) {
-                    alert('Maksimal total 10 foto.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Peringatan',
+                            text: 'Maksimal total 10 foto.'
+                        });
+                    } else {
+                        alert('Maksimal total 10 foto.');
+                    }
                     this.value = '';
                     return;
                 }
@@ -2322,6 +2338,13 @@ document.addEventListener(
                         error.message
                         ?? 'Terjadi kesalahan.'
                     );
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Tidak dapat disimpan',
+                            text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
+                        });
+                    }
                 } finally {
                     document
                         .querySelectorAll('.save-button')

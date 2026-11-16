@@ -1,95 +1,95 @@
 @extends('layouts.component.main')
 
 @section('title')
-    Pemeriksaan Inner / Outer
+Pemeriksaan Inner / Outer
 @endsection
 
 @section('content')
 
 @php
-    $jenisIncomingName = strtolower(
-        $packagingIncoming->jenisIncoming?->nama ?? ''
-    );
+$jenisIncomingName = strtolower(
+$packagingIncoming->jenisIncoming?->nama ?? ''
+);
 
-    $jenisMaterialName = strtolower(
-        $packagingIncoming->jenisMaterial?->nama ?? ''
-    );
+$jenisMaterialName = strtolower(
+$packagingIncoming->jenisMaterial?->nama ?? ''
+);
 
-    $isOuter =
-        (
-            str_contains($jenisIncomingName, 'outer')
-            && ! str_contains($jenisIncomingName, 'inner')
-        )
-        || str_contains($jenisMaterialName, 'outer');
+$isOuter =
+(
+str_contains($jenisIncomingName, 'outer')
+&& ! str_contains($jenisIncomingName, 'inner')
+)
+|| str_contains($jenisMaterialName, 'outer');
 
 
-    $existingFotoPengecekan = collect(
-        $sampling?->foto_pengecekan ?? []
-    )->filter()->values()->all();
+$existingFotoPengecekan = collect(
+$sampling?->foto_pengecekan ?? []
+)->filter()->values()->all();
 
-    $existingFotoKetidaksesuaian = collect(
-        $sampling?->foto_ketidaksesuaian ?? []
-    )->filter()->values()->all();
+$existingFotoKetidaksesuaian = collect(
+$sampling?->foto_ketidaksesuaian ?? []
+)->filter()->values()->all();
 
-    $samplePertama = collect($sampling?->hasil_sampel ?? [])->first() ?? [];
-    $barcodeValue = old('barcode', $samplePertama['barcode'] ?? '');
-    $qrCodeValue = old('qr_code', $samplePertama['qr_code'] ?? '');
+$samplePertama = collect($sampling?->hasil_sampel ?? [])->first() ?? [];
+$barcodeValue = old('barcode', $samplePertama['barcode'] ?? '');
+$qrCodeValue = old('qr_code', $samplePertama['qr_code'] ?? '');
 
-    $nonconformityOptions = [
-        'Miss Print',
-        'Berat Under',
-        'Dimensi Tidak Standar',
-        'Pitch Under',
-        'Delaminasi',
-        'Salah Design',
-        'Barcode Tidak Terbaca',
-    ];
+$nonconformityOptions = [
+'Miss Print',
+'Berat Under',
+'Dimensi Tidak Standar',
+'Pitch Under',
+'Delaminasi',
+'Salah Design',
+'Barcode Tidak Terbaca',
+];
 
-    $savedJenisKetidaksesuaian = collect(
-        $sampling?->jenis_ketidaksesuaian ?? []
-    )->filter()->values()->all();
+$savedJenisKetidaksesuaian = collect(
+$sampling?->jenis_ketidaksesuaian ?? []
+)->filter()->values()->all();
 
-    $customJenisTersimpan = collect(
-        $savedJenisKetidaksesuaian
-    )->first(
-        fn ($value) =>
-            ! in_array(
-                $value,
-                $nonconformityOptions,
-                true
-            )
-    );
+$customJenisTersimpan = collect(
+$savedJenisKetidaksesuaian
+)->first(
+fn ($value) =>
+! in_array(
+$value,
+$nonconformityOptions,
+true
+)
+);
 
-    $selectedJenisKetidaksesuaian = collect(
-        old(
-            'jenis_ketidaksesuaian',
-            $savedJenisKetidaksesuaian
-        )
-    )->filter()->values()->all();
+$selectedJenisKetidaksesuaian = collect(
+old(
+'jenis_ketidaksesuaian',
+$savedJenisKetidaksesuaian
+)
+)->filter()->values()->all();
 
-    $jenisLainnyaValue = old(
-        'jenis_ketidaksesuaian_lainnya',
-        $customJenisTersimpan
-    );
+$jenisLainnyaValue = old(
+'jenis_ketidaksesuaian_lainnya',
+$customJenisTersimpan
+);
 
-    $lainnyaSelected =
-        in_array(
-            'Lainnya',
-            $selectedJenisKetidaksesuaian,
-            true
-        )
-        || filled($jenisLainnyaValue);
+$lainnyaSelected =
+in_array(
+'Lainnya',
+$selectedJenisKetidaksesuaian,
+true
+)
+|| filled($jenisLainnyaValue);
 
-    $isForeman =
-        auth()->check()
-        && in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
+$isForeman =
+auth()->check()
+&& in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
 
-    $isFinal =
-        $sampling?->status_proses === 'final';
+$isFinal =
+$sampling?->status_proses === 'final';
 
-    $isLocked =
-        $isFinal
-        && ! $isForeman;
+$isLocked =
+$isFinal
+&& ! $isForeman;
 @endphp
 
 <div class="page-content">
@@ -135,26 +135,26 @@
         <div id="alertContainer" class="mb-3"></div>
 
         @if ($sampling?->status_proses === 'draft')
-            <div class="alert alert-warning">
-                <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                Data sementara ditemukan. Silakan lanjutkan pengisian lalu pilih
-                <strong>Simpan Final</strong>.
-            </div>
+        <div class="alert alert-warning">
+            <i class="mdi mdi-content-save-edit-outline me-1"></i>
+            Data sementara ditemukan. Silakan lanjutkan pengisian lalu pilih
+            <strong>Simpan Final</strong>.
+        </div>
         @endif
 
         @if ($isLocked)
-            <div class="alert alert-info">
-                <i class="mdi mdi-lock-outline me-1"></i>
-                Data sampling ini sudah <strong>Final</strong>.
-                Data hanya dapat dilihat. Koreksi data final hanya dapat dilakukan oleh
-                <strong>Foreman</strong>.
-            </div>
+        <div class="alert alert-info">
+            <i class="mdi mdi-lock-outline me-1"></i>
+            Data sampling ini sudah <strong>Final</strong>.
+            Data hanya dapat dilihat. Koreksi data final hanya dapat dilakukan oleh
+            <strong>Foreman</strong>.
+        </div>
         @elseif ($isFinal && $isForeman)
-            <div class="alert alert-warning">
-                <i class="mdi mdi-account-edit-outline me-1"></i>
-                Data sampling ini sudah <strong>Final</strong>.
-                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
-            </div>
+        <div class="alert alert-warning">
+            <i class="mdi mdi-account-edit-outline me-1"></i>
+            Data sampling ini sudah <strong>Final</strong>.
+            Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+        </div>
         @endif
 
         <div class="row mb-4">
@@ -172,8 +172,7 @@
 
                         <a
                             href="{{ route('rmpm.pm.inner-outer') }}"
-                            class="btn btn-primary px-4"
-                        >
+                            class="btn btn-primary px-4">
                             <i class="mdi mdi-arrow-left me-1"></i>
                             Kembali
                         </a>
@@ -189,308 +188,287 @@
                 'rmpm.pm.inner-outer.sampling.store',
                 $packagingIncoming
             ) }}"
-            enctype="multipart/form-data"
-        >
+            enctype="multipart/form-data">
             @csrf
 
             <fieldset
                 id="innerOuterSamplingFieldset"
-                @disabled($isLocked)
-            >
-            <div class="card border-0 shadow-sm sampling-card mb-4">
+                @disabled($isLocked)>
+                <div class="card border-0 shadow-sm sampling-card mb-4">
 
-                <div class="sampling-header">
-                    <div>
-                        <span class="sampling-label">
-                            PACKAGING MATERIAL
-                        </span>
+                    <div class="sampling-header">
+                        <div>
+                            <span class="sampling-label">
+                                PACKAGING MATERIAL
+                            </span>
 
-                        <h3 class="mb-1">
-                            {{ $isOuter ? 'OUTER' : 'INNER' }}
-                        </h3>
+                            <h3 class="mb-1">
+                                {{ $isOuter ? 'OUTER' : 'INNER' }}
+                            </h3>
 
-                        <p class="mb-0">
-                            Pemeriksaan incoming material
-                        </p>
-                    </div>
-
-                    <div class="sampling-header-icon">
-                        <i class="mdi mdi-clipboard-check-outline"></i>
-                    </div>
-                </div>
-
-                <div class="card-body p-4">
-
-                    <div class="section-title">
-                        <i class="mdi mdi-information-outline"></i>
-                        Identitas Incoming
-                    </div>
-
-                    <div class="row g-3 mb-4">
-
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">Nomor SPB</label>
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->no_spb }}"
-                                readonly
-                            >
+                            <p class="mb-0">
+                                Pemeriksaan incoming material
+                            </p>
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">Jenis Incoming</label>
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->jenisIncoming?->nama ?? '-' }}"
-                                readonly
-                            >
+                        <div class="sampling-header-icon">
+                            <i class="mdi mdi-clipboard-check-outline"></i>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+
+                        <div class="section-title">
+                            <i class="mdi mdi-information-outline"></i>
+                            Identitas Incoming
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">Supplier</label>
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{
+                        <div class="row g-3 mb-4">
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">Nomor SPB</label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->no_spb }}"
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">Jenis Incoming</label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->jenisIncoming?->nama ?? '-' }}"
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">Supplier</label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{
                                     $packagingIncoming->supplier?->nama
                                     ?? $packagingIncoming->supplier?->nama_supplier
                                     ?? '-'
                                 }}"
-                                readonly
-                            >
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">Nomor Mobil</label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->no_mobil ?? '-' }}"
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-6 col-md-6">
+                                <label class="form-label">MID</label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->mid ?? '-' }}"
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-6 col-md-6">
+                                <label class="form-label">Jenis Material</label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}"
+                                    readonly>
+                            </div>
+
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">Nomor Mobil</label>
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->no_mobil ?? '-' }}"
-                                readonly
-                            >
+                        <div class="section-title">
+                            <i class="mdi mdi-flask-outline"></i>
+                            Informasi Sampel
                         </div>
 
-                        <div class="col-xl-6 col-md-6">
-                            <label class="form-label">MID</label>
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->mid ?? '-' }}"
-                                readonly
-                            >
-                        </div>
-
-                        <div class="col-xl-6 col-md-6">
-                            <label class="form-label">Jenis Material</label>
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->jenisMaterial?->nama ?? '-' }}"
-                                readonly
-                            >
-                        </div>
-
-                    </div>
-
-                    <div class="section-title">
-                        <i class="mdi mdi-flask-outline"></i>
-                        Informasi Sampel
-                    </div>
-
-                    @php
+                        @php
                         $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
-                        $defaultInnerExpDate = $sampling?->exp_date 
-                            ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
-                            : ($packagingIncoming->exp_date 
-                                ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d') 
-                                : ($packagingIncoming->tanggal_kedatangan 
-                                    ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addMonths(6)->format('Y-m-d') 
-                                    : ''));
-                    @endphp
+                        $defaultInnerExpDate = $sampling?->exp_date
+                        ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d')
+                        : ($packagingIncoming->exp_date
+                        ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d')
+                        : ($packagingIncoming->tanggal_kedatangan
+                        ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addMonths(6)->format('Y-m-d')
+                        : ''));
+                        @endphp
 
-                    <div class="row g-3 mb-4">
+                        <div class="row g-3 mb-4">
 
-                        <div class="col-xl-3 col-md-6">
-                            <label
-                                for="jumlah_sampel"
-                                class="form-label"
-                            >
-                                Jumlah Sampel
-                            </label>
+                            <div class="col-xl-3 col-md-6">
+                                <label
+                                    for="jumlah_sampel"
+                                    class="form-label">
+                                    Jumlah Sampel
+                                </label>
 
-                            <input
-                                type="number"
-                                name="jumlah_sampel"
-                                id="jumlah_sampel"
-                                class="form-control bg-light"
-                                min="1"
-                                max="275"
-                                value="{{ $packagingIncoming->jumlah_sampel }}"
-                                readonly
-                                required
-                            >
+                                <input
+                                    type="number"
+                                    name="jumlah_sampel"
+                                    id="jumlah_sampel"
+                                    class="form-control bg-light"
+                                    min="1"
+                                    max="275"
+                                    value="{{ $packagingIncoming->jumlah_sampel }}"
+                                    readonly
+                                    required>
 
-                            <small class="text-muted d-block mt-1">
-                                Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
-                            </small>
-                        </div>
+                                <small class="text-muted d-block mt-1">
+                                    Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
+                                </small>
+                            </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label
-                                for="no_batch"
-                                class="form-label"
-                            >
-                                Nomor Batch
-                            </label>
+                            <div class="col-xl-3 col-md-6">
+                                <label
+                                    for="no_batch"
+                                    class="form-label">
+                                    Nomor Batch
+                                </label>
 
-                            <input
-                                type="text"
-                                name="no_batch"
-                                id="no_batch"
-                                class="form-control"
-                                value="{{ old(
+                                <input
+                                    type="text"
+                                    name="no_batch"
+                                    id="no_batch"
+                                    class="form-control"
+                                    value="{{ old(
                                     'no_batch',
                                     $sampling?->no_batch
                                 ) }}"
-                                placeholder="Masukkan nomor batch"
-                            >
-                        </div>
+                                    placeholder="Masukkan nomor batch">
+                            </div>
 
-                        <div class="col-xl-2 col-md-4">
-                            <label
-                                for="exp_date"
-                                class="form-label"
-                            >
-                                Exp Date
-                            </label>
+                            <div class="col-xl-2 col-md-4">
+                                <label
+                                    for="exp_date"
+                                    class="form-label">
+                                    Exp Date
+                                </label>
 
-                            <input
-                                type="date"
-                                name="exp_date"
-                                id="exp_date"
-                                class="form-control @if(!$isForeman) bg-light @endif"
-                                value="{{ old('exp_date', $defaultInnerExpDate) }}"
-                                @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif
-                            >
-                        </div>
+                                <input
+                                    type="date"
+                                    name="exp_date"
+                                    id="exp_date"
+                                    class="form-control @if(!$isForeman) bg-light @endif"
+                                    value="{{ old('exp_date', $defaultInnerExpDate) }}"
+                                    @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif>
+                            </div>
 
-                        <div class="col-xl-2 col-md-4">
-                            <label
-                                for="lot_sebelum"
-                                class="form-label"
-                            >
-                                Lot Sebelum
-                            </label>
+                            <div class="col-xl-2 col-md-4">
+                                <label
+                                    for="lot_sebelum"
+                                    class="form-label">
+                                    Lot Sebelum
+                                </label>
 
-                            <input
-                                type="text"
-                                name="lot_sebelum"
-                                id="lot_sebelum"
-                                class="form-control"
-                                value="{{ old(
+                                <input
+                                    type="text"
+                                    name="lot_sebelum"
+                                    id="lot_sebelum"
+                                    class="form-control"
+                                    value="{{ old(
                                     'lot_sebelum',
                                     $sampling?->lot_sebelum
                                 ) }}"
-                                placeholder="Masukkan lot sebelum"
-                            >
-                        </div>
+                                    placeholder="Masukkan lot sebelum">
+                            </div>
 
-                        <div class="col-xl-2 col-md-4">
-                            <label
-                                for="lot_setelah"
-                                class="form-label"
-                            >
-                                Lot Setelah
-                            </label>
+                            <div class="col-xl-2 col-md-4">
+                                <label
+                                    for="lot_setelah"
+                                    class="form-label">
+                                    Lot Setelah
+                                </label>
 
-                            <input
-                                type="text"
-                                name="lot_setelah"
-                                id="lot_setelah"
-                                class="form-control"
-                                value="{{ old(
+                                <input
+                                    type="text"
+                                    name="lot_setelah"
+                                    id="lot_setelah"
+                                    class="form-control"
+                                    value="{{ old(
                                     'lot_setelah',
                                     $sampling?->lot_setelah
                                 ) }}"
-                                placeholder="Masukkan lot setelah"
-                            >
-                        </div>
-
-                    </div>
-
-                    <div class="section-title">
-                        <i class="mdi mdi-ruler-square"></i>
-                        Hasil Pemeriksaan Sampel
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle inspection-table">
-                            <thead>
-                                <tr>
-                                    <th>No. Sampel</th>
-                                    <th>Berat Gross (Kg)</th>
-                                    <th>Inside Core (cm)</th>
-                                    <th>Lebar (mm)</th>
-                                    <th>Pitch (mm)</th>
-                                    <th>Thickness (Mikron)</th>
-                                    <th>Bonding Strength</th>
-                                    <th>Sealing Strength</th>
-                                    <th>Laminasi</th>
-                                    <th>Stability Test</th>
-                                    <th>Design</th>
-                                    <th>Warna</th>
-                                    <th>Tulisan</th>
-                                </tr>
-                            </thead>
-
-                            <tbody id="sampleRows"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="row g-3 mt-3">
-                        <div class="col-12">
-                            <label class="form-label">
-                                Foto Pengecekan
-                                <span class="text-danger">*</span>
-                            </label>
-
-                            <div class="d-flex flex-wrap gap-2 mb-2">
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-primary btn-camera-photo"
-                                    data-target="foto_pengecekan"
-                                >
-                                    <i class="mdi mdi-camera-outline me-1"></i>
-                                    Gunakan Kamera
-                                </button>
-
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-secondary btn-file-photo"
-                                    data-target="foto_pengecekan"
-                                >
-                                    <i class="mdi mdi-folder-image me-1"></i>
-                                    Pilih File
-                                </button>
+                                    placeholder="Masukkan lot setelah">
                             </div>
 
-                            <input
-                                type="file"
-                                name="foto_pengecekan[]"
-                                id="foto_pengecekan"
-                                class="d-none multi-photo-input"
-                                accept="image/*"
-                                multiple
-                                data-existing-count="{{ count($existingFotoPengecekan) }}"
-                            >
+                        </div>
 
-                            <small class="text-muted d-block">
-                                Maksimal 10 foto. Wajib minimal 1 foto untuk Simpan Final.
-                            </small>
+                        <div class="section-title">
+                            <i class="mdi mdi-ruler-square"></i>
+                            Hasil Pemeriksaan Sampel
+                        </div>
 
-                            @if (count($existingFotoPengecekan) > 0)
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle inspection-table">
+                                <thead>
+                                    <tr>
+                                        <th>No. Sampel</th>
+                                        <th>Berat Gross (Kg)</th>
+                                        <th>Inside Core (cm)</th>
+                                        <th>Lebar (mm)</th>
+                                        <th>Pitch (mm)</th>
+                                        <th>Thickness (Mikron)</th>
+                                        <th>Bonding Strength</th>
+                                        <th>Sealing Strength</th>
+                                        <th>Laminasi</th>
+                                        <th>Stability Test</th>
+                                        <th>Design</th>
+                                        <th>Warna</th>
+                                        <th>Tulisan</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="sampleRows"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-12">
+                                <label class="form-label">
+                                    Foto Pengecekan
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary btn-camera-photo"
+                                        data-target="foto_pengecekan">
+                                        <i class="mdi mdi-camera-outline me-1"></i>
+                                        Gunakan Kamera
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary btn-file-photo"
+                                        data-target="foto_pengecekan">
+                                        <i class="mdi mdi-folder-image me-1"></i>
+                                        Pilih File
+                                    </button>
+                                </div>
+
+                                <input
+                                    type="file"
+                                    name="foto_pengecekan[]"
+                                    id="foto_pengecekan"
+                                    class="d-none multi-photo-input"
+                                    accept="image/*"
+                                    multiple
+                                    data-existing-count="{{ count($existingFotoPengecekan) }}">
+
+                                <small class="text-muted d-block">
+                                    Maksimal 10 foto. Wajib minimal 1 foto untuk Simpan Final.
+                                </small>
+
+                                @if (count($existingFotoPengecekan) > 0)
                                 <div class="saved-photo-wrap mt-3">
                                     <div class="fw-semibold mb-2">
                                         Foto Pengecekan Tersimpan
@@ -498,294 +476,271 @@
 
                                     <div class="photo-preview-grid">
                                         @foreach ($existingFotoPengecekan as $index => $photo)
-                                            <a
-                                                href="{{ asset('storage/' . $photo) }}"
-                                                target="_blank"
-                                                rel="noopener"
-                                                class="photo-preview-item"
-                                            >
-                                                <img
-                                                    src="{{ asset('storage/' . $photo) }}"
-                                                    alt="Foto Pengecekan {{ $index + 1 }}"
-                                                >
-                                            </a>
+                                        <a
+                                            href="{{ asset('storage/' . $photo) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="photo-preview-item">
+                                            <img
+                                                src="{{ asset('storage/' . $photo) }}"
+                                                alt="Foto Pengecekan {{ $index + 1 }}">
+                                        </a>
                                         @endforeach
                                     </div>
                                 </div>
-                            @endif
+                                @endif
 
-                            <div
-                                id="foto_pengecekan_preview"
-                                class="d-flex flex-column gap-2 mt-2"
-                            ></div>
-                        </div>
-                    </div>
-
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-barcode-scan"></i>
-                        Pemeriksaan QR Code & Barcode
-                    </div>
-
-                    <div class="inspection-note mb-3">
-                        <small class="text-muted d-block">
-                            QR Code dan Barcode cukup diperiksa pada
-                            <strong>1 sampel</strong> untuk setiap SPB.
-                            Scanner fisik dapat langsung digunakan pada field di bawah
-                            karena terbaca sebagai input keyboard/HID.
-                        </small>
-                    </div>
-
-                    <div class="row g-3 mb-4">
-                        <div class="col-xl-6 col-md-6">
-                            <label
-                                for="barcode"
-                                class="form-label fw-semibold"
-                            >
-                                Barcode
-                            </label>
-
-                            <input
-                                type="text"
-                                name="barcode"
-                                id="barcode"
-                                class="form-control"
-                                maxlength="500"
-                                autocomplete="off"
-                                value="{{ $barcodeValue }}"
-                                placeholder="Scan atau ketik Barcode"
-                            >
+                                <div
+                                    id="foto_pengecekan_preview"
+                                    class="d-flex flex-column gap-2 mt-2"></div>
+                            </div>
                         </div>
 
-                        <div class="col-xl-6 col-md-6">
-                            <label
-                                for="qr_code"
-                                class="form-label fw-semibold"
-                            >
-                                QR Code
-                            </label>
-
-                            <input
-                                type="text"
-                                name="qr_code"
-                                id="qr_code"
-                                class="form-control"
-                                maxlength="500"
-                                autocomplete="off"
-                                value="{{ $qrCodeValue }}"
-                                placeholder="Scan atau ketik QR Code"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="inspection-note mt-3">
-                        <small class="text-muted d-block">
-                            Jumlah baris otomatis mengikuti field
-                            <strong>Jumlah Sampel</strong>.
-                        </small>
-
-                        <small class="text-muted d-block">
-                            Field <strong>Pitch</strong> dapat diisi bebas sesuai hasil pemeriksaan.
-                        </small>
-                    </div>
-
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-clipboard-check-outline"></i>
-                        Kesimpulan Pemeriksaan
-                    </div>
-
-                    <div class="row g-3">
-
-                        <div class="col-xl-3 col-md-6">
-                            <label for="coa" class="form-label">CoA</label>
-                            <select name="coa" id="coa" class="form-select">
-                                <option value="">Pilih status CoA</option>
-                                <option value="Ada" @selected($sampling?->coa === 'Ada')>Ada</option>
-                                <option value="Tidak Ada" @selected($sampling?->coa === 'Tidak Ada')>Tidak Ada</option>
-                            </select>
+                        <div class="section-title mt-4">
+                            <i class="mdi mdi-barcode-scan"></i>
+                            Pemeriksaan QR Code & Barcode
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label
-                                for="rekomendasi"
-                                class="form-label"
-                            >
-                                Rekomendasi
-                            </label>
+                        <div class="inspection-note mb-3">
+                            <small class="text-muted d-block">
+                                QR Code dan Barcode cukup diperiksa pada
+                                <strong>1 sampel</strong> untuk setiap SPB.
+                                Scanner fisik dapat langsung digunakan pada field di bawah
+                                karena terbaca sebagai input keyboard/HID.
+                            </small>
+                        </div>
 
-                            <select
-                                name="rekomendasi"
-                                id="rekomendasi"
-                                class="form-select"
-                                required
-                            >
-                                <option value="">Pilih rekomendasi</option>
-                                @foreach ([
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-6 col-md-6">
+                                <label
+                                    for="barcode"
+                                    class="form-label fw-semibold">
+                                    Barcode
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="barcode"
+                                    id="barcode"
+                                    class="form-control"
+                                    maxlength="500"
+                                    autocomplete="off"
+                                    value="{{ $barcodeValue }}"
+                                    placeholder="Scan atau ketik Barcode">
+                            </div>
+
+                            <div class="col-xl-6 col-md-6">
+                                <label
+                                    for="qr_code"
+                                    class="form-label fw-semibold">
+                                    QR Code
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="qr_code"
+                                    id="qr_code"
+                                    class="form-control"
+                                    maxlength="500"
+                                    autocomplete="off"
+                                    value="{{ $qrCodeValue }}"
+                                    placeholder="Scan atau ketik QR Code">
+                            </div>
+                        </div>
+
+                        <div class="inspection-note mt-3">
+                            <small class="text-muted d-block">
+                                Jumlah baris otomatis mengikuti field
+                                <strong>Jumlah Sampel</strong>.
+                            </small>
+
+                            <small class="text-muted d-block">
+                                Field <strong>Pitch</strong> dapat diisi bebas sesuai hasil pemeriksaan.
+                            </small>
+                        </div>
+
+                        <div class="section-title mt-4">
+                            <i class="mdi mdi-clipboard-check-outline"></i>
+                            Kesimpulan Pemeriksaan
+                        </div>
+
+                        <div class="row g-3">
+
+                            <div class="col-xl-3 col-md-6">
+                                <label for="coa" class="form-label">CoA</label>
+                                <select name="coa" id="coa" class="form-select">
+                                    <option value="">Pilih status CoA</option>
+                                    <option value="Ada" @selected($sampling?->coa === 'Ada')>Ada</option>
+                                    <option value="Tidak Ada" @selected($sampling?->coa === 'Tidak Ada')>Tidak Ada</option>
+                                </select>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label
+                                    for="rekomendasi"
+                                    class="form-label">
+                                    Rekomendasi
+                                </label>
+
+                                <select
+                                    name="rekomendasi"
+                                    id="rekomendasi"
+                                    class="form-select"
+                                    required>
+                                    <option value="">Pilih rekomendasi</option>
+                                    @foreach ([
                                     'Diterima',
                                     'Diterima Bersyarat',
                                     'Ditolak',
-                                ] as $option)
+                                    ] as $option)
                                     <option
                                         value="{{ $option }}"
                                         @selected($sampling?->rekomendasi === $option)
-                                    >
+                                        >
                                         {{ $option }}
                                     </option>
-                                @endforeach
-                            </select>
-                        </div>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label
-                                for="konfirmasi_ketidaksesuaian"
-                                class="form-label"
-                            >
-                                Konfirmasi Ketidaksesuaian
-                            </label>
+                            <div class="col-xl-3 col-md-6">
+                                <label
+                                    for="konfirmasi_ketidaksesuaian"
+                                    class="form-label">
+                                    Konfirmasi Ketidaksesuaian
+                                </label>
 
-                            <select
-                                name="konfirmasi_ketidaksesuaian"
-                                id="konfirmasi_ketidaksesuaian"
-                                class="form-select"
-                            >
-                                <option value="">Pilih konfirmasi</option>
-                                <option
-                                    value="Ada"
-                                    @selected(
+                                <select
+                                    name="konfirmasi_ketidaksesuaian"
+                                    id="konfirmasi_ketidaksesuaian"
+                                    class="form-select">
+                                    <option value="">Pilih konfirmasi</option>
+                                    <option
+                                        value="Ada"
+                                        @selected(
                                         $sampling?->konfirmasi_ketidaksesuaian === 'Ada'
-                                    )
-                                >
-                                    Ada
-                                </option>
-                                <option
-                                    value="Tidak Ada"
-                                    @selected(
+                                        )
+                                        >
+                                        Ada
+                                    </option>
+                                    <option
+                                        value="Tidak Ada"
+                                        @selected(
                                         $sampling?->konfirmasi_ketidaksesuaian === 'Tidak Ada'
-                                    )
-                                >
-                                    Tidak Ada
-                                </option>
-                            </select>
-                        </div>
+                                        )
+                                        >
+                                        Tidak Ada
+                                    </option>
+                                </select>
+                            </div>
 
-                        <div class="col-xl-6 col-12">
-                            <label class="form-label">
-                                Jenis Ketidaksesuaian
-                            </label>
+                            <div class="col-xl-6 col-12">
+                                <label class="form-label">
+                                    Jenis Ketidaksesuaian
+                                </label>
 
-                            <div
-                                id="jenisKetidaksesuaianGroup"
-                                class="nonconformity-grid"
-                            >
-                                @foreach ($nonconformityOptions as $option)
+                                <div
+                                    id="jenisKetidaksesuaianGroup"
+                                    class="nonconformity-grid">
+                                    @foreach ($nonconformityOptions as $option)
                                     <label class="nonconformity-option">
                                         <input
                                             type="checkbox"
                                             name="jenis_ketidaksesuaian[]"
                                             value="{{ $option }}"
                                             class="jenis-ketidaksesuaian-checkbox"
-                                            @checked(in_array($option, $selectedJenisKetidaksesuaian, true))
-                                        >
+                                            @checked(in_array($option, $selectedJenisKetidaksesuaian, true))>
 
                                         <span>{{ $option }}</span>
                                     </label>
-                                @endforeach
+                                    @endforeach
 
-                                <label class="nonconformity-option">
+                                    <label class="nonconformity-option">
+                                        <input
+                                            type="checkbox"
+                                            name="jenis_ketidaksesuaian[]"
+                                            value="Lainnya"
+                                            id="jenisKetidaksesuaianLainnyaCheckbox"
+                                            class="jenis-ketidaksesuaian-checkbox"
+                                            @checked($lainnyaSelected)>
+
+                                        <span>Lainnya</span>
+                                    </label>
+                                </div>
+
+                                <div
+                                    id="jenisKetidaksesuaianLainnyaWrap"
+                                    class="mt-3 {{ $lainnyaSelected ? '' : 'd-none' }}">
+                                    <label
+                                        for="jenis_ketidaksesuaian_lainnya"
+                                        class="form-label">
+                                        Jenis Ketidaksesuaian Lainnya
+                                        <span class="text-danger">*</span>
+                                    </label>
+
                                     <input
-                                        type="checkbox"
-                                        name="jenis_ketidaksesuaian[]"
-                                        value="Lainnya"
-                                        id="jenisKetidaksesuaianLainnyaCheckbox"
-                                        class="jenis-ketidaksesuaian-checkbox"
-                                        @checked($lainnyaSelected)
-                                    >
+                                        type="text"
+                                        name="jenis_ketidaksesuaian_lainnya"
+                                        id="jenis_ketidaksesuaian_lainnya"
+                                        class="form-control"
+                                        value="{{ $jenisLainnyaValue }}"
+                                        maxlength="255"
+                                        placeholder="Tulis jenis ketidaksesuaian lainnya">
 
-                                    <span>Lainnya</span>
-                                </label>
-                            </div>
+                                    <small class="text-muted d-block mt-1">
+                                        Isi jenis ketidaksesuaian yang belum tersedia pada pilihan.
+                                    </small>
+                                </div>
 
-                            <div
-                                id="jenisKetidaksesuaianLainnyaWrap"
-                                class="mt-3 {{ $lainnyaSelected ? '' : 'd-none' }}"
-                            >
-                                <label
-                                    for="jenis_ketidaksesuaian_lainnya"
-                                    class="form-label"
-                                >
-                                    Jenis Ketidaksesuaian Lainnya
-                                    <span class="text-danger">*</span>
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="jenis_ketidaksesuaian_lainnya"
-                                    id="jenis_ketidaksesuaian_lainnya"
-                                    class="form-control"
-                                    value="{{ $jenisLainnyaValue }}"
-                                    maxlength="255"
-                                    placeholder="Tulis jenis ketidaksesuaian lainnya"
-                                >
-
-                                <small class="text-muted d-block mt-1">
-                                    Isi jenis ketidaksesuaian yang belum tersedia pada pilihan.
+                                <small
+                                    id="jenisKetidaksesuaianHelp"
+                                    class="text-muted d-block mt-1">
+                                    Bisa memilih lebih dari satu.
                                 </small>
                             </div>
 
-                            <small
-                                id="jenisKetidaksesuaianHelp"
-                                class="text-muted d-block mt-1"
-                            >
-                                Bisa memilih lebih dari satu.
-                            </small>
-                        </div>
+                            <div class="col-xl-6 col-12">
+                                <label class="form-label">
+                                    Foto Ketidaksesuaian
+                                    <span
+                                        id="fotoKetidaksesuaianRequired"
+                                        class="text-danger d-none">*</span>
+                                </label>
 
-                        <div class="col-xl-6 col-12">
-                            <label class="form-label">
-                                Foto Ketidaksesuaian
-                                <span
-                                    id="fotoKetidaksesuaianRequired"
-                                    class="text-danger d-none"
-                                >*</span>
-                            </label>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary btn-camera-photo"
+                                        data-target="foto_ketidaksesuaian">
+                                        <i class="mdi mdi-camera-outline me-1"></i>
+                                        Gunakan Kamera
+                                    </button>
 
-                            <div class="d-flex flex-wrap gap-2 mb-2">
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-primary btn-camera-photo"
-                                    data-target="foto_ketidaksesuaian"
-                                >
-                                    <i class="mdi mdi-camera-outline me-1"></i>
-                                    Gunakan Kamera
-                                </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary btn-file-photo"
+                                        data-target="foto_ketidaksesuaian">
+                                        <i class="mdi mdi-folder-image me-1"></i>
+                                        Pilih File
+                                    </button>
+                                </div>
 
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-secondary btn-file-photo"
-                                    data-target="foto_ketidaksesuaian"
-                                >
-                                    <i class="mdi mdi-folder-image me-1"></i>
-                                    Pilih File
-                                </button>
-                            </div>
+                                <input
+                                    type="file"
+                                    name="foto_ketidaksesuaian[]"
+                                    id="foto_ketidaksesuaian"
+                                    class="d-none multi-photo-input"
+                                    accept="image/*"
+                                    multiple
+                                    data-existing-count="{{ count($existingFotoKetidaksesuaian) }}">
 
-                            <input
-                                type="file"
-                                name="foto_ketidaksesuaian[]"
-                                id="foto_ketidaksesuaian"
-                                class="d-none multi-photo-input"
-                                accept="image/*"
-                                multiple
-                                data-existing-count="{{ count($existingFotoKetidaksesuaian) }}"
-                            >
+                                <small
+                                    id="fotoKetidaksesuaianHelp"
+                                    class="text-muted d-block">
+                                    Maksimal 10 foto. Tidak wajib apabila tidak terdapat ketidaksesuaian.
+                                </small>
 
-                            <small
-                                id="fotoKetidaksesuaianHelp"
-                                class="text-muted d-block"
-                            >
-                                Maksimal 10 foto. Tidak wajib apabila tidak terdapat ketidaksesuaian.
-                            </small>
-
-                            @if (count($existingFotoKetidaksesuaian) > 0)
+                                @if (count($existingFotoKetidaksesuaian) > 0)
                                 <div class="saved-photo-wrap mt-3">
                                     <div class="fw-semibold mb-2">
                                         Foto Ketidaksesuaian Tersimpan
@@ -793,86 +748,84 @@
 
                                     <div class="photo-preview-grid">
                                         @foreach ($existingFotoKetidaksesuaian as $index => $photo)
-                                            <a
-                                                href="{{ asset('storage/' . $photo) }}"
-                                                target="_blank"
-                                                rel="noopener"
-                                                class="photo-preview-item"
-                                            >
-                                                <img
-                                                    src="{{ asset('storage/' . $photo) }}"
-                                                    alt="Foto Ketidaksesuaian {{ $index + 1 }}"
-                                                >
-                                            </a>
+                                        <a
+                                            href="{{ asset('storage/' . $photo) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="photo-preview-item">
+                                            <img
+                                                src="{{ asset('storage/' . $photo) }}"
+                                                alt="Foto Ketidaksesuaian {{ $index + 1 }}">
+                                        </a>
                                         @endforeach
                                     </div>
                                 </div>
-                            @endif
+                                @endif
 
-                            <div
-                                id="foto_ketidaksesuaian_preview"
-                                class="d-flex flex-column gap-2 mt-2"
-                            ></div>
-                        </div>
+                                <div
+                                    id="foto_ketidaksesuaian_preview"
+                                    class="d-flex flex-column gap-2 mt-2"></div>
+                            </div>
 
-                        <div class="col-xl-6 col-12">
-                            <label
-                                for="keterangan"
-                                class="form-label"
-                            >
-                                Keterangan
-                            </label>
+                            <div class="col-xl-6 col-12">
+                                <label
+                                    for="keterangan"
+                                    class="form-label">
+                                    Keterangan
+                                </label>
 
-                            <textarea
-                                name="keterangan"
-                                id="keterangan"
-                                class="form-control"
-                                rows="4"
-                                placeholder="Masukkan keterangan pemeriksaan"
-                            >{{ old(
+                                <textarea
+                                    name="keterangan"
+                                    id="keterangan"
+                                    class="form-control"
+                                    rows="4"
+                                    placeholder="Masukkan keterangan pemeriksaan">{{ old(
                                 'keterangan',
                                 $sampling?->keterangan
                             ) }}</textarea>
-                        </div>
+                            </div>
 
+                        </div>
                     </div>
                 </div>
-            </div>
             </fieldset>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
+            <div class="d-flex justify-content-end align-items-center gap-2 mt-4">
+                <span id="autoSaveIndicator" class="small text-muted me-2 d-none">
+                    <span class="status-saving text-primary d-none"><i class="mdi mdi-cloud-sync-outline me-1"></i>Menyimpan otomatis...</span>
+                    <span class="status-saved text-success d-none"><i class="mdi mdi-cloud-check-outline me-1"></i>Tersimpan otomatis</span>
+                    <span class="status-offline text-muted d-none"><i class="mdi mdi-cloud-outline me-1"></i>Tersimpan di perangkat lokal</span>
+                </span>
+
                 <a
                     href="{{ route('rmpm.pm.inner-outer') }}"
-                    class="btn btn-light"
-                >
+                    class="btn btn-light">
                     <i class="mdi mdi-arrow-left me-1"></i>
                     Kembali
                 </a>
 
                 @if (! $isLocked)
-                    @if (! $isFinal)
-                        <button
-                            type="submit"
-                            value="draft"
-                            class="btn btn-warning px-4 save-button"
-                            formnovalidate
-                        >
-                            <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                            Simpan Sementara
-                        </button>
-                    @endif
+                @if (! $isFinal)
+                <button
+                    type="submit"
+                    value="draft"
+                    class="btn btn-warning px-4 save-button"
+                    formnovalidate>
+                    <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                    Simpan Sementara
+                </button>
+                @endif
 
-                    <button
-                        type="submit"
-                        value="final"
-                        id="submitButton"
-                        class="btn btn-primary px-4 save-button"
-                    >
-                        <i class="mdi mdi-check-circle-outline me-1"></i>
-                        {{ $isFinal && $isForeman
+                <button
+                    type="submit"
+                    value="final"
+                    id="submitButton"
+                    class="btn btn-primary px-4 save-button">
+                    <i class="mdi mdi-check-circle-outline me-1"></i>
+                    {{ $isFinal && $isForeman
                             ? 'Simpan Koreksi'
                             : 'Simpan Final' }}
-                    </button>
+                </button>
                 @endif
             </div>
         </form>
@@ -894,8 +847,7 @@
                     id="photoCameraPreview"
                     autoplay
                     playsinline
-                    class="camera-video"
-                ></video>
+                    class="camera-video"></video>
 
                 <canvas id="photoCameraCanvas" hidden></canvas>
             </div>
@@ -904,8 +856,7 @@
                 <button
                     type="button"
                     class="btn btn-primary"
-                    id="btnTakePhoto"
-                >
+                    id="btnTakePhoto">
                     <i class="mdi mdi-camera me-1"></i>
                     Ambil Foto
                 </button>
@@ -1175,7 +1126,7 @@
 @section('scripts')
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const isSamplingLocked = @json($isLocked);
         const form = document.getElementById(
             'innerOuterSamplingForm'
@@ -1222,12 +1173,12 @@
         const isOuter = @json($isOuter);
 
         const savedSamples = @json(
-            $sampling?->hasil_sampel ?? []
+            $sampling ? - > hasil_sampel ?? []
         );
 
-        let samples = Array.isArray(savedSamples)
-            ? savedSamples
-            : [];
+        let samples = Array.isArray(savedSamples) ?
+            savedSamples :
+            [];
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -1301,11 +1252,11 @@
             const isTwoDecimals = field === 'bonding_strength' || field === 'sealing_strength' || field === 'thickness' || field === 'inside_core' || field === 'lebar';
             const actualStep = isGross ? '0.1' : (step || '0.01');
             const actualPlaceholder = placeholder || (isGross ? '0.0' : (isTwoDecimals ? '0.00' : ''));
-            const onInputAttr = isGross
-                ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 1){ this.value = parts[0] + '.' + parts[1].slice(0, 1); } }"`
-                : (isTwoDecimals
-                    ? `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"`
-                    : '');
+            const onInputAttr = isGross ?
+                `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 1){ this.value = parts[0] + '.' + parts[1].slice(0, 1); } }"` :
+                (isTwoDecimals ?
+                    `oninput="if(this.value.includes('.')){ const parts = this.value.split('.'); if(parts[1].length > 2){ this.value = parts[0] + '.' + parts[1].slice(0, 2); } }"` :
+                    '');
 
             return `
                 <input
@@ -1464,15 +1415,15 @@
 
             sampleRows
                 .querySelectorAll('.option-radio input[type="radio"]')
-                .forEach(function (radio) {
-                    radio.addEventListener('change', function () {
+                .forEach(function(radio) {
+                    radio.addEventListener('change', function() {
                         const group =
                             radio.closest('.option-radio-group');
 
                         if (group) {
                             group
                                 .querySelectorAll('.option-radio')
-                                .forEach(function (label) {
+                                .forEach(function(label) {
                                     label.classList.remove('is-selected');
                                 });
                         }
@@ -1554,7 +1505,7 @@
                 return elements.filter(el => isVisibleAndEditable(el));
             }
 
-            formElement.addEventListener('keydown', function (event) {
+            formElement.addEventListener('keydown', function(event) {
                 const target = event.target;
                 if (!target) return;
 
@@ -1695,16 +1646,15 @@
 
         function updateLainnyaField() {
             const showLainnya =
-                konfirmasiSelect.value === 'Ada'
-                && lainnyaCheckbox.checked;
+                konfirmasiSelect.value === 'Ada' &&
+                lainnyaCheckbox.checked;
 
             lainnyaWrap.classList.toggle(
                 'd-none',
                 !showLainnya
             );
 
-            lainnyaInput.disabled =
-                !showLainnya;
+            lainnyaInput.disabled = !showLainnya;
 
             lainnyaInput.required =
                 showLainnya;
@@ -1720,7 +1670,7 @@
 
             jenisKetidaksesuaianGroup
                 .querySelectorAll('input[type="checkbox"]')
-                .forEach(function (checkbox) {
+                .forEach(function(checkbox) {
                     checkbox.disabled = !adaKetidaksesuaian;
 
                     if (!adaKetidaksesuaian) {
@@ -1733,13 +1683,13 @@
                 !adaKetidaksesuaian
             );
 
-            jenisKetidaksesuaianHelp.textContent = adaKetidaksesuaian
-                ? 'Pilih satu atau lebih jenis ketidaksesuaian.'
-                : 'Tidak perlu dipilih apabila tidak terdapat ketidaksesuaian.';
+            jenisKetidaksesuaianHelp.textContent = adaKetidaksesuaian ?
+                'Pilih satu atau lebih jenis ketidaksesuaian.' :
+                'Tidak perlu dipilih apabila tidak terdapat ketidaksesuaian.';
 
-            fotoKetidaksesuaianHelp.textContent = adaKetidaksesuaian
-                ? 'Wajib minimal 1 foto. Maksimal 10 foto.'
-                : 'Tidak wajib apabila hasil pemeriksaan sesuai.';
+            fotoKetidaksesuaianHelp.textContent = adaKetidaksesuaian ?
+                'Wajib minimal 1 foto. Maksimal 10 foto.' :
+                'Tidak wajib apabila hasil pemeriksaan sesuai.';
 
             updateLainnyaField();
         }
@@ -1751,16 +1701,24 @@
 
             const dataTransfer = new DataTransfer();
 
-            Array.from(input.files ?? []).forEach(function (file) {
+            Array.from(input.files ?? []).forEach(function(file) {
                 dataTransfer.items.add(file);
             });
 
-            Array.from(files ?? []).forEach(function (file) {
+            Array.from(files ?? []).forEach(function(file) {
                 dataTransfer.items.add(file);
             });
 
             if (existingCount + dataTransfer.files.length > 10) {
-                alert('Total foto maksimal 10.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Total foto maksimal 10.'
+                    });
+                } else {
+                    alert('Total foto maksimal 10.');
+                }
                 return false;
             }
 
@@ -1773,9 +1731,9 @@
         function formatFileSize(bytes) {
             if (!bytes || bytes === 0) return '0 KB';
             const sizeInKb = (bytes / 1024).toFixed(1);
-            return (bytes >= 1024 * 1024)
-                ? (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-                : sizeInKb + ' KB';
+            return (bytes >= 1024 * 1024) ?
+                (bytes / (1024 * 1024)).toFixed(2) + ' MB' :
+                sizeInKb + ' KB';
         }
 
         function renderSelectedPhotos(input) {
@@ -1789,7 +1747,7 @@
             const files = Array.from(input.files ?? []);
             if (files.length === 0) return;
 
-            files.forEach(function (file, index) {
+            files.forEach(function(file, index) {
                 const card = document.createElement('div');
                 card.className = 'd-flex align-items-center gap-3 p-2 border rounded bg-light';
                 card.style.maxWidth = '480px';
@@ -1819,7 +1777,7 @@
                 btnHapus.type = 'button';
                 btnHapus.className = 'btn btn-xs btn-outline-danger mt-1 py-0 px-2';
                 btnHapus.innerHTML = '<i class="mdi mdi-delete-outline me-1"></i> Hapus Foto';
-                btnHapus.addEventListener('click', function () {
+                btnHapus.addEventListener('click', function() {
                     const dt = new DataTransfer();
                     Array.from(input.files ?? []).forEach((f, i) => {
                         if (i !== index) dt.items.add(f);
@@ -1839,8 +1797,8 @@
         }
 
         document.querySelectorAll('.btn-file-photo')
-            .forEach(function (button) {
-                button.addEventListener('click', function () {
+            .forEach(function(button) {
+                button.addEventListener('click', function() {
                     document.getElementById(
                         this.dataset.target
                     ).click();
@@ -1848,15 +1806,23 @@
             });
 
         document.querySelectorAll('.multi-photo-input')
-            .forEach(function (input) {
-                input.addEventListener('change', function () {
+            .forEach(function(input) {
+                input.addEventListener('change', function() {
                     const selectedFiles = Array.from(this.files ?? []);
                     const existingCount = Number(
                         this.dataset.existingCount ?? 0
                     );
 
                     if (existingCount + selectedFiles.length > 10) {
-                        alert('Total foto maksimal 10.');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Peringatan',
+                                text: 'Total foto maksimal 10.'
+                            });
+                        } else {
+                            alert('Total foto maksimal 10.');
+                        }
                         this.value = '';
                         renderSelectedPhotos(this);
                         return;
@@ -1870,7 +1836,7 @@
 
         function triggerNativeCameraInnerOuter(targetInput) {
             if (!nativeCameraInnerOuter) return;
-            nativeCameraInnerOuter.onchange = function () {
+            nativeCameraInnerOuter.onchange = function() {
                 if (this.files && this.files.length > 0) {
                     if (mergeFiles(targetInput, Array.from(this.files))) {
                         renderSelectedPhotos(targetInput);
@@ -1882,8 +1848,8 @@
         }
 
         document.querySelectorAll('.btn-camera-photo')
-            .forEach(function (button) {
-                button.addEventListener('click', async function () {
+            .forEach(function(button) {
+                button.addEventListener('click', async function() {
                     activePhotoInput = document.getElementById(
                         this.dataset.target
                     );
@@ -1913,7 +1879,7 @@
                 });
             });
 
-        btnTakePhoto.addEventListener('click', function () {
+        btnTakePhoto.addEventListener('click', function() {
             if (!activePhotoInput) {
                 return;
             }
@@ -1925,11 +1891,12 @@
                 .getContext('2d')
                 .drawImage(cameraPreview, 0, 0);
 
-            cameraCanvas.toBlob(function (blob) {
+            cameraCanvas.toBlob(function(blob) {
                 const file = new File(
                     [blob],
-                    `foto-${Date.now()}.jpg`,
-                    { type: 'image/jpeg' }
+                    `foto-${Date.now()}.jpg`, {
+                        type: 'image/jpeg'
+                    }
                 );
 
                 if (mergeFiles(activePhotoInput, [file])) {
@@ -1944,7 +1911,7 @@
                 return;
             }
 
-            cameraStream.getTracks().forEach(function (track) {
+            cameraStream.getTracks().forEach(function(track) {
                 track.stop();
             });
 
@@ -1964,13 +1931,13 @@
 
         jenisKetidaksesuaianGroup
             .querySelectorAll('input[type="checkbox"]')
-            .forEach(function (checkbox) {
+            .forEach(function(checkbox) {
                 checkbox.addEventListener(
                     'change',
-                    function () {
+                    function() {
                         if (
-                            checkbox.checked
-                            && konfirmasiSelect.value !== 'Ada'
+                            checkbox.checked &&
+                            konfirmasiSelect.value !== 'Ada'
                         ) {
                             konfirmasiSelect.value = 'Ada';
                         }
@@ -1985,15 +1952,121 @@
             updateLainnyaField
         );
 
+        // ─────────────────────────────────────────────
+        // AUTO-SAVE DRAFT IN BACKGROUND
+        // ─────────────────────────────────────────────
+        let autoSaveTimer = null;
+        let isAutoSaving = false;
+        let pendingAutoSave = false;
+
+        const autoSaveIndicator = document.getElementById('autoSaveIndicator');
+
+        function setAutoSaveStatus(status) {
+            if (!autoSaveIndicator) return;
+            autoSaveIndicator.classList.remove('d-none');
+            const saving = autoSaveIndicator.querySelector('.status-saving');
+            const saved = autoSaveIndicator.querySelector('.status-saved');
+            const offline = autoSaveIndicator.querySelector('.status-offline');
+            if (saving) saving.classList.toggle('d-none', status !== 'saving');
+            if (saved) saved.classList.toggle('d-none', status !== 'saved');
+            if (offline) offline.classList.toggle('d-none', status !== 'offline');
+        }
+
+        function scheduleAutoSave() {
+            if (isSamplingLocked) return;
+
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+
+            autoSaveTimer = setTimeout(function() {
+                executeAutoSave();
+            }, 1800);
+        }
+
+        async function executeAutoSave() {
+            if (isSamplingLocked) return;
+            if (isAutoSaving) {
+                pendingAutoSave = true;
+                return;
+            }
+
+            isAutoSaving = true;
+            setAutoSaveStatus('saving');
+
+            const formData = new FormData(form);
+            formData.set('save_mode', 'draft');
+            formData.set('is_auto_save', '1');
+
+            // Hindari upload file berulang pada background auto-save
+            formData.delete('foto_pengecekan');
+            for (const key of Array.from(formData.keys())) {
+                if (key.startsWith('foto_ketidaksesuaian[')) {
+                    formData.delete(key);
+                }
+            }
+
+            const csrfToken = form.querySelector('input[name="_token"]')?.value ?? '';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    setAutoSaveStatus('saved');
+                } else {
+                    setAutoSaveStatus('offline');
+                }
+            } catch (err) {
+                setAutoSaveStatus('offline');
+            } finally {
+                isAutoSaving = false;
+                if (pendingAutoSave) {
+                    pendingAutoSave = false;
+                    scheduleAutoSave();
+                }
+            }
+        }
+
+        form.addEventListener('input', function(event) {
+            if (event.target.type === 'file' || event.target.type === 'submit') return;
+            scheduleAutoSave();
+        });
+
+        form.addEventListener('change', function(event) {
+            if (event.target.type === 'file' || event.target.type === 'submit') return;
+            scheduleAutoSave();
+        });
+
         form.addEventListener(
             'submit',
-            async function (event) {
+            async function(event) {
                 event.preventDefault();
 
+                if (autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                }
+
                 if (isSamplingLocked) {
-                    alert(
-                        'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
-                    );
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Data Terkunci',
+                            text: 'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                        });
+                    } else {
+                        alert(
+                            'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                        );
+                    }
                     return;
                 }
 
@@ -2004,8 +2077,8 @@
                     saveMode === 'final';
 
                 if (
-                    isFinal
-                    && !form.reportValidity()
+                    isFinal &&
+                    !form.reportValidity()
                 ) {
                     return;
                 }
@@ -2013,35 +2086,67 @@
 
                 if (isFinal) {
                     const totalFotoPengecekan =
-                        Number(fotoPengecekanInput.dataset.existingCount ?? 0)
-                        + fotoPengecekanInput.files.length;
+                        Number(fotoPengecekanInput.dataset.existingCount ?? 0) +
+                        fotoPengecekanInput.files.length;
 
                     if (totalFotoPengecekan < 1) {
-                        alert('Foto pengecekan wajib minimal 1 foto.');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Validasi Foto',
+                                text: 'Foto pengecekan wajib minimal 1 foto.'
+                            });
+                        } else {
+                            alert('Foto pengecekan wajib minimal 1 foto.');
+                        }
                         return;
                     }
 
                     if (konfirmasiSelect.value === 'Ada') {
                         if (getCheckedKetidaksesuaianCount() < 1) {
-                            alert('Pilih minimal satu jenis ketidaksesuaian.');
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Validasi Ketidaksesuaian',
+                                    text: 'Pilih minimal satu jenis ketidaksesuaian.'
+                                });
+                            } else {
+                                alert('Pilih minimal satu jenis ketidaksesuaian.');
+                            }
                             return;
                         }
 
                         if (
-                            lainnyaCheckbox.checked
-                            && lainnyaInput.value.trim() === ''
+                            lainnyaCheckbox.checked &&
+                            lainnyaInput.value.trim() === ''
                         ) {
-                            alert('Jenis ketidaksesuaian lainnya wajib diisi.');
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Validasi Ketidaksesuaian',
+                                    text: 'Jenis ketidaksesuaian lainnya wajib diisi.'
+                                });
+                            } else {
+                                alert('Jenis ketidaksesuaian lainnya wajib diisi.');
+                            }
                             lainnyaInput.focus();
                             return;
                         }
 
                         const totalFotoKetidaksesuaian =
-                            Number(fotoKetidaksesuaianInput.dataset.existingCount ?? 0)
-                            + fotoKetidaksesuaianInput.files.length;
+                            Number(fotoKetidaksesuaianInput.dataset.existingCount ?? 0) +
+                            fotoKetidaksesuaianInput.files.length;
 
                         if (totalFotoKetidaksesuaian < 1) {
-                            alert('Foto ketidaksesuaian wajib minimal 1 foto.');
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Validasi Foto',
+                                    text: 'Foto ketidaksesuaian wajib minimal 1 foto.'
+                                });
+                            } else {
+                                alert('Foto ketidaksesuaian wajib minimal 1 foto.');
+                            }
                             return;
                         }
                     }
@@ -2049,7 +2154,7 @@
 
                 document
                     .querySelectorAll('.save-button')
-                    .forEach(function (button) {
+                    .forEach(function(button) {
                         button.disabled = true;
                     });
                 submitButton.innerHTML = `
@@ -2075,16 +2180,13 @@
                         )?.value ?? '';
 
                     const response = await fetch(
-                        form.action,
-                        {
+                        form.action, {
                             method: 'POST',
                             credentials: 'same-origin',
                             headers: {
                                 Accept: 'application/json',
-                                'X-Requested-With':
-                                    'XMLHttpRequest',
-                                'X-CSRF-TOKEN':
-                                    csrfToken
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': csrfToken
                             },
                             body: formData
                         }
@@ -2109,37 +2211,45 @@
                             const firstMessage =
                                 Object.values(
                                     result.errors ?? {}
-                                ).flat()[0]
-                                ?? 'Validasi gagal.';
+                                ).flat()[0] ??
+                                'Validasi gagal.';
 
                             throw new Error(firstMessage);
                         }
 
                         throw new Error(
-                            result.message
-                            ?? 'Data gagal disimpan.'
+                            result.message ??
+                            'Data gagal disimpan.'
                         );
                     }
 
+                    setAutoSaveStatus('saved');
                     showAlert(
                         'success',
                         result.message
                     );
 
-                    setTimeout(function () {
+                    setTimeout(function() {
                         window.location.href =
                             result.redirect_url;
                     }, 1000);
                 } catch (error) {
                     showAlert(
                         'danger',
-                        error.message
-                        ?? 'Terjadi kesalahan.'
+                        error.message ??
+                        'Terjadi kesalahan.'
                     );
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Tidak dapat disimpan',
+                            text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
+                        });
+                    }
                 } finally {
                     document
                         .querySelectorAll('.save-button')
-                        .forEach(function (button) {
+                        .forEach(function(button) {
                             button.disabled = false;
                         });
 

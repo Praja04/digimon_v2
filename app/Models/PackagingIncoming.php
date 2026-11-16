@@ -105,4 +105,12 @@ class PackagingIncoming extends Model
             'packaging_incoming_id'
         );
     }
+
+    public function kartonBct()
+    {
+        return $this->hasOne(
+            PackagingKartonBct::class,
+            'packaging_incoming_id'
+        );
+    }
 }

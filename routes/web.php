@@ -303,6 +303,11 @@ Route::middleware(['auth'])->group(function () {
         )->name('rmpm.pm.incoming.create');
 
         Route::get(
+            '/rmpm/pm/incoming',
+            [PackagingIncomingController::class, 'index']
+        )->name('rmpm.pm.incoming.index');
+
+        Route::get(
             '/rmpm/pm/incoming/wpm-barang',
             [PackagingIncomingController::class, 'getWpmBarang']
         )->name('rmpm.pm.incoming.wpm-barang');
@@ -360,6 +365,11 @@ Route::middleware(['auth'])->group(function () {
             '/rmpm/pm/karton/{packagingIncoming}/display/bct',
             [RMPMController::class, 'pmKartonBct']
         )->name('rmpm.pm.karton.bct');
+
+        Route::post(
+            '/rmpm/pm/karton/{packagingIncoming}/display/bct',
+            [RMPMController::class, 'pmKartonBctStore']
+        )->name('rmpm.pm.karton.bct.store');
 
         Route::get(
             '/rmpm/pm/karton/{packagingIncoming}/display/berat',
@@ -454,6 +464,11 @@ Route::middleware(['auth'])->group(function () {
             '/rmpm/pm/incoming/create',
             [PackagingIncomingController::class, 'index']
         )->name('rmpm.pm.incoming.create');
+
+        Route::get(
+            '/rmpm/pm/incoming',
+            [PackagingIncomingController::class, 'index']
+        )->name('rmpm.pm.incoming.index');
 
         Route::post(
             '/rmpm/pm/incoming',

@@ -38,6 +38,22 @@ class SamplingStatusController extends Controller
                 })
 
                 ->addColumn('action', function (SamplingStatus $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -48,16 +64,7 @@ class SamplingStatusController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -143,11 +150,32 @@ class SamplingStatusController extends Controller
     public function destroy(
         SamplingStatus $samplingStatus
     ): JsonResponse {
-        $samplingStatus->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Status Sampling berhasil dihapus.',
-        ]);
+        try {
+            if (\App\Models\PackagingIncoming::query()->where('sampling_status_id', $samplingStatus->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak dapat dihapus karena sudah digunakan pada data Incoming PM. Silakan ubah status menjadi "Tidak Aktif" jika sudah tidak digunakan.',
+                ], 422);
+            }
+
+            $samplingStatus->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status Sampling berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus Status Sampling: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

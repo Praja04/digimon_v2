@@ -16,6 +16,8 @@ class JenisMaterialController extends Controller
             $data = JenisMaterial::query()
                 ->orderBy('id');
 
+            $canDelete = $this->canDeleteMaster();
+
             return DataTables::of($data)
                 ->addIndexColumn()
 
@@ -37,7 +39,22 @@ class JenisMaterialController extends Controller
                     ';
                 })
 
-                ->addColumn('action', function (JenisMaterial $item) {
+                ->addColumn('action', function (JenisMaterial $item) use ($canDelete) {
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -48,16 +65,7 @@ class JenisMaterialController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -143,11 +151,32 @@ class JenisMaterialController extends Controller
     public function destroy(
         JenisMaterial $jenisMaterial
     ): JsonResponse {
-        $jenisMaterial->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Jenis Material berhasil dihapus.',
-        ]);
+        try {
+            if (\App\Models\PackagingIncoming::query()->where('jenis_material_id', $jenisMaterial->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak dapat dihapus karena sudah digunakan pada data Incoming PM. Silakan ubah status menjadi "Tidak Aktif" jika sudah tidak digunakan.',
+                ], 422);
+            }
+
+            $jenisMaterial->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jenis Material berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus Jenis Material: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

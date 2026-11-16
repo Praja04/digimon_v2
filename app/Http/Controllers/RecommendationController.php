@@ -38,6 +38,22 @@ class RecommendationController extends Controller
                 })
 
                 ->addColumn('action', function (Recommendation $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -48,16 +64,7 @@ class RecommendationController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -146,11 +153,25 @@ class RecommendationController extends Controller
     public function destroy(
         Recommendation $recommendation
     ): JsonResponse {
-        $recommendation->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Rekomendasi berhasil dihapus.',
-        ]);
+        try {
+            $recommendation->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Rekomendasi berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus Rekomendasi: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -206,7 +206,7 @@
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Oops...',
+                            title: 'Tidak dapat disimpan',
                             text: xhr.responseJSON?.message || 'Terjadi kesalahan pada server.'
                         });
                     }
@@ -283,7 +283,7 @@
                         error: function (xhr) {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Gagal!',
+                                title: 'Tidak dapat dihapus',
                                 text: xhr.responseJSON?.message || 'Gagal menghapus data aroma.'
                             });
                         }

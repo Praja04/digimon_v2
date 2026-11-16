@@ -94,6 +94,22 @@ class MasterStandarRmController extends Controller
                     return '<span class="badge bg-secondary"><i class="mdi mdi-close-circle-outline me-1"></i>Tidak Aktif</span>';
                 })
                 ->addColumn('action', function (MasterStandarRm $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete px-2 py-1"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e(($item->jenisBahan?->nama ?? '') . ' - ' . $item->parameter) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete fs-14"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1 justify-content-center">
                             <button
@@ -104,15 +120,7 @@ class MasterStandarRmController extends Controller
                             >
                                 <i class="mdi mdi-pencil fs-14"></i>
                             </button>
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete px-2 py-1"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e(($item->jenisBahan?->nama ?? '') . ' - ' . $item->parameter) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete fs-14"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -232,13 +240,27 @@ class MasterStandarRmController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $data = MasterStandarRm::findOrFail($id);
-        $data->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Data standar mutu RM berhasil dihapus.',
-        ]);
+        try {
+            $data = MasterStandarRm::findOrFail($id);
+            $data->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Data standar mutu RM berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function getActiveByJenis(Request $request): JsonResponse

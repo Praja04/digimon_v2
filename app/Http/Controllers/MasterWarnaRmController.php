@@ -28,6 +28,22 @@ class MasterWarnaRmController extends Controller
                     return '<span class="badge bg-secondary"><i class="mdi mdi-close-circle-outline me-1"></i>Tidak Aktif</span>';
                 })
                 ->addColumn('action', function (MasterParameterRm $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama_pilihan) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex justify-content-center gap-1">
                             <button
@@ -38,15 +54,7 @@ class MasterWarnaRmController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama_pilihan) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -104,12 +112,26 @@ class MasterWarnaRmController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $data = MasterParameterRm::where('kategori', 'warna')->findOrFail($id);
-        $data->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Data warna berhasil dihapus.',
-        ]);
+        try {
+            $data = MasterParameterRm::where('kategori', 'warna')->findOrFail($id);
+            $data->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Data warna berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -1,7 +1,7 @@
 @extends('layouts.component.main')
 
 @section('title')
-    Pemeriksaan BCT
+Pemeriksaan BCT
 @endsection
 
 @section('content')
@@ -29,8 +29,8 @@
                                             'rmpm.pm.karton.display',
                                             $packagingIncoming
                                         ) }}">
-                                            Display Karton
-                                        </a>
+                                    Display Karton
+                                </a>
                             </li>
                             <li class="breadcrumb-item active">BCT</li>
                         </ol>
@@ -67,12 +67,17 @@
                         </p>
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="autoSaveIndicator" class="small text-muted me-2 d-none">
+                            <span class="status-saving text-primary d-none"><i class="mdi mdi-cloud-sync-outline me-1"></i>Menyimpan otomatis...</span>
+                            <span class="status-saved text-success d-none"><i class="mdi mdi-cloud-check-outline me-1"></i>Tersimpan otomatis</span>
+                            <span class="status-offline text-muted d-none"><i class="mdi mdi-cloud-outline me-1"></i>Tersimpan di perangkat lokal</span>
+                        </span>
+
                         <button
                             type="button"
                             id="saveButton"
-                            class="btn btn-primary"
-                        >
+                            class="btn btn-primary">
                             <i class="mdi mdi-content-save-outline me-1"></i>
                             Simpan
                         </button>
@@ -80,16 +85,14 @@
                         <button
                             type="button"
                             id="resamplingButton"
-                            class="btn btn-warning"
-                        >
+                            class="btn btn-warning">
                             <i class="mdi mdi-refresh me-1"></i>
                             Resampling
                         </button>
 
                         <a
                             href="{{ route('rmpm.pm.karton.display', $packagingIncoming) }}"
-                            class="btn btn-light"
-                        >
+                            class="btn btn-light">
                             <i class="mdi mdi-arrow-left me-1"></i>
                             Kembali
                         </a>
@@ -121,8 +124,7 @@
                                                     class="form-control text-center"
                                                     step="0.01"
                                                     min="0"
-                                                    placeholder="0.00"
-                                                >
+                                                    placeholder="0.00">
                                             </td>
                                             <td>
                                                 <input
@@ -131,8 +133,7 @@
                                                     class="form-control text-center"
                                                     step="0.01"
                                                     min="0"
-                                                    placeholder="0.00"
-                                                >
+                                                    placeholder="0.00">
                                             </td>
                                         </tr>
                                     </tbody>
@@ -163,18 +164,28 @@
 
                 </div>
 
-                <div class="mt-4">
+                <div class="mt-4 d-none" id="resamplingSection">
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                         <div>
-                            <h5 class="mb-1">Hasil BCT</h5>
+                            <h5 class="mb-1">Hasil BCT (Resampling)</h5>
                             <p class="text-muted mb-0">
-                                Isi nilai BCT secara manual pada tabel berikut.
+                                Isi nilai BCT secara manual pada tabel berikut. Kolom resampling tidak wajib diisi semua.
                             </p>
                         </div>
 
-                        <span class="badge bg-primary-subtle text-primary px-3 py-2">
-                            Resampling ke-<span id="resamplingCount">1</span>
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                                Resampling ke-<span id="resamplingCount">1</span>
+                            </span>
+                            <button
+                                type="button"
+                                id="cancelResamplingButton"
+                                class="btn btn-outline-danger btn-sm"
+                                title="Hapus pemeriksaan resampling terakhir">
+                                <i class="mdi mdi-trash-can-outline me-1"></i>
+                                Hapus Resampling
+                            </button>
+                        </div>
                     </div>
 
                     <div id="bctTables"></div>
@@ -184,22 +195,13 @@
                     <div class="summary-card">
                         <div>
                             <span class="summary-label">Rata-rata BCT</span>
-                            <h3 class="mb-0" id="averageValue">0.00</h3>
-                        </div>
-
-                        <div>
-                            <span class="summary-label">Jumlah Data Terisi</span>
-                            <h3 class="mb-0">
-                                <span id="filledCount">0</span>
-                                /
-                                <span id="totalCount">10</span>
-                            </h3>
+                            <h3 class="mb-0 text-primary" id="averageValue">0.00</h3>
                         </div>
 
                         <div>
                             <span class="summary-label">Status</span>
-                            <h4 class="mb-0" id="statusText">
-                                Belum Lengkap
+                            <h4 class="mb-0 text-secondary fw-bold" id="statusText">
+                                Tidak Terisi
                             </h4>
                         </div>
                     </div>
@@ -329,15 +331,15 @@
 
     .summary-card {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
         padding: 18px;
         border-radius: 14px;
         background: #f8fafc;
         border: 1px solid #e2e8f0;
     }
 
-    .summary-card > div {
+    .summary-card>div {
         padding: 14px;
         border-radius: 12px;
         background: #ffffff;
@@ -368,29 +370,56 @@
 
 @section('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const storageKey = 'karton_bct_manual_data_{{ $packagingIncoming->id }}';
+        const serverData = @json($bctData ?? null);
+        const storeUrl = '{{ route("rmpm.pm.karton.bct.store", $packagingIncoming) }}';
+        const csrfToken = '{{ csrf_token() }}';
         const maximumResampling = 2;
         const itemsPerSampling = 10;
 
+        const resamplingSection = document.getElementById('resamplingSection');
         const bctTables = document.getElementById('bctTables');
         const saveButton = document.getElementById('saveButton');
         const resamplingButton = document.getElementById('resamplingButton');
+        const cancelResamplingButton = document.getElementById('cancelResamplingButton');
         const resamplingCountElement = document.getElementById('resamplingCount');
         const averageValue = document.getElementById('averageValue');
-        const filledCount = document.getElementById('filledCount');
-        const totalCount = document.getElementById('totalCount');
         const statusText = document.getElementById('statusText');
         const alertContainer = document.getElementById('alertContainer');
+        const bct4gt1Input = document.getElementById('bct4gt1');
+        const bct4gt2Input = document.getElementById('bct4gt2');
 
         let state = {
-            resamplingCount: 1,
+            resamplingCount: 0,
             bct4gt1: '',
             bct4gt2: '',
-            values: Array(itemsPerSampling).fill(''),
+            values: [],
         };
 
         function loadState() {
+            // 1. Coba ambil dari server data yang tersimpan di database
+            if (serverData && (serverData.bct4gt1 !== null || serverData.bct4gt2 !== null || (Array.isArray(serverData.values) && serverData.values.length > 0))) {
+                state.bct4gt1 = serverData.bct4gt1 !== null && serverData.bct4gt1 !== undefined ? String(serverData.bct4gt1) : '';
+                state.bct4gt2 = serverData.bct4gt2 !== null && serverData.bct4gt2 !== undefined ? String(serverData.bct4gt2) : '';
+                state.resamplingCount = Math.min(Math.max(parseInt(serverData.resampling_count ?? 0) || 0, 0), maximumResampling);
+
+                const expectedLength = state.resamplingCount * itemsPerSampling;
+                state.values = Array.isArray(serverData.values) ?
+                    serverData.values.slice(0, expectedLength).map(function(v) {
+                        return v !== null && v !== undefined ? String(v) : '';
+                    }) :
+                    [];
+
+                while (state.values.length < expectedLength) {
+                    state.values.push('');
+                }
+
+                localStorage.setItem(storageKey, JSON.stringify(state));
+                return;
+            }
+
+            // 2. Fallback: ambil dari localStorage jika di server belum ada
             const saved = localStorage.getItem(storageKey);
 
             if (!saved) {
@@ -400,23 +429,29 @@
             try {
                 const parsed = JSON.parse(saved);
 
-                state.resamplingCount = Math.min(
-                    Math.max(parseInt(parsed.resamplingCount || 1), 1),
-                    maximumResampling
-                );
-
                 state.bct4gt1 = parsed.bct4gt1 ?? '';
                 state.bct4gt2 = parsed.bct4gt2 ?? '';
 
-                const expectedLength =
-                    state.resamplingCount * itemsPerSampling;
+                let savedCount = parseInt(parsed.resamplingCount ?? 0) || 0;
+                savedCount = Math.min(Math.max(savedCount, 0), maximumResampling);
 
-                state.values = Array.isArray(parsed.values)
-                    ? parsed.values.slice(0, expectedLength)
-                    : [];
+                // Periksa apakah ada nilai resampling yang terisi atau sengaja ditambahkan
+                const hasAnyResamplingValue = Array.isArray(parsed.values) && parsed.values.some(function(v) {
+                    return v !== '' && v !== null && v !== undefined && parseFloat(v) > 0;
+                });
 
-                while (state.values.length < expectedLength) {
-                    state.values.push('');
+                if (savedCount > 0 && (hasAnyResamplingValue || parsed.resamplingExplicitlyAdded)) {
+                    state.resamplingCount = savedCount;
+                    const expectedLength = state.resamplingCount * itemsPerSampling;
+                    state.values = Array.isArray(parsed.values) ?
+                        parsed.values.slice(0, expectedLength) :
+                        [];
+                    while (state.values.length < expectedLength) {
+                        state.values.push('');
+                    }
+                } else {
+                    state.resamplingCount = 0;
+                    state.values = [];
                 }
             } catch (error) {
                 localStorage.removeItem(storageKey);
@@ -453,139 +488,256 @@
         function renderTables() {
             bctTables.innerHTML = '';
 
-            for (
-                let samplingIndex = 0;
-                samplingIndex < state.resamplingCount;
-                samplingIndex++
-            ) {
-                const startIndex = samplingIndex * itemsPerSampling;
+            if (state.resamplingCount <= 0) {
+                if (resamplingSection) resamplingSection.classList.add('d-none');
+                if (resamplingButton) resamplingButton.disabled = false;
+            } else {
+                if (resamplingSection) resamplingSection.classList.remove('d-none');
+                if (resamplingCountElement) resamplingCountElement.textContent = state.resamplingCount;
+                if (resamplingButton) resamplingButton.disabled = state.resamplingCount >= maximumResampling;
 
-                let headers = '';
-                let inputs = '';
+                for (let samplingIndex = 0; samplingIndex < state.resamplingCount; samplingIndex++) {
+                    const startIndex = samplingIndex * itemsPerSampling;
+                    let headers = '';
+                    let inputs = '';
 
-                for (
-                    let itemIndex = 0;
-                    itemIndex < itemsPerSampling;
-                    itemIndex++
-                ) {
-                    const globalIndex = startIndex + itemIndex;
-                    const number = globalIndex + 1;
-                    const value = state.values[globalIndex] ?? '';
+                    for (let itemIndex = 0; itemIndex < itemsPerSampling; itemIndex++) {
+                        const globalIndex = startIndex + itemIndex;
+                        const number = itemIndex + 1;
+                        const value = state.values[globalIndex] ?? '';
 
-                    headers += `
-                        <th>BCT kgf ${number}</th>
-                    `;
+                        headers += `
+                            <th>BCT kgf ${number}</th>
+                        `;
 
-                    inputs += `
-                        <td>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                class="form-control bct-input"
-                                data-index="${globalIndex}"
-                                value="${escapeHtml(value)}"
-                                placeholder="0.00"
-                            >
-                        </td>
-                    `;
-                }
-
-                bctTables.insertAdjacentHTML(
-                    'beforeend',
-                    `
-                        <div class="bct-result-wrapper">
-                            <div class="bct-result-title">
-                                Hasil BCT - Pengujian ${samplingIndex + 1}
-                            </div>
-
-                            <div class="table-responsive">
-                                <table
-                                    class="table table-bordered align-middle
-                                           bct-result-table mb-0"
+                        inputs += `
+                            <td>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    class="form-control bct-input"
+                                    data-index="${globalIndex}"
+                                    value="${escapeHtml(value)}"
+                                    placeholder="0.00"
                                 >
-                                    <thead>
-                                        <tr>${headers}</tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>${inputs}</tr>
-                                    </tbody>
-                                </table>
+                            </td>
+                        `;
+                    }
+
+                    bctTables.insertAdjacentHTML(
+                        'beforeend',
+                        `
+                            <div class="bct-result-wrapper">
+                                <div class="bct-result-title d-flex justify-content-between align-items-center">
+                                    <span>Hasil BCT - Resampling ${samplingIndex + 1}</span>
+                                    <span class="badge bg-light text-muted border font-monospace" style="font-size: 11px;">10 Sampel</span>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table
+                                        class="table table-bordered align-middle bct-result-table mb-0"
+                                    >
+                                        <thead>
+                                            <tr>${headers}</tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>${inputs}</tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    `
-                );
+                        `
+                    );
+                }
             }
 
-            document.getElementById('bct4gt1').value =
-                state.bct4gt1;
-
-            document.getElementById('bct4gt2').value =
-                state.bct4gt2;
-
-            resamplingCountElement.textContent =
-                state.resamplingCount;
-
-            totalCount.textContent =
-                state.resamplingCount * itemsPerSampling;
-
-            resamplingButton.disabled =
-                state.resamplingCount >= maximumResampling;
+            if (bct4gt1Input) bct4gt1Input.value = state.bct4gt1;
+            if (bct4gt2Input) bct4gt2Input.value = state.bct4gt2;
 
             updateSummary();
         }
 
         function updateSummary() {
-            const numericValues = state.values
-                .map(function (value) {
-                    return parseFloat(value);
-                })
-                .filter(function (value) {
-                    return Number.isFinite(value);
-                });
+            const filledValues = [];
 
-            const total = numericValues.length;
-
-            const average = total > 0
-                ? numericValues.reduce(function (sum, value) {
-                    return sum + value;
-                }, 0) / total
-                : 0;
-
-            filledCount.textContent = total;
-            averageValue.textContent = average.toFixed(2);
-
-            const expectedTotal =
-                state.resamplingCount * itemsPerSampling;
-
-            if (total < expectedTotal) {
-                statusText.textContent = 'Belum Lengkap';
-                statusText.className = 'mb-0 text-warning';
-            } else if (
-                numericValues.some(function (value) {
-                    return value < 110;
-                })
-            ) {
-                statusText.textContent = 'Perlu Pemeriksaan';
-                statusText.className = 'mb-0 text-danger';
-            } else {
-                statusText.textContent = 'OK';
-                statusText.className = 'mb-0 text-success';
+            // 1. Data dari 2 Sampel Awal
+            const v1 = parseFloat(state.bct4gt1);
+            if (Number.isFinite(v1) && v1 > 0) {
+                filledValues.push(v1);
             }
 
-            document
-                .querySelectorAll('.bct-input')
-                .forEach(function (input) {
-                    const value = parseFloat(input.value);
+            const v2 = parseFloat(state.bct4gt2);
+            if (Number.isFinite(v2) && v2 > 0) {
+                filledValues.push(v2);
+            }
 
-                    input.classList.toggle(
-                        'bct-warning',
-                        Number.isFinite(value) && value < 110
-                    );
+            // 2. Data dari Resampling (tidak wajib diisi 10)
+            if (Array.isArray(state.values)) {
+                state.values.forEach(function(val) {
+                    const v = parseFloat(val);
+                    if (Number.isFinite(v) && v > 0) {
+                        filledValues.push(v);
+                    }
+                });
+            }
+
+            const totalFilled = filledValues.length;
+
+            // Perhitungan Average: berdasarkan data yang diisi (2 sampel awal + data resampling)
+            const average = totalFilled > 0 ?
+                (filledValues.reduce(function(sum, val) {
+                    return sum + val;
+                }, 0) / totalFilled) :
+                0;
+
+            averageValue.textContent = average.toFixed(2);
+
+            // Status: Terisi (Jika ada min 1 data yang >0) & Tidak Terisi (Jika belum ada data yang terisi atau seluruh data = 0)
+            if (totalFilled > 0) {
+                statusText.textContent = 'Terisi';
+                statusText.className = 'mb-0 text-success fw-bold';
+            } else {
+                statusText.textContent = 'Tidak Terisi';
+                statusText.className = 'mb-0 text-secondary fw-bold';
+            }
+
+            // Highlight warning pada input individual jika ada nilai terisi < 110
+            const allInputs = [
+                bct4gt1Input,
+                bct4gt2Input,
+                ...document.querySelectorAll('.bct-input')
+            ];
+
+            allInputs.forEach(function(input) {
+                if (!input) return;
+                const val = parseFloat(input.value);
+                input.classList.toggle(
+                    'bct-warning',
+                    Number.isFinite(val) && val > 0 && val < 110
+                );
+            });
+        }
+
+        // Auto-Save Management
+        let autoSaveTimer = null;
+        let isAutoSaving = false;
+        let pendingAutoSave = false;
+
+        const autoSaveIndicator = document.getElementById('autoSaveIndicator');
+
+        function setAutoSaveStatus(status) {
+            if (!autoSaveIndicator) return;
+            autoSaveIndicator.classList.remove('d-none');
+            const saving = autoSaveIndicator.querySelector('.status-saving');
+            const saved = autoSaveIndicator.querySelector('.status-saved');
+            const offline = autoSaveIndicator.querySelector('.status-offline');
+            if (saving) saving.classList.toggle('d-none', status !== 'saving');
+            if (saved) saved.classList.toggle('d-none', status !== 'saved');
+            if (offline) offline.classList.toggle('d-none', status !== 'offline');
+        }
+
+        function calculateCurrentSummary() {
+            const filledValues = [];
+            const v1 = parseFloat(state.bct4gt1);
+            if (Number.isFinite(v1) && v1 > 0) filledValues.push(v1);
+            const v2 = parseFloat(state.bct4gt2);
+            if (Number.isFinite(v2) && v2 > 0) filledValues.push(v2);
+
+            if (Array.isArray(state.values)) {
+                state.values.forEach(function(val) {
+                    const v = parseFloat(val);
+                    if (Number.isFinite(v) && v > 0) filledValues.push(v);
+                });
+            }
+
+            const totalFilled = filledValues.length;
+            const average = totalFilled > 0 ?
+                (filledValues.reduce(function(sum, val) {
+                    return sum + val;
+                }, 0) / totalFilled) :
+                0;
+            const currentStatus = totalFilled > 0 ? 'Terisi' : 'Tidak Terisi';
+
+            return {
+                average,
+                currentStatus
+            };
+        }
+
+        function scheduleAutoSave() {
+            // Simpan langsung ke localStorage untuk persistensi offline seketika
+            localStorage.setItem(storageKey, JSON.stringify(state));
+
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+
+            autoSaveTimer = setTimeout(function() {
+                executeAutoSave();
+            }, 1800);
+        }
+
+        function executeAutoSave() {
+            if (isAutoSaving) {
+                pendingAutoSave = true;
+                return;
+            }
+
+            const {
+                average,
+                currentStatus
+            } = calculateCurrentSummary();
+
+            isAutoSaving = true;
+            setAutoSaveStatus('saving');
+
+            fetch(storeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        bct4gt1: state.bct4gt1 !== '' ? parseFloat(state.bct4gt1) : null,
+                        bct4gt2: state.bct4gt2 !== '' ? parseFloat(state.bct4gt2) : null,
+                        resampling_count: state.resamplingCount,
+                        values: state.values,
+                        average: average,
+                        status: currentStatus,
+                        is_auto_save: 1
+                    })
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(res) {
+                    isAutoSaving = false;
+                    if (res.success) {
+                        setAutoSaveStatus('saved');
+                    } else {
+                        setAutoSaveStatus('offline');
+                    }
+
+                    if (pendingAutoSave) {
+                        pendingAutoSave = false;
+                        scheduleAutoSave();
+                    }
+                })
+                .catch(function() {
+                    isAutoSaving = false;
+                    setAutoSaveStatus('offline');
+
+                    if (pendingAutoSave) {
+                        pendingAutoSave = false;
+                        scheduleAutoSave();
+                    }
                 });
         }
 
-        bctTables.addEventListener('input', function (event) {
+        bctTables.addEventListener('input', function(event) {
             if (!event.target.classList.contains('bct-input')) {
                 return;
             }
@@ -594,17 +746,18 @@
             state.values[index] = event.target.value;
 
             updateSummary();
+            scheduleAutoSave();
         });
 
-        document.addEventListener('keydown', function (event) {
+        document.addEventListener('keydown', function(event) {
             const target = event.target;
             if (!target || target.tagName !== 'INPUT') return;
 
-            if (event.key === 'Enter' || event.key === 'Tab') {
+            if (event.key === 'Enter') {
                 const isBackwards = event.shiftKey;
                 const allInputs = [
-                    document.getElementById('bct4gt1'),
-                    document.getElementById('bct4gt2'),
+                    bct4gt1Input,
+                    bct4gt2Input,
                     ...Array.from(document.querySelectorAll('.bct-input'))
                 ].filter(Boolean);
 
@@ -620,58 +773,163 @@
             }
         });
 
-        document
-            .getElementById('bct4gt1')
-            .addEventListener('input', function () {
+        if (bct4gt1Input) {
+            bct4gt1Input.addEventListener('input', function() {
                 state.bct4gt1 = this.value;
+                updateSummary();
+                scheduleAutoSave();
             });
+        }
 
-        document
-            .getElementById('bct4gt2')
-            .addEventListener('input', function () {
+        if (bct4gt2Input) {
+            bct4gt2Input.addEventListener('input', function() {
                 state.bct4gt2 = this.value;
+                updateSummary();
+                scheduleAutoSave();
             });
+        }
 
-        resamplingButton.addEventListener('click', function () {
-            if (state.resamplingCount >= maximumResampling) {
-                return;
-            }
+        if (resamplingButton) {
+            resamplingButton.addEventListener('click', function() {
+                if (state.resamplingCount >= maximumResampling) {
+                    return;
+                }
 
-            state.resamplingCount++;
+                state.resamplingCount++;
+                state.resamplingExplicitlyAdded = true;
 
-            for (
-                let index = 0;
-                index < itemsPerSampling;
-                index++
-            ) {
-                state.values.push('');
-            }
+                for (let index = 0; index < itemsPerSampling; index++) {
+                    state.values.push('');
+                }
 
-            renderTables();
+                renderTables();
 
-            showAlert(
-                'info',
-                'Kolom resampling kedua berhasil ditambahkan.'
-            );
-        });
+                showAlert(
+                    'info',
+                    `Kolom Resampling ke-${state.resamplingCount} berhasil ditampilkan.`
+                );
 
-        saveButton.addEventListener('click', function () {
-            state.bct4gt1 =
-                document.getElementById('bct4gt1').value;
+                if (resamplingSection) {
+                    resamplingSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }
 
-            state.bct4gt2 =
-                document.getElementById('bct4gt2').value;
+                scheduleAutoSave();
+            });
+        }
 
-            localStorage.setItem(
-                storageKey,
-                JSON.stringify(state)
-            );
+        if (cancelResamplingButton) {
+            cancelResamplingButton.addEventListener('click', function() {
+                if (state.resamplingCount <= 0) return;
 
-            showAlert(
-                'success',
-                'Data BCT manual berhasil disimpan tanpa reload halaman.'
-            );
-        });
+                if (confirm('Apakah Anda yakin ingin menghapus kelompok pemeriksaan Resampling terakhir?')) {
+                    state.resamplingCount--;
+                    state.values.splice(state.resamplingCount * itemsPerSampling, itemsPerSampling);
+
+                    if (state.resamplingCount === 0) {
+                        state.resamplingExplicitlyAdded = false;
+                    }
+
+                    renderTables();
+
+                    showAlert(
+                        'warning',
+                        'Pemeriksaan Resampling berhasil dihapus.'
+                    );
+
+                    scheduleAutoSave();
+                }
+            });
+        }
+
+        if (saveButton) {
+            saveButton.addEventListener('click', function() {
+                if (autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                }
+
+                state.bct4gt1 = bct4gt1Input.value;
+                state.bct4gt2 = bct4gt2Input.value;
+
+                const {
+                    average,
+                    currentStatus
+                } = calculateCurrentSummary();
+
+                // Simpan cadangan ke localStorage
+                localStorage.setItem(storageKey, JSON.stringify(state));
+
+                // UI Loading state
+                const originalHtml = saveButton.innerHTML;
+                saveButton.disabled = true;
+                saveButton.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span>Menyimpan...`;
+
+                // Kirim dan simpan ke database server
+                fetch(storeUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            bct4gt1: state.bct4gt1 !== '' ? parseFloat(state.bct4gt1) : null,
+                            bct4gt2: state.bct4gt2 !== '' ? parseFloat(state.bct4gt2) : null,
+                            resampling_count: state.resamplingCount,
+                            values: state.values,
+                            average: average,
+                            status: currentStatus,
+                        })
+                    })
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(res) {
+                        saveButton.disabled = false;
+                        saveButton.innerHTML = originalHtml;
+
+                        if (res.success) {
+                            setAutoSaveStatus('saved');
+                            showAlert(
+                                'success',
+                                '<i class="mdi mdi-check-circle-outline me-1"></i>Data BCT berhasil disimpan ke database.'
+                            );
+                        } else {
+                            setAutoSaveStatus('offline');
+                            showAlert(
+                                'warning',
+                                res.message || 'Data tersimpan di perangkat lokal, namun gagal sinkron ke database.'
+                            );
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Gagal Sinkronisasi',
+                                    text: res.message || 'Data tersimpan di perangkat lokal, namun gagal sinkron ke database.'
+                                });
+                            }
+                        }
+                    })
+                    .catch(function(err) {
+                        saveButton.disabled = false;
+                        saveButton.innerHTML = originalHtml;
+                        setAutoSaveStatus('offline');
+
+                        showAlert(
+                            'info',
+                            'Data BCT tersimpan di perangkat lokal. Terjadi kendala saat menghubungkan ke server.'
+                        );
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Terjadi Kendala Koneksi',
+                                text: 'Data BCT tersimpan di perangkat lokal. Terjadi kendala saat menghubungkan ke database server.'
+                            });
+                        }
+                    });
+            });
+        }
 
         loadState();
         renderTables();

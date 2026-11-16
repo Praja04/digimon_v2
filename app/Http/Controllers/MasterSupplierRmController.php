@@ -29,6 +29,22 @@ class MasterSupplierRmController extends Controller
                     return '<span class="badge bg-secondary"><i class="mdi mdi-close-circle-outline me-1"></i>Tidak Aktif</span>';
                 })
                 ->addColumn('action', function (MasterSupplierRm $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama_supplier) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -39,15 +55,7 @@ class MasterSupplierRmController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama_supplier) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -109,13 +117,43 @@ class MasterSupplierRmController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $data = MasterSupplierRm::findOrFail($id);
-        $data->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Data supplier RM berhasil dihapus.',
-        ]);
+        try {
+            $data = MasterSupplierRm::findOrFail($id);
+
+            $asalBahanIds = \App\Models\MasterAsalBahan::where('supplier_rm_id', $id)->pluck('id');
+
+            $isUsedInTransaksi = \App\Models\IdentitasRM::where('supplier_id', $id)
+                ->orWhereIn('asal_bahan_id', $asalBahanIds)
+                ->exists();
+
+            if ($isUsedInTransaksi) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Data tidak dapat dihapus karena sudah digunakan dalam transaksi RM. Silakan ubah status menjadi "Tidak Aktif" jika tidak ingin digunakan.',
+                ], 422);
+            }
+
+            // Hapus asal bahan terkait yang belum pernah dipakai di transaksi (misal typo)
+            \App\Models\MasterAsalBahan::where('supplier_rm_id', $id)->delete();
+            $data->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Data supplier RM berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function getByJenisBahan($jenisBahanId): JsonResponse
