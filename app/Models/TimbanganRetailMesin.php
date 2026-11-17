@@ -16,6 +16,15 @@ class TimbanganRetailMesin extends Model
         'berat',
         'unit',
         'nik',
-        'filler'
+        'filler',
+        'resampling',
+    ];
+
+    protected $attributes = [
+        'resampling' => false,
+    ];
+
+    protected $casts = [
+        'resampling' => 'boolean',
     ];
 }
