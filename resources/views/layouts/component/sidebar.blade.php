@@ -296,6 +296,14 @@
                                                         </li>
 
                                                         <li class="nav-item">
+                                                            <a href="{{ route('dashboard.timbangan-retail.bdkt') }}"
+                                                                class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.bdkt') ? 'active' : '' }}">
+                                                                <i class="mdi mdi-view-dashboard-variant-outline"></i>
+                                                                Dashboard BDKT
+                                                            </a>
+                                                        </li>
+
+                                                        <li class="nav-item">
                                                             <a href="{{ route('dashboard.timbangan-retail.analisa') }}"
                                                                 class="nav-link {{ request()->routeIs('dashboard.timbangan-retail.analisa') ? 'active' : '' }}">
                                                                 <i class="mdi mdi-chart-bell-curve-cumulative"></i>

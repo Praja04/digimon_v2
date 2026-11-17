@@ -1251,29 +1251,28 @@
         }
 
         const btn = document.getElementById('s1-btn-export');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="ri-loader-4-line me-1"></i>Mengunduh...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ri-loader-4-line me-1"></i>Mengunduh...';
+        }
 
-        // Gunakan endpoint export — looping per hari antara startDate dan endDate
-        // Karena endpoint export hanya menerima satu hari (date), kita download per tanggal
-        // Jika range > 1 hari, tampilkan info ke user
         const start = new Date(startDate);
         const end = new Date(endDate);
         const diffDays = Math.round((end - start) / 86400000) + 1;
 
         if (diffDays > 31) {
             alert('Range export maksimal 31 hari. Silakan persempit rentang tanggal.');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+            }
             return;
         }
 
-        // Build query string untuk endpoint average-minmax (export data flat)
-        // Kita gunakan endpoint /export yang sudah ada di controller
-        // Endpoint export hanya menerima date tunggal, jadi kita download per tanggal
         if (diffDays === 1) {
             const params = new URLSearchParams({
-                date: startDate
+                date: startDate,
+                source: 'mesin'
             });
             if (varian) params.set('variant', varian);
             if (mesin) params.set('mesin', mesin);
@@ -1286,24 +1285,28 @@
             a.remove();
 
             setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+                }
             }, 2000);
         } else {
-            // Multi-hari: download satu per satu dengan delay
             let idx = 0;
 
             function downloadNext() {
                 if (idx >= diffDays) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
+                    }
                     return;
                 }
                 const d = new Date(start);
                 d.setDate(start.getDate() + idx);
                 const dateStr = d.toISOString().split('T')[0];
                 const params = new URLSearchParams({
-                    date: dateStr
+                    date: dateStr,
+                    source: 'mesin'
                 });
                 if (varian) params.set('variant', varian);
                 if (mesin) params.set('mesin', mesin);
@@ -1315,128 +1318,81 @@
                 a.click();
                 a.remove();
 
-                btn.innerHTML = `<i class="ri-loader-4-line me-1"></i>Hari ${idx+1}/${diffDays}`;
+                if (btn) {
+                    btn.innerHTML = `<i class="ri-loader-4-line me-1"></i>Hari ${idx+1}/${diffDays}`;
+                }
                 idx++;
-                setTimeout(downloadNext, 1200); // delay antar unduhan
+                setTimeout(downloadNext, 1200);
             }
             downloadNext();
         }
     }
 
     /* ══════════════════════════════════════════════════════════════════
-       SLIDE 1 — Perbandingan Shift
+       HELPER RENDER PER SHIFT
     ══════════════════════════════════════════════════════════════════ */
-    async function loadSlide1() {
-        const params = {
-            start_date: document.getElementById('s1-date-start').value,
-            end_date: document.getElementById('s1-date-end').value,
-            varian: document.getElementById('s1-varian').value,
-            mesin: document.getElementById('s1-mesin').value,
-        };
+    function renderShiftSection(prefix, avgData, chartData, hasVariant, std, yLines) {
+        const summaryRows = [];
 
-        // Show loaders
+        // Tampilkan / sembunyikan alignment hint badge
         [1, 2, 3].forEach(s => {
-            document.getElementById(`s1-stacked-shift${s}`).innerHTML = '<div class="tr-loading"><div class="tr-spinner"></div></div>';
-            destroyChart(`s1-line-shift${s}`);
-            const hint = document.getElementById(`s1-align-hint-${s}`);
-            if (hint) hint.style.display = 'none';
+            const hint = document.getElementById(`${prefix}-align-hint-${s}`);
+            if (hint) hint.style.display = hasVariant ? '' : 'none';
         });
-        document.getElementById('s1-summary-body').innerHTML =
-            '<tr><td colspan="9" class="text-center py-3"><div class="tr-loading"><div class="tr-spinner"></div><span>Memuat...</span></div></td></tr>';
 
-        try {
-            const [avgData, chartData] = await Promise.all([
-                apiFetch('/api/timbangan-retail/average-minmax', params),
-                apiFetch('/api/timbangan-retail/chart', params),
-            ]);
+        [1, 2, 3].forEach((shift, si) => {
+            const shiftKey = `shift${shift}`;
+            const shiftData = avgData[shiftKey] || {};
+            const shiftChart = chartData[shiftKey] || {};
 
-            const summaryRows = [];
-            const hasVariant = !!(params.varian && VARIANT_STANDARDS[params.varian]);
-            const std = hasVariant ? VARIANT_STANDARDS[params.varian] : null;
+            const counts = shiftData.counts || {
+                underTu2: 0,
+                tu2ToTu1: 0,
+                tu1ToStd: 0,
+                stdToMax: 0,
+                overMax: 0
+            };
+            const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
-            // Tampilkan / sembunyikan alignment hint badge
-            [1, 2, 3].forEach(s => {
-                const hint = document.getElementById(`s1-align-hint-${s}`);
-                if (hint) hint.style.display = hasVariant ? '' : 'none';
+            // Stacked bar
+            const stackedEl = document.getElementById(`${prefix}-stacked-shift${shift}`);
+            if (stackedEl) {
+                stackedEl.innerHTML = buildStackedBar(counts, total);
+            }
+
+            // Line chart
+            const samples = shiftChart.samples || [];
+            buildLineChart(
+                `${prefix}-line-shift${shift}`,
+                samples.map((_, i) => `#${i+1}`),
+                [{
+                    label: `Shift ${shift}`,
+                    data: samples.map(s => s.berat || s.weight || s),
+                    borderColor: SHIFT_COLORS[si],
+                    backgroundColor: SHIFT_COLORS[si] + '22',
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    tension: .35,
+                    fill: true,
+                }],
+                yLines
+            );
+
+            // Summary row
+            summaryRows.push({
+                shift,
+                color: SHIFT_COLORS[si],
+                min: shiftData.min,
+                avg: shiftData.avg || shiftData.average,
+                max: shiftData.max,
+                ...counts,
             });
+        });
 
-            // Garis alignment — hanya muncul jika variant dipilih
-            const yLines = std ? [{
-                    v: std.max,
-                    color: '#9333ea',
-                    label: 'Max'
-                }, // ungu solid
-                {
-                    v: std.std,
-                    color: '#16a34a',
-                    label: 'STD'
-                }, // hijau tua
-                {
-                    v: std.min,
-                    color: '#2563eb',
-                    label: 'Min'
-                }, // biru solid
-                {
-                    v: std.tu1,
-                    color: '#d97706',
-                    label: 'TU1'
-                }, // oranye amber
-                {
-                    v: std.tu2,
-                    color: '#dc2626',
-                    label: 'TU2'
-                }, // merah solid
-            ] : [];
-
-            [1, 2, 3].forEach((shift, si) => {
-                const shiftKey = `shift${shift}`;
-                const shiftData = avgData[shiftKey] || {};
-                const shiftChart = chartData[shiftKey] || {};
-
-                // Build counts from chart data or API
-                const counts = shiftData.counts || {
-                    underTu2: 0,
-                    tu2ToTu1: 0,
-                    tu1ToStd: 0,
-                    stdToMax: 0,
-                    overMax: 0
-                };
-                const total = Object.values(counts).reduce((a, b) => a + b, 0);
-
-                // Stacked bar
-                document.getElementById(`s1-stacked-shift${shift}`).innerHTML = buildStackedBar(counts, total);
-
-                // Line chart
-                const samples = shiftChart.samples || [];
-                buildLineChart(
-                    `s1-line-shift${shift}`,
-                    samples.map((_, i) => `#${i+1}`),
-                    [{
-                        label: `Shift ${shift}`,
-                        data: samples.map(s => s.berat || s.weight || s),
-                        borderColor: SHIFT_COLORS[si],
-                        backgroundColor: SHIFT_COLORS[si] + '22',
-                        pointRadius: 2,
-                        borderWidth: 2,
-                        tension: .35,
-                        fill: true,
-                    }],
-                    yLines
-                );
-
-                // Summary row
-                summaryRows.push({
-                    shift,
-                    color: SHIFT_COLORS[si],
-                    min: shiftData.min,
-                    avg: shiftData.avg || shiftData.average,
-                    max: shiftData.max,
-                    ...counts,
-                });
-            });
-
-            // Render summary table
-            document.getElementById('s1-summary-body').innerHTML = summaryRows.map(r => {
+        // Render summary table
+        const summaryBody = document.getElementById(`${prefix}-summary-body`);
+        if (summaryBody) {
+            summaryBody.innerHTML = summaryRows.map(r => {
                 const isBelowTu1 = std && r.avg != null && r.avg < std.tu1;
                 const avgClass = isBelowTu1 ? 'text-danger fw-700' : '';
                 return `
@@ -1452,12 +1408,75 @@
                     <td><span class="badge ${r.overMax>0?'badge-over':'badge-ok'}">${r.overMax||0}</span></td>
                 </tr>`;
             }).join('');
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SLIDE 1 — Perbandingan Shift
+    ══════════════════════════════════════════════════════════════════ */
+    async function loadSlide1() {
+        const params = {
+            start_date: document.getElementById('s1-date-start').value,
+            end_date: document.getElementById('s1-date-end').value,
+            varian: document.getElementById('s1-varian').value,
+            mesin: document.getElementById('s1-mesin').value,
+        };
+
+        [1, 2, 3].forEach(s => {
+            const el1 = document.getElementById(`s1-stacked-shift${s}`);
+            if (el1) el1.innerHTML = '<div class="tr-loading"><div class="tr-spinner"></div></div>';
+            destroyChart(`s1-line-shift${s}`);
+            const hint1 = document.getElementById(`s1-align-hint-${s}`);
+            if (hint1) hint1.style.display = 'none';
+        });
+
+        document.getElementById('s1-summary-body').innerHTML =
+            '<tr><td colspan="9" class="text-center py-3"><div class="tr-loading"><div class="tr-spinner"></div><span>Memuat data...</span></div></td></tr>';
+
+        try {
+            const [avgDataMesin, chartDataMesin] = await Promise.all([
+                apiFetch('/api/timbangan-retail/average-minmax', { ...params, source: 'mesin' }),
+                apiFetch('/api/timbangan-retail/chart', { ...params, source: 'mesin' }),
+            ]);
+
+            const hasVariant = !!(params.varian && VARIANT_STANDARDS[params.varian]);
+            const std = hasVariant ? VARIANT_STANDARDS[params.varian] : null;
+
+            // Garis alignment — hanya muncul jika variant dipilih
+            const yLines = std ? [{
+                    v: std.max,
+                    color: '#9333ea',
+                    label: 'Max'
+                },
+                {
+                    v: std.std,
+                    color: '#16a34a',
+                    label: 'STD'
+                },
+                {
+                    v: std.min,
+                    color: '#2563eb',
+                    label: 'Min'
+                },
+                {
+                    v: std.tu1,
+                    color: '#d97706',
+                    label: 'TU1'
+                },
+                {
+                    v: std.tu2,
+                    color: '#dc2626',
+                    label: 'TU2'
+                },
+            ] : [];
+
+            renderShiftSection('s1', avgDataMesin, chartDataMesin, hasVariant, std, yLines);
 
         } catch (e) {
             console.error('Slide 1 error:', e);
             [1, 2, 3].forEach(s => {
-                document.getElementById(`s1-stacked-shift${s}`).innerHTML =
-                    '<div class="tr-empty"><i class="ri-error-warning-line"></i><span>Gagal memuat data</span></div>';
+                const el1 = document.getElementById(`s1-stacked-shift${s}`);
+                if (el1) el1.innerHTML = '<div class="tr-empty"><i class="ri-error-warning-line"></i><span>Gagal memuat data</span></div>';
             });
             document.getElementById('s1-summary-body').innerHTML =
                 '<tr><td colspan="9" class="text-center text-danger py-3">Gagal memuat data — periksa koneksi API</td></tr>';

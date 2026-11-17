@@ -15,6 +15,11 @@ class TimbanganRetailController extends Controller
         return view('dashboard.timbangan-retail.index');
     }
 
+    public function bdkt()
+    {
+        return view('dashboard.timbangan-retail.bdkt');
+    }
+
     public function analisa()
     {
         return view('dashboard.timbangan-retail.analisa');
