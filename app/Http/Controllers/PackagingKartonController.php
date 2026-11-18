@@ -7,6 +7,7 @@ use App\Models\PackagingKartonSampling;
 use App\Models\PackagingKartonSamplingDraft;
 use App\Models\SamplingStatus;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -185,8 +186,11 @@ class PackagingKartonController extends Controller
 
     public function sampling(
         PackagingIncoming $packagingIncoming
-    ): View {
-        return $this->berat($packagingIncoming);
+    ): RedirectResponse {
+        return redirect()->route(
+            'rmpm.pm.karton.display',
+            $packagingIncoming
+        );
     }
 
     public function storeSampling(

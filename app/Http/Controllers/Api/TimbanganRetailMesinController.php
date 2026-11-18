@@ -280,8 +280,10 @@ class TimbanganRetailMesinController extends Controller
         ]);
 
         $range = $this->getShiftRange($request->date);
+        $source = $request->input('source', 'mesin');
+        $table  = $source === 'bdkt' ? 'timbangan_retail_bdkt' : 'timbangan_retail_mesin';
 
-        $query = TimbanganRetailMesin::whereBetween('waktu', [
+        $query = DB::table($table)->whereBetween('waktu', [
             $range['start']->toDateTimeString(),
             $range['end']->toDateTimeString(),
         ])->orderBy('waktu');
@@ -303,7 +305,8 @@ class TimbanganRetailMesinController extends Controller
             ];
         });
 
-        $filename = 'timbangan-retail-' . $request->date;
+        $prefix = $source === 'bdkt' ? 'timbangan-retail-bdkt-' : 'timbangan-retail-';
+        $filename = $prefix . $request->date;
         if ($request->filled('variant')) $filename .= '-' . $request->variant;
         if ($request->filled('mesin'))   $filename .= '-' . $request->mesin;
         $filename .= '.xlsx';
@@ -331,7 +334,10 @@ class TimbanganRetailMesinController extends Controller
         // FIX: pakai buildDateRangeWithShift — tidak ada lagi TIME() filter yang bocor
         [$start, $end] = $this->buildDateRangeWithShift($request);
 
-        $rows = DB::table('timbangan_retail_mesin')
+        $source = $request->input('source', 'mesin');
+        $table  = $source === 'bdkt' ? 'timbangan_retail_bdkt' : 'timbangan_retail_mesin';
+
+        $rows = DB::table($table)
             ->select('waktu', 'berat', 'variant', 'mesin')
             ->whereBetween('waktu', [$start, $end])
             ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
@@ -456,7 +462,10 @@ class TimbanganRetailMesinController extends Controller
         // FIX: pakai buildDateRangeWithShift — tidak ada lagi TIME() filter yang bocor
         [$start, $end] = $this->buildDateRangeWithShift($request);
 
-        $rows = DB::table('timbangan_retail_mesin')
+        $source = $request->input('source', 'mesin');
+        $table  = $source === 'bdkt' ? 'timbangan_retail_bdkt' : 'timbangan_retail_mesin';
+
+        $rows = DB::table($table)
             ->select(['mesin', 'variant', 'waktu', 'berat', 'status'])
             ->whereBetween('waktu', [$start, $end])
             ->when($request->filled('varian'), fn ($q) => $q->where('variant', trim($request->varian)))
@@ -841,7 +850,10 @@ class TimbanganRetailMesinController extends Controller
                 }
 
                 // Create record
-                TimbanganRetailMesin::create([
+                $source = $request->input('source', 'mesin');
+                $modelClass = $source === 'bdkt' ? TimbanganRetailBdkt::class : TimbanganRetailMesin::class;
+
+                $modelClass::create([
                     'nik' => $nik,
                     'mesin' => $mesin,
                     'variant' => $matchedVariant,

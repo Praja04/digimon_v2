@@ -335,7 +335,11 @@
                             $('#errorStatus').text(errors.status[0]);
                         }
                     } else {
-                        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Tidak dapat disimpan',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan sistem.'
+                        });
                     }
                 }
             });
@@ -381,9 +385,13 @@
                                 });
                             }
                         },
-                        error: function () {
+                        error: function (xhr) {
                             Swal.close();
-                            Swal.fire('Error', 'Gagal menghapus data.', 'error');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Tidak dapat dihapus',
+                                text: xhr.responseJSON?.message || 'Gagal menghapus data.'
+                            });
                         }
                     });
                 }

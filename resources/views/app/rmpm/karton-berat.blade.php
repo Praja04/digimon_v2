@@ -867,7 +867,13 @@
             </div>
             </fieldset>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
+            <div class="d-flex justify-content-end align-items-center gap-2 mt-4">
+                <span id="autoSaveIndicator" class="small text-muted me-2 d-none">
+                    <span class="status-saving text-primary d-none"><i class="mdi mdi-cloud-sync-outline me-1"></i>Menyimpan otomatis...</span>
+                    <span class="status-saved text-success d-none"><i class="mdi mdi-cloud-check-outline me-1"></i>Tersimpan otomatis</span>
+                    <span class="status-offline text-muted d-none"><i class="mdi mdi-cloud-outline me-1"></i>Tersimpan di perangkat lokal</span>
+                </span>
+
                 <a
                     href="{{ route(
                         'rmpm.pm.karton.display',
@@ -1730,9 +1736,17 @@ document.addEventListener(
                 + input.files.length
                 > 10
             ) {
-                alert(
-                    'Maksimal total 10 foto.'
-                );
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Maksimal total 10 foto.'
+                    });
+                } else {
+                    alert(
+                        'Maksimal total 10 foto.'
+                    );
+                }
 
                 input.value = '';
 
@@ -1967,7 +1981,15 @@ document.addEventListener(
 
                 const existingCount = targetInputId === 'foto' ? existingFotoCount : existingFotoKetidaksesuaianCount;
                 if (existingCount + targetInput.files.length >= 10) {
-                    alert('Maksimal total 10 foto.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Peringatan',
+                            text: 'Maksimal total 10 foto.'
+                        });
+                    } else {
+                        alert('Maksimal total 10 foto.');
+                    }
                     this.value = '';
                     return;
                 }
@@ -2140,10 +2162,108 @@ document.addEventListener(
             }
         );
 
+        // ─────────────────────────────────────────────
+        // AUTO-SAVE DRAFT IN BACKGROUND
+        // ─────────────────────────────────────────────
+        let autoSaveTimer = null;
+        let isAutoSaving = false;
+        let pendingAutoSave = false;
+
+        const autoSaveIndicator = document.getElementById('autoSaveIndicator');
+        function setAutoSaveStatus(status) {
+            if (!autoSaveIndicator) return;
+            autoSaveIndicator.classList.remove('d-none');
+            const saving = autoSaveIndicator.querySelector('.status-saving');
+            const saved = autoSaveIndicator.querySelector('.status-saved');
+            const offline = autoSaveIndicator.querySelector('.status-offline');
+            if (saving) saving.classList.toggle('d-none', status !== 'saving');
+            if (saved) saved.classList.toggle('d-none', status !== 'saved');
+            if (offline) offline.classList.toggle('d-none', status !== 'offline');
+        }
+
+        function scheduleAutoSave() {
+            if (isSamplingLocked) return;
+
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+
+            autoSaveTimer = setTimeout(function () {
+                executeAutoSave();
+            }, 1800);
+        }
+
+        async function executeAutoSave() {
+            if (isSamplingLocked) return;
+            if (isAutoSaving) {
+                pendingAutoSave = true;
+                return;
+            }
+
+            isAutoSaving = true;
+            setAutoSaveStatus('saving');
+
+            const formData = new FormData(form);
+            formData.set('save_mode', 'draft');
+            formData.set('is_auto_save', '1');
+
+            // Hindari upload ulang file berulang pada background auto-save
+            formData.delete('foto_pengecekan');
+            for (const key of Array.from(formData.keys())) {
+                if (key.startsWith('foto[')) {
+                    formData.delete(key);
+                }
+            }
+
+            const csrfToken = form.querySelector('input[name="_token"]')?.value ?? '';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    setAutoSaveStatus('saved');
+                } else {
+                    setAutoSaveStatus('offline');
+                }
+            } catch (err) {
+                setAutoSaveStatus('offline');
+            } finally {
+                isAutoSaving = false;
+                if (pendingAutoSave) {
+                    pendingAutoSave = false;
+                    scheduleAutoSave();
+                }
+            }
+        }
+
+        // Trigger auto-save on user typing or select change
+        form.addEventListener('input', function (event) {
+            if (event.target.type === 'file' || event.target.type === 'submit') return;
+            scheduleAutoSave();
+        });
+
+        form.addEventListener('change', function (event) {
+            if (event.target.type === 'file' || event.target.type === 'submit') return;
+            scheduleAutoSave();
+        });
+
         form.addEventListener(
             'submit',
             async function (event) {
                 event.preventDefault();
+
+                if (autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                }
 
                 if (isSamplingLocked) {
                     showAlert(
@@ -2304,6 +2424,7 @@ document.addEventListener(
                         );
                     }
 
+                    setAutoSaveStatus('saved');
                     showAlert(
                         'success',
                         result.message
@@ -2322,6 +2443,13 @@ document.addEventListener(
                         error.message
                         ?? 'Terjadi kesalahan.'
                     );
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Tidak dapat disimpan',
+                            text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
+                        });
+                    }
                 } finally {
                     document
                         .querySelectorAll('.save-button')
@@ -2367,6 +2495,176 @@ document.addEventListener(
         updateKetidaksesuaian();
 
         setupKeyboardNavigation(form);
+
+        // ─────────────────────────────────────────────
+        // SAP / EXCEL COPY-PASTE INTEGRATION (BERAT KARTON)
+        // ─────────────────────────────────────────────
+        function highlightInput(el) {
+            if (!el) return;
+            el.classList.add('paste-highlight');
+            setTimeout(() => {
+                el.classList.remove('paste-highlight');
+            }, 1200);
+        }
+
+        function copyKartonBeratToSap() {
+            const trList = rowsContainer.querySelectorAll('tr');
+            if (!trList.length) {
+                showAlert('warning', 'Tidak ada data berat sampel untuk disalin.');
+                return;
+            }
+
+            const lines = [];
+            trList.forEach(tr => {
+                const input = tr.querySelector('input[name$="[berat]"]');
+                lines.push(input ? input.value.trim() : '');
+            });
+
+            const copyString = lines.join('\r\n');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(copyString).then(() => {
+                    showAlert('success', `<i class="mdi mdi-check-circle-outline me-1"></i>Berhasil menyalin ${lines.length} data berat ke clipboard! Siap di-paste ke SAP / Excel.`);
+                }).catch(() => {
+                    fallbackCopyKartonBerat(copyString, lines.length);
+                });
+            } else {
+                fallbackCopyKartonBerat(copyString, lines.length);
+            }
+        }
+
+        function fallbackCopyKartonBerat(text, count) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showAlert('success', `<i class="mdi mdi-check-circle-outline me-1"></i>Berhasil menyalin ${count} data berat ke clipboard! Siap di-paste ke SAP / Excel.`);
+            } catch (e) {
+                showAlert('danger', 'Gagal menyalin data.');
+            }
+            document.body.removeChild(ta);
+        }
+
+        function applyPastedKartonBerat(rawText, startRowIdx = 0) {
+            if (!rawText || !rawText.trim()) return;
+
+            const tokens = rawText
+                .split(/[\r\n\t;]+/)
+                .map(t => t.replace(/[^0-9.,-]/g, '').trim())
+                .filter(t => t.length > 0)
+                .map(t => t.replace(',', '.'));
+
+            if (!tokens.length) {
+                showAlert('warning', 'Tidak ada angka valid yang ditemukan pada teks.');
+                return;
+            }
+
+            const trList = rowsContainer.querySelectorAll('tr');
+            let appliedCount = 0;
+
+            tokens.forEach((val, offset) => {
+                const targetIdx = startRowIdx + offset;
+                if (targetIdx >= trList.length) return;
+                const tr = trList[targetIdx];
+                const input = tr.querySelector('input[name$="[berat]"]');
+                if (input) {
+                    input.value = val;
+                    highlightInput(input);
+                    appliedCount++;
+                }
+            });
+
+            if (appliedCount > 0) {
+                showAlert('success', `<i class="mdi mdi-check-circle-outline me-1"></i>Berhasil menempelkan ${appliedCount} nilai berat dari SAP/Excel.`);
+                if (typeof scheduleAutoSave === 'function') {
+                    scheduleAutoSave();
+                }
+            }
+        }
+
+        const btnCopySapKartonBerat = document.getElementById('btnCopySapKartonBerat');
+        const btnPasteSapKartonBerat = document.getElementById('btnPasteSapKartonBerat');
+        const modalPasteSapKartonBeratEl = document.getElementById('modalPasteSapKartonBerat');
+        const btnApplyPasteSapKartonBerat = document.getElementById('btnApplyPasteSapKartonBerat');
+        const pasteSapKartonBeratTextarea = document.getElementById('pasteSapKartonBeratTextarea');
+        const pasteStartRowKartonBerat = document.getElementById('pasteStartRowKartonBerat');
+
+        if (btnCopySapKartonBerat) {
+            btnCopySapKartonBerat.addEventListener('click', copyKartonBeratToSap);
+        }
+
+        let bsModalPasteKartonBerat = null;
+        if (modalPasteSapKartonBeratEl && window.bootstrap) {
+            bsModalPasteKartonBerat = new bootstrap.Modal(modalPasteSapKartonBeratEl);
+        }
+
+        if (btnPasteSapKartonBerat) {
+            btnPasteSapKartonBerat.addEventListener('click', function () {
+                if (pasteSapKartonBeratTextarea) pasteSapKartonBeratTextarea.value = '';
+                const activeTr = document.activeElement ? document.activeElement.closest('tr') : null;
+                if (activeTr && activeTr.parentElement === rowsContainer) {
+                    const rowIdx = Array.from(rowsContainer.children).indexOf(activeTr);
+                    if (pasteStartRowKartonBerat) pasteStartRowKartonBerat.value = rowIdx + 1;
+                } else if (pasteStartRowKartonBerat) {
+                    pasteStartRowKartonBerat.value = 1;
+                }
+                if (bsModalPasteKartonBerat) bsModalPasteKartonBerat.show();
+            });
+        }
+
+        if (btnApplyPasteSapKartonBerat && pasteSapKartonBeratTextarea) {
+            btnApplyPasteSapKartonBerat.addEventListener('click', function () {
+                const text = pasteSapKartonBeratTextarea.value;
+                const startRow = Math.max(0, parseInt(pasteStartRowKartonBerat.value || 1) - 1);
+                applyPastedKartonBerat(text, startRow);
+                if (bsModalPasteKartonBerat) bsModalPasteKartonBerat.hide();
+            });
+        }
+
+        // Direct Ctrl+V on the table
+        document.addEventListener('paste', function (e) {
+            const active = document.activeElement;
+            const insideTable = active && active.closest && active.closest('.inspection-table');
+            if (!insideTable) return;
+            if (active.tagName === 'TEXTAREA') return;
+
+            const clipboardData = (e.clipboardData || window.clipboardData);
+            if (!clipboardData) return;
+            const text = clipboardData.getData('text/plain') || clipboardData.getData('text');
+            if (!text || !text.trim()) return;
+
+            let startRow = 0;
+            const tr = active.closest('tr');
+            if (tr && tr.parentElement === rowsContainer) {
+                startRow = Array.from(rowsContainer.children).indexOf(tr);
+            }
+
+            e.preventDefault();
+            applyPastedKartonBerat(text, startRow);
+        });
+
+        // Direct Ctrl+C on the table
+        document.addEventListener('copy', function (e) {
+            const active = document.activeElement;
+            const insideTable = active && active.closest && active.closest('.inspection-table');
+            if (!insideTable) return;
+            if (window.getSelection().toString().length > 0) return;
+
+            const tr = active.closest('tr');
+            if (tr && tr.parentElement === rowsContainer) {
+                e.preventDefault();
+                const input = tr.querySelector('input[name$="[berat]"]');
+                const val = input ? input.value.trim() : '';
+                if (e.clipboardData) {
+                    e.clipboardData.setData('text/plain', val);
+                    highlightInput(tr);
+                    showAlert('success', '<i class="mdi mdi-check-circle-outline me-1"></i>Nilai berat disalin ke clipboard untuk SAP/Excel.');
+                }
+            }
+        });
     }
 );
 </script>

@@ -1629,7 +1629,14 @@
                     document.getElementById('no_spb').value =
                         data.no_spb ?? '';
 
-                    document.getElementById('jenis_incoming_id').value =
+                    const jenisIncomingSelectEl = document.getElementById('jenis_incoming_id');
+                    if (data.jenis_incoming_id && !jenisIncomingSelectEl.querySelector(`option[value="${data.jenis_incoming_id}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = data.jenis_incoming_id;
+                        opt.textContent = `${data.jenis_incoming_nama || 'Jenis Incoming'} (Tidak Aktif)`;
+                        jenisIncomingSelectEl.appendChild(opt);
+                    }
+                    jenisIncomingSelectEl.value =
                         data.jenis_incoming_id ?? '';
 
                     if (jenisIncomingLainnyaInput) {
@@ -1639,7 +1646,14 @@
 
                     updateJenisIncomingLainnya(false);
 
-                    document.getElementById('supplier_id').value =
+                    const supplierSelectEl = document.getElementById('supplier_id');
+                    if (data.supplier_id && !supplierSelectEl.querySelector(`option[value="${data.supplier_id}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = data.supplier_id;
+                        opt.textContent = `${data.supplier_nama || 'Supplier'} (Tidak Aktif)`;
+                        supplierSelectEl.appendChild(opt);
+                    }
+                    supplierSelectEl.value =
                         data.supplier_id ?? '';
 
                     if (supplierLainnyaInput) {
@@ -1649,7 +1663,14 @@
 
                     updateSupplierLainnya(false);
 
-                    document.getElementById('jenis_material_id').value =
+                    const jenisMaterialSelectEl = document.getElementById('jenis_material_id');
+                    if (data.jenis_material_id && !jenisMaterialSelectEl.querySelector(`option[value="${data.jenis_material_id}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = data.jenis_material_id;
+                        opt.textContent = `${data.jenis_material_nama || 'Jenis Material'} (Tidak Aktif)`;
+                        jenisMaterialSelectEl.appendChild(opt);
+                    }
+                    jenisMaterialSelectEl.value =
                         data.jenis_material_id ?? '';
 
                     document.getElementById('mid').value =
@@ -2325,7 +2346,7 @@
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Gagal Menghapus',
+                                title: 'Tidak dapat dihapus',
                                 text: error.message || 'Terjadi kesalahan saat menghapus data.'
                             });
                         } else {

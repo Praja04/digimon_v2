@@ -63,8 +63,14 @@
                 </p>
             </div>
 
+            @php
+                $previousUrl = url()->previous();
+                $backUrl = ($previousUrl && str_contains($previousUrl, '/incoming'))
+                    ? route('rmpm.pm.incoming.create')
+                    : route('rmpm.pm.karton');
+            @endphp
             <a
-                href="{{ route('rmpm.pm.karton') }}"
+                href="{{ $backUrl }}"
                 class="btn btn-primary px-3"
             >
                 <i class="mdi mdi-arrow-left me-1"></i>

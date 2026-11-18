@@ -196,7 +196,7 @@
             <table class="table table-bordered table-hover align-middle incoming-table">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 65px;">No.</th>
+                        <th style="width: 50px;" class="text-center">No.</th>
                         <th>No. SPB</th>
                         <th class="text-end">Quantity Incoming</th>
                         <th>Jenis Incoming</th>
@@ -205,12 +205,12 @@
                         <th>Jenis Material</th>
                         <th>Tanggal</th>
                         <th class="text-center">Status</th>
-                        <th class="text-center" style="min-width: 175px;">
+                        <th class="text-center" style="min-width: 155px;">
                             Proses
                         </th>
 
                         @if ($canManageIncoming)
-                            <th class="text-center sticky-col" style="width: 105px;">
+                            <th class="text-center" style="min-width: 100px; width: 105px;">
                                 Kelola Data
                             </th>
                         @endif
@@ -333,7 +333,7 @@
                                 )
                             ) {
                                 $samplingUrl = route(
-                                    'rmpm.pm.karton.sampling',
+                                    'rmpm.pm.karton.display',
                                     $incoming
                                 );
 
@@ -423,7 +423,7 @@
                                 'incoming-row-draft' => $isDraft,
                             ])
                         >
-                            <td>
+                            <td class="text-center">
                                 {{ $incomings->firstItem() + $loop->index }}
                             </td>
 
@@ -492,11 +492,11 @@
                                 </span>
                             </td>
 
-                            <td class="text-center">
+                            <td class="text-center text-nowrap">
                                 @if ($samplingUrl)
                                     <a
                                         href="{{ $samplingUrl }}"
-                                        class="btn {{ $samplingClass }} btn-sm px-3"
+                                        class="btn {{ $samplingClass }} btn-sm px-3 text-nowrap"
                                         title="{{ $samplingLabel }}"
                                     >
                                         <i class="mdi {{ $samplingIcon }} me-1"></i>
@@ -505,7 +505,7 @@
                                 @else
                                     <button
                                         type="button"
-                                        class="btn btn-secondary btn-sm"
+                                        class="btn btn-secondary btn-sm text-nowrap"
                                         disabled
                                     >
                                         <i class="mdi mdi-alert-circle-outline me-1"></i>
@@ -515,8 +515,8 @@
                             </td>
 
                             @if ($canManageIncoming)
-                                <td class="text-center sticky-col">
-                                    <div class="d-flex justify-content-center gap-1">
+                                <td class="text-center text-nowrap">
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                         <button
                                             type="button"
                                             class="btn btn-outline-warning btn-sm btnEdit"
@@ -535,7 +535,7 @@
                                                 'rmpm.pm.incoming.destroy',
                                                 $incoming
                                             ) }}"
-                                            class="deleteForm"
+                                            class="deleteForm d-inline m-0 p-0"
                                         >
                                             @csrf
                                             @method('DELETE')
@@ -591,34 +591,9 @@
     overflow: hidden;
 }
 
-.incoming-table {
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.sticky-col {
-    position: sticky;
-    right: 0;
-    background-color: #ffffff;
-    z-index: 2;
-    box-shadow: -3px 0 6px -2px rgba(0, 0, 0, 0.08);
-}
-
-.incoming-table thead th.sticky-col {
-    background-color: #f8fafc;
-    z-index: 3;
-}
-
-.incoming-table tbody tr:hover td.sticky-col {
-    background-color: #f8fafc;
-}
-
-.incoming-table tbody tr.incoming-row-draft td.sticky-col {
-    background-color: #fffdf5;
-}
-
-.incoming-table tbody tr.incoming-row-draft:hover td.sticky-col {
-    background-color: #fffbeb !important;
+.incoming-table td {
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 .incoming-table thead th {
@@ -636,13 +611,10 @@
     background: #f8fafc;
 }
 
-.incoming-table td {
-    white-space: nowrap;
-}
-
 .incoming-table td:nth-child(6),
 .incoming-table td:nth-child(7) {
-    min-width: 130px;
+    min-width: 120px;
+    max-width: 180px;
     white-space: normal;
 }
 

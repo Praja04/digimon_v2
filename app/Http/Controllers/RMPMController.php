@@ -13,6 +13,9 @@ use App\Models\MasterJenisBahan;
 use App\Models\MasterParameterRm;
 use App\Models\MasterStandarRm;
 use App\Models\PackagingIncoming;
+use App\Models\PackagingKartonBct;
+use App\Models\PackagingKartonSampling;
+use App\Models\PackagingKartonSamplingDraft;
 use App\Models\TransaksiAnalisaRM;
 use App\Models\AnalisaRMSampleDetail;
 use App\Models\AnalisaRMSampleGlassware;
@@ -364,6 +367,7 @@ class RMPMController extends Controller
             'jenisMaterial',
             'supplier',
             'samplingStatus',
+            'kartonBct',
         ]);
 
         abort_unless(
@@ -381,10 +385,77 @@ class RMPMController extends Controller
             'Data incoming bukan kategori Karton.'
         );
 
+        $bctData = $packagingIncoming->kartonBct;
+
         return view(
             'app.rmpm.karton-bct',
-            compact('packagingIncoming')
+            compact('packagingIncoming', 'bctData')
         );
+    }
+
+    public function pmKartonBctStore(
+        Request $request,
+        PackagingIncoming $packagingIncoming
+    ) {
+        $validated = $request->validate([
+            'bct4gt1' => 'nullable|numeric|min:0',
+            'bct4gt2' => 'nullable|numeric|min:0',
+            'resampling_count' => 'nullable|integer|min:0|max:2',
+            'values' => 'nullable|array',
+            'values.*' => 'nullable|numeric|min:0',
+            'average' => 'nullable|numeric|min:0',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        $bct = PackagingKartonBct::updateOrCreate(
+            ['packaging_incoming_id' => $packagingIncoming->id],
+            [
+                'bct4gt1' => $validated['bct4gt1'] ?? null,
+                'bct4gt2' => $validated['bct4gt2'] ?? null,
+                'resampling_count' => (int) ($validated['resampling_count'] ?? 0),
+                'values' => $validated['values'] ?? [],
+                'average' => $validated['average'] ?? 0,
+                'status' => $validated['status'] ?? 'Tidak Terisi',
+                'updated_by' => auth()->id(),
+            ]
+        );
+
+        if (!$bct->created_by && auth()->check()) {
+            $bct->created_by = auth()->id();
+            $bct->save();
+        }
+
+        // Sinkronisasi nilai rata-rata BCT ke draft/sampling jika ada
+        $avg = (float) ($bct->average ?? 0);
+        if ($avg > 0) {
+            $draft = PackagingKartonSamplingDraft::where('packaging_incoming_id', $packagingIncoming->id)->first();
+            if ($draft) {
+                $samples = $draft->hasil_sampel ?? [];
+                if (!isset($samples[0]) || !is_array($samples[0])) {
+                    $samples[0] = [];
+                }
+                $samples[0]['bct'] = $avg;
+                $draft->hasil_sampel = $samples;
+                $draft->save();
+            }
+
+            $sampling = PackagingKartonSampling::where('packaging_incoming_id', $packagingIncoming->id)->first();
+            if ($sampling) {
+                $samples = $sampling->hasil_sampel ?? [];
+                if (!isset($samples[0]) || !is_array($samples[0])) {
+                    $samples[0] = [];
+                }
+                $samples[0]['bct'] = $avg;
+                $sampling->hasil_sampel = $samples;
+                $sampling->save();
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data BCT berhasil disimpan ke database.',
+            'data' => $bct,
+        ]);
     }
 
     /*

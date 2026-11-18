@@ -35,6 +35,22 @@ class MasterGlasswareController extends Controller
                     return '<span class="badge bg-secondary"><i class="mdi mdi-close-circle-outline me-1"></i>Tidak Aktif</span>';
                 })
                 ->addColumn('action', function (MasterGlassware $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->jenis_glassware . ' No. ' . $item->nomor_glassware) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -45,15 +61,7 @@ class MasterGlasswareController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->jenis_glassware . ' No. ' . $item->nomor_glassware) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -129,13 +137,35 @@ class MasterGlasswareController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $data = MasterGlassware::findOrFail($id);
-        $data->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Data glassware berhasil dihapus.',
-        ]);
+        try {
+            $data = MasterGlassware::findOrFail($id);
+
+            if (\App\Models\AnalisaRMSampleGlassware::where('glassware_id', $id)->exists()) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Data tidak dapat dihapus karena sudah digunakan dalam data analisa RM. Silakan ubah status menjadi "Tidak Aktif" jika tidak ingin digunakan.',
+                ], 422);
+            }
+
+            $data->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Data glassware berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function getActiveData(Request $request): JsonResponse

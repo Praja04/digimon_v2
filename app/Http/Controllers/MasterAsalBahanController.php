@@ -33,6 +33,22 @@ class MasterAsalBahanController extends Controller
                     return '<span class="badge bg-secondary"><i class="mdi mdi-close-circle-outline me-1"></i>Tidak Aktif</span>';
                 })
                 ->addColumn('action', function (MasterAsalBahan $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->asal_bahan) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -43,15 +59,7 @@ class MasterAsalBahanController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->asal_bahan) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -120,13 +128,35 @@ class MasterAsalBahanController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $data = MasterAsalBahan::findOrFail($id);
-        $data->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Data asal bahan berhasil dihapus.',
-        ]);
+        try {
+            $data = MasterAsalBahan::findOrFail($id);
+
+            if (\App\Models\IdentitasRM::where('asal_bahan_id', $id)->exists()) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Data tidak dapat dihapus karena sudah digunakan dalam data Transaksi RM. Silakan ubah status menjadi "Tidak Aktif" jika tidak ingin digunakan.',
+                ], 422);
+            }
+
+            $data->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Data asal bahan berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function getAllActive(): JsonResponse

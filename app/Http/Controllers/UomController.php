@@ -38,6 +38,22 @@ class UomController extends Controller
                 })
 
                 ->addColumn('action', function (Uom $item) {
+                    $canDelete = $this->canDeleteMaster();
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . e($item->nama) . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
+
                     return '
                         <div class="d-flex gap-1">
                             <button
@@ -48,16 +64,7 @@ class UomController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . e($item->nama) . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -141,11 +148,32 @@ class UomController extends Controller
 
     public function destroy(Uom $uom): JsonResponse
     {
-        $uom->delete();
+        if (! $this->canDeleteMaster()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'UOM berhasil dihapus.',
-        ]);
+        try {
+            if (\App\Models\PackagingIncoming::query()->where('uom_id', $uom->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak dapat dihapus karena sudah digunakan pada data Incoming PM. Silakan ubah status menjadi "Tidak Aktif" jika sudah tidak digunakan.',
+                ], 422);
+            }
+
+            $uom->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'UOM berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus UOM: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

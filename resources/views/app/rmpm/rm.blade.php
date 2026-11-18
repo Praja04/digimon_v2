@@ -1086,7 +1086,7 @@
                                 } else {
                                     Swal.fire({
                                         icon: 'error',
-                                        title: 'Gagal!',
+                                        title: 'Tidak dapat dihapus',
                                         text: response.message || 'Terjadi kesalahan saat menghapus data.'
                                     });
                                 }
@@ -1098,7 +1098,7 @@
                                 }
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Gagal!',
+                                    title: 'Tidak dapat dihapus',
                                     text: errMsg
                                 });
                             }
@@ -1232,7 +1232,8 @@
                             if (errors.jumlah_kedatangan)   { $('#jumlah_kedatangan').addClass('is-invalid');   $('.errorJumlahKedatangan').html(errors.jumlah_kedatangan.join('<br>')); }
                             if (errors.lot_batch)           { $('#lot_batch').addClass('is-invalid');           $('.errorLotBatch').html(errors.lot_batch.join('<br>')); }
                         } else {
-                            Swal.fire({ icon: 'error', title: 'Kesalahan', text: 'Terjadi kesalahan, silakan coba lagi.' });
+                            let msg = xhr.responseJSON?.message || 'Terjadi kesalahan, silakan coba lagi.';
+                            Swal.fire({ icon: 'error', title: 'Kesalahan', text: msg });
                         }
                     }
                 });

@@ -872,7 +872,13 @@
             </div>
             </fieldset>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
+            <div class="d-flex justify-content-end align-items-center gap-2 mt-4">
+                <span id="autoSaveIndicator" class="small text-muted me-2 d-none">
+                    <span class="status-saving text-primary d-none"><i class="mdi mdi-cloud-sync-outline me-1"></i>Menyimpan otomatis...</span>
+                    <span class="status-saved text-success d-none"><i class="mdi mdi-cloud-check-outline me-1"></i>Tersimpan otomatis</span>
+                    <span class="status-offline text-muted d-none"><i class="mdi mdi-cloud-outline me-1"></i>Tersimpan di perangkat lokal</span>
+                </span>
+
                 <a
                     href="{{ route(
                         'rmpm.pm.karton.display',
@@ -1771,9 +1777,17 @@ document.addEventListener(
                 + input.files.length
                 > 10
             ) {
-                alert(
-                    'Maksimal total 10 foto.'
-                );
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Maksimal total 10 foto.'
+                    });
+                } else {
+                    alert(
+                        'Maksimal total 10 foto.'
+                    );
+                }
 
                 input.value = '';
 
@@ -2008,7 +2022,15 @@ document.addEventListener(
 
                 const existingCount = targetInputId === 'foto' ? existingFotoCount : existingFotoKetidaksesuaianCount;
                 if (existingCount + targetInput.files.length >= 10) {
-                    alert('Maksimal total 10 foto.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Peringatan',
+                            text: 'Maksimal total 10 foto.'
+                        });
+                    } else {
+                        alert('Maksimal total 10 foto.');
+                    }
                     this.value = '';
                     return;
                 }
@@ -2181,10 +2203,108 @@ document.addEventListener(
             }
         );
 
+        // ─────────────────────────────────────────────
+        // AUTO-SAVE DRAFT IN BACKGROUND
+        // ─────────────────────────────────────────────
+        let autoSaveTimer = null;
+        let isAutoSaving = false;
+        let pendingAutoSave = false;
+
+        const autoSaveIndicator = document.getElementById('autoSaveIndicator');
+        function setAutoSaveStatus(status) {
+            if (!autoSaveIndicator) return;
+            autoSaveIndicator.classList.remove('d-none');
+            const saving = autoSaveIndicator.querySelector('.status-saving');
+            const saved = autoSaveIndicator.querySelector('.status-saved');
+            const offline = autoSaveIndicator.querySelector('.status-offline');
+            if (saving) saving.classList.toggle('d-none', status !== 'saving');
+            if (saved) saved.classList.toggle('d-none', status !== 'saved');
+            if (offline) offline.classList.toggle('d-none', status !== 'offline');
+        }
+
+        function scheduleAutoSave() {
+            if (isSamplingLocked) return;
+
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+
+            autoSaveTimer = setTimeout(function () {
+                executeAutoSave();
+            }, 1800);
+        }
+
+        async function executeAutoSave() {
+            if (isSamplingLocked) return;
+            if (isAutoSaving) {
+                pendingAutoSave = true;
+                return;
+            }
+
+            isAutoSaving = true;
+            setAutoSaveStatus('saving');
+
+            const formData = new FormData(form);
+            formData.set('save_mode', 'draft');
+            formData.set('is_auto_save', '1');
+
+            // Hindari upload ulang file berulang pada background auto-save
+            formData.delete('foto_pengecekan');
+            for (const key of Array.from(formData.keys())) {
+                if (key.startsWith('foto[')) {
+                    formData.delete(key);
+                }
+            }
+
+            const csrfToken = form.querySelector('input[name="_token"]')?.value ?? '';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    setAutoSaveStatus('saved');
+                } else {
+                    setAutoSaveStatus('offline');
+                }
+            } catch (err) {
+                setAutoSaveStatus('offline');
+            } finally {
+                isAutoSaving = false;
+                if (pendingAutoSave) {
+                    pendingAutoSave = false;
+                    scheduleAutoSave();
+                }
+            }
+        }
+
+        // Trigger auto-save on user typing or select change
+        form.addEventListener('input', function (event) {
+            if (event.target.type === 'file' || event.target.type === 'submit') return;
+            scheduleAutoSave();
+        });
+
+        form.addEventListener('change', function (event) {
+            if (event.target.type === 'file' || event.target.type === 'submit') return;
+            scheduleAutoSave();
+        });
+
         form.addEventListener(
             'submit',
             async function (event) {
                 event.preventDefault();
+
+                if (autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                }
 
                 if (isSamplingLocked) {
                     showAlert(
@@ -2345,6 +2465,7 @@ document.addEventListener(
                         );
                     }
 
+                    setAutoSaveStatus('saved');
                     showAlert(
                         'success',
                         result.message
@@ -2363,6 +2484,13 @@ document.addEventListener(
                         error.message
                         ?? 'Terjadi kesalahan.'
                     );
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Tidak dapat disimpan',
+                            text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
+                        });
+                    }
                 } finally {
                     document
                         .querySelectorAll('.save-button')
@@ -2408,6 +2536,256 @@ document.addEventListener(
         updateKetidaksesuaian();
 
         setupKeyboardNavigation(form);
+
+        // ─────────────────────────────────────────────
+        // SAP / EXCEL COPY-PASTE INTEGRATION (KARTON FISIK)
+        // ─────────────────────────────────────────────
+        const fisikFieldOrder = ['panjang', 'lebar', 'tinggi', 'design', 'warna', 'tulisan'];
+
+        function highlightFisikInput(el) {
+            if (!el) return;
+            el.classList.add('paste-highlight');
+            setTimeout(() => {
+                el.classList.remove('paste-highlight');
+            }, 1200);
+        }
+
+        function copyKartonFisikToSap() {
+            const trList = rowsContainer.querySelectorAll('tr');
+            if (!trList.length) {
+                showAlert('warning', 'Tidak ada data sampel untuk disalin.');
+                return;
+            }
+
+            const lines = [];
+            trList.forEach(tr => {
+                const rowVals = [];
+                fisikFieldOrder.forEach(field => {
+                    if (['design', 'warna', 'tulisan'].includes(field)) {
+                        const checkedRadio = tr.querySelector(`input[name$="[${field}]"]:checked`);
+                        rowVals.push(checkedRadio ? checkedRadio.value : '');
+                    } else {
+                        const input = tr.querySelector(`input[name$="[${field}]"]`);
+                        rowVals.push(input ? input.value.trim() : '');
+                    }
+                });
+                lines.push(rowVals.join('\t'));
+            });
+
+            const copyString = lines.join('\r\n');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(copyString).then(() => {
+                    showAlert('success', `<i class="mdi mdi-check-circle-outline me-1"></i>Berhasil menyalin ${lines.length} baris data dimensi ke clipboard! Siap di-paste ke SAP / Excel.`);
+                }).catch(() => {
+                    fallbackCopyKartonFisik(copyString, lines.length);
+                });
+            } else {
+                fallbackCopyKartonFisik(copyString, lines.length);
+            }
+        }
+
+        function fallbackCopyKartonFisik(text, count) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showAlert('success', `<i class="mdi mdi-check-circle-outline me-1"></i>Berhasil menyalin ${count} baris data dimensi ke clipboard! Siap di-paste ke SAP / Excel.`);
+            } catch (e) {
+                showAlert('danger', 'Gagal menyalin data.');
+            }
+            document.body.removeChild(ta);
+        }
+
+        function applyPastedKartonFisik(rawText, startRowIdx = 0, startColIdx = 0) {
+            if (!rawText || !rawText.trim()) return;
+
+            let lines = rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (!lines.length) return;
+
+            let rawRows = lines.map(line => {
+                if (line.includes('\t')) {
+                    return line.split('\t').map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                if (line.includes(';')) {
+                    return line.split(';').map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                if (/\s{2,}/.test(line.trim())) {
+                    return line.trim().split(/\s{2,}/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                return [line.trim()];
+            });
+
+            // Strip edge empty cols
+            if (rawRows.every(r => r.length > 1 && r[0] === '')) rawRows = rawRows.map(r => r.slice(1));
+            if (rawRows.every(r => r.length > 1 && r[r.length - 1] === '')) rawRows = rawRows.map(r => r.slice(0, -1));
+
+            // Detect header
+            const headerKeywords = ['panjang', 'lebar', 'tinggi', 'design', 'warna', 'tulisan', 'no', 'sampel'];
+            const firstRowText = rawRows[0].join(' ').toLowerCase();
+            if (rawRows.length > 1 && headerKeywords.some(kw => firstRowText.includes(kw))) {
+                rawRows = rawRows.slice(1);
+            }
+
+            // Skip sample no if present in col 0
+            if (startColIdx === 0 && rawRows.length > 0) {
+                const firstCell = rawRows[0][0];
+                if (/^\d+$/.test(firstCell) && (rawRows.length === 1 || /^\d+$/.test(rawRows[1][0]))) {
+                    if (rawRows[0].length > fisikFieldOrder.length || (parseInt(rawRows[0][0]) === 1 && parseInt(rawRows[1]?.[0] || 2) === 2)) {
+                        rawRows = rawRows.map(r => r.slice(1));
+                    }
+                }
+            }
+
+            const trList = rowsContainer.querySelectorAll('tr');
+            let appliedCount = 0;
+
+            rawRows.forEach((rowVals, rOffset) => {
+                const targetRowIdx = startRowIdx + rOffset;
+                if (targetRowIdx >= trList.length) return;
+                const tr = trList[targetRowIdx];
+
+                rowVals.forEach((cellVal, cOffset) => {
+                    const targetColIdx = startColIdx + cOffset;
+                    if (targetColIdx >= fisikFieldOrder.length) return;
+                    const fieldName = fisikFieldOrder[targetColIdx];
+                    let val = (cellVal || '').toString().trim();
+
+                    if (['design', 'warna', 'tulisan'].includes(fieldName)) {
+                        const upper = val.toUpperCase();
+                        let targetVal = null;
+                        if (['OK', '1', 'SESUAI', 'BAIK', 'S', 'PASS'].includes(upper)) targetVal = 'OK';
+                        else if (['NOK', 'NOT OK', '0', 'TIDAK', 'REJECT', 'R', 'FAIL'].includes(upper)) targetVal = 'NOK';
+
+                        if (targetVal) {
+                            const radio = tr.querySelector(`input[name="samples[${targetRowIdx}][${fieldName}]"][value="${targetVal}"]`);
+                            if (radio) {
+                                radio.checked = true;
+                                radio.closest('.option-radio-group')?.querySelectorAll('.option-radio').forEach(lbl => lbl.classList.remove('is-selected'));
+                                radio.closest('.option-radio')?.classList.add('is-selected');
+                                highlightFisikInput(radio.parentElement);
+                                appliedCount++;
+                            }
+                        }
+                    } else {
+                        const input = tr.querySelector(`input[name="samples[${targetRowIdx}][${fieldName}]"]`);
+                        if (input) {
+                            val = val.replace(',', '.').replace(/[^0-9.-]/g, '');
+                            input.value = val;
+                            highlightFisikInput(input);
+                            appliedCount++;
+                        }
+                    }
+                });
+            });
+
+            if (appliedCount > 0) {
+                showAlert('success', `<i class="mdi mdi-check-circle-outline me-1"></i>Berhasil menempelkan nilai dimensi/fisik dari SAP/Excel.`);
+                if (typeof scheduleAutoSave === 'function') {
+                    scheduleAutoSave();
+                }
+            }
+        }
+
+        const btnCopySapKartonFisik = document.getElementById('btnCopySapKartonFisik');
+        const btnPasteSapKartonFisik = document.getElementById('btnPasteSapKartonFisik');
+        const modalPasteSapKartonFisikEl = document.getElementById('modalPasteSapKartonFisik');
+        const btnApplyPasteSapKartonFisik = document.getElementById('btnApplyPasteSapKartonFisik');
+        const pasteSapKartonFisikTextarea = document.getElementById('pasteSapKartonFisikTextarea');
+        const pasteStartRowKartonFisik = document.getElementById('pasteStartRowKartonFisik');
+
+        if (btnCopySapKartonFisik) {
+            btnCopySapKartonFisik.addEventListener('click', copyKartonFisikToSap);
+        }
+
+        let bsModalPasteKartonFisik = null;
+        if (modalPasteSapKartonFisikEl && window.bootstrap) {
+            bsModalPasteKartonFisik = new bootstrap.Modal(modalPasteSapKartonFisikEl);
+        }
+
+        if (btnPasteSapKartonFisik) {
+            btnPasteSapKartonFisik.addEventListener('click', function () {
+                if (pasteSapKartonFisikTextarea) pasteSapKartonFisikTextarea.value = '';
+                const activeTr = document.activeElement ? document.activeElement.closest('tr') : null;
+                if (activeTr && activeTr.parentElement === rowsContainer) {
+                    const rowIdx = Array.from(rowsContainer.children).indexOf(activeTr);
+                    if (pasteStartRowKartonFisik) pasteStartRowKartonFisik.value = rowIdx + 1;
+                } else if (pasteStartRowKartonFisik) {
+                    pasteStartRowKartonFisik.value = 1;
+                }
+                if (bsModalPasteKartonFisik) bsModalPasteKartonFisik.show();
+            });
+        }
+
+        if (btnApplyPasteSapKartonFisik && pasteSapKartonFisikTextarea) {
+            btnApplyPasteSapKartonFisik.addEventListener('click', function () {
+                const text = pasteSapKartonFisikTextarea.value;
+                const startRow = Math.max(0, parseInt(pasteStartRowKartonFisik.value || 1) - 1);
+                applyPastedKartonFisik(text, startRow, 0);
+                if (bsModalPasteKartonFisik) bsModalPasteKartonFisik.hide();
+            });
+        }
+
+        // Direct Ctrl+V on the table
+        document.addEventListener('paste', function (e) {
+            const active = document.activeElement;
+            const insideTable = active && active.closest && active.closest('.inspection-table');
+            if (!insideTable) return;
+            if (active.tagName === 'TEXTAREA') return;
+
+            const clipboardData = (e.clipboardData || window.clipboardData);
+            if (!clipboardData) return;
+            const text = clipboardData.getData('text/plain') || clipboardData.getData('text');
+            if (!text || !text.trim()) return;
+
+            let startRow = 0;
+            let startCol = 0;
+            const tr = active.closest('tr');
+            if (tr && tr.parentElement === rowsContainer) {
+                startRow = Array.from(rowsContainer.children).indexOf(tr);
+                const inputName = active.name || '';
+                const match = inputName.match(/^samples\[\d+\]\[([^\]]+)\]$/);
+                if (match) {
+                    const fIndex = fisikFieldOrder.indexOf(match[1]);
+                    if (fIndex !== -1) startCol = fIndex;
+                }
+            }
+
+            e.preventDefault();
+            applyPastedKartonFisik(text, startRow, startCol);
+        });
+
+        // Direct Ctrl+C on the table
+        document.addEventListener('copy', function (e) {
+            const active = document.activeElement;
+            const insideTable = active && active.closest && active.closest('.inspection-table');
+            if (!insideTable) return;
+            if (window.getSelection().toString().length > 0) return;
+
+            const tr = active.closest('tr');
+            if (tr && tr.parentElement === rowsContainer) {
+                e.preventDefault();
+                const rowVals = [];
+                fisikFieldOrder.forEach(field => {
+                    if (['design', 'warna', 'tulisan'].includes(field)) {
+                        const checkedRadio = tr.querySelector(`input[name$="[${field}]"]:checked`);
+                        rowVals.push(checkedRadio ? checkedRadio.value : '');
+                    } else {
+                        const input = tr.querySelector(`input[name$="[${field}]"]`);
+                        rowVals.push(input ? input.value.trim() : '');
+                    }
+                });
+                const copyString = rowVals.join('\t');
+                if (e.clipboardData) {
+                    e.clipboardData.setData('text/plain', copyString);
+                    highlightFisikInput(tr);
+                    showAlert('success', '<i class="mdi mdi-check-circle-outline me-1"></i>Baris data dimensi disalin ke clipboard untuk SAP/Excel.');
+                }
+            }
+        });
     }
 );
 </script>

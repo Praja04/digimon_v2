@@ -27,6 +27,8 @@ class JenisIncomingController extends Controller
                 ])
                 ->orderBy('id', 'asc');
 
+            $canDelete = $this->canDeleteMaster();
+
             return DataTables::of($query)
                 ->addIndexColumn()
 
@@ -48,12 +50,27 @@ class JenisIncomingController extends Controller
                     ';
                 })
 
-                ->addColumn('action', function (JenisIncoming $item) {
+                ->addColumn('action', function (JenisIncoming $item) use ($canDelete) {
                     $nama = htmlspecialchars(
                         $item->nama,
                         ENT_QUOTES,
                         'UTF-8'
                     );
+
+                    $deleteBtn = '';
+                    if ($canDelete) {
+                        $deleteBtn = '
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btnDelete"
+                                data-id="' . $item->id . '"
+                                data-nama="' . $nama . '"
+                                title="Hapus"
+                            >
+                                <i class="mdi mdi-delete"></i>
+                            </button>
+                        ';
+                    }
 
                     return '
                         <div class="d-flex gap-1">
@@ -65,16 +82,7 @@ class JenisIncomingController extends Controller
                             >
                                 <i class="mdi mdi-pencil"></i>
                             </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm btnDelete"
-                                data-id="' . $item->id . '"
-                                data-nama="' . $nama . '"
-                                title="Hapus"
-                            >
-                                <i class="mdi mdi-delete"></i>
-                            </button>
+                            ' . $deleteBtn . '
                         </div>
                     ';
                 })
@@ -180,25 +188,47 @@ class JenisIncomingController extends Controller
     }
 
     /**
-     * Menghapus data yang belum dipakai Supplier.
+     * Menghapus data master (hanya role Supervisor ke atas, misal untuk typo penginputan).
      */
     public function destroy(
         JenisIncoming $jenisIncoming
     ): JsonResponse {
-        if ($jenisIncoming->suppliers()->exists()) {
+        if (! $this->canDeleteMaster()) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Data tidak dapat dihapus karena sudah digunakan oleh Supplier.',
-            ], 422);
+                'message' => 'Hanya role Supervisor ke atas yang berhak menghapus data master.',
+            ], 403);
         }
 
-        $jenisIncoming->delete();
+        try {
+            // Cek apakah jenis incoming atau supplier-nya sudah pernah dipakai dalam transaksi incoming PM
+            $isUsedInIncoming = \App\Models\PackagingIncoming::query()
+                ->where('jenis_incoming_id', $jenisIncoming->id)
+                ->orWhereIn('supplier_id', $jenisIncoming->suppliers()->pluck('id'))
+                ->exists();
 
-        return response()->json([
-            'success' => true,
-            'message' =>
-                'Jenis Incoming berhasil dihapus.',
-        ]);
+            if ($isUsedInIncoming) {
+                return response()->json([
+                    'success' => false,
+                    'message' =>
+                        'Data tidak dapat dihapus karena sudah digunakan pada data transaksi Incoming PM. Silakan ubah status menjadi "Tidak Aktif" jika sudah tidak digunakan.',
+                ], 422);
+            }
+
+            // Hapus supplier terkait yang belum pernah dipakai transaksi (misal typo input)
+            $jenisIncoming->suppliers()->delete();
+            $jenisIncoming->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' =>
+                    'Jenis Incoming berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus Jenis Incoming: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
