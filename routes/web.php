@@ -9,6 +9,7 @@ use App\Http\Controllers\JenisMaterialController;
 use App\Http\Controllers\MasterAsalBahanController;
 use App\Http\Controllers\MasterAromaRmController;
 use App\Http\Controllers\MasterGlasswareController;
+use App\Http\Controllers\MasterGroupRmController;
 use App\Http\Controllers\MasterJenisBahanController;
 use App\Http\Controllers\MasterOrganoRmController;
 use App\Http\Controllers\MasterParameterRmController;
@@ -1059,6 +1060,21 @@ Route::middleware(['auth'])->group(function () {
             'master-data-rm/jenis-bahan',
             MasterJenisBahanController::class
         )->names('master-jenis-bahan')->only([
+            'index',
+            'store',
+            'edit',
+            'destroy',
+        ]);
+
+        Route::get(
+            'master-data-rm/group/get-by-jenis-bahan/{jenisBahanId}',
+            [MasterGroupRmController::class, 'getByJenisBahan']
+        )->name('master-group-rm.get-by-jenis-bahan');
+
+        Route::resource(
+            'master-data-rm/group',
+            MasterGroupRmController::class
+        )->names('master-group-rm')->only([
             'index',
             'store',
             'edit',

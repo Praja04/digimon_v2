@@ -114,10 +114,11 @@ class DocRmController extends Controller
             return null;
         }
 
-        $jenisRaw = trim($identitas->jenis ?? 'Gula Tebu');
+        $jenisRaw = trim($identitas->jenis ?? 'Raw Material');
         $jenisUpper = strtoupper($jenisRaw);
-        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA');
-        $isGulaTebu = str_contains($jenisUpper, 'TEBU') || (!$isGulaKelapa && str_contains($jenisUpper, 'GULA'));
+        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA') || $jenisUpper === 'GK';
+        $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
+        $isGula = ($isGulaKelapa || $isGulaTebu);
 
         $title = $isGulaTebu ? 'GULA TEBU' : ($isGulaKelapa ? 'GULA KELAPA' : $jenisUpper);
         $displayJenis = $isGulaTebu ? 'Gula Tebu' : ($isGulaKelapa ? 'Gula Kelapa' : ucwords(strtolower($jenisRaw)));

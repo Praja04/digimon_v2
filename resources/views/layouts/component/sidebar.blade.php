@@ -88,6 +88,7 @@
 
                 $masterDataRmActive = request()->routeIs([
                     'master-jenis-bahan.*',
+                    'master-group-rm.*',
                     'master-supplier-rm.*',
                     'master-asal-bahan.*',
                     'master-glassware.*',
@@ -347,10 +348,10 @@
                     </li>
 
                     {{-- RMPM --}}
-                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM'], true))
+                    @if (in_array($userRole, ['Head Of Dapartement', 'Supervisor', 'Foreman', 'Analis RM', 'Analis Field'], true))
                         <li class="nav-item">
                             <a href="{{ route('rmpm.index') }}"
-                                class="nav-link menu-link {{ request()->routeIs(['rmpm.index', 'rmpm.rm', 'rmpm.pm', 'rmpm.show', 'rmpm.analisa', 'doc-rm.*']) ? 'active' : '' }}">
+                                class="nav-link menu-link {{ request()->routeIs(['rmpm.*', 'doc-rm.*']) ? 'active' : '' }}">
                                 <i class="mdi mdi-puzzle-outline"></i>
 
                                 <span data-key="t-widgets">
@@ -749,6 +750,14 @@
                                             class="nav-link {{ request()->routeIs('master-jenis-bahan.*') ? 'active' : '' }}">
                                             <i class="mdi mdi-format-list-bulleted-type"></i>
                                             Jenis Bahan
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ Route::has('master-group-rm.index') ? route('master-group-rm.index') : '#' }}"
+                                            class="nav-link {{ request()->routeIs('master-group-rm.*') ? 'active' : '' }}">
+                                            <i class="mdi mdi-group"></i>
+                                            Master Group
                                         </a>
                                     </li>
 

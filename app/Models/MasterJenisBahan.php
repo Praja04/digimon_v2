@@ -35,4 +35,9 @@ class MasterJenisBahan extends Model
     {
         return $this->hasMany(MasterStandarRm::class, 'id_jenis_bahan');
     }
+
+    public function groupRms(): HasMany
+    {
+        return $this->hasMany(MasterGroupRm::class, 'jenis_bahan_id');
+    }
 }

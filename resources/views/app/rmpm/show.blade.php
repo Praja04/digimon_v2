@@ -73,9 +73,18 @@
                                     <i class="ri-add-line align-bottom me-1"></i> Sampling
                                 </button>
 
-                                <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasi" title="Konfirmasi Waktu Sampling & Analisa">
-                                    <i class="ri-checkbox-circle-line align-bottom me-1"></i> Konfirmasi
+                                {{-- Tombol Konfirmasi Berdasarkan Otoritas Role (Hanya jika belum dikonfirmasi) --}}
+                                @if (($isQcField || $isSupervisor) && empty($konfirmasi?->waktu_kedatangan))
+                                <button type="button" class="btn btn-warning" id="btnBukaModalKonfirmasiSampling" title="Konfirmasi Jam Sampling (QC Field)">
+                                    <i class="ri-time-line align-bottom me-1"></i> Konfirmasi Jam Sampling
                                 </button>
+                                @endif
+
+                                @if (($isAnalisLab || $isSupervisor) && empty($konfirmasi?->waktu_analisa))
+                                <button type="button" class="btn btn-info text-white" id="btnBukaModalKonfirmasiAnalisa" title="Konfirmasi Jam Selesai Analisa (Analis Lab)">
+                                    <i class="ri-flask-line align-bottom me-1"></i> Konfirmasi Selesai Analisa
+                                </button>
+                                @endif
 
                                 @if ($isQcField)
                                 <a href="{{ route('rmpm.analisa', $identitas->id) }}" class="btn btn-info" title="Akses Analis Field: Hanya input Gross Weight, parameter analisa lab read-only">
@@ -130,6 +139,11 @@
                                     <i class="ri-time-line me-1"></i>
                                     Jam Sampling: Belum Dikonfirmasi
                                 </span>
+                                @if ($isQcField || $isSupervisor)
+                                <a href="javascript:void(0)" class="text-warning small fw-semibold text-decoration-underline ms-1 btn-trigger-sampling" title="Konfirmasi Jam Sampling">
+                                    <i class="ri-checkbox-circle-line"></i> Konfirmasi Sekarang
+                                </a>
+                                @endif
                             </div>
                             @endif
 
@@ -152,6 +166,11 @@
                                     <i class="ri-flask-line me-1"></i>
                                     Jam Selesai Analisa: Belum Dikonfirmasi
                                 </span>
+                                @if ($isAnalisLab || $isSupervisor)
+                                <a href="javascript:void(0)" class="text-info small fw-semibold text-decoration-underline ms-1 btn-trigger-analisa" title="Konfirmasi Jam Selesai Analisa">
+                                    <i class="ri-checkbox-circle-line"></i> Konfirmasi Sekarang
+                                </a>
+                                @endif
                             </div>
                             @endif
                         </div>
@@ -312,18 +331,34 @@
                                     @endphp
                                     <div class="row g-2">
                                         @foreach ($mobilFields as $key => $cfg)
-                                        @php $val = optional($data_mobil)->$key; @endphp
+                                        @php
+                                        $val = optional($data_mobil)->$key;
+                                        $keterangan_key = 'keterangan_' . $key;
+                                        $ketVal = optional($data_mobil)->$keterangan_key;
+                                        @endphp
                                         <div class="col-6 col-md-4">
-                                            <div class="d-flex align-items-center gap-2">
+                                            <div class="d-flex {{ !empty($ketVal) ? 'align-items-start' : 'align-items-center' }} gap-2">
                                                 @if ($val === null)
-                                                <i class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold"></i>
-                                                <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                <i class="ri-indeterminate-circle-fill text-secondary fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
                                                 @elseif ($val === 'yes')
-                                                <i class="ri-checkbox-circle-fill text-success fs-4 fw-bold"></i>
-                                                <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                <i class="ri-checkbox-circle-fill text-success fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-muted fw-semibold">{{ $cfg['label_good'] }}</span>
+                                                </div>
                                                 @else
-                                                <i class="ri-alert-fill text-warning fs-4 fw-bold"></i>
-                                                <span class="text-warning fw-semibold">{{ $cfg['label_bad'] }}</span>
+                                                <i class="ri-alert-fill text-warning fs-4 fw-bold mt-1"></i>
+                                                <div>
+                                                    <span class="text-warning fw-semibold">{{ $cfg['label_bad'] }}</span>
+                                                    @if (!empty($ketVal))
+                                                    <div class="text-danger small fst-italic mt-1">
+                                                        <i class="ri-error-warning-line"></i>
+                                                        ({{ $ketVal }})
+                                                    </div>
+                                                    @endif
+                                                </div>
                                                 @endif
                                             </div>
                                         </div>
@@ -1700,19 +1735,26 @@
                     @csrf
                     <input type="hidden" name="id_identitas" value="{{ $identitas->id }}">
                     @foreach (['bersih' => 'a. Bersih', 'kering' => 'b. Kering', 'benda_asing' => 'c. Tidak Ada Benda Asing', 'cacat' => 'd. Tidak Cacat / Bolong', 'segel' => 'e. Segel', 'berbau' => 'f. Tidak Berbau'] as $field => $label)
-                    <div class="mb-3 d-flex justify-content-between align-items-center">
-                        <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
-                        <div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}-yes" value="yes">
-                                <label class="form-check-label" for="{{ $field }}-yes">Iya</label>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="{{ $field }}"
+                                        id="{{ $field }}-yes" value="yes">
+                                    <label class="form-check-label" for="{{ $field }}-yes">Iya</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="{{ $field }}"
+                                        id="{{ $field }}-no" value="no">
+                                    <label class="form-check-label" for="{{ $field }}-no">Tidak</label>
+                                </div>
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}-no" value="no">
-                                <label class="form-check-label" for="{{ $field }}-no">Tidak</label>
-                            </div>
+                        </div>
+                        <div class="mobil-input-wrapper mt-2" style="display:none;">
+                            <label class="form-label small text-muted">Keterangan temuan / alasan tidak sesuai:</label>
+                            <input type="text" class="form-control form-control-sm" name="keterangan_{{ $field }}"
+                                placeholder="Keterangan temuan / alasan...">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -1737,23 +1779,35 @@
             <div class="modal-body">
                 <form id="editMobilForm">
                     @csrf
+                    <input type="hidden" name="id" value="{{ $data_mobil->id ?? null }}">
                     <input type="hidden" name="id_mobil" value="{{ $data_mobil->id ?? null }}">
                     @foreach (['bersih' => 'a. Bersih', 'kering' => 'b. Kering', 'benda_asing' => 'c. Tidak Ada Benda Asing', 'cacat' => 'd. Tidak Cacat', 'segel' => 'e. Segel', 'berbau' => 'f. Tidak Berbau'] as $field => $label)
-                    <div class="mb-3 d-flex justify-content-between align-items-center">
-                        <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
-                        <div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_yes_edit" value="yes"
-                                    {{ optional($data_mobil)->$field === 'yes' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_yes_edit">Iya</label>
+                    @php
+                        $curVal = optional($data_mobil)->$field;
+                        $curKet = optional($data_mobil)->{'keterangan_' . $field};
+                    @endphp
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0 fw-semibold">{{ $label }}</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="{{ $field }}"
+                                        id="{{ $field }}_yes_edit" value="yes"
+                                        {{ $curVal === 'yes' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="{{ $field }}_yes_edit">Iya</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="{{ $field }}"
+                                        id="{{ $field }}_no_edit" value="no"
+                                        {{ $curVal === 'no' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="{{ $field }}_no_edit">Tidak</label>
+                                </div>
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="{{ $field }}"
-                                    id="{{ $field }}_no_edit" value="no"
-                                    {{ optional($data_mobil)->$field === 'no' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="{{ $field }}_no_edit">Tidak</label>
-                            </div>
+                        </div>
+                        <div class="mobil-input-wrapper-edit mt-2" style="{{ $curVal === 'no' ? '' : 'display:none;' }}">
+                            <label class="form-label small text-muted">Keterangan temuan / alasan tidak sesuai:</label>
+                            <input type="text" class="form-control form-control-sm" name="keterangan_{{ $field }}"
+                                value="{{ $curKet }}" placeholder="Keterangan temuan / alasan...">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -2231,81 +2285,103 @@
     </div>
 </div>
 
-{{-- Modal Konfirmasi Waktu Sampling & Analisa (2 Card dengan Otoritas Role) --}}
-<div class="modal fade" id="modalKonfirmasi" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+{{-- ============================================================== --}}
+{{-- MODAL KONFIRMASI PER ROLE --}}
+{{-- ============================================================== --}}
+
+{{-- 1. Modal Konfirmasi Jam Sampling (Khusus QC Field & Supervisor) --}}
+@if ($isQcField || $isSupervisor)
+<div class="modal fade" id="modalKonfirmasiSampling" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-light py-2">
-                <h5 class="modal-title fw-bold text-dark fs-6" id="modalKonfirmasiTitle">
-                    <i class="ri-checkbox-circle-line text-warning me-1"></i> Konfirmasi Waktu Sampling & Analisa
+            <div class="modal-header bg-warning-subtle py-2">
+                <h5 class="modal-title fw-bold text-dark fs-6">
+                    <i class="ri-time-line text-warning me-1"></i> Konfirmasi Jam Sampling
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <span class="badge bg-warning text-dark ms-2">QC Field</span>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row g-3">
-                    {{-- Bagian 1: Jam Sampling (QC Field) --}}
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-warning-subtle shadow-none mb-0">
-                            <div class="card-header bg-warning-subtle py-2 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-dark small">
-                                    <i class="ri-time-line text-warning me-1"></i> Jam Sampling
-                                </span>
-                                <span class="badge bg-warning text-dark small">QC Field</span>
-                            </div>
-                            <div class="card-body d-flex flex-column justify-content-between p-3">
-                                <div class="mb-3">
-                                    <label for="jamSamplingInput" class="form-label fw-semibold small text-muted">Tanggal & Jam Sampling</label>
-                                    <input type="datetime-local" class="form-control" id="jamSamplingInput">
-                                    <div class="mt-2 small" id="jamSamplingStatus"></div>
-                                </div>
-                                <div id="btnSamplingContainer">
-                                    <button type="button" class="btn btn-warning btn-sm w-100 fw-semibold" id="btnSimpanSampling">
-                                        <i class="ri-save-line me-1"></i> Simpan Jam Sampling
-                                    </button>
-                                </div>
-                            </div>
+                <div class="card border border-warning-subtle shadow-none mb-3 bg-light bg-opacity-50">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small">Nama Bahan:</span>
+                            <strong class="text-dark">{{ $identitas->nama_bahan ?? '-' }}</strong>
                         </div>
-                    </div>
-
-                    {{-- Bagian 2: Jam Selesai Analisa (Analis Lab) --}}
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-info-subtle shadow-none mb-0">
-                            <div class="card-header bg-info-subtle py-2 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-dark small">
-                                    <i class="ri-flask-line text-info me-1"></i> Jam Selesai Analisa
-                                </span>
-                                <span class="badge bg-info text-white small">Analis Lab</span>
-                            </div>
-                            <div class="card-body d-flex flex-column justify-content-between p-3">
-                                <div class="mb-3">
-                                    <label for="jamAnalisaInput" class="form-label fw-semibold small text-muted">Tanggal & Jam Selesai Analisa</label>
-                                    <input type="datetime-local" class="form-control" id="jamAnalisaInput">
-                                    <div class="mt-2 small" id="jamAnalisaStatus"></div>
-                                </div>
-                                <div id="btnAnalisaContainer">
-                                    <button type="button" class="btn btn-info btn-sm w-100 fw-semibold text-white" id="btnSimpanAnalisa">
-                                        <i class="ri-save-line me-1"></i> Simpan Jam Selesai Analisa
-                                    </button>
-                                </div>
-                            </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small">No LOT:</span>
+                            <span class="badge bg-secondary-subtle text-secondary">{{ $identitas->no_lot ?? '-' }}</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-muted small">Tanggal Kedatangan:</span>
+                            <span class="text-muted small">{{ $identitas->tanggal_kedatangan ? \Carbon\Carbon::parse($identitas->tanggal_kedatangan)->format('d M Y') : '-' }}</span>
                         </div>
                     </div>
                 </div>
 
-                {{-- Ketentuan Otoritas --}}
-                <div class="alert alert-light border mt-3 mb-0 small text-muted d-flex align-items-center">
-                    <i class="ri-shield-user-line fs-5 me-2 text-primary flex-shrink-0"></i>
-                    <div>
-                        <strong>Ketentuan Otoritas:</strong> Jam Sampling dikonfirmasi oleh <strong>QC Field</strong>. Jam Selesai Analisa dikonfirmasi oleh <strong>Analis Lab</strong>. Supervisor / Dept Head memiliki wewenang mengonfirmasi keduanya.
-                    </div>
+                <div class="mb-3">
+                    <label for="jamSamplingInput" class="form-label fw-semibold small text-muted">Tanggal & Jam Sampling</label>
+                    <input type="datetime-local" class="form-control" id="jamSamplingInput">
+                    <div class="mt-2 small" id="jamSamplingStatus"></div>
                 </div>
             </div>
             <div class="modal-footer bg-light py-2">
                 <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-sm btn-warning fw-semibold" id="btnSimpanSampling">
+                    <i class="ri-save-line me-1"></i> Simpan Jam Sampling
+                </button>
             </div>
         </div>
     </div>
 </div>
+@endif
+
+{{-- 2. Modal Konfirmasi Jam Selesai Analisa (Khusus Analis Lab & Supervisor) --}}
+@if ($isAnalisLab || $isSupervisor)
+<div class="modal fade" id="modalKonfirmasiAnalisa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info-subtle py-2">
+                <h5 class="modal-title fw-bold text-dark fs-6">
+                    <i class="ri-flask-line text-info me-1"></i> Konfirmasi Jam Selesai Analisa
+                </h5>
+                <span class="badge bg-info text-white ms-2">Analis Lab</span>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="card border border-info-subtle shadow-none mb-3 bg-light bg-opacity-50">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small">Nama Bahan:</span>
+                            <strong class="text-dark">{{ $identitas->nama_bahan ?? '-' }}</strong>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small">No LOT:</span>
+                            <span class="badge bg-secondary-subtle text-secondary">{{ $identitas->no_lot ?? '-' }}</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-muted small">Waktu Sampling (QC Field):</span>
+                            <span id="infoSamplingQCReference" class="small fw-semibold text-muted">Memuat...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="jamAnalisaInput" class="form-label fw-semibold small text-muted">Tanggal & Jam Selesai Analisa</label>
+                    <input type="datetime-local" class="form-control" id="jamAnalisaInput">
+                    <div class="mt-2 small" id="jamAnalisaStatus"></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-sm btn-info text-white fw-semibold" id="btnSimpanAnalisa">
+                    <i class="ri-save-line me-1"></i> Simpan Jam Selesai Analisa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Modal Universal Lightbox Preview Foto --}}
 <div class="modal fade" id="modalUniversalImagePreview" tabindex="-1" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);">
@@ -2395,6 +2471,27 @@
 
 
 
+        // ── Mobil input toggle ──
+        $('#form-kondisi-mobil input[type=radio]').on('change', function() {
+            const $parent = $(this).closest('.mb-3');
+            const $wrapper = $parent.find('.mobil-input-wrapper');
+            if ($(this).val() === 'no') {
+                $wrapper.slideDown(150);
+            } else {
+                $wrapper.slideUp(150).find('input').val('');
+            }
+        });
+
+        $('#editMobilForm input[type=radio]').on('change', function() {
+            const $parent = $(this).closest('.mb-3');
+            const $wrapper = $parent.find('.mobil-input-wrapper-edit');
+            if ($(this).val() === 'no') {
+                $wrapper.slideDown(150);
+            } else {
+                $wrapper.slideUp(150).find('input').val('');
+            }
+        });
+
         // ── Zak input toggle ──
         $('form.form-sampling input[type=radio]').on('change', function() {
             const $parent = $(this).closest('.mb-3');
@@ -2468,15 +2565,7 @@
             $.ajax({
                 url: "{{ route('sampling-kondisi-mobil.update') }}",
                 method: 'POST',
-                data: {
-                    id: $('[name="id_mobil"]').val(),
-                    bersih: $('[name="bersih"]:checked').val(),
-                    kering: $('[name="kering"]:checked').val(),
-                    benda_asing: $('[name="benda_asing"]:checked').val(),
-                    cacat: $('[name="cacat"]:checked').val(),
-                    segel: $('[name="segel"]:checked').val(),
-                    berbau: $('[name="berbau"]:checked').val(),
-                },
+                data: $(this).serialize(),
                 success: () => {
                     $('#editModalMobil').modal('hide');
                     Swal.fire({
@@ -2600,105 +2689,65 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        // ── Konfirmasi Jam (Role-Based: QC Field vs Analis vs Supervisor) ──
-        $('#btnBukaModalKonfirmasi').on('click', function() {
+        // ── Konfirmasi Waktu Terpisah Per Role (QC Field vs Analis Lab vs Supervisor) ──
+        function fetchKonfirmasiData(callback) {
             const defaultNow = getCurrentDateTimeLocal();
 
             $.ajax({
                 url: "{{ url('rmpm/konfirmasi/' . $identitas->id) }}",
                 type: 'GET',
                 dataType: 'json',
-                beforeSend: function() {
-                    $('#btnBukaModalKonfirmasi').prop('disabled', true);
-                },
-                complete: function() {
-                    $('#btnBukaModalKonfirmasi').prop('disabled', false);
-                },
                 success: function(r) {
-                    // 1. Populate Jam Sampling
+                    // Populate Jam Sampling
                     if ($('#jamSamplingInput').length) {
                         $('#jamSamplingInput').val(r.jam_sampling || defaultNow);
+                        if (r.jam_sampling_exists) {
+                            $('#jamSamplingInput').prop('disabled', true);
+                            $('#btnSimpanSampling').hide();
+                        } else {
+                            $('#jamSamplingInput').prop('disabled', false);
+                            $('#btnSimpanSampling').show();
+                        }
                     }
                     if ($('#jamSamplingStatus').length) {
                         if (r.sampling_by) {
-                            $('#jamSamplingStatus').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Dikonfirmasi oleh: <strong>${r.sampling_by}</strong></span>`);
+                            $('#jamSamplingStatus').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Dikonfirmasi oleh: <strong>${r.sampling_by}</strong> (${r.jam_sampling_formatted || r.jam_sampling})</span> <span class="badge bg-secondary-subtle text-secondary ms-1">Terkunci</span>`);
                         } else {
                             $('#jamSamplingStatus').html(`<span class="text-warning"><i class="ri-time-line me-1"></i> Belum dikonfirmasi (QC Field)</span>`);
                         }
                     }
 
-                    // Info box Jam Sampling (di modal Analis)
-                    if ($('#infoSamplingQCVal').length) {
-                        if (r.jam_sampling) {
-                            $('#infoSamplingQCVal').html(`<strong>${r.jam_sampling_formatted || r.jam_sampling}</strong> ${r.sampling_by ? '(' + r.sampling_by + ')' : ''}`);
-                            $('#badgeSamplingQC').html('<i class="ri-checkbox-circle-fill me-1"></i>Telah Dikonfirmasi').removeClass('bg-secondary-subtle text-muted').addClass('bg-success-subtle text-success');
-                        } else {
-                            $('#infoSamplingQCVal').html('<span class="text-muted fst-italic">Belum dikonfirmasi</span>');
-                            $('#badgeSamplingQC').html('<i class="ri-time-line me-1"></i>Menunggu QC Field').removeClass('bg-success-subtle text-success').addClass('bg-warning-subtle text-warning');
-                        }
-                    }
-
-                    // 2. Populate Jam Selesai Analisa
+                    // Populate Jam Selesai Analisa
                     if ($('#jamAnalisaInput').length) {
                         $('#jamAnalisaInput').val(r.jam_analisa || defaultNow);
+                        if (r.jam_analisa_exists) {
+                            $('#jamAnalisaInput').prop('disabled', true);
+                            $('#btnSimpanAnalisa').hide();
+                        } else {
+                            $('#jamAnalisaInput').prop('disabled', false);
+                            $('#btnSimpanAnalisa').show();
+                        }
                     }
                     if ($('#jamAnalisaStatus').length) {
                         if (r.analisa_by) {
-                            $('#jamAnalisaStatus').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Dikonfirmasi oleh: <strong>${r.analisa_by}</strong></span>`);
+                            $('#jamAnalisaStatus').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> Dikonfirmasi oleh: <strong>${r.analisa_by}</strong> (${r.jam_analisa_formatted || r.jam_analisa})</span> <span class="badge bg-secondary-subtle text-secondary ms-1">Terkunci</span>`);
                         } else {
-                            $('#jamAnalisaStatus').html(`<span class="text-info"><i class="ri-flask-line me-1"></i> Belum dikonfirmasi (Analis)</span>`);
+                            $('#jamAnalisaStatus').html(`<span class="text-info"><i class="ri-flask-line me-1"></i> Belum dikonfirmasi (Analis Lab)</span>`);
                         }
                     }
 
-                    // Info box Jam Analisa Lab (di modal QC Field)
-                    if ($('#infoAnalisaLabVal').length) {
-                        if (r.jam_analisa) {
-                            $('#infoAnalisaLabVal').html(`<strong>${r.jam_analisa_formatted || r.jam_analisa}</strong> ${r.analisa_by ? '(' + r.analisa_by + ')' : ''}`);
-                            $('#badgeAnalisaLab').html('<i class="ri-checkbox-circle-fill me-1"></i>Telah Selesai').removeClass('bg-secondary-subtle text-muted').addClass('bg-success-subtle text-success');
+                    // Info Referensi Jam Sampling QC di Modal Analisa
+                    if ($('#infoSamplingQCReference').length) {
+                        if (r.jam_sampling) {
+                            $('#infoSamplingQCReference').html(`<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i> ${r.jam_sampling_formatted || r.jam_sampling} WIB ${r.sampling_by ? '(' + r.sampling_by + ')' : ''}</span>`);
                         } else {
-                            $('#infoAnalisaLabVal').html('<span class="text-muted fst-italic">Belum dikonfirmasi</span>');
-                            $('#badgeAnalisaLab').html('<i class="ri-flask-line me-1"></i>Dalam Proses Lab').removeClass('bg-success-subtle text-success').addClass('bg-secondary-subtle text-muted');
+                            $('#infoSamplingQCReference').html(`<span class="text-warning"><i class="ri-time-line me-1"></i> Belum dikonfirmasi oleh QC Field</span>`);
                         }
                     }
 
-                    // Otoritas Gating: Jam Sampling (QC Field) & Jam Selesai Analisa (Analis)
-                    if ($('#btnSamplingContainer').length) {
-                        if (!r.can_edit_sampling) {
-                            $('#jamSamplingInput').prop('disabled', true);
-                            $('#btnSamplingContainer').html(`
-                                <button type="button" class="btn btn-light btn-sm w-100 text-muted" disabled>
-                                    <i class="ri-lock-line me-1"></i> Akses Terbatas (Khusus QC Field)
-                                </button>
-                            `);
-                        } else {
-                            $('#jamSamplingInput').prop('disabled', false);
-                            $('#btnSamplingContainer').html(`
-                                <button type="button" class="btn btn-warning btn-sm w-100 fw-semibold" id="btnSimpanSampling">
-                                    <i class="ri-save-line me-1"></i> Simpan Jam Sampling
-                                </button>
-                            `);
-                        }
+                    if (typeof callback === 'function') {
+                        callback(r);
                     }
-
-                    if ($('#btnAnalisaContainer').length) {
-                        if (!r.can_edit_analisa) {
-                            $('#jamAnalisaInput').prop('disabled', true);
-                            $('#btnAnalisaContainer').html(`
-                                <button type="button" class="btn btn-light btn-sm w-100 text-muted" disabled>
-                                    <i class="ri-lock-line me-1"></i> Akses Terbatas (Khusus Analis)
-                                </button>
-                            `);
-                        } else {
-                            $('#jamAnalisaInput').prop('disabled', false);
-                            $('#btnAnalisaContainer').html(`
-                                <button type="button" class="btn btn-info btn-sm w-100 fw-semibold text-white" id="btnSimpanAnalisa">
-                                    <i class="ri-save-line me-1"></i> Simpan Jam Selesai Analisa
-                                </button>
-                            `);
-                        }
-                    }
-
-                    $('#modalKonfirmasi').modal('show');
                 },
                 error: function() {
                     Swal.fire({
@@ -2708,9 +2757,45 @@
                     });
                 }
             });
+        }
+
+        // Buka Modal Konfirmasi Jam Sampling (QC Field & Supervisor)
+        $(document).on('click', '#btnBukaModalKonfirmasiSampling, .btn-trigger-sampling', function() {
+            const btn = $(this);
+            btn.prop('disabled', true);
+            fetchKonfirmasiData(function(r) {
+                btn.prop('disabled', false);
+                if (r && r.jam_sampling_exists) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Terkunci',
+                        text: 'Jam Sampling sudah dikonfirmasi dan tidak dapat diubah lagi.'
+                    });
+                    return;
+                }
+                $('#modalKonfirmasiSampling').modal('show');
+            });
         });
 
-        // Simpan Jam Sampling (QC Field)
+        // Buka Modal Konfirmasi Jam Selesai Analisa (Analis Lab & Supervisor)
+        $(document).on('click', '#btnBukaModalKonfirmasiAnalisa, .btn-trigger-analisa', function() {
+            const btn = $(this);
+            btn.prop('disabled', true);
+            fetchKonfirmasiData(function(r) {
+                btn.prop('disabled', false);
+                if (r && r.jam_analisa_exists) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Terkunci',
+                        text: 'Jam Selesai Analisa sudah dikonfirmasi dan tidak dapat diubah lagi.'
+                    });
+                    return;
+                }
+                $('#modalKonfirmasiAnalisa').modal('show');
+            });
+        });
+
+        // Simpan Jam Sampling (QC Field & Supervisor)
         $(document).on('click', '#btnSimpanSampling', function() {
             const jamVal = $('#jamSamplingInput').val();
             if (!jamVal) {
@@ -2737,7 +2822,7 @@
                     jam: jamVal,
                 },
                 success: function(r) {
-                    $('#modalKonfirmasi').modal('hide');
+                    $('#modalKonfirmasiSampling').modal('hide');
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
@@ -2754,7 +2839,7 @@
             });
         });
 
-        // Simpan Jam Selesai Analisa (Analis)
+        // Simpan Jam Selesai Analisa (Analis Lab & Supervisor)
         $(document).on('click', '#btnSimpanAnalisa', function() {
             const jamVal = $('#jamAnalisaInput').val();
             if (!jamVal) {
@@ -2781,7 +2866,7 @@
                     jam: jamVal,
                 },
                 success: function(r) {
-                    $('#modalKonfirmasi').modal('hide');
+                    $('#modalKonfirmasiAnalisa').modal('hide');
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',

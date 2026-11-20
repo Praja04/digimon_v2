@@ -51,10 +51,11 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
     public function title(): string
     {
         $jenisUpper = strtoupper(trim($this->identitas->jenis ?? 'GULA TEBU'));
-        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA');
-        $isGulaTebu = str_contains($jenisUpper, 'TEBU') || (!$isGulaKelapa && str_contains($jenisUpper, 'GULA'));
+        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA') || $jenisUpper === 'GK';
+        $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
         $cleanTitle = $isGulaTebu ? 'GULA TEBU' : ($isGulaKelapa ? 'GULA KELAPA' : $jenisUpper);
-        return 'LAPORAN ' . substr($cleanTitle, 0, 20);
+        $titleStr = 'LAPORAN ' . $cleanTitle;
+        return substr(preg_replace('/[\:\/\\\?\*\[\]]/', '', $titleStr), 0, 31);
     }
 
     public function registerEvents(): array
@@ -74,8 +75,9 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
         $identitas = $this->identitas;
         $jenisUpper = strtoupper(trim($identitas->jenis ?? 'GULA TEBU'));
-        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA');
-        $isGulaTebu = str_contains($jenisUpper, 'TEBU') || (!$isGulaKelapa && str_contains($jenisUpper, 'GULA'));
+        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA') || $jenisUpper === 'GK';
+        $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
+        $isGula = ($isGulaKelapa || $isGulaTebu);
         $titleMain = $isGulaTebu ? 'GULA TEBU' : ($isGulaKelapa ? 'GULA KELAPA' : $jenisUpper);
 
         // Ambil data sampel analisa (Jika ada monitoring/long term, hitung rata-rata gabungan)
@@ -155,21 +157,23 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->setCellValue('B5', 'SPB');
         $sheet->setCellValue('C5', $spb);
 
-        $sheet->setCellValue('B6', 'Standart BPS');
-        $sheet->setCellValue('C6', $standartBps);
-        $cleanBps = strtolower(trim((string)$standartBps));
-        if ($cleanBps === 'kritis') {
-            $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF990000');
-            $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-        } elseif ($cleanBps === 'standar') {
-            $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF15803D');
-            $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-        } elseif ($cleanBps === 'non-kritis') {
-            $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF475569');
-            $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-        } elseif ($cleanBps !== '') {
-            $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF0369A1');
-            $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+        if ($isGula) {
+            $sheet->setCellValue('B6', 'Standart BPS');
+            $sheet->setCellValue('C6', $standartBps);
+            $cleanBps = strtolower(trim((string)$standartBps));
+            if ($cleanBps === 'kritis') {
+                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF990000');
+                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            } elseif ($cleanBps === 'standar') {
+                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF15803D');
+                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            } elseif ($cleanBps === 'non-kritis') {
+                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF475569');
+                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            } elseif ($cleanBps !== '') {
+                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF0369A1');
+                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            }
         }
 
         // Header Kanan
@@ -185,6 +189,67 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
         $sheet->getStyle('B3:B6')->getFont()->setBold(false);
         $sheet->getStyle('G3:G5')->getFont()->setBold(false);
+
+        // Jika bukan Gula Kelapa & bukan Gula Tebu -> Kosongkan template tapi tetap ekspor lembar form kosong
+        if (!$isGula) {
+            // Header Tabel Lembar Form Kosong
+            $sheet->setCellValue('B8', 'No');
+            $sheet->setCellValue('C8', 'Parameter Uji');
+            $sheet->setCellValue('D8', 'Standar Mutu');
+            $sheet->setCellValue('E8', 'Hasil Analisa');
+            $sheet->setCellValue('F8', 'Keterangan');
+            $sheet->mergeCells('F8:G8');
+
+            $sheet->getStyle('B8:G8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9E1F2');
+            $sheet->getStyle('B8:G8')->getFont()->setBold(true);
+            $sheet->getStyle('B8:G8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // 10 Baris Kosong
+            for ($r = 9; $r <= 18; $r++) {
+                $sheet->setCellValue("B{$r}", $r - 8);
+                $sheet->mergeCells("F{$r}:G{$r}");
+            }
+
+            $thinBorder = [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => 'FF000000'],
+                    ],
+                ],
+            ];
+            $sheet->getStyle('B8:G18')->applyFromArray($thinBorder);
+            $sheet->getStyle('B9:B18')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // Tanda Tangan
+            $sheet->setCellValue('C21', 'Dianalisa Oleh:');
+            $sheet->setCellValue('C25', '( ........................................ )');
+            $sheet->setCellValue('C26', 'Analis Laboratorium');
+            $sheet->getStyle('C21:C26')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $sheet->setCellValue('F21', 'Disetujui Oleh:');
+            $sheet->mergeCells('F21:G21');
+            $sheet->setCellValue('F25', '( ........................................ )');
+            $sheet->mergeCells('F25:G25');
+            $sheet->setCellValue('F26', 'Foreman / Supervisor');
+            $sheet->mergeCells('F26:G26');
+            $sheet->getStyle('F21:G26')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // Column Widths
+            $sheet->getColumnDimension('A')->setWidth(3);
+            $sheet->getColumnDimension('B')->setWidth(8);
+            $sheet->getColumnDimension('C')->setWidth(30);
+            $sheet->getColumnDimension('D')->setWidth(25);
+            $sheet->getColumnDimension('E')->setWidth(20);
+            $sheet->getColumnDimension('F')->setWidth(20);
+            $sheet->getColumnDimension('G')->setWidth(15);
+            $sheet->getColumnDimension('H')->setWidth(15);
+
+            $sheet->getStyle('A1:H26')->getFont()->setName('Calibri')->setSize(10);
+            $sheet->getStyle('D1')->getFont()->setSize(14)->setBold(true);
+
+            return;
+        }
 
         // -------------------------------------------------------------
         // 2. TABEL KIRI & TABEL KANAN (START ROW 8)

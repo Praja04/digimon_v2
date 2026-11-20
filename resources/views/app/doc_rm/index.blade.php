@@ -210,15 +210,6 @@
                     {{ $docData['title'] ?? $docData['jenis'] }}
                 </div>
 
-                @if(!empty($docData['is_supported']) && !$docData['is_supported'])
-                <div class="alert alert-warning d-flex align-items-center mb-4 no-print" role="alert">
-                    <i class="ri-alert-line fs-20 me-2"></i>
-                    <div>
-                        <strong>Perhatian:</strong> Dokumen kalkulasi ini dikhususkan untuk Raw Material <strong>GULA</strong> (Gula Tebu / Gula Kelapa). Data yang dipilih saat ini adalah <strong>{{ $docData['jenis'] }}</strong>.
-                    </div>
-                </div>
-                @endif
-
                 {{-- Header Metadata persis Gambar 2 & 3 --}}
                 <div class="row mb-4">
                     <div class="col-md-6">
@@ -235,6 +226,7 @@
                                 <td class="meta-label">SPB</td>
                                 <td class="meta-val">: {{ $docData['spb'] }}</td>
                             </tr>
+                            @if($docData['is_supported'])
                             <tr>
                                 <td class="meta-label">Standart BPS</td>
                                 <td class="meta-val">
@@ -255,6 +247,7 @@
                                     </div>
                                 </td>
                             </tr>
+                            @endif
                         </table>
                     </div>
                     <div class="col-md-6">
@@ -275,7 +268,8 @@
                     </div>
                 </div>
 
-                {{-- Two Tables Side-By-Side (Left & Right) --}}
+                @if($docData['is_supported'])
+                {{-- Two Tables Side-By-Side (Left & Right) Khusus Gula Tebu & Gula Kelapa --}}
                 <div class="row g-4">
                     
                     {{-- TABEL KIRI: pH, Brix, %Kotoran --}}
@@ -555,6 +549,46 @@
                     </div>
 
                 </div>
+                @else
+                {{-- Lembar Format Kosong untuk Bahan Selain Gula Tebu & Gula Kelapa --}}
+                <div class="mt-4">
+                    <table class="table-kalkulasi">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">No</th>
+                                <th style="width: 32%;">Parameter Uji</th>
+                                <th style="width: 25%;">Standar Mutu</th>
+                                <th style="width: 15%;">Hasil Analisa</th>
+                                <th style="width: 20%;">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for ($i = 1; $i <= 10; $i++)
+                            <tr>
+                                <td class="cell-center text-muted" style="height: 38px;">{{ $i }}</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            @endfor
+                        </tbody>
+                    </table>
+
+                    <div class="row mt-5 pt-3">
+                        <div class="col-6 text-center">
+                            <p class="mb-5 small text-muted">Dianalisa Oleh:</p>
+                            <p class="fw-semibold text-dark mb-0">( ........................................ )</p>
+                            <small class="text-muted">Analis Laboratorium</small>
+                        </div>
+                        <div class="col-6 text-center">
+                            <p class="mb-5 small text-muted">Disetujui Oleh:</p>
+                            <p class="fw-semibold text-dark mb-0">( ........................................ )</p>
+                            <small class="text-muted">Foreman / Supervisor</small>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
             </div>
         </div>
