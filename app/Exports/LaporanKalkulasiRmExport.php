@@ -2,12 +2,15 @@
 
 namespace App\Exports;
 
+use App\Http\Controllers\Analisa\DocRmController;
+use App\Http\Controllers\RMPMController;
 use App\Models\IdentitasRM;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -26,10 +29,10 @@ class LaporanKalkulasiRmExport implements WithMultipleSheets
     {
         $sheets = [];
 
-        // Sheet 1: Lembar Laporan Kalkulasi (persis seperti Gambar 2 & 3)
+        // Sheet 1: Lembar Laporan / Form Dokumen Analisis
         $sheets[] = new LaporanKalkulasiSheetExport($this->identitas);
 
-        // Sheet 2: Data Mentah Sampel (Brix, pH, Kotoran, KA, Organo per sampel)
+        // Sheet 2: Data Mentah Sampel
         $sheets[] = new DataSampelRmSheetExport($this->identitas);
 
         return $sheets;
@@ -70,17 +73,35 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
     protected function buildReport(Worksheet $sheet): void
     {
-        // Nonaktifkan gridlines default agar kita bisa mengatur garis border sendiri
         $sheet->setShowGridlines(true);
 
+        $identitas = $this->identitas;
+        $jenisUpper = strtoupper(trim($identitas->jenis ?? 'RM'));
+        $isGulaKelapa = str_contains($jenisUpper, 'KELAPA') || $jenisUpper === 'GK';
+        $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
+        $isGulaSpecial = ($isGulaKelapa || $isGulaTebu);
+
+        // Khusus Gula Tebu & Gula Kelapa: Buat Laporan Kalkulasi Statistik
+        if ($isGulaSpecial) {
+            $this->buildGulaKalkulasiReport($sheet);
+        } else {
+            // Semua bahan lainnya (Garam, SKM, Karamel, Minor Ingredient, Glukosa Cair/HFCS, Gula Rafinasi/lainnya):
+            // Buat Form Laporan Dokumen Analisis persis template Excel resmi
+            $this->buildOfficialTemplateReport($sheet);
+        }
+    }
+
+    /**
+     * Format Laporan Kalkulasi Statistik khusus Gula Tebu & Gula Kelapa
+     */
+    protected function buildGulaKalkulasiReport(Worksheet $sheet): void
+    {
         $identitas = $this->identitas;
         $jenisUpper = strtoupper(trim($identitas->jenis ?? 'GULA TEBU'));
         $isGulaKelapa = str_contains($jenisUpper, 'KELAPA') || $jenisUpper === 'GK';
         $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
-        $isGula = ($isGulaKelapa || $isGulaTebu);
-        $titleMain = $isGulaTebu ? 'GULA TEBU' : ($isGulaKelapa ? 'GULA KELAPA' : $jenisUpper);
+        $titleMain = $isGulaTebu ? 'GULA TEBU' : 'GULA KELAPA';
 
-        // Ambil data sampel analisa (Jika ada monitoring/long term, hitung rata-rata gabungan)
         $samples = $identitas->analisaSampel ?? ($identitas->analisaShortTerm ?? collect());
         $hasMonitoring = $samples->contains(fn($s) => strtolower($s->kategori ?? '') === 'monitoring');
         if ($hasMonitoring) {
@@ -93,61 +114,34 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
                 $incomingSamples = $samples;
             }
         }
-
-        // Jika analisa garam gula (misal Garam)
         if ($incomingSamples->isEmpty() && $identitas->analisaGaramGula->isNotEmpty()) {
             $incomingSamples = $identitas->analisaGaramGula;
-        }
-        if ($incomingSamples->isEmpty() && $identitas->analisaBahanKering && $identitas->analisaBahanKering->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaBahanKering;
-        }
-        if ($incomingSamples->isEmpty() && $identitas->analisaBahanCair && $identitas->analisaBahanCair->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaBahanCair;
-        }
-
-        // Jika analisa bahan kering (misal MSG, ND, Rafinasi)
-        if ($incomingSamples->isEmpty() && $identitas->analisaBahanKering && $identitas->analisaBahanKering->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaBahanKering;
-        }
-
-        // Jika analisa bahan cair (misal Glukosa, HFCS, Sari Kecap, Karamel)
-        if ($incomingSamples->isEmpty() && $identitas->analisaBahanCair && $identitas->analisaBahanCair->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaBahanCair;
         }
 
         $sampleCount = $incomingSamples->count();
 
-        // Data arrays numerik
-        $phVals = $incomingSamples->pluck('ph')->filter(fn($v) => $v !== null && $v !== '')->map(fn($v) => (float)$v)->values();
-        $brixVals = $incomingSamples->pluck('brix')->filter(fn($v) => $v !== null && $v !== '')->map(fn($v) => (float)$v)->values();
-        $kotoranVals = $incomingSamples->pluck('kotoran')->filter(fn($v) => $v !== null && $v !== '')->map(fn($v) => (float)$v)->values();
+        // Data numerik
+        $phVals = $incomingSamples->pluck('ph')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
+        $brixVals = $incomingSamples->pluck('brix')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
+        $kotoranVals = $incomingSamples->pluck('kotoran')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
         
-        // Kadar air (ka atau %ka)
         $kaField = $incomingSamples->first()?->offsetExists('%ka') ? '%ka' : 'ka';
-        $kaVals = $incomingSamples->pluck($kaField)->filter(fn($v) => $v !== null && $v !== '')->map(fn($v) => (float)$v)->values();
-
-        // Organo values
+        $kaVals = $incomingSamples->pluck($kaField)->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
         $organoVals = $incomingSamples->pluck('organo')->filter(fn($v) => !empty($v))->map(fn($v) => trim((string)$v))->values();
 
-        // -------------------------------------------------------------
-        // 1. HEADER ATAS
-        // -------------------------------------------------------------
-        $tglIncoming = $identitas->tanggal_kedatangan
-            ? Carbon::parse($identitas->tanggal_kedatangan)->format('d-M-Y')
-            : '-';
+        // Header Atas
+        $tglIncoming = $identitas->tanggal_kedatangan ? Carbon::parse($identitas->tanggal_kedatangan)->format('d-M-Y') : '-';
         $vendor = $identitas->supplier ?? '-';
         $spb = $identitas->no_spb ?? '-';
         $standartBps = $identitas->standart_bps ?? '';
         $nopol = $identitas->no_plat ?? '-';
         $qty = $identitas->jumlah_kedatangan ? number_format((float)$identitas->jumlah_kedatangan, 0, ',', '.') : '-';
 
-        // Judul Utama (Center)
         $sheet->setCellValue('D1', $titleMain);
         $sheet->mergeCells('D1:G1');
         $sheet->getStyle('D1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Header Kiri
         $sheet->setCellValue('B3', 'Tgl Incoming');
         $sheet->setCellValue('C3', $tglIncoming);
 
@@ -157,26 +151,18 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->setCellValue('B5', 'SPB');
         $sheet->setCellValue('C5', $spb);
 
-        if ($isGula) {
-            $sheet->setCellValue('B6', 'Standart BPS');
-            $sheet->setCellValue('C6', $standartBps);
-            $cleanBps = strtolower(trim((string)$standartBps));
-            if ($cleanBps === 'kritis') {
-                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF990000');
-                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-            } elseif ($cleanBps === 'standar') {
-                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF15803D');
-                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-            } elseif ($cleanBps === 'non-kritis') {
-                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF475569');
-                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-            } elseif ($cleanBps !== '') {
-                $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF0369A1');
-                $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-            }
+        $sheet->setCellValue('B6', 'Standart BPS');
+        $sheet->setCellValue('C6', $standartBps);
+
+        $cleanBps = strtolower(trim((string)$standartBps));
+        if ($cleanBps === 'kritis') {
+            $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF990000');
+            $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+        } elseif ($cleanBps === 'standar') {
+            $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF15803D');
+            $sheet->getStyle('C6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
         }
 
-        // Header Kanan
         $sheet->setCellValue('G3', 'Nopol');
         $sheet->setCellValue('H3', $nopol);
 
@@ -187,79 +173,12 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->setCellValue('H5', $sampleCount);
         $sheet->getStyle('H5')->getFont()->setBold(true);
 
-        $sheet->getStyle('B3:B6')->getFont()->setBold(false);
-        $sheet->getStyle('G3:G5')->getFont()->setBold(false);
-
-        // Jika bukan Gula Kelapa & bukan Gula Tebu -> Kosongkan template tapi tetap ekspor lembar form kosong
-        if (!$isGula) {
-            // Header Tabel Lembar Form Kosong
-            $sheet->setCellValue('B8', 'No');
-            $sheet->setCellValue('C8', 'Parameter Uji');
-            $sheet->setCellValue('D8', 'Standar Mutu');
-            $sheet->setCellValue('E8', 'Hasil Analisa');
-            $sheet->setCellValue('F8', 'Keterangan');
-            $sheet->mergeCells('F8:G8');
-
-            $sheet->getStyle('B8:G8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9E1F2');
-            $sheet->getStyle('B8:G8')->getFont()->setBold(true);
-            $sheet->getStyle('B8:G8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // 10 Baris Kosong
-            for ($r = 9; $r <= 18; $r++) {
-                $sheet->setCellValue("B{$r}", $r - 8);
-                $sheet->mergeCells("F{$r}:G{$r}");
-            }
-
-            $thinBorder = [
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => 'FF000000'],
-                    ],
-                ],
-            ];
-            $sheet->getStyle('B8:G18')->applyFromArray($thinBorder);
-            $sheet->getStyle('B9:B18')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Tanda Tangan
-            $sheet->setCellValue('C21', 'Dianalisa Oleh:');
-            $sheet->setCellValue('C25', '( ........................................ )');
-            $sheet->setCellValue('C26', 'Analis Laboratorium');
-            $sheet->getStyle('C21:C26')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            $sheet->setCellValue('F21', 'Disetujui Oleh:');
-            $sheet->mergeCells('F21:G21');
-            $sheet->setCellValue('F25', '( ........................................ )');
-            $sheet->mergeCells('F25:G25');
-            $sheet->setCellValue('F26', 'Foreman / Supervisor');
-            $sheet->mergeCells('F26:G26');
-            $sheet->getStyle('F21:G26')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Column Widths
-            $sheet->getColumnDimension('A')->setWidth(3);
-            $sheet->getColumnDimension('B')->setWidth(8);
-            $sheet->getColumnDimension('C')->setWidth(30);
-            $sheet->getColumnDimension('D')->setWidth(25);
-            $sheet->getColumnDimension('E')->setWidth(20);
-            $sheet->getColumnDimension('F')->setWidth(20);
-            $sheet->getColumnDimension('G')->setWidth(15);
-            $sheet->getColumnDimension('H')->setWidth(15);
-
-            $sheet->getStyle('A1:H26')->getFont()->setName('Calibri')->setSize(10);
-            $sheet->getStyle('D1')->getFont()->setSize(14)->setBold(true);
-
-            return;
-        }
-
-        // -------------------------------------------------------------
-        // 2. TABEL KIRI & TABEL KANAN (START ROW 8)
-        // -------------------------------------------------------------
-        $headerFill = 'FFD9E1F2'; // Soft blue/gray
-        $subHeaderFill = 'FFD9E1F2';
+        // Styling Color Constants
+        $headerFill = 'FFD9E1F2';
+        $subHeaderFill = 'FFB4C6E7';
         $yellowFill = 'FFFFFF00';
         $greenFill = 'FFC6EFCE';
 
-        // Header Tabel Kiri (B=Parameter Col1, C=Parameter Col2, D=Awal, E=Keterangan)
         $sheet->setCellValue('B8', 'Parameter');
         $sheet->mergeCells('B8:C8');
         $sheet->setCellValue('D8', 'Awal');
@@ -268,7 +187,6 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->getStyle('B8:E8')->getFont()->setBold(true);
         $sheet->getStyle('B8:E8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Header Tabel Kanan (G=Parameter, H=Awal, I=Keterangan)
         $sheet->setCellValue('G8', 'Parameter');
         $sheet->setCellValue('H8', 'Awal');
         $sheet->setCellValue('I8', 'Keterangan');
@@ -276,44 +194,16 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->getStyle('G8:I8')->getFont()->setBold(true);
         $sheet->getStyle('G8:I8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Ambil Standar Mutu Dinamis dari Master Data (MasterStandarRm)
-        $cleanJenis = strtoupper(trim((string)$this->identitas->jenis));
-        $standards = \App\Models\MasterStandarRm::where('status', true)
-            ->whereHas('jenisBahan', function ($q) use ($cleanJenis) {
-                $q->whereRaw('UPPER(nama) = ?', [$cleanJenis]);
-            })
-            ->get();
-
-        if ($standards->isEmpty()) {
-            $standards = \App\Models\MasterStandarRm::where('status', true)
-                ->whereHas('jenisBahan', function ($q) use ($isGulaKelapa) {
-                    if ($isGulaKelapa) {
-                        $q->where('nama', 'LIKE', '%KELAPA%');
-                    } else {
-                        $q->where('nama', 'LIKE', '%TEBU%');
-                    }
-                })
-                ->get();
-        }
-
-        $stdPh = $standards->first(fn($s) => stripos($s->parameter, 'ph') !== false);
-        $phMinSpec = $stdPh?->min_standar ?? ($isGulaKelapa ? 5.30 : 5.50);
-        $phMaxSpec = $stdPh?->max_standar ?? 6.50;
+        // Standar Mutu
+        $phMinSpec = $isGulaKelapa ? 5.30 : 5.50;
+        $phMaxSpec = 6.50;
         $phStdText = 'pH (STD : ' . number_format($phMinSpec, 2, ',', '.') . ' - ' . number_format($phMaxSpec, 2, ',', '.') . ')';
-
-        $stdBrix = $standards->first(fn($s) => stripos($s->parameter, 'brix') !== false);
-        $brixMinSpec = $stdBrix?->min_standar ?? 8.7;
-        $brixStdText = 'Brix (STD : Min, ' . number_format($brixMinSpec, 1, ',', '.') . ')';
-
-        $stdKot = $standards->first(fn($s) => stripos($s->parameter, 'kotoran') !== false);
-        $kotMaxSpec = $stdKot?->max_standar ?? 10.0;
-        $kotStdText = '%Kotoran (STD : Max, ' . number_format($kotMaxSpec, 0, ',', '.') . '% w/w)';
-
-        $stdKa = $standards->first(fn($s) => stripos($s->parameter, 'kadar air') !== false || stripos($s->parameter, 'ka') !== false);
-        $kaMaxSpec = $stdKa?->max_standar ?? ($isGulaTebu ? 3.0 : 8.0);
+        $brixStdText = 'Brix (STD : Min, 8,7)';
+        $kotStdText = '%Kotoran (STD : Max, 10% w/w)';
+        $kaMaxSpec = $isGulaTebu ? 3.0 : 8.0;
         $kaStdText = '%Kadar Air (STD : Max, ' . number_format($kaMaxSpec, 0, ',', '.') . '%)';
 
-        // --- TABEL KIRI: pH ---
+        // --- pH ---
         $sheet->setCellValue('B9', $phStdText);
         $sheet->mergeCells('B9:E9');
         $sheet->getStyle('B9:E9')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
@@ -323,38 +213,26 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $minPh = $phVals->isNotEmpty() ? $phVals->min() : null;
         $maxPh = $phVals->isNotEmpty() ? $phVals->max() : null;
 
-        $sheet->setCellValue('B10', 'Avg,');
-        $sheet->mergeCells('B10:C10');
+        $sheet->setCellValue('B10', 'Avg,'); $sheet->mergeCells('B10:C10');
         $sheet->setCellValue('D10', $avgPh !== null ? number_format($avgPh, 2, ',', '.') : '-');
 
-        $sheet->setCellValue('B11', 'Min,');
-        $sheet->mergeCells('B11:C11');
+        $sheet->setCellValue('B11', 'Min,'); $sheet->mergeCells('B11:C11');
         $sheet->setCellValue('D11', $minPh !== null ? number_format($minPh, 2, ',', '.') : '-');
 
-        $sheet->setCellValue('B12', 'Max,');
-        $sheet->mergeCells('B12:C12');
+        $sheet->setCellValue('B12', 'Max,'); $sheet->mergeCells('B12:C12');
         $sheet->setCellValue('D12', $maxPh !== null ? number_format($maxPh, 2, ',', '.') : '-');
 
-        // Highlight pH jika out of spec
         if ($avgPh !== null && ($avgPh < $phMinSpec || $avgPh > $phMaxSpec)) {
             $sheet->getStyle('D10')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
         }
-        if ($minPh !== null && $minPh < $phMinSpec) {
-            $sheet->getStyle('D11')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-        if ($maxPh !== null && $maxPh > $phMaxSpec) {
-            $sheet->getStyle('D12')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
 
-        // Distribusi %Qty Sample pH
         $totalPhSampel = $phVals->count() ?: 1;
+        $cntPhUnder = $phVals->filter(fn($v) => $v < $phMinSpec)->count();
+        $pctPhUnder = ($cntPhUnder / $totalPhSampel) * 100;
+        $cntPhInSpec = $phVals->filter(fn($v) => $v >= $phMinSpec && $v <= $phMaxSpec)->count();
+        $pctPhInSpec = ($cntPhInSpec / $totalPhSampel) * 100;
 
         if ($isGulaKelapa) {
-            // Gula Kelapa: Under, InSpec, Over
-            $cntPhUnder = $phVals->filter(fn($v) => $v < $phMinSpec)->count();
-            $pctPhUnder = ($cntPhUnder / $totalPhSampel) * 100;
-            $cntPhInSpec = $phVals->filter(fn($v) => $v >= $phMinSpec && $v <= $phMaxSpec)->count();
-            $pctPhInSpec = ($cntPhInSpec / $totalPhSampel) * 100;
             $cntPhOver = $phVals->filter(fn($v) => $v > $phMaxSpec)->count();
             $pctPhOver = ($cntPhOver / $totalPhSampel) * 100;
 
@@ -364,119 +242,89 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
             $sheet->setCellValue('C13', 'pH Under ' . number_format($phMinSpec, 2, ',', '.') . ' (#)');
             $sheet->setCellValue('D13', number_format($pctPhUnder, 0) . '%');
-            if ($pctPhUnder > 0) {
-                $sheet->getStyle('D13')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-            }
+            if ($pctPhUnder > 0) $sheet->getStyle('D13')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
             $sheet->setCellValue('C14', 'pH Sesuai Standar (' . number_format($phMinSpec, 2, ',', '.') . ' - ' . number_format($phMaxSpec, 2, ',', '.') . ') (#)');
             $sheet->setCellValue('D14', number_format($pctPhInSpec, 0) . '%');
-            if ($pctPhInSpec > 0) {
-                $sheet->getStyle('D14')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-            }
+            if ($pctPhInSpec > 0) $sheet->getStyle('D14')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
             $sheet->setCellValue('C15', 'pH Over ' . number_format($phMaxSpec, 2, ',', '.') . ' (#)');
             $sheet->setCellValue('D15', number_format($pctPhOver, 0) . '%');
-            if ($pctPhOver > 0) {
-                $sheet->getStyle('D15')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-            }
+            if ($pctPhOver > 0) $sheet->getStyle('D15')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
-            $startBrixRow = 16;
+            $rBrix = 16;
         } else {
-            // Gula Tebu: Under, InSpec, Over [max - max+0.50], Over > [max+0.50]
-            $cntPhUnder = $phVals->filter(fn($v) => $v < $phMinSpec)->count();
-            $pctPhUnder = ($cntPhUnder / $totalPhSampel) * 100;
-            $cntPhInSpec = $phVals->filter(fn($v) => $v >= $phMinSpec && $v <= $phMaxSpec)->count();
-            $pctPhInSpec = ($cntPhInSpec / $totalPhSampel) * 100;
-            $cntPhOver65_70 = $phVals->filter(fn($v) => $v > $phMaxSpec && $v <= ($phMaxSpec + 0.50))->count();
+            $cntPhOver65_70 = $phVals->filter(fn($v) => $v > 6.50 && $v <= 7.00)->count();
             $pctPhOver65_70 = ($cntPhOver65_70 / $totalPhSampel) * 100;
-            $cntPhOver70 = $phVals->filter(fn($v) => $v > ($phMaxSpec + 0.50))->count();
+            $cntPhOver70 = $phVals->filter(fn($v) => $v > 7.00)->count();
             $pctPhOver70 = ($cntPhOver70 / $totalPhSampel) * 100;
 
             $sheet->setCellValue('B13', '%Qty Sample');
             $sheet->mergeCells('B13:B16');
             $sheet->getStyle('B13:B16')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-            $sheet->setCellValue('C13', 'pH Under ' . number_format($phMinSpec, 2, ',', '.') . ' (#)');
+            $sheet->setCellValue('C13', 'pH Under 5,50 (#)');
             $sheet->setCellValue('D13', number_format($pctPhUnder, 0) . '%');
-            if ($pctPhUnder > 0) {
-                $sheet->getStyle('D13')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-            }
+            if ($pctPhUnder > 0) $sheet->getStyle('D13')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
-            $sheet->setCellValue('C14', 'pH Sesuai Standar (' . number_format($phMinSpec, 2, ',', '.') . ' - ' . number_format($phMaxSpec, 2, ',', '.') . ') (#)');
+            $sheet->setCellValue('C14', 'pH Sesuai Standar (5,50 - 6,50) (#)');
             $sheet->setCellValue('D14', number_format($pctPhInSpec, 0) . '%');
-            if ($pctPhInSpec > 0) {
-                $sheet->getStyle('D14')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-            }
+            if ($pctPhInSpec > 0) $sheet->getStyle('D14')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
-            $sheet->setCellValue('C15', 'pH Over ' . number_format($phMaxSpec, 2, ',', '.') . '-' . number_format($phMaxSpec + 0.50, 2, ',', '.') . ' (#)');
+            $sheet->setCellValue('C15', 'pH Over 6,50-7,00 (#)');
             $sheet->setCellValue('D15', number_format($pctPhOver65_70, 0) . '%');
-            if ($pctPhOver65_70 > 0) {
-                $sheet->getStyle('D15')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-            }
+            if ($pctPhOver65_70 > 0) $sheet->getStyle('D15')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
-            $sheet->setCellValue('C16', 'pH Over ' . number_format($phMaxSpec + 0.50, 2, ',', '.') . ' (#)');
+            $sheet->setCellValue('C16', 'pH Over 7,00 (#)');
             $sheet->setCellValue('D16', number_format($pctPhOver70, 0) . '%');
-            if ($pctPhOver70 > 0) {
-                $sheet->getStyle('D16')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-            }
+            if ($pctPhOver70 > 0) $sheet->getStyle('D16')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
-            $startBrixRow = 17;
+            $rBrix = 17;
         }
 
-        // --- TABEL KIRI: Brix ---
-        $r = $startBrixRow;
-        $sheet->setCellValue("B{$r}", $brixStdText);
-        $sheet->mergeCells("B{$r}:E{$r}");
-        $sheet->getStyle("B{$r}:E{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
-        $sheet->getStyle("B{$r}:E{$r}")->getFont()->setBold(true);
+        // --- BRIX ---
+        $sheet->setCellValue("B{$rBrix}", $brixStdText);
+        $sheet->mergeCells("B{$rBrix}:E{$rBrix}");
+        $sheet->getStyle("B{$rBrix}:E{$rBrix}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+        $sheet->getStyle("B{$rBrix}:E{$rBrix}")->getFont()->setBold(true);
 
         $avgBrix = $brixVals->isNotEmpty() ? $brixVals->avg() : null;
         $minBrix = $brixVals->isNotEmpty() ? $brixVals->min() : null;
         $maxBrix = $brixVals->isNotEmpty() ? $brixVals->max() : null;
 
-        $sheet->setCellValue('B' . ($r + 1), 'Avg,');
-        $sheet->mergeCells('B' . ($r + 1) . ':C' . ($r + 1));
-        $sheet->setCellValue('D' . ($r + 1), $avgBrix !== null ? number_format($avgBrix, 1, ',', '.') : '-');
+        $sheet->setCellValue('B' . ($rBrix + 1), 'Avg,'); $sheet->mergeCells('B' . ($rBrix + 1) . ':C' . ($rBrix + 1));
+        $sheet->setCellValue('D' . ($rBrix + 1), $avgBrix !== null ? number_format($avgBrix, 1, ',', '.') : '-');
 
-        $sheet->setCellValue('B' . ($r + 2), 'Min,');
-        $sheet->mergeCells('B' . ($r + 2) . ':C' . ($r + 2));
-        $sheet->setCellValue('D' . ($r + 2), $minBrix !== null ? number_format($minBrix, 1, ',', '.') : '-');
+        $sheet->setCellValue('B' . ($rBrix + 2), 'Min,'); $sheet->mergeCells('B' . ($rBrix + 2) . ':C' . ($rBrix + 2));
+        $sheet->setCellValue('D' . ($rBrix + 2), $minBrix !== null ? number_format($minBrix, 1, ',', '.') : '-');
 
-        $sheet->setCellValue('B' . ($r + 3), 'Max,');
-        $sheet->mergeCells('B' . ($r + 3) . ':C' . ($r + 3));
-        $sheet->setCellValue('D' . ($r + 3), $maxBrix !== null ? number_format($maxBrix, 1, ',', '.') : '-');
+        $sheet->setCellValue('B' . ($rBrix + 3), 'Max,'); $sheet->mergeCells('B' . ($rBrix + 3) . ':C' . ($rBrix + 3));
+        $sheet->setCellValue('D' . ($rBrix + 3), $maxBrix !== null ? number_format($maxBrix, 1, ',', '.') : '-');
 
-        if ($avgBrix !== null && $avgBrix < $brixMinSpec) {
-            $sheet->getStyle('D' . ($r + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-        if ($minBrix !== null && $minBrix < $brixMinSpec) {
-            $sheet->getStyle('D' . ($r + 2))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
+        if ($avgBrix !== null && $avgBrix < 8.7) {
+            $sheet->getStyle('D' . ($rBrix + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
         }
 
         $totalBrixSampel = $brixVals->count() ?: 1;
-        $cntBrixInSpec = $brixVals->filter(fn($v) => $v >= $brixMinSpec)->count();
+        $cntBrixInSpec = $brixVals->filter(fn($v) => $v >= 8.7)->count();
         $pctBrixInSpec = ($cntBrixInSpec / $totalBrixSampel) * 100;
-        $cntBrixUnder = $brixVals->filter(fn($v) => $v < $brixMinSpec)->count();
+        $cntBrixUnder = $brixVals->filter(fn($v) => $v < 8.7)->count();
         $pctBrixUnder = ($cntBrixUnder / $totalBrixSampel) * 100;
 
-        $sheet->setCellValue('B' . ($r + 4), '%Qty Sample');
-        $sheet->mergeCells('B' . ($r + 4) . ':B' . ($r + 5));
-        $sheet->getStyle('B' . ($r + 4) . ':B' . ($r + 5))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('B' . ($rBrix + 4), '%Qty Sample');
+        $sheet->mergeCells('B' . ($rBrix + 4) . ':B' . ($rBrix + 5));
+        $sheet->getStyle('B' . ($rBrix + 4) . ':B' . ($rBrix + 5))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->setCellValue('C' . ($r + 4), 'Brix Sesuai Standar (>= ' . number_format($brixMinSpec, 1, ',', '.') . ') (#)');
-        $sheet->setCellValue('D' . ($r + 4), number_format($pctBrixInSpec, 0) . '%');
-        if ($pctBrixInSpec > 0) {
-            $sheet->getStyle('D' . ($r + 4))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-        }
+        $sheet->setCellValue('C' . ($rBrix + 4), 'Brix Sesuai Standar (>= 8,7) (#)');
+        $sheet->setCellValue('D' . ($rBrix + 4), number_format($pctBrixInSpec, 0) . '%');
+        if ($pctBrixInSpec > 0) $sheet->getStyle('D' . ($rBrix + 4))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
-        $sheet->setCellValue('C' . ($r + 5), 'Brix Under ' . number_format($brixMinSpec, 1, ',', '.') . ' (#)');
-        $sheet->setCellValue('D' . ($r + 5), number_format($pctBrixUnder, 0) . '%');
-        if ($pctBrixUnder > 0) {
-            $sheet->getStyle('D' . ($r + 5))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
+        $sheet->setCellValue('C' . ($rBrix + 5), 'Brix Under 8,7 (#)');
+        $sheet->setCellValue('D' . ($rBrix + 5), number_format($pctBrixUnder, 0) . '%');
+        if ($pctBrixUnder > 0) $sheet->getStyle('D' . ($rBrix + 5))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
-        // --- TABEL KIRI: %Kotoran ---
-        $rKot = $r + 6;
+        // --- %KOTORAN ---
+        $rKot = $rBrix + 6;
         $sheet->setCellValue("B{$rKot}", $kotStdText);
         $sheet->mergeCells("B{$rKot}:E{$rKot}");
         $sheet->getStyle("B{$rKot}:E{$rKot}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
@@ -486,112 +334,68 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $minKotoran = $kotoranVals->isNotEmpty() ? $kotoranVals->min() : null;
         $maxKotoran = $kotoranVals->isNotEmpty() ? $kotoranVals->max() : null;
 
-        $sheet->setCellValue('B' . ($rKot + 1), 'Avg,');
-        $sheet->mergeCells('B' . ($rKot + 1) . ':C' . ($rKot + 1));
+        $sheet->setCellValue('B' . ($rKot + 1), 'Avg,'); $sheet->mergeCells('B' . ($rKot + 1) . ':C' . ($rKot + 1));
         $sheet->setCellValue('D' . ($rKot + 1), $avgKotoran !== null ? number_format($avgKotoran, 2, ',', '.') : '-');
 
-        $sheet->setCellValue('B' . ($rKot + 2), 'Min,');
-        $sheet->mergeCells('B' . ($rKot + 2) . ':C' . ($rKot + 2));
+        $sheet->setCellValue('B' . ($rKot + 2), 'Min,'); $sheet->mergeCells('B' . ($rKot + 2) . ':C' . ($rKot + 2));
         $sheet->setCellValue('D' . ($rKot + 2), $minKotoran !== null ? number_format($minKotoran, 2, ',', '.') : '-');
 
-        $sheet->setCellValue('B' . ($rKot + 3), 'Max,');
-        $sheet->mergeCells('B' . ($rKot + 3) . ':C' . ($rKot + 3));
+        $sheet->setCellValue('B' . ($rKot + 3), 'Max,'); $sheet->mergeCells('B' . ($rKot + 3) . ':C' . ($rKot + 3));
         $sheet->setCellValue('D' . ($rKot + 3), $maxKotoran !== null ? number_format($maxKotoran, 2, ',', '.') : '-');
 
-        if ($avgKotoran !== null && $avgKotoran > $kotMaxSpec) {
-            $sheet->getStyle('D' . ($rKot + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-        if ($minKotoran !== null && $minKotoran > $kotMaxSpec) {
-            $sheet->getStyle('D' . ($rKot + 2))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-        if ($maxKotoran !== null && $maxKotoran > $kotMaxSpec) {
-            $sheet->getStyle('D' . ($rKot + 3))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-
         $totalKotSampel = $kotoranVals->count() ?: 1;
-        $cntKotInSpec = $kotoranVals->filter(fn($v) => $v <= $kotMaxSpec)->count();
+        $cntKotInSpec = $kotoranVals->filter(fn($v) => $v <= 10.0)->count();
         $pctKotInSpec = ($cntKotInSpec / $totalKotSampel) * 100;
-        $cntKot10_14 = $kotoranVals->filter(fn($v) => $v > $kotMaxSpec && $v <= ($kotMaxSpec + 4.0))->count();
-        $cntKotOver14 = $kotoranVals->filter(fn($v) => $v > ($kotMaxSpec + 4.0))->count();
+        $cntKot10_14 = $kotoranVals->filter(fn($v) => $v > 10.0 && $v <= 14.0)->count();
         $pctKot10_14 = ($cntKot10_14 / $totalKotSampel) * 100;
+        $cntKotOver14 = $kotoranVals->filter(fn($v) => $v > 14.0)->count();
         $pctKotOver14 = ($cntKotOver14 / $totalKotSampel) * 100;
 
         $sheet->setCellValue('B' . ($rKot + 4), '%Qty Sample');
         $sheet->mergeCells('B' . ($rKot + 4) . ':B' . ($rKot + 6));
         $sheet->getStyle('B' . ($rKot + 4) . ':B' . ($rKot + 6))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->setCellValue('C' . ($rKot + 4), 'Kotoran Sesuai Standar (<= ' . number_format($kotMaxSpec, 0, ',', '.') . '%) (#)');
+        $sheet->setCellValue('C' . ($rKot + 4), 'Kotoran Sesuai Standar (<= 10%) (#)');
         $sheet->setCellValue('D' . ($rKot + 4), number_format($pctKotInSpec, 0) . '%');
-        if ($pctKotInSpec > 0) {
-            $sheet->getStyle('D' . ($rKot + 4))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-        }
+        if ($pctKotInSpec > 0) $sheet->getStyle('D' . ($rKot + 4))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
-        $sheet->setCellValue('C' . ($rKot + 5), '%Qty Sample Kotoran Over ' . number_format($kotMaxSpec, 0, ',', '.') . '-14%(#)');
+        $sheet->setCellValue('C' . ($rKot + 5), '%Qty Sample Kotoran Over 10-14%(#)');
         $sheet->setCellValue('D' . ($rKot + 5), number_format($pctKot10_14, 0) . '%');
-        if ($pctKot10_14 > 0) {
-            $sheet->getStyle('D' . ($rKot + 5))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
+        if ($pctKot10_14 > 0) $sheet->getStyle('D' . ($rKot + 5))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
         $sheet->setCellValue('C' . ($rKot + 6), '%Qty Sample Kotoran Over 14%(#)');
         $sheet->setCellValue('D' . ($rKot + 6), number_format($pctKotOver14, 0) . '%');
-        if ($pctKotOver14 > 0) {
-            $sheet->getStyle('D' . ($rKot + 6))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
+        if ($pctKotOver14 > 0) $sheet->getStyle('D' . ($rKot + 6))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
         $leftTableEndRow = $rKot + 6;
 
-        // -------------------------------------------------------------
-        // TABEL KANAN: Organo, %KA, Rasa Khas (Columns G, H, I)
-        // -------------------------------------------------------------
+        // --- TABEL KANAN: ORGANO ---
         $sheet->setCellValue('G9', 'Organo');
         $sheet->mergeCells('G9:I9');
         $sheet->getStyle('G9:I9')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
         $sheet->getStyle('G9:I9')->getFont()->setBold(true);
 
         $totalOrganoSampel = $organoVals->count() ?: 1;
+        $organoDefinitions = [
+            ['label' => 'Rasa Khas Gula Kelapa/Tebu', 'key' => 'ok', 'ket' => 'Kategori OK', 'isMurni' => true],
+            ['label' => 'Asam dan pH < 5.00', 'key' => 'asam', 'ket' => 'Kategori Campuran (Asam)', 'isMurni' => false],
+            ['label' => 'Agak Asam / pH Normal', 'key' => 'agak_asam', 'ket' => 'Kategori Campuran (Asam)', 'isMurni' => false],
+            ['label' => 'Asin', 'key' => 'asin', 'ket' => 'Kategori Campuran (Garam)', 'isMurni' => false],
+            ['label' => 'Sagu', 'key' => 'sagu', 'ket' => 'Kategori Campuran (Sagu)', 'isMurni' => false],
+            ['label' => 'Kapur', 'key' => 'kapur', 'ket' => 'Kategori Campuran (Kapur)', 'isMurni' => false],
+            ['label' => 'Lain - Lain (Endapan, Tengik)', 'key' => 'lain', 'ket' => 'Kategori Lain - Lain', 'isMurni' => false],
+        ];
 
-        if ($isGulaKelapa) {
-            // 9 Opsi Organo Gula Kelapa
-            $organoItems = [
-                ['label' => '1, OK', 'key' => 'ok', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '2, Agak asam', 'key' => 'agak_asam', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '3, Asam', 'key' => 'asam', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '4, Agak pahit', 'key' => 'agak_pahit', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '5, Pahit', 'key' => 'pahit', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => false],
-                ['label' => '6, Sagu', 'key' => 'sagu', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '7, Kapur', 'key' => 'kapur', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '8, Lain-lain (tengik, kapur, endapan)', 'key' => 'lain', 'ket' => 'Terasa/dominan rasa gula kelapa', 'isMurni' => true],
-                ['label' => '9, Campuran', 'key' => 'campuran', 'ket' => 'Tidak terasa/tidak dominan rasa gula kelapa', 'isMurni' => false],
-            ];
-            $ketMurni = '';
-        } else {
-            // 7 Opsi Organo Gula Tebu
-            $organoItems = [
-                ['label' => '1, OK', 'key' => 'ok', 'ket' => 'Terasa/dominan rasa gula tebu', 'isMurni' => true],
-                ['label' => '2, Pahit', 'key' => 'pahit', 'ket' => 'Terasa/dominan rasa gula tebu', 'isMurni' => false],
-                ['label' => '3, Agak pahit', 'key' => 'agak_pahit', 'ket' => 'Terasa/dominan rasa gula tebu', 'isMurni' => true],
-                ['label' => '4, Asam dan pH < 5,5', 'key' => 'asam', 'ket' => 'Terasa/dominan rasa gula tebu', 'isMurni' => true],
-                ['label' => '5, Agak asam dan pH normal', 'key' => 'agak_asam', 'ket' => 'Terasa/dominan rasa gula tebu', 'isMurni' => true],
-                ['label' => '6, Lain-lain (tengik, kapur, endapan)', 'key' => 'lain', 'ket' => 'Terasa/dominan rasa gula tebu', 'isMurni' => true],
-                ['label' => '7, Campuran', 'key' => 'campuran', 'ket' => 'Tidak terasa/tidak dominan rasa gula tebu', 'isMurni' => false],
-            ];
-            $ketMurni = '';
-        }
-
-        $rowOrg = 10;
+        $rOrg = 10;
         $murniPctTotal = 0;
         $campuranPctTotal = 0;
 
-        foreach ($organoItems as $item) {
-            $cnt = $organoVals->filter(function ($val) use ($item) {
+        foreach ($organoDefinitions as $def) {
+            $cnt = $organoVals->filter(function ($val) use ($def) {
                 $v = strtolower(trim((string)$val));
-                switch ($item['key']) {
+                switch ($def['key']) {
                     case 'ok':
-                        return in_array($v, ['ok', '1', 'sesuai', 'normal']);
-                    case 'pahit':
-                        return $v === 'pahit' || ($v !== 'agak pahit' && str_contains($v, 'pahit'));
-                    case 'agak_pahit':
-                        return str_contains($v, 'agak pahit');
+                        return in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas');
                     case 'asam':
                         return str_contains($v, 'asam dan ph < 5') || ($v === 'asam');
                     case 'agak_asam':
@@ -604,33 +408,26 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
                         return str_contains($v, 'kapur') && !str_contains($v, 'lain');
                     case 'lain':
                         return str_contains($v, 'lain') || str_contains($v, 'tengik') || str_contains($v, 'endapan');
-                    case 'campuran':
-                        return str_contains($v, 'campur');
                     default:
                         return false;
                 }
             })->count();
 
             $pct = round(($cnt / $totalOrganoSampel) * 100);
-            if ($item['isMurni']) {
-                $murniPctTotal += $pct;
-            } else {
-                $campuranPctTotal += $pct;
+            if ($def['isMurni']) $murniPctTotal += $pct; else $campuranPctTotal += $pct;
+
+            $sheet->setCellValue("G{$rOrg}", $def['label']);
+            $sheet->setCellValue("H{$rOrg}", $pct . '%');
+            $sheet->setCellValue("I{$rOrg}", $def['ket']);
+
+            if ($def['key'] === 'ok' && $pct > 0) {
+                $sheet->getStyle("H{$rOrg}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
             }
-
-            $sheet->setCellValue("G{$rowOrg}", $item['label']);
-            $sheet->setCellValue("H{$rowOrg}", $pct . '%');
-            $sheet->setCellValue("I{$rowOrg}", $item['ket']);
-
-            if ($item['key'] === 'ok' && $pct > 0) {
-                $sheet->getStyle("H{$rowOrg}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-            }
-
-            $rowOrg++;
+            $rOrg++;
         }
 
-        // --- TABEL KANAN: %Kadar Air ---
-        $rKa = $rowOrg;
+        // --- %KADAR AIR ---
+        $rKa = $rOrg;
         $sheet->setCellValue("G{$rKa}", $kaStdText);
         $sheet->mergeCells("G{$rKa}:I{$rKa}");
         $sheet->getStyle("G{$rKa}:I{$rKa}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
@@ -649,16 +446,6 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->setCellValue('G' . ($rKa + 3), 'Max,');
         $sheet->setCellValue('H' . ($rKa + 3), $maxKa !== null ? number_format($maxKa, 2, ',', '.') : '-');
 
-        if ($avgKa !== null && $avgKa > $kaMaxSpec) {
-            $sheet->getStyle('H' . ($rKa + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-        if ($minKa !== null && $minKa > $kaMaxSpec) {
-            $sheet->getStyle('H' . ($rKa + 2))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-        if ($maxKa !== null && $maxKa > $kaMaxSpec) {
-            $sheet->getStyle('H' . ($rKa + 3))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
-
         $totalKaSampel = $kaVals->count() ?: 1;
         $cntKaInSpec = $kaVals->filter(fn($v) => $v <= $kaMaxSpec)->count();
         $pctKaInSpec = ($cntKaInSpec / $totalKaSampel) * 100;
@@ -667,19 +454,15 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
         $sheet->setCellValue('G' . ($rKa + 4), '%Qty Sample KA Sesuai Standar (<= ' . number_format($kaMaxSpec, 0, ',', '.') . '%) (#)');
         $sheet->setCellValue('H' . ($rKa + 4), number_format($pctKaInSpec, 2, ',', '.') . '%');
-        if ($pctKaInSpec > 0) {
-            $sheet->getStyle('H' . ($rKa + 4))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-        }
+        if ($pctKaInSpec > 0) $sheet->getStyle('H' . ($rKa + 4))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
         $sheet->setCellValue('G' . ($rKa + 5), '%Qty Sample KA Over ' . number_format($kaMaxSpec, 0, ',', '.') . '% (#)');
         $sheet->setCellValue('H' . ($rKa + 5), number_format($pctKaOver, 2, ',', '.') . '%');
-        if ($pctKaOver > 0) {
-            $sheet->getStyle('H' . ($rKa + 5))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
-        }
+        if ($pctKaOver > 0) $sheet->getStyle('H' . ($rKa + 5))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
-        // --- TABEL KANAN: Rasa Khas Gula ---
+        // --- RASA KHAS ---
         $rRasa = $rKa + 6;
-        $displayJenisRasa = $isGulaTebu ? 'Gula Tebu' : ($isGulaKelapa ? 'Gula Kelapa' : ucwords(strtolower($jenisUpper)));
+        $displayJenisRasa = $isGulaTebu ? 'Gula Tebu' : 'Gula Kelapa';
         $sheet->setCellValue("G{$rRasa}", 'Rasa Khas ' . $displayJenisRasa);
         $sheet->mergeCells("G{$rRasa}:I{$rRasa}");
         $sheet->getStyle("G{$rRasa}:I{$rRasa}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
@@ -687,10 +470,8 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
         $sheet->setCellValue('G' . ($rRasa + 1), 'Murni');
         $sheet->setCellValue('H' . ($rRasa + 1), $murniPctTotal . '%');
-        $sheet->setCellValue('I' . ($rRasa + 1), $ketMurni);
-        if ($murniPctTotal > 0) {
-            $sheet->getStyle('H' . ($rRasa + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
-        }
+        $sheet->setCellValue('I' . ($rRasa + 1), ($murniPctTotal >= 100) ? 'Murni 100%' : 'Ada Campuran');
+        if ($murniPctTotal > 0) $sheet->getStyle('H' . ($rRasa + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
         $sheet->setCellValue('G' . ($rRasa + 2), 'Campuran');
         $sheet->setCellValue('H' . ($rRasa + 2), $campuranPctTotal . '%');
@@ -698,9 +479,6 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
 
         $rightTableEndRow = $rRasa + 2;
 
-        // -------------------------------------------------------------
-        // 3. BORDER STYLING & CELL ALIGNMENT
-        // -------------------------------------------------------------
         $thinBorder = [
             'borders' => [
                 'allBorders' => [
@@ -710,15 +488,12 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
             ],
         ];
 
-        // Border Tabel Kiri (B8:E[end])
         $sheet->getStyle("B8:E{$leftTableEndRow}")->applyFromArray($thinBorder);
         $sheet->getStyle("D8:E{$leftTableEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Border Tabel Kanan (G8:I[end])
         $sheet->getStyle("G8:I{$rightTableEndRow}")->applyFromArray($thinBorder);
         $sheet->getStyle("H8:H{$rightTableEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Set Column Widths agar rapi dan proporsional
         $sheet->getColumnDimension('A')->setWidth(3);
         $sheet->getColumnDimension('B')->setWidth(18);
         $sheet->getColumnDimension('C')->setWidth(24);
@@ -729,10 +504,419 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->getColumnDimension('H')->setWidth(14);
         $sheet->getColumnDimension('I')->setWidth(36);
 
-        // Font default seluruh sheet: Calibri 10
         $maxRow = max($leftTableEndRow, $rightTableEndRow);
         $sheet->getStyle("A1:I{$maxRow}")->getFont()->setName('Calibri')->setSize(10);
         $sheet->getStyle('D1')->getFont()->setSize(14)->setBold(true);
+    }
+
+    /**
+     * Format Laporan Dokumen Analisis persis Template Excel Resmi
+     * untuk Garam, SKM, Karamel, Minor Ingredient, Gula Cair/HFCS, Gula Rafinasi/Lainnya
+     */
+    protected function buildOfficialTemplateReport(Worksheet $sheet): void
+    {
+        $docCtrl = new DocRmController();
+        $docData = $docCtrl->formatDocumentData($this->identitas);
+
+        if (!$docData) {
+            return;
+        }
+
+        $headerFill = 'FFD9E1F2';
+        $subHeaderFill = 'FFE2E8F0';
+        $thinBorder = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ];
+
+        // 1. Title
+        $sheet->setCellValue('D1', $docData['title']);
+        $sheet->mergeCells('D1:N1');
+        $sheet->getStyle('D1')->getFont()->setBold(true)->setSize(13);
+        $sheet->getStyle('D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // 2. Metadata Grid (Rows 5-9)
+        $sheet->setCellValue('B5', 'Nama Bahan');
+        $sheet->setCellValue('D5', ': ' . $docData['nama_bahan']);
+        $sheet->setCellValue('K5', 'Jam Kedatangan');
+        $sheet->setCellValue('M5', ': ' . $docData['jam_kedatangan']);
+
+        $sheet->setCellValue('B6', 'Tanggal Kedatangan');
+        $sheet->setCellValue('D6', ': ' . $docData['tgl_incoming']);
+        $sheet->setCellValue('K6', 'No. SPB');
+        $sheet->setCellValue('M6', ': ' . $docData['spb']);
+
+        $sheet->setCellValue('B7', 'Supplier & Manufacturing');
+        $sheet->setCellValue('D7', ': ' . $docData['vendor']);
+        $sheet->setCellValue('K7', 'Lot / Batch');
+        $sheet->setCellValue('M7', ': ' . $docData['lot_batch']);
+
+        $sheet->setCellValue('B8', 'Negara / Kota Asal');
+        $sheet->setCellValue('D8', ': ' . $docData['asal_bahan']);
+        $sheet->setCellValue('K8', 'Jumlah Kedatangan');
+        $sheet->setCellValue('M8', ': ' . $docData['qty']);
+
+        $sheet->setCellValue('B9', 'No. Mobil');
+        $sheet->setCellValue('D9', ': ' . $docData['nopol']);
+        $sheet->setCellValue('K9', 'Exp. Date');
+        $sheet->setCellValue('M9', ': ' . $docData['exp_date']);
+
+        $sheet->getStyle('B5:B9')->getFont()->setBold(true);
+        $sheet->getStyle('K5:K9')->getFont()->setBold(true);
+
+        // 3. Left Block: Pengecekan Kedatangan & Pengecekan Fisik (Row 11)
+        $sheet->setCellValue('B11', 'Pengecekan Kedatangan');
+        $sheet->mergeCells('B11:D11');
+        $sheet->getStyle('B11:D11')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+        $sheet->getStyle('B11:D11')->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle('B11:D11')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $fisikHeaderTitle = ($docData['kemasan_type'] === 'cair') ? 'Pengecekan Fisik Material' : 'Pengecekan Fisik';
+        $sheet->setCellValue('E11', $fisikHeaderTitle);
+        $sheet->mergeCells('E11:H11');
+        $sheet->getStyle('E11:H11')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+        $sheet->getStyle('E11:H11')->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle('E11:H11')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Subheaders Row 12
+        $sheet->setCellValue('B12', 'Kondisi Mobil');
+        $sheet->mergeCells('B12:D12');
+        $sheet->getStyle('B12:D12')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+        $sheet->getStyle('B12:D12')->getFont()->setBold(true);
+        $sheet->getStyle('B12:D12')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        if ($docData['kemasan_type'] === 'cair') {
+            $sheet->setCellValue('E12', 'Spesifikasi'); $sheet->mergeCells('E12:F12');
+            $sheet->setCellValue('G12', 'Kondisi'); $sheet->mergeCells('G12:H12');
+            $sheet->getStyle('E12:H12')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+            $sheet->getStyle('E12:H12')->getFont()->setBold(true);
+            $sheet->getStyle('E12:H12')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        } elseif ($docData['kemasan_type'] === 'drum') {
+            $sheet->setCellValue('E12', 'Kriteria');
+            $sheet->setCellValue('F12', 'Drum');
+            $sheet->setCellValue('G12', '%'); $sheet->mergeCells('G12:H12');
+            $sheet->getStyle('E12:H12')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+            $sheet->getStyle('E12:H12')->getFont()->setBold(true);
+            $sheet->getStyle('E12:H12')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        } else {
+            $sheet->setCellValue('E12', 'Kriteria / Fisik Zak');
+            $sheet->setCellValue('F12', 'Qty Zak');
+            $sheet->setCellValue('G12', '%'); $sheet->mergeCells('G12:H12');
+            $sheet->getStyle('E12:H12')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+            $sheet->getStyle('E12:H12')->getFont()->setBold(true);
+            $sheet->getStyle('E12:H12')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        // Subheader Row 13 for Kondisi Mobil
+        $sheet->setCellValue('B13', 'Spesifikasi');
+        $sheet->setCellValue('C13', 'Kondisi'); $sheet->mergeCells('C13:D13');
+        $sheet->getStyle('B13:D13')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+        $sheet->getStyle('B13:D13')->getFont()->setBold(true);
+        $sheet->getStyle('C13:D13')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Rows 14-19: Kondisi Mobil
+        $mobilSpecs = [
+            ['Bersih', $docData['kondisi_mobil']['bersih'] ?? '-'],
+            ['Kering', $docData['kondisi_mobil']['kering'] ?? '-'],
+            ['Tidak ada benda asing', $docData['kondisi_mobil']['benda_asing'] ?? '-'],
+            ['Tidak berbau', $docData['kondisi_mobil']['berbau'] ?? '-'],
+            ['Tidak cacat/bolong', $docData['kondisi_mobil']['cacat'] ?? '-'],
+            ['Segel container', $docData['kondisi_mobil']['segel'] ?? '-'],
+        ];
+
+        $rMobil = 14;
+        foreach ($mobilSpecs as $spec) {
+            $sheet->setCellValue("B{$rMobil}", $spec[0]);
+            $sheet->setCellValue("C{$rMobil}", $spec[1]);
+            $sheet->mergeCells("C{$rMobil}:D{$rMobil}");
+            $sheet->getStyle("C{$rMobil}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("C{$rMobil}")->getFont()->setBold(true);
+            $rMobil++;
+        }
+
+        $sheet->setCellValue("B{$rMobil}", 'Keterangan: ' . ($docData['kondisi_mobil']['keterangan'] ?? '-'));
+        $sheet->mergeCells("B{$rMobil}:D{$rMobil}");
+        $rMobil++;
+        $sheet->setCellValue("B{$rMobil}", 'Note: √= Ya       ×= Tidak');
+        $sheet->mergeCells("B{$rMobil}:D{$rMobil}");
+        $sheet->getStyle("B{$rMobil}")->getFont()->setItalic(true);
+
+        // Rows Fisik Kemasan (Rows 13-20 on Cols E-H)
+        $rFisik = 13;
+        if ($docData['kemasan_type'] === 'cair') {
+            $sheet->setCellValue("E{$rFisik}", 'Bening, tidak berbau'); $sheet->mergeCells("E{$rFisik}:F{$rFisik}");
+            $sheet->setCellValue("G{$rFisik}", '√'); $sheet->mergeCells("G{$rFisik}:H{$rFisik}");
+            $sheet->getStyle("G{$rFisik}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rFisik++;
+            $sheet->setCellValue("E{$rFisik}", 'Tidak berbuih'); $sheet->mergeCells("E{$rFisik}:F{$rFisik}");
+            $sheet->setCellValue("G{$rFisik}", '√'); $sheet->mergeCells("G{$rFisik}:H{$rFisik}");
+            $sheet->getStyle("G{$rFisik}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rFisik++;
+            $sheet->setCellValue("E{$rFisik}", 'Note: √= Ya       ×= Tidak'); $sheet->mergeCells("E{$rFisik}:H{$rFisik}");
+            $sheet->getStyle("E{$rFisik}")->getFont()->setItalic(true);
+            $rFisik++;
+        } elseif ($docData['kemasan_type'] === 'drum') {
+            $drumItems = [
+                ['Kotor', $docData['fisik_kemasan']['kotor'] ?? '-'],
+                ['Kembung', $docData['fisik_kemasan']['kembung'] ?? '-'],
+                ['Rusak', $docData['fisik_kemasan']['rusak'] ?? '-'],
+            ];
+            foreach ($drumItems as $it) {
+                $sheet->setCellValue("E{$rFisik}", $it[0]);
+                $sheet->setCellValue("F{$rFisik}", $it[1]);
+                $sheet->setCellValue("G{$rFisik}", '-'); $sheet->mergeCells("G{$rFisik}:H{$rFisik}");
+                $sheet->getStyle("F{$rFisik}:G{$rFisik}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $rFisik++;
+            }
+            $sheet->setCellValue("E{$rFisik}", 'Total Bagus');
+            $sheet->setCellValue("F{$rFisik}", $docData['fisik_kemasan']['total_bagus'] ?? '-'); $sheet->mergeCells("F{$rFisik}:H{$rFisik}");
+            $sheet->getStyle("E{$rFisik}:F{$rFisik}")->getFont()->setBold(true);
+            $sheet->getStyle("F{$rFisik}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rFisik++;
+        } else {
+            $zakItems = [
+                ['Kotor', $docData['fisik_kemasan']['kotor'] ?? '-'],
+                ['Berair / Basah', $docData['fisik_kemasan']['berair'] !== '-' ? $docData['fisik_kemasan']['berair'] : ($docData['fisik_kemasan']['basah'] ?? '-')],
+                ['Warna', $docData['fisik_kemasan']['warna'] ?? '-'],
+                ['Campuran', $docData['fisik_kemasan']['campuran'] ?? '-'],
+                ['Aroma', $docData['fisik_kemasan']['aroma'] ?? '-'],
+                ['Rusak / Robek', $docData['fisik_kemasan']['rusak'] ?? '-'],
+            ];
+            foreach ($zakItems as $it) {
+                $sheet->setCellValue("E{$rFisik}", $it[0]);
+                $sheet->setCellValue("F{$rFisik}", $it[1]);
+                $sheet->setCellValue("G{$rFisik}", '-'); $sheet->mergeCells("G{$rFisik}:H{$rFisik}");
+                $sheet->getStyle("F{$rFisik}:G{$rFisik}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $rFisik++;
+            }
+            $sheet->setCellValue("E{$rFisik}", 'Total Bagus');
+            $sheet->setCellValue("F{$rFisik}", $docData['fisik_kemasan']['total_bagus'] ?? '-'); $sheet->mergeCells("F{$rFisik}:H{$rFisik}");
+            $sheet->getStyle("E{$rFisik}:F{$rFisik}")->getFont()->setBold(true);
+            $sheet->getStyle("F{$rFisik}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rFisik++;
+        }
+
+        // Dokumen & Identitas (Rows 22-30 on Cols B-D)
+        $rDok = 22;
+        $sheet->setCellValue("B{$rDok}", 'Dokumen dan Identitas');
+        $sheet->mergeCells("B{$rDok}:D{$rDok}");
+        $sheet->getStyle("B{$rDok}:D{$rDok}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+        $sheet->getStyle("B{$rDok}:D{$rDok}")->getFont()->setBold(true);
+        $sheet->getStyle("B{$rDok}:D{$rDok}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $rDok++;
+
+        $sheet->setCellValue("B{$rDok}", 'Dokumen');
+        $sheet->setCellValue("C{$rDok}", 'Ada / Tidak'); $sheet->mergeCells("C{$rDok}:D{$rDok}");
+        $sheet->getStyle("B{$rDok}:D{$rDok}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+        $sheet->getStyle("B{$rDok}:D{$rDok}")->getFont()->setBold(true);
+        $sheet->getStyle("C{$rDok}:D{$rDok}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $rDok++;
+
+        $dokItems = [
+            ['COA', $docData['dokumen']['coa'] ?? '-'],
+            ['Surat Jalan Vendor', $docData['dokumen']['surat_jalan'] ?? '-'],
+            ['Packing List', $docData['dokumen']['packing_list'] ?? '-'],
+            ['Identitas RM di kemasan', $docData['dokumen']['identitas_kemasan'] ?? '-'],
+            ['Logo Halal Kemasan', $docData['dokumen']['logo_halal'] ?? '-'],
+            ['Sesuai Matriks Bahan Baku', $docData['dokumen']['matriks_bahan'] ?? '-'],
+        ];
+
+        foreach ($dokItems as $it) {
+            $sheet->setCellValue("B{$rDok}", $it[0]);
+            $sheet->setCellValue("C{$rDok}", $it[1]);
+            $sheet->mergeCells("C{$rDok}:D{$rDok}");
+            $sheet->getStyle("C{$rDok}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("C{$rDok}")->getFont()->setBold(true);
+            $rDok++;
+        }
+
+        $sheet->setCellValue("B{$rDok}", 'Note: √ : Ada       x : Tidak ada');
+        $sheet->mergeCells("B{$rDok}:D{$rDok}");
+        $sheet->getStyle("B{$rDok}")->getFont()->setItalic(true);
+
+        // Serah Terima Sampel & Disposisi (Rows 22-28 on Cols E-H)
+        $rSt = 22;
+        $sheet->setCellValue("E{$rSt}", 'Serah Terima Sampel');
+        $sheet->mergeCells("E{$rSt}:H{$rSt}");
+        $sheet->getStyle("E{$rSt}:H{$rSt}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+        $sheet->getStyle("E{$rSt}:H{$rSt}")->getFont()->setBold(true);
+        $sheet->getStyle("E{$rSt}:H{$rSt}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $rSt++;
+
+        $sheet->setCellValue("E{$rSt}", 'Tahap');
+        $sheet->setCellValue("F{$rSt}", 'Jam');
+        $sheet->setCellValue("G{$rSt}", 'Ttd');
+        $sheet->setCellValue("H{$rSt}", 'Jumlah');
+        $sheet->getStyle("E{$rSt}:H{$rSt}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+        $sheet->getStyle("E{$rSt}:H{$rSt}")->getFont()->setBold(true);
+        $sheet->getStyle("F{$rSt}:H{$rSt}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $rSt++;
+
+        $sheet->setCellValue("E{$rSt}", 'Sampling');
+        $sheet->setCellValue("F{$rSt}", $docData['serah_terima']['jam_sampling'] ?? '-');
+        $sheet->setCellValue("G{$rSt}", $docData['serah_terima']['ttd_sampling'] ?? '-');
+        $sheet->setCellValue("H{$rSt}", $docData['serah_terima']['jumlah_sampling'] ?? '-');
+        $sheet->getStyle("F{$rSt}:H{$rSt}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $rSt++;
+
+        $sheet->setCellValue("E{$rSt}", 'Re-Sampling');
+        $sheet->setCellValue("F{$rSt}", '-');
+        $sheet->setCellValue("G{$rSt}", '-');
+        $sheet->setCellValue("H{$rSt}", '-');
+        $sheet->getStyle("F{$rSt}:H{$rSt}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $rSt++;
+
+        $sheet->setCellValue("E{$rSt}", 'Disposisi'); $sheet->mergeCells("E{$rSt}:F{$rSt}");
+        $sheet->setCellValue("G{$rSt}", $docData['serah_terima']['disposisi'] ?? 'Belum Disposisi'); $sheet->mergeCells("G{$rSt}:H{$rSt}");
+        $sheet->getStyle("E{$rSt}")->getFont()->setBold(true);
+        $sheet->getStyle("G{$rSt}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("G{$rSt}")->getFont()->setBold(true);
+        $rSt++;
+
+        if (!empty($docData['serah_terima']['group']) && $docData['serah_terima']['group'] !== '-') {
+            $sheet->setCellValue("E{$rSt}", 'Group'); $sheet->mergeCells("E{$rSt}:F{$rSt}");
+            $sheet->setCellValue("G{$rSt}", $docData['serah_terima']['group']); $sheet->mergeCells("G{$rSt}:H{$rSt}");
+            $sheet->getStyle("E{$rSt}")->getFont()->setBold(true);
+            $sheet->getStyle("G{$rSt}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("G{$rSt}")->getFont()->setBold(true);
+            $rSt++;
+        }
+
+        // Apply borders on left block
+        $leftMaxRow = max($rDok, $rSt);
+        $sheet->getStyle("B11:D{$rDok}")->applyFromArray($thinBorder);
+        $sheet->getStyle("E11:H{$rSt}")->applyFromArray($thinBorder);
+
+        // 4. Right Block: Analisis Table (Columns J onwards)
+        $startColIdx = 10; // Column J
+        $paramLabels = $docData['template_meta']['param_labels'];
+        $paramKeys = $docData['template_meta']['param_keys'];
+        $numParams = count($paramLabels);
+        $endColIdx = $startColIdx + $numParams;
+
+        $startColLetter = Coordinate::stringFromColumnIndex($startColIdx);
+        $endColLetter = Coordinate::stringFromColumnIndex($endColIdx);
+
+        // Header Row 11: Analisis
+        $sheet->setCellValue("{$startColLetter}11", 'Analisis');
+        $sheet->mergeCells("{$startColLetter}11:{$endColLetter}11");
+        $sheet->getStyle("{$startColLetter}11:{$endColLetter}11")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+        $sheet->getStyle("{$startColLetter}11:{$endColLetter}11")->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle("{$startColLetter}11:{$endColLetter}11")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Subheader Row 12: No Sampel + Param Labels
+        $sheet->setCellValue("{$startColLetter}12", 'No Sampel');
+        $sheet->getStyle("{$startColLetter}12")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+        $sheet->getStyle("{$startColLetter}12")->getFont()->setBold(true);
+        $sheet->getStyle("{$startColLetter}12")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        foreach ($paramLabels as $idx => $label) {
+            $colLetter = Coordinate::stringFromColumnIndex($startColIdx + 1 + $idx);
+            $sheet->setCellValue("{$colLetter}12", $label);
+            $sheet->getStyle("{$colLetter}12")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
+            $sheet->getStyle("{$colLetter}12")->getFont()->setBold(true);
+            $sheet->getStyle("{$colLetter}12")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        // Sample Rows (Rows 13 to max(27, 13 + count($docData['sample_rows'])))
+        $sampleRows = $docData['sample_rows'] ?? [];
+        $totalSampleCount = count($sampleRows);
+        $minDisplayRows = max(15, $totalSampleCount);
+
+        $currR = 13;
+        for ($i = 0; $i < $minDisplayRows; $i++) {
+            $s = $sampleRows[$i] ?? null;
+            $sheet->setCellValue("{$startColLetter}{$currR}", $i + 1);
+            $sheet->getStyle("{$startColLetter}{$currR}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            foreach ($paramKeys as $idx => $key) {
+                $colLetter = Coordinate::stringFromColumnIndex($startColIdx + 1 + $idx);
+                $val = ($s && isset($s[$key]) && $s[$key] !== '') ? $s[$key] : '-';
+                $sheet->setCellValue("{$colLetter}{$currR}", $val);
+                $sheet->getStyle("{$colLetter}{$currR}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+            $currR++;
+        }
+
+        // Row Average
+        $sheet->setCellValue("{$startColLetter}{$currR}", 'Average');
+        $sheet->getStyle("{$startColLetter}{$currR}")->getFont()->setBold(true);
+        $sheet->getStyle("{$startColLetter}{$currR}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+        $sheet->getStyle("{$startColLetter}{$currR}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        foreach ($paramKeys as $idx => $key) {
+            $colLetter = Coordinate::stringFromColumnIndex($startColIdx + 1 + $idx);
+            $avgVal = $docData['averages'][$key] ?? '-';
+            $sheet->setCellValue("{$colLetter}{$currR}", $avgVal);
+            $sheet->getStyle("{$colLetter}{$currR}")->getFont()->setBold(true);
+            $sheet->getStyle("{$colLetter}{$currR}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($headerFill);
+            $sheet->getStyle("{$colLetter}{$currR}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        $sheet->getStyle("{$startColLetter}11:{$endColLetter}{$currR}")->applyFromArray($thinBorder);
+
+        // Note below table
+        if (!empty($docData['note'])) {
+            $currR++;
+            $sheet->setCellValue("{$startColLetter}{$currR}", 'Catatan: ' . $docData['note']);
+            $sheet->mergeCells("{$startColLetter}{$currR}:{$endColLetter}{$currR}");
+            $sheet->getStyle("{$startColLetter}{$currR}")->getFont()->setItalic(true);
+        }
+
+        // 5. Signatures Block (Below tables)
+        $rSig = max($leftMaxRow, $currR) + 2;
+
+        $sheet->setCellValue("B{$rSig}", 'Disampling oleh,'); $sheet->mergeCells("B{$rSig}:D{$rSig}");
+        $sheet->setCellValue("G{$rSig}", 'Dianalisis oleh,'); $sheet->mergeCells("G{$rSig}:I{$rSig}");
+        $sheet->setCellValue("L{$rSig}", 'Dicek oleh,'); $sheet->mergeCells("L{$rSig}:N{$rSig}");
+        $sheet->getStyle("B{$rSig}:N{$rSig}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("B{$rSig}:N{$rSig}")->getFont()->setBold(true);
+
+        $rSigName = $rSig + 3;
+        $sheet->setCellValue("B{$rSigName}", '( ' . ($docData['signatures']['qc_field'] ?? '....................................') . ' )');
+        $sheet->mergeCells("B{$rSigName}:D{$rSigName}");
+        $sheet->setCellValue("G{$rSigName}", '( ' . ($docData['signatures']['qc_analis'] ?? '....................................') . ' )');
+        $sheet->mergeCells("G{$rSigName}:I{$rSigName}");
+        $sheet->setCellValue("L{$rSigName}", '( ' . ($docData['signatures']['spv'] ?? '....................................') . ' )');
+        $sheet->mergeCells("L{$rSigName}:N{$rSigName}");
+        $sheet->getStyle("B{$rSigName}:N{$rSigName}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("B{$rSigName}:N{$rSigName}")->getFont()->setBold(true);
+
+        $rSigRole = $rSigName + 1;
+        $sheet->setCellValue("B{$rSigRole}", 'QC Field'); $sheet->mergeCells("B{$rSigRole}:D{$rSigRole}");
+        $sheet->setCellValue("G{$rSigRole}", 'QC Analis'); $sheet->mergeCells("G{$rSigRole}:I{$rSigRole}");
+        $sheet->setCellValue("L{$rSigRole}", 'Staff / SPV / MNG QC'); $sheet->mergeCells("L{$rSigRole}:N{$rSigRole}");
+        $sheet->getStyle("B{$rSigRole}:N{$rSigRole}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Document Code Watermark
+        $rWatermark = $rSigRole + 2;
+        $sheet->setCellValue("{$endColLetter}{$rWatermark}", $docData['doc_no']);
+        $sheet->getStyle("{$endColLetter}{$rWatermark}")->getFont()->setSize(9)->setBold(true);
+        $sheet->getStyle("{$endColLetter}{$rWatermark}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // 6. Formatting Column Widths
+        $sheet->getColumnDimension('A')->setWidth(3);
+        $sheet->getColumnDimension('B')->setWidth(18);
+        $sheet->getColumnDimension('C')->setWidth(12);
+        $sheet->getColumnDimension('D')->setWidth(12);
+        $sheet->getColumnDimension('E')->setWidth(18);
+        $sheet->getColumnDimension('F')->setWidth(10);
+        $sheet->getColumnDimension('G')->setWidth(10);
+        $sheet->getColumnDimension('H')->setWidth(10);
+        $sheet->getColumnDimension('I')->setWidth(3);
+        $sheet->getColumnDimension('J')->setWidth(10);
+
+        for ($c = $startColIdx + 1; $c <= $endColIdx; $c++) {
+            $colLetter = Coordinate::stringFromColumnIndex($c);
+            $sheet->getColumnDimension($colLetter)->setWidth(13);
+        }
+
+        $sheet->getStyle("A1:{$endColLetter}{$rWatermark}")->getFont()->setName('Calibri')->setSize(9.5);
+        $sheet->getStyle('D1')->getFont()->setSize(13)->setBold(true);
     }
 }
 
@@ -768,80 +952,58 @@ class DataSampelRmSheetExport implements WithEvents, WithTitle
         $sheet->setShowGridlines(true);
 
         $identitas = $this->identitas;
-        $samples = $identitas->analisaSampel ?? ($identitas->analisaShortTerm ?? collect());
-        $hasMonitoring = $samples->contains(fn($s) => strtolower($s->kategori ?? '') === 'monitoring');
-        if ($hasMonitoring) {
-            $incomingSamples = $samples;
-        } else {
-            $incomingSamples = $samples->filter(function ($s) {
-                return empty($s->kategori) || in_array(strtolower($s->kategori), ['incoming', 'sta']);
-            });
+        try {
+            $rmCtrl = new RMPMController();
+            $incomingSamples = $rmCtrl->getFlattenedSamplesForIdentitas($identitas->id, 'incoming');
             if ($incomingSamples->isEmpty()) {
-                $incomingSamples = $samples;
+                $incomingSamples = $rmCtrl->getFlattenedSamplesForIdentitas($identitas->id);
             }
-        }
-        if ($incomingSamples->isEmpty() && $identitas->analisaGaramGula->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaGaramGula;
-        }
-        if ($incomingSamples->isEmpty() && $identitas->analisaBahanKering && $identitas->analisaBahanKering->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaBahanKering;
-        }
-        if ($incomingSamples->isEmpty() && $identitas->analisaBahanCair && $identitas->analisaBahanCair->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaBahanCair;
+        } catch (\Throwable $e) {
+            $incomingSamples = $identitas->analisaSampel ?? collect();
         }
 
         // Header sheet 2
         $sheet->setCellValue('A1', 'DATA HASIL UJI SAMPEL INCOMING');
-        $sheet->mergeCells('A1:I1');
+        $sheet->mergeCells('A1:J1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
 
-        $sheet->setCellValue('A2', 'No SPB: ' . ($identitas->no_spb ?? '-') . ' | Bahan: ' . ($identitas->jenis ?? '-') . ' | Supplier: ' . ($identitas->supplier ?? '-'));
-        $sheet->mergeCells('A2:I2');
+        $sheet->setCellValue('A2', 'No SPB: ' . ($identitas->no_spb ?? '-') . ' | Bahan: ' . ($identitas->nama_bahan ?: $identitas->jenis) . ' | Supplier: ' . ($identitas->supplier ?? '-'));
+        $sheet->mergeCells('A2:J2');
 
-        // Table Header
-        $headers = ['Sampel Ke', 'Brix (°Bx)', 'pH', 'Timbang A (g)', 'Timbang B (g)', '% Kotoran', 'Timbang AA (g)', '% Kadar Air', 'Organoleptik'];
-        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+        // Dynamic Columns based on template
+        $templateType = DocRmController::resolveTemplateType($identitas->jenis ?? '');
+        $templateMeta = DocRmController::getTemplateMeta($templateType);
+
+        $headers = array_merge(['Sampel Ke'], $templateMeta['param_labels']);
+        $keys = $templateMeta['param_keys'];
 
         $headerRow = 4;
         foreach ($headers as $idx => $h) {
-            $col = $cols[$idx];
+            $col = Coordinate::stringFromColumnIndex($idx + 1);
             $sheet->setCellValue("{$col}{$headerRow}", $h);
         }
 
-        $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getFont()->setBold(true);
-        $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9E1F2');
-        $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $endCol = Coordinate::stringFromColumnIndex(count($headers));
+        $sheet->getStyle("A{$headerRow}:{$endCol}{$headerRow}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$headerRow}:{$endCol}{$headerRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9E1F2');
+        $sheet->getStyle("A{$headerRow}:{$endCol}{$headerRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $currRow = 5;
         foreach ($incomingSamples as $idx => $s) {
-            $sampelNo = $idx + 1;
-            $brix = $s->brix !== null ? number_format((float)$s->brix, 2) : '-';
-            $ph = $s->ph !== null ? number_format((float)$s->ph, 2) : '-';
-            $timbangA = $s->timbang_a !== null ? number_format((float)$s->timbang_a, 4) : '-';
-            $timbangB = $s->timbang_b !== null ? number_format((float)$s->timbang_b, 4) : '-';
-            $kotoran = $s->kotoran !== null ? number_format((float)$s->kotoran, 3) : '-';
-            $timbangAa = $s->timbang_aa !== null ? number_format((float)$s->timbang_aa, 4) : '-';
-            
-            $kaVal = $s->ka ?? $s->{'%ka'} ?? null;
-            $ka = $kaVal !== null ? number_format((float)$kaVal, 2) : '-';
-            $organo = $s->organo ?? '-';
+            $sheet->setCellValue("A{$currRow}", $idx + 1);
+            $sheet->getStyle("A{$currRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-            $sheet->setCellValue("A{$currRow}", $sampelNo);
-            $sheet->setCellValue("B{$currRow}", $brix);
-            $sheet->setCellValue("C{$currRow}", $ph);
-            $sheet->setCellValue("D{$currRow}", $timbangA);
-            $sheet->setCellValue("E{$currRow}", $timbangB);
-            $sheet->setCellValue("F{$currRow}", $kotoran);
-            $sheet->setCellValue("G{$currRow}", $timbangAa);
-            $sheet->setCellValue("H{$currRow}", $ka);
-            $sheet->setCellValue("I{$currRow}", $organo);
-
-            $sheet->getStyle("A{$currRow}:H{$currRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            foreach ($keys as $kIdx => $k) {
+                $col = Coordinate::stringFromColumnIndex($kIdx + 2);
+                $val = $s->{$k} ?? ($s->{strtolower($k)} ?? '-');
+                $sheet->setCellValue("{$col}{$currRow}", $val !== null && $val !== '' ? $val : '-');
+                $sheet->getStyle("{$col}{$currRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
             $currRow++;
         }
 
         $lastRow = max(5, $currRow - 1);
-        $sheet->getStyle("A4:I{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A4:{$endCol}{$lastRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -850,7 +1012,8 @@ class DataSampelRmSheetExport implements WithEvents, WithTitle
             ],
         ]);
 
-        foreach ($cols as $col) {
+        for ($c = 1; $c <= count($headers); $c++) {
+            $col = Coordinate::stringFromColumnIndex($c);
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }

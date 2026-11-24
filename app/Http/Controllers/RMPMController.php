@@ -114,7 +114,7 @@ class RMPMController extends Controller
                     $hasAnalisa = $data->analisaSampel && $data->analisaSampel->isNotEmpty();
 
                     if ($hasAnalisa) {
-                        $docRmUrl = route('doc-rm.index', ['id' => $data->id]);
+                        $docRmUrl = route('doc-rm.index', ['id' => $data->id, 'from' => 'rm']);
                         $exportBtn = '
                             <a
                                 class="btn btn-sm btn-success me-1"

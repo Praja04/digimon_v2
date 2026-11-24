@@ -100,7 +100,7 @@
                                     $hasAnalisaRm = $identitas->analisaSampel && $identitas->analisaSampel->isNotEmpty();
                                 @endphp
                                 @if ($hasAnalisaRm)
-                                <a href="{{ route('doc-rm.index', ['id' => $identitas->id]) }}" class="btn btn-success" title="Buka Dokumen Laporan Kalkulasi RM">
+                                <a href="{{ route('doc-rm.index', ['id' => $identitas->id, 'from' => 'show']) }}" class="btn btn-success" title="Buka Dokumen Laporan Kalkulasi RM">
                                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Laporan
                                 </a>
                                 @endif

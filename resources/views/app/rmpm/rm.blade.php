@@ -674,7 +674,7 @@
                                         </p>
                                     </div>
                                     <div>
-                                        <a href="{{ route('doc-rm.index') }}" class="btn btn-success btn-sm">
+                                        <a href="{{ route('doc-rm.index', ['from' => 'rm']) }}" class="btn btn-success btn-sm">
                                             <i class="ri-file-excel-2-line me-1"></i> Form Dokumen Kalkulasi RM
                                         </a>
                                     </div>
@@ -995,10 +995,22 @@
                 $('#incomingCardColumn').removeClass('is-hidden');
                 $('#dataOpenAction').removeClass('d-none');
                 $('#btnCloseDataCard').addClass('d-none');
+
+                // Bersihkan query param open dari URL tanpa refresh
+                if (window.history.replaceState) {
+                    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+                }
             }
 
             $('#btnOpenDataCard').on('click', openDataCard);
             $('#btnCloseDataCard').on('click', closeDataCard);
+
+            // Auto buka tabel Data Raw Material jika diarahkan kembali dari halaman ekspor dokumen (?open=data)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('open') === 'data' || window.location.hash === '#data' || window.location.hash === '#dataCardDetail') {
+                openDataCard();
+            }
 
             $('#dataCardDetail').on('shown.bs.collapse', function() {
                 table.columns.adjust().draw(false);
