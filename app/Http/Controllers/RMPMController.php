@@ -114,7 +114,7 @@ class RMPMController extends Controller
                     $hasAnalisa = $data->analisaSampel && $data->analisaSampel->isNotEmpty();
 
                     if ($hasAnalisa) {
-                        $docRmUrl = route('doc-rm.index', ['id' => $data->id]);
+                        $docRmUrl = route('doc-rm.index', ['id' => $data->id, 'from' => 'rm']);
                         $exportBtn = '
                             <a
                                 class="btn btn-sm btn-success me-1"
@@ -481,10 +481,10 @@ class RMPMController extends Controller
         $data_kemasan = $identitas->samplingFisikKemasan;
         $data_raw = $identitas->samplingFisikRaw;
         $analisa_sampel = $this->getFlattenedSamplesForIdentitas($id);
-        $analisa_garam_gula = $analisa_sampel;
+        $analisa_garam_gula = $this->getFlattenedSamplesForIdentitas($id, 'incoming');
         $analisa_short_term = $analisa_sampel;
-        $analisa_bahan_kering = $analisa_sampel;
-        $analisa_bahan_cair = $analisa_sampel;
+        $analisa_bahan_kering = $this->getFlattenedSamplesForIdentitas($id, 'incoming');
+        $analisa_bahan_cair = $this->getFlattenedSamplesForIdentitas($id, 'incoming');
         $analisa_long_term = $identitas->analisaLongTerm;
         $analisa_long_term_histories = $identitas->analisaLongTermHistories;
 
@@ -530,9 +530,9 @@ class RMPMController extends Controller
         $existingLongTerm = $identitas->analisaLongTerm->last();
         $existingSampel = $this->getFlattenedSamplesForIdentitas($id);
         $existingShortTerm = $existingSampel;
-        $existingGaramGula = $existingSampel;
-        $existingBahanKering = $existingSampel;
-        $existingBahanCair = $existingSampel;
+        $existingGaramGula = $this->getFlattenedSamplesForIdentitas($id, 'incoming');
+        $existingBahanKering = $this->getFlattenedSamplesForIdentitas($id, 'incoming');
+        $existingBahanCair = $this->getFlattenedSamplesForIdentitas($id, 'incoming');
         $histories = $identitas->analisaLongTermHistories;
 
         // Preload Master Glassware Tare Weights & Quota
@@ -631,10 +631,10 @@ class RMPMController extends Controller
         $jb = $this->resolveMasterJenisBahan($identitas->jenis);
         $standards = $jb
             ? MasterStandarRm::where('status', true)
-                ->where('id_jenis_bahan', $jb->id)
-                ->select('parameter', 'min_standar', 'max_standar', 'target_text', 'uom', 'jenis_standar')
-                ->distinct()
-                ->get()
+            ->where('id_jenis_bahan', $jb->id)
+            ->select('parameter', 'min_standar', 'max_standar', 'target_text', 'uom', 'jenis_standar')
+            ->distinct()
+            ->get()
             : collect();
 
         $standardsMap = [];
@@ -913,11 +913,23 @@ class RMPMController extends Controller
         $konfirmasi = KonfirmasiKedatangan::firstOrNew(['id_identitas' => $request->id]);
 
         if ($tipe === 'analisa') {
+            if (!empty($konfirmasi->waktu_analisa)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Jam Selesai Analisa sudah dikonfirmasi dan tidak dapat diubah lagi.',
+                ], 422);
+            }
             $konfirmasi->waktu_analisa = $request->jam;
             $konfirmasi->dianalisa_by = $user->id;
             $konfirmasi->save();
             $message = 'Konfirmasi Jam Selesai Analisa berhasil disimpan.';
         } else {
+            if (!empty($konfirmasi->waktu_kedatangan)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Jam Sampling sudah dikonfirmasi dan tidak dapat diubah lagi.',
+                ], 422);
+            }
             $konfirmasi->waktu_kedatangan = $request->jam;
             $konfirmasi->diterima_by = $user->id;
             $konfirmasi->save();
@@ -1447,7 +1459,7 @@ class RMPMController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        public function storeGaramGula(Request $request)
+    public function storeGaramGula(Request $request)
     {
         return $this->storeSampel($request);
     }
@@ -1766,28 +1778,15 @@ class RMPMController extends Controller
                     'unit' => '',
                 ];
             } elseif (str_contains($upper, 'WARNA')) {
-                $isWarnaKuanti = $isKuanti || strtoupper($uom) === 'UP' || $std->min_standar !== null || $std->max_standar !== null;
-                if ($isWarnaKuanti) {
-                    $fields[] = [
-                        'name' => 'warna',
-                        'key' => 'warna[]',
-                        'label' => 'Warna',
-                        'type' => 'number',
-                        'unit' => $uom ?: 'UP',
-                        'min' => $std->min_standar,
-                        'max' => $std->max_standar,
-                    ];
-                } else {
-                    $fields[] = [
-                        'name' => 'warna',
-                        'key' => 'warna[]',
-                        'label' => 'Warna',
-                        'type' => 'dropdown',
-                        'masterKey' => 'warna',
-                        'unit' => '',
-                        'target' => $std->target_text,
-                    ];
-                }
+                $fields[] = [
+                    'name' => 'warna',
+                    'key' => 'warna[]',
+                    'label' => 'Warna',
+                    'type' => 'dropdown',
+                    'masterKey' => 'warna',
+                    'unit' => '',
+                    'target' => $std->target_text,
+                ];
             } elseif (str_contains($upper, 'AROMA')) {
                 $isAromaKuanti = $isKuanti || $std->min_standar !== null || $std->max_standar !== null;
                 if ($isAromaKuanti) {
@@ -1930,7 +1929,12 @@ class RMPMController extends Controller
             ->where('id_identitas', $idIdentitas);
 
         if ($kategori) {
-            $query->where('kategori', $kategori);
+            $query->where(function ($q) use ($kategori) {
+                $q->where('kategori', $kategori);
+                if ($kategori === 'incoming') {
+                    $q->orWhereNull('kategori');
+                }
+            });
         } else {
             $query->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END, id ASC");
         }

@@ -18,6 +18,15 @@ class MasterParameterRmSeeder extends Seeder
             'Coklat tua',
             'Coklat muda',
             'Gelap',
+            'Standar',
+            'Sesuai standar',
+            'OK',
+            'OK, agak kuning',
+            'Kuning',
+            'Putih',
+            'Bening',
+            'Jernih',
+            'Hitam',
         ];
 
         foreach ($warnaList as $w) {

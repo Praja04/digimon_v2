@@ -120,6 +120,11 @@
                                 <div class="col-md-6" id="jumlahWrapper">
                                     <label class="form-label fw-semibold">Jumlah Sampel</label>
                                     <input type="number" class="form-control" id="jumlahData" min="1" max="50" placeholder="Jumlah Sampel" value="1">
+                                    @if (!$isKelapaTebu)
+                                    <div id="setupBadgeNonGulaWrapper" class="mt-2" style="display:none;">
+                                        <span id="setupBadgeNonGula" class="badge fs-7 px-2 py-1"></span>
+                                    </div>
+                                    @endif
                                 </div>
 
                                 <div class="col-md-3">
@@ -2119,6 +2124,8 @@
                 defaultWarna = 'OK, agak kuning';
             } else if (rawJenis.includes('GARAM') || rawJenis.includes('MSG') || rawJenis.includes('RAFINASI') || rawJenis.includes('GLUKOSA')) {
                 defaultWarna = 'OK';
+            } else if (rawJenis.includes('KECAP') || rawJenis.includes('CARAMEL') || rawJenis.includes('KARAMEL')) {
+                defaultWarna = 'Coklat tua';
             }
 
             $('select[name="warna[]"]').each(function() {
@@ -2161,13 +2168,16 @@
             $('#setupSection').slideDown(150);
 
             const isKelapaTebu = isGulaKristalMaterial(JENIS);
-            const isGaram = JENIS.toUpperCase().includes('GARAM');
             let showCount = 1;
             if (isKelapaTebu) {
                 const activeRadio = $('input[name="analisa_type"]:checked').val() || currentKategori || 'incoming';
                 showCount = categorySampleCounts[activeRadio] || 1;
-            } else if (isGaram) {
+            } else if (MAT_CATEGORY === 'garam') {
                 showCount = currentJumlah || (SERVER_GARAM_GULA && SERVER_GARAM_GULA.length > 0 ? SERVER_GARAM_GULA.length : (categorySampleCounts['garam-gula'] || 1));
+            } else if (MAT_CATEGORY === 'kering') {
+                showCount = currentJumlah || (SERVER_BAHAN_KERING && SERVER_BAHAN_KERING.length > 0 ? SERVER_BAHAN_KERING.length : (categorySampleCounts['bahan-kering'] || 1));
+            } else if (MAT_CATEGORY === 'cair') {
+                showCount = currentJumlah || (SERVER_BAHAN_CAIR && SERVER_BAHAN_CAIR.length > 0 ? SERVER_BAHAN_CAIR.length : (categorySampleCounts['bahan-cair'] || 1));
             } else {
                 showCount = currentJumlah || (SERVER_SHORT_TERM && SERVER_SHORT_TERM.length > 0 ? SERVER_SHORT_TERM.length : (categorySampleCounts['incoming'] || 1));
             }
@@ -2790,7 +2800,39 @@
     }
 
     function updateSetupBadges() {
-        if (!isGulaKristalMaterial(JENIS)) return;
+        if (!isGulaKristalMaterial(JENIS)) {
+            let records = [];
+            if (MAT_CATEGORY === 'garam') records = SERVER_GARAM_GULA || [];
+            else if (MAT_CATEGORY === 'kering') records = SERVER_BAHAN_KERING || [];
+            else if (MAT_CATEGORY === 'cair') records = SERVER_BAHAN_CAIR || [];
+            else records = SERVER_SHORT_TERM || [];
+
+            const validRecords = records.filter(item => (item.kategori || 'incoming') === 'incoming');
+            if (validRecords.length > 0) {
+                const isDraft = validRecords.some(item => item.status === 'draft');
+                if (isDraft) {
+                    $('#setupBadgeNonGula').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Status: Tersimpan Sementara (Draft - ' + validRecords.length + ' Sampel)').removeClass('bg-success text-white').addClass('bg-warning text-dark').show();
+                } else {
+                    $('#setupBadgeNonGula').html('<i class="ri-lock-2-line me-1"></i> Status: FINAL (' + validRecords.length + ' Sampel)').removeClass('bg-warning text-dark').addClass('bg-success text-white').show();
+                }
+                $('#setupBadgeNonGulaWrapper').show();
+            } else {
+                let draft;
+                try {
+                    const typeKey = (MAT_CATEGORY === 'garam') ? 'garam-gula' : (MAT_CATEGORY === 'kering' ? 'bahan-kering' : (MAT_CATEGORY === 'cair' ? 'bahan-cair' : 'incoming'));
+                    draft = JSON.parse(localStorage.getItem(getDraftKey(typeKey))) || JSON.parse(localStorage.getItem(getDraftKey('incoming')));
+                } catch (e) {}
+
+                if (draft && draft.fields && Object.keys(draft.fields).length > 0) {
+                    const draftCnt = draft.setup?.jumlah || 1;
+                    $('#setupBadgeNonGula').html('<i class="mdi mdi-file-document-edit-outline me-1"></i> Ada Draft Lokal (' + draftCnt + ' Sampel)').removeClass('bg-success text-white').addClass('bg-warning text-dark').show();
+                    $('#setupBadgeNonGulaWrapper').show();
+                } else {
+                    $('#setupBadgeNonGulaWrapper').hide();
+                }
+            }
+            return;
+        }
         const incoming = (SERVER_SHORT_TERM || []).filter(item => (item.kategori || 'incoming') === 'incoming');
         const sta = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'sta');
         const monitoring = (SERVER_SHORT_TERM || []).filter(item => item.kategori === 'monitoring');
@@ -2939,9 +2981,10 @@
     }
 
     function populateGgFamilyRecords(records, type, customJumlah = null) {
-        if (!records || !records.length) return false;
+        const validRecords = (records || []).filter(item => (item.kategori || 'incoming') === 'incoming');
+        if (!validRecords || !validRecords.length) return false;
 
-        const count = (customJumlah && customJumlah > 0) ? customJumlah : records.length;
+        const count = (customJumlah && customJumlah > 0) ? customJumlah : validRecords.length;
         currentType = type;
         currentKategori = 'incoming';
         currentJumlah = count;
@@ -2950,17 +2993,17 @@
         startForm(type, count, 'incoming');
 
         setTimeout(() => {
-            if (records[0].disposisi) {
-                $('select[name="disposisi"]').val(records[0].disposisi).trigger('change');
+            if (validRecords[0].disposisi) {
+                $('select[name="disposisi"]').val(validRecords[0].disposisi).trigger('change');
             } else {
                 $('select[name="disposisi"]').val('').trigger('change');
             }
             updateDraftBadgeStatus();
-            if (records[0].keterangan) {
-                $('textarea[name="keterangan"]').val(records[0].keterangan);
+            if (validRecords[0].keterangan) {
+                $('textarea[name="keterangan"]').val(validRecords[0].keterangan);
             }
 
-            records.forEach((rec, idx) => {
+            validRecords.forEach((rec, idx) => {
                 if (idx >= count) return;
 
                 // 1. Numeric Ringkasan Fields
@@ -3028,6 +3071,8 @@
 
             calculateStatistics();
             applyFormLockState();
+            updateDraftBadgeStatus();
+            saveDraft();
         }, 100);
         return true;
     }
@@ -3055,6 +3100,88 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const reqKategori = urlParams.get('kategori');
+
+        // Check if material is non-kelapa-tebu (Garam, Gula Rafinasi/Bahan Kering, Sari Kecap/Bahan Cair)
+        if (!isGulaKristalMaterial(JENIS)) {
+            let targetType = 'short-term';
+            let serverRecords = [];
+            let catCountKey = 'incoming';
+
+            if (MAT_CATEGORY === 'garam') {
+                targetType = 'garam-gula';
+                serverRecords = (SERVER_GARAM_GULA || []).filter(i => (i.kategori || 'incoming') === 'incoming');
+                catCountKey = 'garam-gula';
+            } else if (MAT_CATEGORY === 'kering') {
+                targetType = 'bahan-kering';
+                serverRecords = (SERVER_BAHAN_KERING || []).filter(i => (i.kategori || 'incoming') === 'incoming');
+                catCountKey = 'bahan-kering';
+            } else if (MAT_CATEGORY === 'cair') {
+                targetType = 'bahan-cair';
+                serverRecords = (SERVER_BAHAN_CAIR || []).filter(i => (i.kategori || 'incoming') === 'incoming');
+                catCountKey = 'bahan-cair';
+            }
+
+            let draft;
+            try {
+                draft = JSON.parse(localStorage.getItem(getDraftKey(targetType))) || JSON.parse(localStorage.getItem(getDraftKey('incoming')));
+                if (!draft) {
+                    const legacy = JSON.parse(localStorage.getItem(DRAFT_KEY));
+                    if (legacy && legacy.setup && (legacy.setup.type === targetType || legacy.setup.kategori === 'incoming')) draft = legacy;
+                }
+            } catch (e) {}
+
+            const hasServerData = (serverRecords && serverRecords.length > 0);
+            const hasDraftData = !!(draft && draft.fields && Object.keys(draft.fields).length > 0);
+
+            // Auto-load if server records or draft exists, or if URL has ?kategori
+            if (hasServerData || hasDraftData || reqKategori) {
+                const sampleCount = hasServerData
+                    ? serverRecords.length
+                    : ((draft && draft.setup && draft.setup.jumlah) ? parseInt(draft.setup.jumlah) : (categorySampleCounts[catCountKey] || 1));
+
+                categorySampleCounts[catCountKey] = sampleCount;
+                $('#jumlahData').val(sampleCount);
+
+                if (targetType === 'garam-gula') {
+                    if (hasServerData) {
+                        populateExistingGaramGula(sampleCount);
+                        if (draft && draft.fields) loadFieldsFromDraft(draft.fields);
+                    } else if (hasDraftData) {
+                        restoreFromDraft('garam-gula');
+                    } else {
+                        startForm('garam-gula', sampleCount, 'incoming');
+                    }
+                    return;
+                } else if (targetType === 'bahan-kering') {
+                    if (hasServerData) {
+                        populateExistingBahanKering(sampleCount);
+                        if (draft && draft.fields) loadFieldsFromDraft(draft.fields);
+                    } else if (hasDraftData) {
+                        restoreFromDraft('bahan-kering');
+                    } else {
+                        startForm('bahan-kering', sampleCount, 'incoming');
+                    }
+                    return;
+                } else if (targetType === 'bahan-cair') {
+                    if (hasServerData) {
+                        populateExistingBahanCair(sampleCount);
+                        if (draft && draft.fields) loadFieldsFromDraft(draft.fields);
+                    } else if (hasDraftData) {
+                        restoreFromDraft('bahan-cair');
+                    } else {
+                        startForm('bahan-cair', sampleCount, 'incoming');
+                    }
+                    return;
+                }
+            }
+
+            // Otherwise show setup section for fresh input
+            $('#setupSection').show();
+            $('#dividerForm, #analisaSection').hide();
+            const count = categorySampleCounts[catCountKey] || 1;
+            $('#jumlahData').val(count);
+            return;
+        }
 
         // Priority 1: If URL explicitly specifies a category (?kategori=sta or long-term)
         if (reqKategori) {
@@ -3455,8 +3582,8 @@
         const newUrl = new URL(window.location.href);
         if (type === 'long-term') {
             newUrl.searchParams.set('kategori', 'long-term');
-        } else if (type === 'short-term') {
-            newUrl.searchParams.set('kategori', kategori);
+        } else {
+            newUrl.searchParams.set('kategori', kategori || 'incoming');
         }
         window.history.replaceState({}, '', newUrl);
 
@@ -3475,9 +3602,6 @@
         }
         applyFormLockState();
         updateMainFormActionsVisibility();
-        if (!isCurrentFinal()) {
-            saveDraft();
-        }
     }
 
     function updateCategorySwitcherBadges() {
@@ -6658,14 +6782,29 @@
             const arr = [];
             for (let i = 0; i < jumlah; i++) {
                 arr.push({
+                    kategori: kategori || 'incoming',
                     status: 'draft',
                     disposisi: $('select[name="disposisi"]').val() || null,
                     keterangan: $('textarea[name="keterangan"]').val() || null,
                     brix: $('input[name="brix[]"]').eq(i).val() || null,
                     ph: $('input[name="ph[]"]').eq(i).val() || null,
                     ka: $('input[name="%ka[]"], input[name="ka[]"]').eq(i).val() || null,
+                    '%ka': $('input[name="%ka[]"], input[name="ka[]"]').eq(i).val() || null,
                     kotoran: $('input[name="kotoran[]"]').eq(i).val() || null,
+                    nacl: $('input[name="%nacl[]"], input[name="nacl[]"]').eq(i).val() || null,
+                    '%nacl': $('input[name="%nacl[]"], input[name="nacl[]"]').eq(i).val() || null,
+                    tn: $('input[name="%tn[]"], input[name="tn[]"]').eq(i).val() || null,
+                    '%tn': $('input[name="%tn[]"], input[name="tn[]"]').eq(i).val() || null,
+                    berat_jenis: $('input[name="berat_jenis[]"]').eq(i).val() || null,
+                    suhu: $('input[name="suhu[]"]').eq(i).val() || null,
+                    aw: $('input[name="aw[]"]').eq(i).val() || null,
+                    viskositas: $('input[name="viskositas[]"]').eq(i).val() || null,
                     gross_weight: $('input[name="gross_weight[]"]').eq(i).val() || null,
+                    fisik: $('input[name="fisik[]"]').eq(i).val() || null,
+                    warna: $('select[name="warna[]"]').eq(i).val() || $('input[name="warna[]"]').eq(i).val() || null,
+                    aroma: $('select[name="aroma[]"]').eq(i).val() || $('input[name="aroma[]"]').eq(i).val() || null,
+                    organo: $('.organo-cell-container').eq(i).find('input.organo-hidden-val').val() || null,
+                    rasa: $('.organo-cell-container').eq(i).find('input.organo-hidden-val').val() || null,
                     no_cawan: $('select[name="no_cawan[]"]').eq(i).val() || null,
                     berat_cawan: $('input[name="berat_cawan[]"]').eq(i).val() || null,
                     timbang_aa: $('input[name="timbang_aa[]"]').eq(i).val() || null,

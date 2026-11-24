@@ -20,6 +20,12 @@ class KondisiMobilController extends Controller
             'cacat' => 'required',
             'segel' => 'required',
             'berbau' => 'required',
+            'keterangan_bersih' => 'nullable|string',
+            'keterangan_kering' => 'nullable|string',
+            'keterangan_benda_asing' => 'nullable|string',
+            'keterangan_cacat' => 'nullable|string',
+            'keterangan_segel' => 'nullable|string',
+            'keterangan_berbau' => 'nullable|string',
         ]);
 
         $existing = SamplingKondisiMobil::where('id_identitas', $validated['id_identitas'])->first();
@@ -29,6 +35,12 @@ class KondisiMobilController extends Controller
                 'status' => 'error',
                 'message' => 'Sampling Kondisi Mobil sudah pernah disimpan untuk ID ini.'
             ], 409);
+        }
+
+        foreach (['bersih', 'kering', 'benda_asing', 'cacat', 'segel', 'berbau'] as $f) {
+            if (($validated[$f] ?? '') === 'yes') {
+                $validated['keterangan_' . $f] = null;
+            }
         }
 
         $validated['created_by'] = auth()->user()->id;
@@ -43,17 +55,31 @@ class KondisiMobilController extends Controller
 
     public function update(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
+            'id' => 'required|exists:sampling_kondisi_mobil,id',
             'bersih' => 'required',
             'kering' => 'required',
             'benda_asing' => 'required',
             'cacat' => 'required',
             'segel' => 'required',
             'berbau' => 'required',
+            'keterangan_bersih' => 'nullable|string',
+            'keterangan_kering' => 'nullable|string',
+            'keterangan_benda_asing' => 'nullable|string',
+            'keterangan_cacat' => 'nullable|string',
+            'keterangan_segel' => 'nullable|string',
+            'keterangan_berbau' => 'nullable|string',
         ]);
 
-        $mobil = SamplingKondisiMobil::find($request->id);
-        $mobil->update($request->all());
+        $mobil = SamplingKondisiMobil::findOrFail($request->id);
+
+        foreach (['bersih', 'kering', 'benda_asing', 'cacat', 'segel', 'berbau'] as $f) {
+            if (($validated[$f] ?? '') === 'yes') {
+                $validated['keterangan_' . $f] = null;
+            }
+        }
+
+        $mobil->update($validated);
 
         return response()->json([
             'status' => 'success',
