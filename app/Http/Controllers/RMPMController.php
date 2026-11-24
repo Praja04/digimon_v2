@@ -108,24 +108,17 @@ class RMPMController extends Controller
                     $userRole = strtolower(trim(auth()->user()->role ?? ''));
                     $isSupervisor = in_array($userRole, ['supervisor', 'head of dapartement', 'head of department', 'dept head'], true);
 
-                    $exportBtn = '';
-
-                    // Tombol Export selalu muncul jika data sudah memiliki sampel analisa (baik draft/simpan sementara maupun final)
-                    $hasAnalisa = $data->analisaSampel && $data->analisaSampel->isNotEmpty();
-
-                    if ($hasAnalisa) {
-                        $docRmUrl = route('doc-rm.index', ['id' => $data->id, 'from' => 'rm']);
-                        $exportBtn = '
-                            <a
-                                class="btn btn-sm btn-success me-1"
-                                href="' . $docRmUrl . '"
-                                title="Buka Dokumen Laporan Kalkulasi RM"
-                            >
-                                <i class="ri-file-excel-2-line"></i>
-                                Export
-                            </a>
-                        ';
-                    }
+                    $docRmUrl = route('doc-rm.index', ['id' => $data->id, 'from' => 'rm']);
+                    $exportBtn = '
+                        <a
+                            class="btn btn-sm btn-success me-1"
+                            href="' . $docRmUrl . '"
+                            title="Buka Dokumen Laporan Kalkulasi RM"
+                        >
+                            <i class="ri-file-excel-2-line"></i>
+                            Export
+                        </a>
+                    ';
 
                     $btn = '
                         <a
