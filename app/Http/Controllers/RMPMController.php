@@ -9,6 +9,7 @@ use App\Models\AnalisaLongTermHistory;
 use App\Models\IdentitasRM;
 use App\Models\KonfirmasiKedatangan;
 use App\Models\MasterGlassware;
+use App\Models\MasterGroupRm;
 use App\Models\MasterJenisBahan;
 use App\Models\MasterParameterRm;
 use App\Models\MasterStandarRm;
@@ -689,6 +690,28 @@ class RMPMController extends Controller
 
         $dynamicFields = $this->getDynamicFieldsForMaterial($identitas->jenis);
 
+        // Preload Master Groups (Group A, B, C, D, K, P, etc.) - fokus hanya id dan grup
+        $groupQuery = MasterGroupRm::where('status', true);
+        if ($jb) {
+            $groupQuery->where('jenis_bahan_id', $jb->id);
+        }
+        $rawGroups = $groupQuery->select('id', 'grup')->orderBy('grup')->get();
+
+        if ($rawGroups->isEmpty()) {
+            $allGroups = MasterGroupRm::where('status', true)->select('id', 'grup')->orderBy('grup')->get();
+            $rawGroups = $allGroups->isNotEmpty() ? $allGroups : collect(['A', 'B', 'C', 'D', 'K', 'P'])->map(fn($l, $i) => (object)['id' => $i + 1, 'grup' => $l]);
+        }
+
+        $availableGroups = $rawGroups->unique('grup')->values()->map(function ($item) {
+            $g = trim((string)$item->grup);
+            $groupName = str_starts_with(strtoupper($g), 'GROUP') ? $g : ('Group ' . $g);
+            return [
+                'id'    => $item->id,
+                'grup'  => $item->grup,
+                'group' => $groupName,
+            ];
+        })->all();
+
         return view(
             'app.rmpm.analisa',
             compact(
@@ -703,7 +726,8 @@ class RMPMController extends Controller
                 'initialGlassware',
                 'initialStandards',
                 'initialParameters',
-                'dynamicFields'
+                'dynamicFields',
+                'availableGroups'
             )
         );
     }
@@ -973,12 +997,12 @@ class RMPMController extends Controller
         if ($isDraft) {
             $rules['uji_kristal'] = ['nullable', 'in:positif,negatif,'];
             $rules['disposisi'] = ['nullable', 'in:Release,Release Bersyarat,Reject,'];
-            $rules['group'] = ['nullable', 'in:Group A,Group B,Group C,'];
+            $rules['group'] = ['nullable', 'string', 'max:50'];
         } else {
             $rules['uji_kristal'] = ['required', 'in:positif,negatif'];
             $rules['disposisi'] = ['required', 'in:Release,Release Bersyarat,Reject'];
             if (in_array($request->disposisi, ['Release', 'Release Bersyarat'])) {
-                $rules['group'] = ['required', 'in:Group A,Group B,Group C'];
+                $rules['group'] = ['required', 'string', 'max:50'];
             }
         }
 
@@ -1174,6 +1198,7 @@ class RMPMController extends Controller
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
             'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
+            'group'        => 'nullable|string|max:50',
             'keterangan'   => 'nullable|string',
             'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
         ]);
@@ -1212,6 +1237,8 @@ class RMPMController extends Controller
                 $statusToSave = $existing->status;
             }
 
+            $groupVal = in_array($request->disposisi, ['Release', 'Release Bersyarat']) ? ($request->filled('group') ? $request->group : null) : null;
+
             // Simpan ke skema normalisasi dinamis (Table 2 Transaksi & Table 4 Sample Detail)
             $transaksi = TransaksiAnalisaRM::updateOrCreate(
                 [
@@ -1220,6 +1247,7 @@ class RMPMController extends Controller
                 ],
                 [
                     'disposisi'    => $userRole === 'analis field' ? ($existing->disposisi ?? null) : $request->disposisi,
+                    'group'        => $userRole === 'analis field' ? ($existing->group ?? null) : $groupVal,
                     'status'       => $statusToSave,
                     'keterangan'   => $userRole === 'analis field' ? ($existing->keterangan ?? null) : $request->keterangan,
                     'created_by'   => auth()->id(),
@@ -1497,7 +1525,8 @@ class RMPMController extends Controller
             ],
             'group' => [
                 'nullable',
-                'in:Group A,Group B,Group C',
+                'string',
+                'max:50',
             ],
             'keterangan_update' => [
                 'nullable',
@@ -1518,7 +1547,7 @@ class RMPMController extends Controller
         if (in_array($newDisposisi, ['Release', 'Release Bersyarat']) && empty($newGroup)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Group ABC wajib dipilih untuk disposisi Release atau Release Bersyarat.',
+                'message' => 'Group wajib dipilih untuk disposisi Release atau Release Bersyarat.',
             ], 422);
         }
 
@@ -1955,6 +1984,7 @@ class RMPMController extends Controller
                     'sampel_ke'    => $s,
                     'kategori'     => $tx->kategori ?: 'incoming',
                     'disposisi'    => $tx->disposisi,
+                    'group'        => $tx->group,
                     'status'       => $tx->status,
                     'keterangan'   => $tx->keterangan,
                     'created_by'   => $tx->created_by,

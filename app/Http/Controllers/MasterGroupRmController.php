@@ -189,15 +189,57 @@ class MasterGroupRmController extends Controller
 
     public function getByJenisBahan($jenisBahanId): JsonResponse
     {
-        $items = MasterGroupRm::where('jenis_bahan_id', $jenisBahanId)
+        $jenisBahan = MasterJenisBahan::find($jenisBahanId);
+
+        // 1. Coba exact match jenis_bahan_id (hanya ambil id dan grup, bukan select all)
+        $groups = MasterGroupRm::where('jenis_bahan_id', $jenisBahanId)
             ->where('status', true)
+            ->select('id', 'grup')
             ->orderBy('grup')
-            ->orderBy('id', 'asc')
             ->get();
+
+        // 2. Jika kosong, coba cari berdasarkan kemiripan nama bahan
+        if ($groups->isEmpty() && $jenisBahan) {
+            $cleanName = trim(strtoupper($jenisBahan->nama));
+            $relatedJenisIds = MasterJenisBahan::where('nama', 'LIKE', "%{$cleanName}%")
+                ->orWhereRaw('? LIKE CONCAT("%", nama, "%")', [$cleanName])
+                ->pluck('id');
+
+            if ($relatedJenisIds->isNotEmpty()) {
+                $groups = MasterGroupRm::whereIn('jenis_bahan_id', $relatedJenisIds)
+                    ->where('status', true)
+                    ->select('id', 'grup')
+                    ->orderBy('grup')
+                    ->get();
+            }
+        }
+
+        // Ambil grup unik terfokus pada id dan grup/group
+        $uniqueGroups = $groups->unique('grup')->values()->map(function ($item) {
+            $g = trim((string)$item->grup);
+            $groupName = str_starts_with(strtoupper($g), 'GROUP') ? $g : ('Group ' . $g);
+            return [
+                'id'    => $item->id,
+                'grup'  => $item->grup,
+                'group' => $groupName,
+            ];
+        });
+
+        // Fallback jika belum ada data grup di master data
+        if ($uniqueGroups->isEmpty()) {
+            $defaultLetters = ['A', 'B', 'C', 'D', 'K', 'P'];
+            $uniqueGroups = collect($defaultLetters)->map(function ($letter, $idx) {
+                return [
+                    'id'    => $idx + 1,
+                    'grup'  => $letter,
+                    'group' => 'Group ' . $letter,
+                ];
+            });
+        }
 
         return response()->json([
             'status' => 'success',
-            'data'   => $items,
+            'data'   => $uniqueGroups,
         ]);
     }
 }

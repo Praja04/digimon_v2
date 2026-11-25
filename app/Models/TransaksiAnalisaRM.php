@@ -19,6 +19,7 @@ class TransaksiAnalisaRM extends Model
         'id_identitas',
         'kategori',
         'disposisi',
+        'group',
         'status',
         'keterangan',
         'created_by',
@@ -54,7 +55,7 @@ class TransaksiAnalisaRM extends Model
             return $val;
         }
 
-        if (!in_array($key, ['id', 'id_identitas', 'kategori', 'disposisi', 'status', 'keterangan', 'created_by', 'created_at', 'updated_at', 'details', 'glasswares', 'identitas', 'creator'])) {
+        if (!in_array($key, ['id', 'id_identitas', 'kategori', 'disposisi', 'group', 'status', 'keterangan', 'created_by', 'created_at', 'updated_at', 'details', 'glasswares', 'identitas', 'creator'])) {
             return $this->getDetailValue($key);
         }
 

@@ -304,7 +304,7 @@
                                         <th>Aksi</th>
                                         <th>Uji Kristal</th>
                                         <th>Disposisi</th>
-                                        <th>Group ABC</th>
+                                        <th>Group</th>
                                         <th>Lampiran Foto</th>
                                         <th>Keterangan</th>
                                     </tr>
@@ -1097,6 +1097,25 @@
     const SERVER_DYNAMIC_FIELDS = @json($dynamicFields ?? []);
     const USER_ROLE = @json(auth()->user()->role ?? '');
     const IS_ANALIS_FIELD = (USER_ROLE === 'Analis Field');
+    const AVAILABLE_GROUPS = @json($availableGroups ?? []);
+
+    function getGroupOptionsHtml() {
+        const groups = (Array.isArray(AVAILABLE_GROUPS) && AVAILABLE_GROUPS.length > 0)
+            ? AVAILABLE_GROUPS
+            : [
+                { id: 1, group: 'Group A' },
+                { id: 2, group: 'Group B' },
+                { id: 3, group: 'Group C' },
+                { id: 4, group: 'Group D' },
+                { id: 5, group: 'Group K' },
+                { id: 6, group: 'Group P' },
+            ];
+
+        return groups.map(g => {
+            const val = (typeof g === 'object' && g !== null) ? (g.group || g.grup) : g;
+            return `<option value="${val}">${val}</option>`;
+        }).join('');
+    }
 
     function isGulaKristalMaterial(jenisStr) {
         return MAT_CATEGORY === 'kelapa-tebu';
@@ -1734,7 +1753,7 @@
         ],
         'long-term': [
             { key: 'uji_kristal', label: 'Uji Kristal', type: 'crystal', unit: '' },
-            { key: 'disposisi', label: 'Disposisi & Group ABC', type: 'select-long', unit: '' },
+            { key: 'disposisi', label: 'Disposisi & Group', type: 'select-long', unit: '' },
         ],
         'garam-gula': [
             ...GARAM_GULA_FIELDS,
@@ -2405,6 +2424,28 @@
         $(document).on('change', '#selectUjiKristal', handleCrystalChange);
         $(document).on('change', '#selectDisposisiLong', handleDisposisiLongChange);
 
+        // Short term & other materials dynamic disposisi & group handlers
+        $(document).on('change', 'select[name="disposisi"]:not(#selectDisposisiLong)', function() {
+            const val = $(this).val();
+            const $section = $(this).closest('.disposisi-section');
+            const $grpWrapper = $section.find('.group-short-wrapper');
+            const $ketCol = $section.find('.keterangan-short-col');
+            if (val === 'Release' || val === 'Release Bersyarat') {
+                $grpWrapper.slideDown(150);
+                $ketCol.removeClass('col-md-8').addClass('col-md-5');
+            } else {
+                $grpWrapper.slideUp(150);
+                $grpWrapper.find('select[name="group"]').val('');
+                $ketCol.removeClass('col-md-5').addClass('col-md-8');
+            }
+            saveDraft();
+        });
+
+        $(document).on('change', 'select[name="group"]:not(#selectGroupLong)', function() {
+            $(this).removeClass('is-invalid');
+            saveDraft();
+        });
+
         // Multi Photo Upload Handlers
         $(document).on('change', '#inputMultiAttachment', handlePhotoSelection);
         $(document).on('click', '#btnClearPhotos', handleClearAllPhotos);
@@ -2906,6 +2947,9 @@
             } else {
                 $('select[name="disposisi"]').val('').trigger('change');
             }
+            if (matching[0].group) {
+                $('select[name="group"]').val(matching[0].group);
+            }
             updateDraftBadgeStatus();
             if (matching[0].keterangan) {
                 $('textarea[name="keterangan"]').val(matching[0].keterangan);
@@ -2997,6 +3041,9 @@
                 $('select[name="disposisi"]').val(validRecords[0].disposisi).trigger('change');
             } else {
                 $('select[name="disposisi"]').val('').trigger('change');
+            }
+            if (validRecords[0].group) {
+                $('select[name="group"]').val(validRecords[0].group);
             }
             updateDraftBadgeStatus();
             if (validRecords[0].keterangan) {
@@ -3985,22 +4032,32 @@
                     <i class="ri-checkbox-circle-fill text-success"></i> Keputusan Akhir Analisa
                 </h6>
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-semibold mb-1">
                             Disposisi <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select" name="disposisi" required ${IS_ANALIS_FIELD ? 'disabled' : ''}>
+                        <select class="form-select form-select-sm" name="disposisi" required ${IS_ANALIS_FIELD ? 'disabled' : ''}>
                             <option value="">-- Pilih Disposisi --</option>
                             <option value="Release">Release</option>
                             <option value="Reject">Reject</option>
                         </select>
                         ${IS_ANALIS_FIELD ? '<div class="form-text text-muted" style="font-size:11px;">Disposisi hanya dapat diisi oleh Analis RM / Foreman.</div>' : ''}
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-3 group-short-wrapper" style="display:none;">
+                        <label class="form-label fw-semibold mb-1">
+                            Group <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm border-primary" name="group" id="selectGroupShort" ${IS_ANALIS_FIELD ? 'disabled' : ''}>
+                            <option value="">-- Pilih Group --</option>
+                            ${getGroupOptionsHtml()}
+                        </select>
+                        <div class="form-text text-muted" style="font-size:11px;">Group mutu untuk disposisi Release.</div>
+                    </div>
+                    <div class="col-md-6 keterangan-short-col">
                         <label class="form-label fw-semibold mb-1">
                             Keterangan <span class="text-muted fw-normal" style="font-size:11px;">(opsional)</span>
                         </label>
-                        <textarea class="form-control" name="keterangan" rows="2" placeholder="Tambahkan catatan hasil analisa atau disposisi..." ${IS_ANALIS_FIELD ? 'disabled' : ''}></textarea>
+                        <textarea class="form-control form-control-sm" name="keterangan" rows="2" placeholder="Tambahkan catatan hasil analisa atau disposisi..." ${IS_ANALIS_FIELD ? 'disabled' : ''}></textarea>
                     </div>
                 </div>
             </div>`;
@@ -4452,7 +4509,7 @@
                     <i class="ri-checkbox-circle-fill text-success"></i> Keputusan Akhir Analisa
                 </h6>
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-semibold mb-1">
                             Disposisi <span class="text-danger">*</span>
                         </label>
@@ -4463,7 +4520,17 @@
                         </select>
                         ${IS_ANALIS_FIELD ? '<div class="form-text text-muted" style="font-size:11px;">Disposisi hanya dapat diisi oleh Analis RM / Foreman.</div>' : ''}
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-3 group-short-wrapper" style="display:none;">
+                        <label class="form-label fw-semibold mb-1">
+                            Group <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm border-primary" name="group" id="selectGroupShort" ${IS_ANALIS_FIELD ? 'disabled' : ''}>
+                            <option value="">-- Pilih Group --</option>
+                            ${getGroupOptionsHtml()}
+                        </select>
+                        <div class="form-text text-muted" style="font-size:11px;">Group mutu untuk disposisi Release.</div>
+                    </div>
+                    <div class="col-md-6 keterangan-short-col">
                         <label class="form-label fw-semibold mb-1">
                             Keterangan <span class="text-muted fw-normal" style="font-size:11px;">(opsional)</span>
                         </label>
@@ -4728,19 +4795,32 @@
                                     <div class="form-text text-muted">Wajib diisi karena uji kristal positif.</div>
                                 </div>
 
-                                {{-- Field Group ABC (Muncul jika Disposisi Release atau Release Bersyarat) --}}
+                                {{-- Field Group (Muncul jika Disposisi Release atau Release Bersyarat) --}}
                                 <div id="groupLongWrapper" class="mt-3 p-3 border border-primary-subtle rounded bg-light" style="display:none;">
                                     <label class="form-label small fw-semibold text-primary d-flex align-items-center mb-1">
-                                        <i class="ri-node-tree me-1 fs-6"></i> Group ABC <span class="text-danger ms-1">*</span>
+                                        <i class="ri-node-tree me-1 fs-6"></i> Group <span class="text-danger ms-1">*</span>
                                     </label>
                                     <select class="form-select form-select-sm border-primary" name="group" id="selectGroupLong">
-                                        <option value="">-- Pilih Group ABC --</option>
-                                        <option value="Group A">Group A</option>
-                                        <option value="Group B">Group B</option>
-                                        <option value="Group C">Group C</option>
+                                        <option value="">-- Pilih Group --</option>
+                                        @php
+                                            $groupsToDisplay = $availableGroups ?? [
+                                                ['id' => 1, 'group' => 'Group A'],
+                                                ['id' => 2, 'group' => 'Group B'],
+                                                ['id' => 3, 'group' => 'Group C'],
+                                                ['id' => 4, 'group' => 'Group D'],
+                                                ['id' => 5, 'group' => 'Group K'],
+                                                ['id' => 6, 'group' => 'Group P'],
+                                            ];
+                                        @endphp
+                                        @foreach($groupsToDisplay as $grp)
+                                            @php
+                                                $val = is_array($grp) ? ($grp['group'] ?? $grp['grup']) : (is_object($grp) ? ($grp->group ?? $grp->grup) : $grp);
+                                            @endphp
+                                            <option value="{{ $val }}" {{ (isset($existingLongTerm) && $existingLongTerm->group === $val) ? 'selected' : '' }}>{{ $val }}</option>
+                                        @endforeach
                                     </select>
                                     <div class="form-text small text-muted mt-1">
-                                        <i class="ri-information-line"></i> Group ABC muncul karena disposisi adalah Release / Release Bersyarat.
+                                        <i class="ri-information-line"></i> Group muncul karena disposisi adalah Release / Release Bersyarat.
                                     </div>
                                 </div>
                             </div>
@@ -6506,6 +6586,15 @@
                     $disp.removeClass('is-invalid');
                 }
 
+                const $grp = $('select[name="group"]:visible');
+                if ($disp.val() === 'Release' && $grp.length && !$grp.val()) {
+                    hasEmpty = true;
+                    emptyFields.add('Group');
+                    $grp.addClass('is-invalid');
+                } else {
+                    $grp.removeClass('is-invalid');
+                }
+
                 if (hasEmpty) {
                     return Swal.fire({
                         icon: 'warning',
@@ -6529,6 +6618,19 @@
                     });
                 } else {
                     $disp.removeClass('is-invalid');
+                }
+
+                const $grp = $('select[name="group"]:visible');
+                if ($disp.val() === 'Release' && $grp.length && !$grp.val()) {
+                    $grp.addClass('is-invalid');
+                    return Swal.fire({
+                        icon: 'warning',
+                        title: 'Data belum lengkap',
+                        html: 'Pilih Group terlebih dahulu untuk disposisi Release.',
+                        confirmButtonText: 'Oke',
+                    });
+                } else {
+                    $grp.removeClass('is-invalid');
                 }
             } else if (currentType === 'long-term') {
                 const ujiKristal = $('#selectUjiKristal').val();
@@ -6562,7 +6664,7 @@
                         if (!group) {
                             return Swal.fire({
                                 icon: 'warning',
-                                text: 'Pilih Group ABC untuk disposisi Release / Release Bersyarat.'
+                                text: 'Pilih Group untuk disposisi Release / Release Bersyarat.'
                             });
                         }
                     }
@@ -6571,7 +6673,7 @@
                     if (!group) {
                         return Swal.fire({
                             icon: 'warning',
-                            text: 'Pilih Group ABC untuk hasil analisa ini.'
+                            text: 'Pilih Group untuk hasil analisa ini.'
                         });
                     }
                 }
@@ -6612,6 +6714,9 @@
             selectedFiles.forEach(file => {
                 formData.append('attachments[]', file);
             });
+        } else {
+            const shortGroup = $('select[name="group"]:visible').val() || '';
+            formData.set('group', shortGroup);
         }
 
         const urlMap = {
@@ -6773,6 +6878,7 @@
                     kategori: kategori,
                     status: 'draft',
                     disposisi: $('select[name="disposisi"]').val() || null,
+                    group: $('select[name="group"]').val() || null,
                     keterangan: $('textarea[name="keterangan"]').val() || null,
                     brix: $('input[name="brix[]"]').eq(i).val() || null,
                     ph: $('input[name="ph[]"]').eq(i).val() || null,
@@ -6785,6 +6891,7 @@
                     kategori: kategori || 'incoming',
                     status: 'draft',
                     disposisi: $('select[name="disposisi"]').val() || null,
+                    group: $('select[name="group"]').val() || null,
                     keterangan: $('textarea[name="keterangan"]').val() || null,
                     brix: $('input[name="brix[]"]').eq(i).val() || null,
                     ph: $('input[name="ph[]"]').eq(i).val() || null,

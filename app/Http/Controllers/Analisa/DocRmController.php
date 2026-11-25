@@ -354,6 +354,14 @@ class DocRmController extends Controller
 
         // Serah terima & Disposisi
         $jamSampling = $konfirmasi?->waktu_kedatangan ? Carbon::parse($konfirmasi->waktu_kedatangan)->format('H:i') : '-';
+        $latestLongTerm = $identitas->analisaLongTerm->last();
+        $disposisiVal = $identitas->disposisi 
+            ?: ($latestLongTerm?->disposisi 
+            ?: ($incomingSamples->first()?->disposisi ?: 'Belum Disposisi'));
+        $groupVal = $identitas->group 
+            ?: ($latestLongTerm?->group 
+            ?: ($incomingSamples->first()?->group ?: '-'));
+
         $serahTerima = [
             'jam_sampling'    => $jamSampling,
             'ttd_sampling'    => $konfirmasi?->diterimaBy?->name ?? 'QC Field',
@@ -361,8 +369,8 @@ class DocRmController extends Controller
             'jam_resampling'  => '-',
             'ttd_resampling'  => '-',
             'jumlah_resampling'=> '-',
-            'disposisi'       => $identitas->disposisi ?: ($incomingSamples->first()?->disposisi ?: 'Belum Disposisi'),
-            'group'           => $identitas->group ?: '-',
+            'disposisi'       => $disposisiVal,
+            'group'           => $groupVal,
         ];
 
         // Tanda tangan
