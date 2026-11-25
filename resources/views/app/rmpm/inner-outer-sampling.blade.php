@@ -1173,7 +1173,7 @@ $isFinal
         const isOuter = @json($isOuter);
 
         const savedSamples = @json(
-            $sampling ? - > hasil_sampel ?? []
+            $sampling?->hasil_sampel ?? []
         );
 
         let samples = Array.isArray(savedSamples) ?
