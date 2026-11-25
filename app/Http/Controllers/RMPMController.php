@@ -447,7 +447,7 @@ class RMPMController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Data BCT berhasil disimpan ke database.',
+            'message' => 'Data BCT berhasil disimpan.',
             'data' => $bct,
         ]);
     }
