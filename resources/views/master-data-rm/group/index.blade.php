@@ -145,11 +145,14 @@
                                 <label for="grup" class="form-label fw-semibold small">
                                     Grup <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" class="form-control form-control-sm" id="grup" name="grup" placeholder="Contoh: A, B, atau C" required list="listGrup">
+                                <input type="text" class="form-control form-control-sm" id="grup" name="grup" placeholder="Contoh: A, B, C, D, K, atau P" required list="listGrup">
                                 <datalist id="listGrup">
                                     <option value="A">
                                     <option value="B">
                                     <option value="C">
+                                    <option value="D">
+                                    <option value="K">
+                                    <option value="P">
                                 </datalist>
                                 <small class="text-muted fs-11">Pilih atau ketik huruf/nama grup (misal: A).</small>
                                 <div class="invalid-feedback" id="errorGrup"></div>

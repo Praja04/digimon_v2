@@ -256,14 +256,26 @@
                                         @php
                                         $incomingRecord = $analisa_sampel->firstWhere('kategori', 'incoming') ?? ($analisa_sampel->whereNull('kategori')->first());
                                         $disposisi_incoming = $incomingRecord->disposisi ?? null;
+                                        $group_incoming = $incomingRecord->group ?? null;
                                         $staRecord = $analisa_sampel->firstWhere('kategori', 'sta');
                                         $disposisi_sta = $staRecord->disposisi ?? null;
+                                        $group_sta = $staRecord->group ?? null;
                                         $latest_long = $analisa_long_term->first();
                                         $disposisi_long_term = $latest_long->disposisi ?? null;
                                         $group_long_term = $latest_long->group ?? null;
                                         @endphp
-                                        <h6>Incoming : {{ $disposisi_incoming ?? 'Belum input' }}</h6>
-                                        <h6>STA : {{ $disposisi_sta ?? 'Belum input' }}</h6>
+                                        <h6>
+                                            Incoming : {{ $disposisi_incoming ?? 'Belum input' }}
+                                            @if (!empty($group_incoming))
+                                            <span class="badge bg-primary fs-7 ms-1">{{ $group_incoming }}</span>
+                                            @endif
+                                        </h6>
+                                        <h6>
+                                            STA : {{ $disposisi_sta ?? 'Belum input' }}
+                                            @if (!empty($group_sta))
+                                            <span class="badge bg-primary fs-7 ms-1">{{ $group_sta }}</span>
+                                            @endif
+                                        </h6>
                                         <h6>
                                             Long Term : {{ $disposisi_long_term ?? 'Belum input' }}
                                             @if (!empty($group_long_term))
@@ -271,8 +283,17 @@
                                             @endif
                                         </h6>
                                         @else
-                                        @php $disposisi_sampel = $analisa_sampel->first()->disposisi ?? null; @endphp
-                                        <h6>Disposisi : {{ $disposisi_sampel ?? 'Belum input' }}</h6>
+                                        @php
+                                        $firstSampel = $analisa_sampel->first();
+                                        $disposisi_sampel = $firstSampel->disposisi ?? null;
+                                        $group_sampel = $firstSampel->group ?? null;
+                                        @endphp
+                                        <h6>
+                                            Disposisi : {{ $disposisi_sampel ?? 'Belum input' }}
+                                            @if (!empty($group_sampel))
+                                            <span class="badge bg-primary fs-7 ms-1">{{ $group_sampel }}</span>
+                                            @endif
+                                        </h6>
                                         @endif
                                     </div>
                                 </div>
@@ -654,6 +675,7 @@
                                                         <th>{{ $f['label'] }}</th>
                                                     @endforeach
                                                     <th>Disposisi</th>
+                                                    <th>Group</th>
                                                     <th>Status</th>
                                                     <th>Keterangan</th>
                                                 </tr>
@@ -719,6 +741,13 @@
                                                         @endif
                                                     </td>
                                                     <td>
+                                                        @if (!empty($short->group))
+                                                        <span class="badge bg-primary fs-7">{{ $short->group }}</span>
+                                                        @else
+                                                        <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
                                                         @php
                                                         $isRowDraft = (($short->status ?? '') === 'draft' || empty($short->disposisi) || $short->disposisi === '-');
                                                         @endphp
@@ -736,7 +765,7 @@
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="{{ count($displayFields) + 5 }}" class="text-center text-muted py-4">
+                                                    <td colspan="{{ count($displayFields) + 6 }}" class="text-center text-muted py-4">
                                                         <i class="ri-inbox-line fs-3 d-block mb-1 text-muted"></i>
                                                         Belum ada data analisa (Incoming, STA, atau Monitoring)
                                                     </td>
@@ -870,7 +899,7 @@
                                                     <th width="5%">#</th>
                                                     <th>Uji Kristal</th>
                                                     <th>Disposisi</th>
-                                                    <th>Group ABC</th>
+                                                    <th>Group</th>
                                                     <th>Lampiran Foto</th>
                                                     <th>Status</th>
                                                     <th>Keterangan</th>
@@ -972,7 +1001,7 @@
                                                     <th>Aksi</th>
                                                     <th>Uji Kristal</th>
                                                     <th>Disposisi</th>
-                                                    <th>Group ABC</th>
+                                                    <th>Group</th>
                                                     <th>Lampiran Foto</th>
                                                     <th>Keterangan</th>
                                                 </tr>
@@ -1507,6 +1536,7 @@
                                                         <th>{{ $f['label'] }}</th>
                                                     @endforeach
                                                     <th>Disposisi</th>
+                                                    <th>Group</th>
                                                     <th>Status</th>
                                                     <th>Keterangan</th>
                                                 </tr>
@@ -1549,6 +1579,13 @@
                                                         @endif
                                                     </td>
                                                     <td>
+                                                        @if (!empty($short->group))
+                                                        <span class="badge bg-primary fs-7">{{ $short->group }}</span>
+                                                        @else
+                                                        <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
                                                         @php
                                                         $isRowDraft = (($short->status ?? '') === 'draft' || empty($short->disposisi) || $short->disposisi === '-');
                                                         @endphp
@@ -1566,7 +1603,7 @@
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="{{ count($displayFields) + 4 }}" class="text-center text-muted py-4">
+                                                    <td colspan="{{ count($displayFields) + 5 }}" class="text-center text-muted py-4">
                                                         Belum ada data analisa Short Term
                                                     </td>
                                                 </tr>
