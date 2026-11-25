@@ -894,7 +894,7 @@ Pemeriksaan BCT
                             setAutoSaveStatus('saved');
                             showAlert(
                                 'success',
-                                '<i class="mdi mdi-check-circle-outline me-1"></i>Data BCT berhasil disimpan ke database.'
+                                '<i class="mdi mdi-check-circle-outline me-1"></i>Data BCT berhasil disimpan.'
                             );
                         } else {
                             setAutoSaveStatus('offline');
