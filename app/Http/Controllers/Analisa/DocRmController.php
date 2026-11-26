@@ -461,45 +461,80 @@ class DocRmController extends Controller
 
         // Organo Stats
         $totalOrgano = $organoVals->count() ?: 1;
-        $teksDominan = 'Terasa/dominan rasa ' . ($isGulaTebu ? 'gula tebu' : 'gula kelapa');
-        $teksTidakDominan = 'Tidak terasa/tidak dominan rasa ' . ($isGulaTebu ? 'gula tebu' : 'gula kelapa');
 
-        $organoDefinitions = [
-            ['key' => 'ok', 'label' => '1, OK', 'ket' => $teksDominan],
-            ['key' => 'pahit', 'label' => '2, Pahit', 'ket' => $teksDominan],
-            ['key' => 'agak_pahit', 'label' => '3, Agak pahit', 'ket' => $teksDominan],
-            ['key' => 'asam', 'label' => '4, Asam dan pH < 5,5', 'ket' => $teksDominan],
-            ['key' => 'agak_asam', 'label' => '5, Agak asam dan pH normal', 'ket' => $teksDominan],
-            ['key' => 'lain', 'label' => '6, Lain-lain (tengik, kapur, endapan putih dll)', 'ket' => $teksDominan],
-            ['key' => 'campuran', 'label' => '7, Campuran', 'ket' => $teksTidakDominan],
-        ];
+        if ($isGulaKelapa) {
+            $organoDefinitions = [
+                ['key' => 'ok',          'label' => '1, OK', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'agak_asam',   'label' => '2, Agak asam', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'asam',        'label' => '3, Asam', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'agak_pahit',  'label' => '4, Agak pahit', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'pahit',       'label' => '5, Pahit', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'sagu',        'label' => '6, Sagu', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'kapur',       'label' => '7, Kapur', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'lain',        'label' => '8, Lain-lain (tengik, kapur, endapan putih dll)', 'ket' => 'Terasa/dominan rasa gula kelapa'],
+                ['key' => 'campuran',    'label' => '9, Campuran', 'ket' => 'Tidak terasa/tidak dominan rasa gula kelapa'],
+            ];
+            $ketMurni = 'Total poin organo dari no 1--4 dan 6-8';
+        } else {
+            // Default / Gula Tebu
+            $teksDominan = 'Terasa/dominan rasa ' . ($isGulaTebu ? 'gula tebu' : 'gula kelapa');
+            $teksTidakDominan = 'Tidak terasa/tidak dominan rasa ' . ($isGulaTebu ? 'gula tebu' : 'gula kelapa');
+            $organoDefinitions = [
+                ['key' => 'ok',         'label' => '1, OK', 'ket' => $teksDominan],
+                ['key' => 'pahit',      'label' => '2, Pahit', 'ket' => $teksDominan],
+                ['key' => 'agak_pahit', 'label' => '3, Agak pahit', 'ket' => $teksDominan],
+                ['key' => 'asam',       'label' => '4, Asam dan pH < 5,5', 'ket' => $teksDominan],
+                ['key' => 'agak_asam',  'label' => '5, Agak asam dan pH normal', 'ket' => $teksDominan],
+                ['key' => 'lain',       'label' => '6, Lain-lain (tengik, kapur, endapan putih dll)', 'ket' => $teksDominan],
+                ['key' => 'campuran',   'label' => '7, Campuran', 'ket' => $teksTidakDominan],
+            ];
+            $ketMurni = 'Total poin organo dari no 1 & 3-6';
+        }
 
-        $counts = [
-            'ok'         => 0,
-            'pahit'      => 0,
-            'agak_pahit' => 0,
-            'asam'       => 0,
-            'agak_asam'  => 0,
-            'lain'       => 0,
-            'campuran'   => 0,
-        ];
+        $counts = [];
+        foreach ($organoDefinitions as $d) {
+            $counts[$d['key']] = 0;
+        }
 
         foreach ($organoVals as $val) {
             $v = strtolower(trim((string)$val));
-            if (str_contains($v, 'agak pahit') || str_starts_with($v, '3')) {
-                $counts['agak_pahit']++;
-            } elseif (str_contains($v, 'agak asam') || str_contains($v, 'ph normal') || str_starts_with($v, '5')) {
-                $counts['agak_asam']++;
-            } elseif (str_contains($v, 'asam') || str_starts_with($v, '4')) {
-                $counts['asam']++;
-            } elseif (str_contains($v, 'pahit') || str_starts_with($v, '2')) {
-                $counts['pahit']++;
-            } elseif (str_contains($v, 'campuran') || str_contains($v, 'tidak terasa') || str_starts_with($v, '7')) {
-                $counts['campuran']++;
-            } elseif (in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas') || str_starts_with($v, '1')) {
-                $counts['ok']++;
+            if ($isGulaKelapa) {
+                if (str_contains($v, 'campuran') || str_contains($v, 'tidak terasa') || str_starts_with($v, '9')) {
+                    $counts['campuran']++;
+                } elseif (str_contains($v, 'agak pahit') || str_starts_with($v, '4')) {
+                    $counts['agak_pahit']++;
+                } elseif (str_contains($v, 'pahit') || str_starts_with($v, '5')) {
+                    $counts['pahit']++;
+                } elseif (str_contains($v, 'agak asam') || str_starts_with($v, '2')) {
+                    $counts['agak_asam']++;
+                } elseif (str_contains($v, 'asam') || str_starts_with($v, '3')) {
+                    $counts['asam']++;
+                } elseif (str_contains($v, 'sagu') || str_starts_with($v, '6')) {
+                    $counts['sagu']++;
+                } elseif ((str_contains($v, 'kapur') && !str_contains($v, 'lain')) || str_starts_with($v, '7')) {
+                    $counts['kapur']++;
+                } elseif (in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas') || str_starts_with($v, '1')) {
+                    $counts['ok']++;
+                } else {
+                    $counts['lain']++;
+                }
             } else {
-                $counts['lain']++;
+                // Gula Tebu
+                if (str_contains($v, 'agak pahit') || str_starts_with($v, '3')) {
+                    $counts['agak_pahit']++;
+                } elseif (str_contains($v, 'agak asam') || str_contains($v, 'ph normal') || str_starts_with($v, '5')) {
+                    $counts['agak_asam']++;
+                } elseif (str_contains($v, 'asam') || str_starts_with($v, '4')) {
+                    $counts['asam']++;
+                } elseif (str_contains($v, 'pahit') || str_starts_with($v, '2')) {
+                    $counts['pahit']++;
+                } elseif (str_contains($v, 'campuran') || str_contains($v, 'tidak terasa') || str_starts_with($v, '7')) {
+                    $counts['campuran']++;
+                } elseif (in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas') || str_starts_with($v, '1')) {
+                    $counts['ok']++;
+                } else {
+                    $counts['lain']++;
+                }
             }
         }
 
@@ -521,8 +556,8 @@ class DocRmController extends Controller
             $campuranPctTotal = 0;
         } else {
             // Formula sesuai format standar:
-            // Campuran : %pahit + %campuran (poin no 2 Pahit + poin no 7 Campuran)
-            // Murni : 100% - Campuran (atau total poin organo dari no 1 & 3-6)
+            // Campuran : %pahit + %campuran (Pahit + Campuran)
+            // Murni : 100% - Campuran
             $pctPahit = collect($organoItems)->firstWhere('key', 'pahit')['pct'] ?? 0;
             $pctCampuranItem = collect($organoItems)->firstWhere('key', 'campuran')['pct'] ?? 0;
             $campuranPctTotal = $pctPahit + $pctCampuranItem;
@@ -622,7 +657,7 @@ class DocRmController extends Controller
             'organo_items'    => $organoItems,
             'murni_pct'       => $murniPctTotal,
             'campuran_pct'    => $campuranPctTotal,
-            'ket_murni'       => 'Total poin organo dari no 1 & 3-6',
+            'ket_murni'       => $ketMurni,
             'ket_campuran'    => 'Rasa campuran dan pahit',
 
             // %KA Detail
