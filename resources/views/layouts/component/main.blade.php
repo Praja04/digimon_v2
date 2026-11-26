@@ -278,6 +278,80 @@
                 }
             });
 
+            // ===== GLOBAL PREVENT DOUBLE SUBMIT & BUTTON LOADING STATE =====
+            $(document).on('submit', 'form', function(e) {
+                const $form = $(this);
+
+                // Jika form punya class no-auto-loading, abaikan
+                if ($form.hasClass('no-auto-loading')) return;
+
+                // Jika form sedang proses submit, cegah submit ulang
+                if ($form.data('submitting') === true) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+
+                // Cari tombol submit
+                const $btn = $form.find('button[type="submit"]:not(.no-auto-loading), input[type="submit"]:not(.no-auto-loading)');
+                if ($btn.length && !$btn.prop('disabled')) {
+                    $form.data('submitting', true);
+
+                    if (!$btn.data('original-html')) {
+                        $btn.data('original-html', $btn.html());
+                    }
+
+                    const btnText = ($btn.text() || '').trim().toLowerCase();
+                    let loadingText = 'Memproses...';
+                    if (btnText.includes('simpan') || btnText.includes('save')) {
+                        loadingText = 'Menyimpan...';
+                    } else if (btnText.includes('kirim') || btnText.includes('send')) {
+                        loadingText = 'Mengirim...';
+                    } else if (btnText.includes('update') || btnText.includes('perbarui')) {
+                        loadingText = 'Memperbarui...';
+                    }
+
+                    $btn.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${loadingText}`);
+                }
+            });
+
+            // Kembalikan tombol jika AJAX selesai dan form masih ada di DOM
+            $(document).ajaxComplete(function(event, xhr, settings) {
+                setTimeout(function() {
+                    $('form').each(function() {
+                        const $form = $(this);
+                        if ($form.data('submitting')) {
+                            $form.data('submitting', false);
+                            const $btn = $form.find('button[type="submit"], input[type="submit"]');
+                            if ($btn.data('original-html')) {
+                                $btn.prop('disabled', false).html($btn.data('original-html'));
+                            }
+                        }
+                    });
+                }, 400);
+            });
+
+            // Helper global untuk tombol non-form yang dipicu via JS/AJAX langsung
+            window.setButtonLoading = function($btn, loadingText = 'Menyimpan...') {
+                const btn = $($btn);
+                if (!btn.length || btn.prop('disabled')) return false;
+                if (!btn.data('original-html')) {
+                    btn.data('original-html', btn.html());
+                }
+                btn.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${loadingText}`);
+                return true;
+            };
+
+            window.resetButtonLoading = function($btn) {
+                const btn = $($btn);
+                if (!btn.length) return;
+                if (btn.data('original-html')) {
+                    btn.prop('disabled', false).html(btn.data('original-html'));
+                } else {
+                    btn.prop('disabled', false);
+                }
+            };
+
             // Session / CSRF Token Keep-Alive (every 5 minutes)
             setInterval(function() {
                 $.getJSON("{{ route('csrf.token') }}")

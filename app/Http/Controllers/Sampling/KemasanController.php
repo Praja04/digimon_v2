@@ -38,10 +38,26 @@ class KemasanController extends Controller
         $existing = SamplingFisikKemasan::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
+            $existing->update([
+                'kotor'                 => $request->kotor,
+                'keterangan_kotor'      => $request->keterangan_kotor,
+                'berair'                => $request->berair,
+                'keterangan_berair'     => $request->keterangan_berair,
+                'basah'                 => $request->basah,
+                'keterangan_basah'      => $request->keterangan_basah,
+                'campuran'              => $request->campuran,
+                'keterangan_campuran'   => $request->keterangan_campuran,
+                'rusak'                 => $request->rusak,
+                'keterangan_rusak'      => $request->keterangan_rusak,
+                'sesuai_std'            => $request->sesuai_std,
+                'keterangan_sesuai_std' => $request->keterangan_sesuai_std,
+                'lain_lain'             => $request->lain_lain,
+            ]);
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'Sampling Kemasan sudah pernah disimpan untuk ID ini.'
-            ], 409);
+                'status'  => 'success',
+                'message' => 'Sampling Kondisi Kemasan berhasil disimpan.'
+            ], 200);
         }
 
         SamplingFisikKemasan::create([

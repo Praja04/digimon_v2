@@ -1209,6 +1209,9 @@
 
             $('#form').submit(function(e) {
                 e.preventDefault();
+                if ($(this).data('submitting')) return false;
+                $(this).data('submitting', true);
+
                 $.ajax({
                     data: $(this).serialize(),
                     url: "{{ route('rmpm.store') }}",
@@ -1219,7 +1222,10 @@
                         $('.form-control, .form-select').removeClass('is-invalid');
                         $('.text-danger').html('');
                     },
-                    complete: function() { $('#save').prop('disabled', false).text('Simpan'); },
+                    complete: function() { 
+                        $('#form').data('submitting', false);
+                        $('#save').prop('disabled', false).text('Simpan'); 
+                    },
                     success: function(response) {
                         closeIncomingCard();
                         $('#form').trigger("reset");
