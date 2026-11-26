@@ -250,14 +250,9 @@
 
         </div>
 
-        {{-- ACTIONS & BACK --}}
-        <div class="row mt-4 align-items-center">
-            <div class="col-md-6">
-                <a href="{{ route('doc-pm.index') }}" class="btn btn-primary shadow-sm">
-                    <i class="ri-file-excel-2-line me-1"></i> Form Dokumen & Export Excel PM
-                </a>
-            </div>
-            <div class="col-md-6 text-end">
+        {{-- BACK TO RMPM --}}
+        <div class="row mt-4">
+            <div class="col-12 text-end">
                 <a
                     href="{{ route('rmpm.index') }}"
                     class="btn btn-light"
