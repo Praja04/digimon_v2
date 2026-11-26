@@ -385,7 +385,7 @@
 
                             } elseif ($isFinished) {
                                 $samplingLabel =
-                                    'Form Dokumen SOP';
+                                    'Export';
 
                                 $samplingIcon =
                                     'mdi-file-document-outline';
