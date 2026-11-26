@@ -309,8 +309,8 @@
                             ) {
                                 $samplingUrl = $isFinished
                                     ? route(
-                                        'rmpm.pm.pouch.resume',
-                                        $incoming
+                                        'doc-pm.index',
+                                        ['id' => $incoming->id, 'type' => 'pouch']
                                     )
                                     : route(
                                         'rmpm.pm.pouch.sampling',
@@ -332,10 +332,15 @@
                                     'kardus'
                                 )
                             ) {
-                                $samplingUrl = route(
-                                    'rmpm.pm.karton.display',
-                                    $incoming
-                                );
+                                $samplingUrl = $isFinished
+                                    ? route(
+                                        'doc-pm.index',
+                                        ['id' => $incoming->id, 'type' => 'karton']
+                                    )
+                                    : route(
+                                        'rmpm.pm.karton.display',
+                                        $incoming
+                                    );
 
                             /*
                             |--------------------------------------------------------------------------
@@ -354,8 +359,8 @@
                             ) {
                                 $samplingUrl = $isFinished
                                     ? route(
-                                        'rmpm.pm.inner-outer.resume',
-                                        $incoming
+                                        'doc-pm.index',
+                                        ['id' => $incoming->id, 'type' => 'inner']
                                     )
                                     : route(
                                         'rmpm.pm.inner-outer.sampling',
@@ -379,29 +384,11 @@
                                     'btn-warning';
 
                             } elseif ($isFinished) {
-                                $isResumeType =
-                                    str_contains(
-                                        $jenisName,
-                                        'pouch'
-                                    )
-                                    || str_contains(
-                                        $jenisName,
-                                        'inner'
-                                    )
-                                    || str_contains(
-                                        $jenisName,
-                                        'outer'
-                                    );
-
                                 $samplingLabel =
-                                    $isResumeType
-                                        ? 'Lihat Resume'
-                                        : 'Lihat Hasil';
+                                    'Form Dokumen SOP';
 
                                 $samplingIcon =
-                                    $isResumeType
-                                        ? 'mdi-file-document-outline'
-                                        : 'mdi-eye-outline';
+                                    'mdi-file-document-outline';
 
                                 $samplingClass =
                                     'btn-success';

@@ -411,13 +411,14 @@
                                                     <div class="d-flex flex-wrap gap-2">
                                                         <a
                                                             href="{{ route(
-                                                                'rmpm.pm.inner-outer.resume',
-                                                                $incoming
+                                                                'doc-pm.index',
+                                                                ['id' => $incoming->id, 'type' => 'inner']
                                                             ) }}"
                                                             class="btn btn-success btn-sm"
+                                                            title="Lihat Form Dokumen Hasil Pemeriksaan Inner / Outer"
                                                         >
                                                             <i class="mdi mdi-file-document-outline me-1"></i>
-                                                            Lihat Resume
+                                                            Lihat Form Dokumen
                                                         </a>
 
                                                         <button

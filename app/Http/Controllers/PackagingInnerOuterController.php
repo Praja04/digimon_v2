@@ -967,8 +967,8 @@ class PackagingInnerOuterController extends Controller
             'redirect_url' =>
                 $isFinal
                     ? route(
-                        'rmpm.pm.inner-outer.resume',
-                        $packagingIncoming
+                        'doc-pm.index',
+                        ['id' => $packagingIncoming->id, 'type' => 'inner']
                     )
                     : route(
                         'rmpm.pm.inner-outer.sampling',
@@ -980,49 +980,11 @@ class PackagingInnerOuterController extends Controller
 
     public function resume(
         PackagingIncoming $packagingIncoming
-    ): View {
-        $packagingIncoming->load([
-            'jenisIncoming',
-            'jenisMaterial',
-            'supplier',
-            'samplingStatus',
+    ) {
+        return redirect()->route('doc-pm.index', [
+            'id' => $packagingIncoming->id,
+            'type' => 'inner',
         ]);
-
-        $allowedJenis = [
-            'Inner',
-            'Outer',
-            'Inner / Outer',
-            'Outers',
-        ];
-
-        abort_unless(
-            in_array(
-                $packagingIncoming->jenisIncoming?->nama,
-                $allowedJenis,
-                true
-            ),
-            404,
-            'Data incoming bukan kategori Inner atau Outer.'
-        );
-
-        $sampling = PackagingInnerOuterSampling::query()
-            ->where(
-                'packaging_incoming_id',
-                $packagingIncoming->id
-            )
-            ->where(
-                'status_proses',
-                'final'
-            )
-            ->firstOrFail();
-
-        return view(
-            'app.rmpm.inner-outer-resume',
-            compact(
-                'packagingIncoming',
-                'sampling'
-            )
-        );
     }
 
     public function getQRCode(
@@ -1067,8 +1029,8 @@ class PackagingInnerOuterController extends Controller
 
         $qrText = $sampling
             ? route(
-                'rmpm.pm.inner-outer.resume',
-                $packagingIncoming
+                'doc-pm.index',
+                ['id' => $packagingIncoming->id, 'type' => 'inner']
             )
             : route(
                 'rmpm.pm.inner-outer.sampling',

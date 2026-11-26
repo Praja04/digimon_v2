@@ -875,23 +875,29 @@
 
             // Inisialisasi Select2 pada dropdown form incoming
             function initSelect2Fields() {
-                $('#jenis').select2({
-                    placeholder: '-- Cari / Pilih Jenis Bahan --',
-                    allowClear: true,
-                    width: '100%'
-                });
+                if (!$('#jenis').hasClass('select2-hidden-accessible')) {
+                    $('#jenis').select2({
+                        placeholder: '-- Cari / Pilih Jenis Bahan --',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
 
-                $('#supplier').select2({
-                    placeholder: '-- Cari / Pilih Supplier (Ketik Nama) --',
-                    allowClear: true,
-                    width: '100%'
-                });
+                if (!$('#supplier').hasClass('select2-hidden-accessible')) {
+                    $('#supplier').select2({
+                        placeholder: '-- Cari / Pilih Supplier (Ketik Nama) --',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
 
-                $('#asal_bahan').select2({
-                    placeholder: '-- Cari / Pilih Asal Bahan --',
-                    allowClear: true,
-                    width: '100%'
-                });
+                if (!$('#asal_bahan').hasClass('select2-hidden-accessible')) {
+                    $('#asal_bahan').select2({
+                        placeholder: '-- Cari / Pilih Asal Bahan --',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
             }
             initSelect2Fields();
 
@@ -903,9 +909,9 @@
                 });
 
                 $('#form').trigger('reset');
-                $('#jenis').val('').trigger('change.select2');
-                $('#supplier').val('').trigger('change.select2');
-                $('#asal_bahan').val('').trigger('change.select2');
+                $('#jenis').val('').trigger('change');
+                $('#supplier').val('').trigger('change');
+                $('#asal_bahan').val('').trigger('change');
                 $('#tanggal_kedatangan').val("{{ now()->format('Y-m-d\TH:i') }}");
                 $('.form-control, .form-select').removeClass('is-invalid');
                 $('.text-danger').html('');
@@ -1121,7 +1127,7 @@
 
             function populateAsalBahan(url) {
                 let asalBahanSelect = $('#asal_bahan');
-                asalBahanSelect.empty().append('<option value="">Memuat asal bahan...</option>').trigger('change.select2');
+                asalBahanSelect.empty().append('<option value="">Memuat asal bahan...</option>').trigger('change');
 
                 $.ajax({
                     url: url,
@@ -1134,10 +1140,10 @@
                                 opts += `<option value="${a.asal_bahan}">${a.asal_bahan}</option>`;
                             });
                         }
-                        asalBahanSelect.html(opts).val('').trigger('change.select2');
+                        asalBahanSelect.html(opts).val('').trigger('change');
                     },
                     error: function() {
-                        asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change.select2');
+                        asalBahanSelect.html('<option value="">-- Cari / Pilih Asal Bahan --</option>').trigger('change');
                     }
                 });
             }
@@ -1147,7 +1153,7 @@
                 let jenisId = selectedOption.data('id');
                 let supplierSelect = $('#supplier');
 
-                supplierSelect.empty().append('<option value="">Memuat supplier...</option>').trigger('change.select2');
+                supplierSelect.empty().append('<option value="">Memuat supplier...</option>').trigger('change');
 
                 if (jenisId) {
                     $.ajax({
@@ -1161,10 +1167,10 @@
                                     opts += `<option value="${s.nama_supplier}" data-id="${s.id}">${s.nama_supplier}</option>`;
                                 });
                             }
-                            supplierSelect.html(opts).val('').trigger('change.select2');
+                            supplierSelect.html(opts).val('').trigger('change');
                         },
                         error: function() {
-                            supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change.select2');
+                            supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change');
                         }
                     });
 
@@ -1181,10 +1187,10 @@
                                     opts += `<option value="${s.nama_supplier}" data-id="${s.id}">${s.nama_supplier}</option>`;
                                 });
                             }
-                            supplierSelect.html(opts).val('').trigger('change.select2');
+                            supplierSelect.html(opts).val('').trigger('change');
                         },
                         error: function() {
-                            supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change.select2');
+                            supplierSelect.html('<option value="">-- Cari / Pilih Supplier (Ketik Nama) --</option>').trigger('change');
                         }
                     });
 
@@ -1198,13 +1204,6 @@
 
                 if (supplierId) {
                     populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-by-supplier') }}/" + supplierId);
-                } else {
-                    let jenisId = $('#jenis').find('option:selected').data('id');
-                    if (jenisId) {
-                        populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-by-jenis-bahan') }}/" + jenisId);
-                    } else {
-                        populateAsalBahan("{{ url('/master-data-rm/asal-bahan/get-all-active') }}");
-                    }
                 }
             });
 
@@ -1224,9 +1223,9 @@
                     success: function(response) {
                         closeIncomingCard();
                         $('#form').trigger("reset");
-                        $('#jenis').val('').trigger('change.select2');
-                        $('#supplier').val('').trigger('change.select2');
-                        $('#asal_bahan').val('').trigger('change.select2');
+                        $('#jenis').val('').trigger('change');
+                        $('#supplier').val('').trigger('change');
+                        $('#asal_bahan').val('').trigger('change');
                         Swal.fire({ icon: 'success', title: 'Sukses', text: response.message });
                         $('#datatable').DataTable().ajax.reload();
                     },

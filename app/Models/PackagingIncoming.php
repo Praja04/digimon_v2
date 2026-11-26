@@ -82,10 +82,26 @@ class PackagingIncoming extends Model
         );
     }
 
+    public function packagingInnerOuterSamplingDraft()
+    {
+        return $this->hasOne(
+            PackagingInnerOuterSamplingDraft::class,
+            'packaging_incoming_id'
+        );
+    }
+
     public function packagingPouchSampling()
     {
         return $this->hasOne(
             PackagingPouchSampling::class,
+            'packaging_incoming_id'
+        );
+    }
+
+    public function packagingPouchSamplingDraft()
+    {
+        return $this->hasOne(
+            PackagingPouchSamplingDraft::class,
             'packaging_incoming_id'
         );
     }

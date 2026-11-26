@@ -246,27 +246,29 @@ class DocRmController extends Controller
         $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
         $isGula = ($templateType === 'gula');
 
-        // Ambil data sampel analisa menggunakan RMPMController yang sudah terflatten
+        // Ambil data sampel analisa (akumulasi Incoming dan STA) menggunakan RMPMController yang sudah terflatten
         try {
             $rmController = new RMPMController();
-            $incomingSamples = $rmController->getFlattenedSamplesForIdentitas($id, 'incoming');
-            if ($incomingSamples->isEmpty()) {
-                $incomingSamples = $rmController->getFlattenedSamplesForIdentitas($id);
+            $accumulatedSamples = $rmController->getFlattenedSamplesForIdentitas($id, ['incoming', 'sta']);
+            if ($accumulatedSamples->isEmpty()) {
+                $accumulatedSamples = $rmController->getFlattenedSamplesForIdentitas($id);
             }
         } catch (\Throwable $e) {
-            $incomingSamples = $identitas->analisaSampel ?? collect();
+            $accumulatedSamples = $identitas->analisaSampel ?? collect();
         }
 
-        $sampleCount = $incomingSamples->count();
+        $sampleCount = $accumulatedSamples->count();
 
         // Siapkan array sample rows sesuai spesifikasi template
         $sampleRows = [];
         $numericSums = [];
         $numericCounts = [];
 
-        foreach ($incomingSamples as $idx => $s) {
+        foreach ($accumulatedSamples as $idx => $s) {
             $row = [
-                'no'           => $s->sampel_ke ?? ($idx + 1),
+                'no'           => $idx + 1,
+                'sampel_ke'    => $s->sampel_ke ?? ($idx + 1),
+                'kategori'     => $s->kategori ?? 'incoming',
                 'brix'         => (is_numeric($s->brix) && $s->brix !== '') ? (float)$s->brix : ($s->brix ?? '-'),
                 'ph'           => (is_numeric($s->ph) && $s->ph !== '') ? (float)$s->ph : ($s->ph ?? '-'),
                 'kotoran'      => (is_numeric($s->kotoran) && $s->kotoran !== '') ? (float)$s->kotoran : ($s->kotoran ?? '-'),
@@ -357,10 +359,12 @@ class DocRmController extends Controller
         $latestLongTerm = $identitas->analisaLongTerm->last();
         $disposisiVal = $identitas->disposisi 
             ?: ($latestLongTerm?->disposisi 
-            ?: ($incomingSamples->first()?->disposisi ?: 'Belum Disposisi'));
+            ?: ($accumulatedSamples->last()?->disposisi 
+            ?: ($accumulatedSamples->first()?->disposisi ?: 'Belum Disposisi')));
         $groupVal = $identitas->group 
             ?: ($latestLongTerm?->group 
-            ?: ($incomingSamples->first()?->group ?: '-'));
+            ?: ($accumulatedSamples->last()?->group 
+            ?: ($accumulatedSamples->first()?->group ?: '-')));
 
         $serahTerima = [
             'jam_sampling'    => $jamSampling,

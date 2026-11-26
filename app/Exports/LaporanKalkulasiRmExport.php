@@ -102,40 +102,26 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $isGulaTebu = (str_contains($jenisUpper, 'TEBU') || $jenisUpper === 'GT') && !str_contains($jenisUpper, 'RAFINASI');
         $titleMain = $isGulaTebu ? 'GULA TEBU' : 'GULA KELAPA';
 
-        $samples = $identitas->analisaSampel ?? ($identitas->analisaShortTerm ?? collect());
-        $hasMonitoring = $samples->contains(fn($s) => strtolower($s->kategori ?? '') === 'monitoring');
-        if ($hasMonitoring) {
-            $incomingSamples = $samples;
-        } else {
-            $incomingSamples = $samples->filter(function ($s) {
-                return empty($s->kategori) || in_array(strtolower($s->kategori), ['incoming', 'sta']);
-            });
-            if ($incomingSamples->isEmpty()) {
-                $incomingSamples = $samples;
-            }
-        }
-        if ($incomingSamples->isEmpty() && $identitas->analisaGaramGula->isNotEmpty()) {
-            $incomingSamples = $identitas->analisaGaramGula;
-        }
+        $docCtrl = new DocRmController();
+        $docData = $docCtrl->formatDocumentData($identitas);
 
-        $sampleCount = $incomingSamples->count();
+        $sampleCount = $docData['sample_count'];
+        $sampleRows = $docData['sample_rows'];
 
         // Data numerik
-        $phVals = $incomingSamples->pluck('ph')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
-        $brixVals = $incomingSamples->pluck('brix')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
-        $kotoranVals = $incomingSamples->pluck('kotoran')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
-        
-        $kaField = $incomingSamples->first()?->offsetExists('%ka') ? '%ka' : 'ka';
-        $kaVals = $incomingSamples->pluck($kaField)->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
-        $organoVals = $incomingSamples->pluck('organo')->filter(fn($v) => !empty($v))->map(fn($v) => trim((string)$v))->values();
+        $phVals = collect($sampleRows)->pluck('ph')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
+        $brixVals = collect($sampleRows)->pluck('brix')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
+        $kotoranVals = collect($sampleRows)->pluck('kotoran')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
+        $kaVals = collect($sampleRows)->pluck('ka')->filter(fn($v) => is_numeric($v))->map(fn($v) => (float)$v)->values();
+        $organoVals = collect($sampleRows)->pluck('organo')->filter(fn($v) => !empty($v) && $v !== '-')->map(fn($v) => trim((string)$v))->values();
 
         // Header Atas
-        $tglIncoming = $identitas->tanggal_kedatangan ? Carbon::parse($identitas->tanggal_kedatangan)->format('d-M-Y') : '-';
-        $vendor = $identitas->supplier ?? '-';
-        $spb = $identitas->no_spb ?? '-';
-        $standartBps = $identitas->standart_bps ?? '';
-        $nopol = $identitas->no_plat ?? '-';
-        $qty = $identitas->jumlah_kedatangan ? number_format((float)$identitas->jumlah_kedatangan, 0, ',', '.') : '-';
+        $tglIncoming = $docData['tgl_incoming'];
+        $vendor = $docData['vendor'];
+        $spb = $docData['spb'];
+        $standartBps = $docData['standart_bps'];
+        $nopol = $docData['nopol'];
+        $qty = $docData['qty'];
 
         $sheet->setCellValue('D1', $titleMain);
         $sheet->mergeCells('D1:G1');
@@ -195,13 +181,13 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->getStyle('G8:I8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Standar Mutu
-        $phMinSpec = $isGulaKelapa ? 5.30 : 5.50;
-        $phMaxSpec = 6.50;
-        $phStdText = 'pH (STD : ' . number_format($phMinSpec, 2, ',', '.') . ' - ' . number_format($phMaxSpec, 2, ',', '.') . ')';
-        $brixStdText = 'Brix (STD : Min, 8,7)';
-        $kotStdText = '%Kotoran (STD : Max, 10% w/w)';
-        $kaMaxSpec = $isGulaTebu ? 3.0 : 8.0;
-        $kaStdText = '%Kadar Air (STD : Max, ' . number_format($kaMaxSpec, 0, ',', '.') . '%)';
+        $phMinSpec = $docData['ph_min_std'] ?? ($isGulaKelapa ? 5.30 : 5.50);
+        $phMaxSpec = $docData['ph_max_std'] ?? 6.50;
+        $phStdText = 'pH (STD : ' . ($docData['ph_std_label'] ?? (number_format($phMinSpec, 2, ',', '.') . ' - ' . number_format($phMaxSpec, 2, ',', '.'))) . ')';
+        $brixStdText = 'Brix (STD : ' . ($docData['brix_std_label'] ?? 'Min, 8,7') . ')';
+        $kotStdText = '%Kotoran (STD : ' . ($docData['kot_std_label'] ?? 'Max, 10% w/w') . ')';
+        $kaMaxSpec = $docData['ka_max_std'] ?? 8.0;
+        $kaStdText = '%Kadar Air (STD : ' . ($docData['ka_std_label'] ?? ('Max, ' . number_format($kaMaxSpec, 0, ',', '.') . '%')) . ')';
 
         // --- pH ---
         $sheet->setCellValue('B9', $phStdText);
@@ -954,16 +940,16 @@ class DataSampelRmSheetExport implements WithEvents, WithTitle
         $identitas = $this->identitas;
         try {
             $rmCtrl = new RMPMController();
-            $incomingSamples = $rmCtrl->getFlattenedSamplesForIdentitas($identitas->id, 'incoming');
-            if ($incomingSamples->isEmpty()) {
-                $incomingSamples = $rmCtrl->getFlattenedSamplesForIdentitas($identitas->id);
+            $accumulatedSamples = $rmCtrl->getFlattenedSamplesForIdentitas($identitas->id, ['incoming', 'sta']);
+            if ($accumulatedSamples->isEmpty()) {
+                $accumulatedSamples = $rmCtrl->getFlattenedSamplesForIdentitas($identitas->id);
             }
         } catch (\Throwable $e) {
-            $incomingSamples = $identitas->analisaSampel ?? collect();
+            $accumulatedSamples = $identitas->analisaSampel ?? collect();
         }
 
         // Header sheet 2
-        $sheet->setCellValue('A1', 'DATA HASIL UJI SAMPEL INCOMING');
+        $sheet->setCellValue('A1', 'DATA HASIL UJI SAMPEL (INCOMING & STA)');
         $sheet->mergeCells('A1:J1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
 
@@ -989,7 +975,7 @@ class DataSampelRmSheetExport implements WithEvents, WithTitle
         $sheet->getStyle("A{$headerRow}:{$endCol}{$headerRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $currRow = 5;
-        foreach ($incomingSamples as $idx => $s) {
+        foreach ($accumulatedSamples as $idx => $s) {
             $sheet->setCellValue("A{$currRow}", $idx + 1);
             $sheet->getStyle("A{$currRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
