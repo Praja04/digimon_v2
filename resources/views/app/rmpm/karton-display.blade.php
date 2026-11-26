@@ -69,13 +69,29 @@
                     ? route('rmpm.pm.incoming.create')
                     : route('rmpm.pm.karton');
             @endphp
-            <a
-                href="{{ $backUrl }}"
-                class="btn btn-primary px-3"
-            >
-                <i class="mdi mdi-arrow-left me-1"></i>
-                Kembali
-            </a>
+            <div class="d-flex gap-2">
+                <a
+                    href="{{ route('doc-pm.export', ['id' => $packagingIncoming->id]) }}"
+                    class="btn btn-success px-3"
+                >
+                    <i class="ri-file-excel-2-line me-1"></i>
+                    Export Excel Form
+                </a>
+                <a
+                    href="{{ route('doc-pm.index', ['id' => $packagingIncoming->id]) }}"
+                    class="btn btn-outline-primary px-3"
+                >
+                    <i class="ri-file-text-line me-1"></i>
+                    Format Dokumen SOP
+                </a>
+                <a
+                    href="{{ $backUrl }}"
+                    class="btn btn-primary px-3"
+                >
+                    <i class="mdi mdi-arrow-left me-1"></i>
+                    Kembali
+                </a>
+            </div>
         </div>
 
         <div class="row g-3">

@@ -41,4 +41,14 @@ class PackagingInnerOuterSampling extends Model
             PackagingIncoming::class
         );
     }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
 }

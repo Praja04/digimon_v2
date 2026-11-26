@@ -767,6 +767,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/doc-rm/export', [App\Http\Controllers\Analisa\DocRmController::class, 'exportExcel'])->name('doc-rm.export');
         Route::post('/doc-rm/update-bps', [App\Http\Controllers\Analisa\DocRmController::class, 'updateStandartBps'])->name('doc-rm.update-bps');
 
+        // Form Dokumen Hasil Pemeriksaan Packaging Material (Karton, Pouch, Inner Sachet)
+        Route::get('/doc-pm', [App\Http\Controllers\Analisa\DocPmController::class, 'index'])->name('doc-pm.index');
+        Route::get('/doc-pm/export', [App\Http\Controllers\Analisa\DocPmController::class, 'exportExcel'])->name('doc-pm.export');
+
         // Analisa - Blending Awal - Kimia
         Route::get('/analisa/blending-awal/index', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'index'])->name('analisa.blending-awal.index');
         Route::get('/analisa/blending-awal/formulasi', [App\Http\Controllers\Analisa\BlendingAwalController::class, 'formulasi'])->name('analisa.blending-awal.formulasi');
@@ -1051,10 +1055,10 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
     Master Data RM (Raw Material)
-    Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM
+    Roles: Head Of Dapartement, Supervisor, Foreman, Analis RM, Analis Field
     --------------------------------------------*/
     Route::middleware([
-        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM',
+        'user-access:Head Of Dapartement,Supervisor,Foreman,Analis RM,Analis Field',
     ])->group(function (): void {
         Route::resource(
             'master-data-rm/jenis-bahan',

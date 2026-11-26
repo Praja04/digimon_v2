@@ -167,37 +167,11 @@ class PackagingPouchController extends Controller
 
     public function resume(
         PackagingIncoming $packagingIncoming
-    ): View {
-        $packagingIncoming->load([
-            'jenisIncoming',
-            'jenisMaterial',
-            'supplier',
-            'uom',
-            'samplingStatus',
+    ) {
+        return redirect()->route('doc-pm.index', [
+            'id' => $packagingIncoming->id,
+            'type' => 'pouch',
         ]);
-
-        $this->ensurePouch($packagingIncoming);
-
-        $sampling = PackagingPouchSampling::query()
-            ->where(
-                'packaging_incoming_id',
-                $packagingIncoming->id
-            )
-            ->firstOrFail();
-
-        abort_unless(
-            $sampling->status_proses === 'final',
-            404,
-            'Laporan hanya tersedia untuk sampling yang sudah final.'
-        );
-
-        return view(
-            'app.rmpm.pouch-resume',
-            compact(
-                'packagingIncoming',
-                'sampling'
-            )
-        );
     }
 
     public function storeSampling(
@@ -836,8 +810,8 @@ class PackagingPouchController extends Controller
             'redirect_url' =>
                 $isFinal
                     ? route(
-                        'rmpm.pm.pouch.resume',
-                        $packagingIncoming
+                        'doc-pm.index',
+                        ['id' => $packagingIncoming->id, 'type' => 'pouch']
                     )
                     : route(
                         'rmpm.pm.pouch.sampling',
@@ -908,8 +882,8 @@ class PackagingPouchController extends Controller
         $qrText =
             $sampling?->status_proses === 'final'
                 ? route(
-                    'rmpm.pm.pouch.resume',
-                    $packagingIncoming
+                    'doc-pm.index',
+                    ['id' => $packagingIncoming->id, 'type' => 'pouch']
                 )
                 : route(
                     'rmpm.pm.pouch.sampling',

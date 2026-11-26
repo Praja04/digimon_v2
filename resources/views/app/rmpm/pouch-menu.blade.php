@@ -292,13 +292,14 @@
                                             <div class="d-flex flex-wrap gap-2">
                                                 <a
                                                     href="{{ route(
-                                                        'rmpm.pm.pouch.resume',
-                                                        $incoming
+                                                        'doc-pm.index',
+                                                        ['id' => $incoming->id, 'type' => 'pouch']
                                                     ) }}"
                                                     class="btn btn-success btn-sm"
+                                                    title="Lihat Form Dokumen Hasil Pemeriksaan Pouch"
                                                 >
                                                     <i class="mdi mdi-file-document-outline me-1"></i>
-                                                    Lihat Resume
+                                                    Lihat Form Dokumen
                                                 </a>
 
                                                 <button

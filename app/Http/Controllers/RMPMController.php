@@ -1952,14 +1952,21 @@ class RMPMController extends Controller
 
         if ($kategori) {
             $query->where(function ($q) use ($kategori) {
-                $q->where('kategori', $kategori);
-                if ($kategori === 'incoming') {
-                    $q->orWhereNull('kategori');
+                if (is_array($kategori)) {
+                    $q->whereIn('kategori', $kategori);
+                    if (in_array('incoming', $kategori)) {
+                        $q->orWhereNull('kategori');
+                    }
+                } else {
+                    $q->where('kategori', $kategori);
+                    if ($kategori === 'incoming') {
+                        $q->orWhereNull('kategori');
+                    }
                 }
             });
-        } else {
-            $query->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END, id ASC");
         }
+
+        $query->orderByRaw("CASE WHEN kategori = 'incoming' OR kategori IS NULL THEN 1 WHEN kategori = 'sta' THEN 2 WHEN kategori = 'monitoring' THEN 3 ELSE 4 END, id ASC");
 
         $transaksis = $query->get();
         $samples = collect();

@@ -3,6 +3,9 @@
 @section('title', 'Laporan Sampling Inner / Outer')
 
 @section('content')
+<script>
+    window.location.replace("{{ route('doc-pm.index', ['id' => $packagingIncoming->id, 'type' => 'inner']) }}");
+</script>
 @php
     $samples = is_array($sampling->hasil_sampel)
         ? array_values($sampling->hasil_sampel)
@@ -75,6 +78,20 @@
             </a>
 
             <div class="d-flex gap-2">
+                <a
+                    href="{{ route('doc-pm.export', ['id' => $packagingIncoming->id]) }}"
+                    class="btn btn-success"
+                >
+                    <i class="ri-file-excel-2-line me-1"></i>
+                    Export Excel Form
+                </a>
+                <a
+                    href="{{ route('doc-pm.index', ['id' => $packagingIncoming->id]) }}"
+                    class="btn btn-outline-primary"
+                >
+                    <i class="ri-file-text-line me-1"></i>
+                    Format Dokumen SOP
+                </a>
                 <button
                     type="button"
                     class="btn btn-primary"

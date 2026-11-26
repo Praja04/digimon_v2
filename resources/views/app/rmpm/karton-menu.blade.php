@@ -1,4 +1,4 @@
-﻿@extends('layouts.component.main')
+@extends('layouts.component.main')
 
 @section('title')
     Menu Karton
@@ -282,17 +282,31 @@
                                                 <td>
                                                     @if ($sudahSampling)
 
-                                                        <a
-                                                            href="{{ route(
-                                                                'rmpm.pm.karton.display',
-                                                                $incoming
-                                                            ) }}"
-                                                            class="btn btn-success btn-sm"
-                                                            title="Buka menu pemeriksaan Karton"
-                                                        >
-                                                            <i class="mdi mdi-view-dashboard-outline me-1"></i>
-                                                            Menu Pemeriksaan
-                                                        </a>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <a
+                                                                href="{{ route(
+                                                                    'doc-pm.index',
+                                                                    ['id' => $incoming->id, 'type' => 'karton']
+                                                                ) }}"
+                                                                class="btn btn-success btn-sm"
+                                                                title="Lihat Form Dokumen Hasil Pemeriksaan Karton"
+                                                            >
+                                                                <i class="mdi mdi-file-document-outline me-1"></i>
+                                                                Lihat Form Dokumen
+                                                            </a>
+
+                                                            <a
+                                                                href="{{ route(
+                                                                    'rmpm.pm.karton.display',
+                                                                    $incoming
+                                                                ) }}"
+                                                                class="btn btn-outline-primary btn-sm"
+                                                                title="Buka menu pemeriksaan Karton"
+                                                            >
+                                                                <i class="mdi mdi-view-dashboard-outline me-1"></i>
+                                                                Menu Pemeriksaan
+                                                            </a>
+                                                        </div>
 
                                                     @else
 
