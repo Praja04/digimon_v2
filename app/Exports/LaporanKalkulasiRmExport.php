@@ -361,52 +361,13 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->getStyle('G9:I9')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
         $sheet->getStyle('G9:I9')->getFont()->setBold(true);
 
-        $totalOrganoSampel = $organoVals->count() ?: 1;
-        $organoDefinitions = [
-            ['label' => 'Rasa Khas Gula Kelapa/Tebu', 'key' => 'ok', 'ket' => 'Kategori OK', 'isMurni' => true],
-            ['label' => 'Asam dan pH < 5.00', 'key' => 'asam', 'ket' => 'Kategori Campuran (Asam)', 'isMurni' => false],
-            ['label' => 'Agak Asam / pH Normal', 'key' => 'agak_asam', 'ket' => 'Kategori Campuran (Asam)', 'isMurni' => false],
-            ['label' => 'Asin', 'key' => 'asin', 'ket' => 'Kategori Campuran (Garam)', 'isMurni' => false],
-            ['label' => 'Sagu', 'key' => 'sagu', 'ket' => 'Kategori Campuran (Sagu)', 'isMurni' => false],
-            ['label' => 'Kapur', 'key' => 'kapur', 'ket' => 'Kategori Campuran (Kapur)', 'isMurni' => false],
-            ['label' => 'Lain - Lain (Endapan, Tengik)', 'key' => 'lain', 'ket' => 'Kategori Lain - Lain', 'isMurni' => false],
-        ];
-
         $rOrg = 10;
-        $murniPctTotal = 0;
-        $campuranPctTotal = 0;
+        foreach ($docData['organo_items'] ?? [] as $org) {
+            $sheet->setCellValue("G{$rOrg}", $org['label']);
+            $sheet->setCellValue("H{$rOrg}", $org['pct'] . '%');
+            $sheet->setCellValue("I{$rOrg}", $org['ket']);
 
-        foreach ($organoDefinitions as $def) {
-            $cnt = $organoVals->filter(function ($val) use ($def) {
-                $v = strtolower(trim((string)$val));
-                switch ($def['key']) {
-                    case 'ok':
-                        return in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas');
-                    case 'asam':
-                        return str_contains($v, 'asam dan ph < 5') || ($v === 'asam');
-                    case 'agak_asam':
-                        return str_contains($v, 'agak asam') || str_contains($v, 'ph normal');
-                    case 'asin':
-                        return str_contains($v, 'asin');
-                    case 'sagu':
-                        return str_contains($v, 'sagu');
-                    case 'kapur':
-                        return str_contains($v, 'kapur') && !str_contains($v, 'lain');
-                    case 'lain':
-                        return str_contains($v, 'lain') || str_contains($v, 'tengik') || str_contains($v, 'endapan');
-                    default:
-                        return false;
-                }
-            })->count();
-
-            $pct = round(($cnt / $totalOrganoSampel) * 100);
-            if ($def['isMurni']) $murniPctTotal += $pct; else $campuranPctTotal += $pct;
-
-            $sheet->setCellValue("G{$rOrg}", $def['label']);
-            $sheet->setCellValue("H{$rOrg}", $pct . '%');
-            $sheet->setCellValue("I{$rOrg}", $def['ket']);
-
-            if ($def['key'] === 'ok' && $pct > 0) {
+            if ($org['key'] === 'ok' && $org['pct'] > 0) {
                 $sheet->getStyle("H{$rOrg}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
             }
             $rOrg++;
@@ -454,14 +415,18 @@ class LaporanKalkulasiSheetExport implements WithEvents, WithTitle
         $sheet->getStyle("G{$rRasa}:I{$rRasa}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($subHeaderFill);
         $sheet->getStyle("G{$rRasa}:I{$rRasa}")->getFont()->setBold(true);
 
+        $murniPct = $docData['murni_pct'] ?? 0;
+        $campuranPct = $docData['campuran_pct'] ?? 0;
+
         $sheet->setCellValue('G' . ($rRasa + 1), 'Murni');
-        $sheet->setCellValue('H' . ($rRasa + 1), $murniPctTotal . '%');
-        $sheet->setCellValue('I' . ($rRasa + 1), ($murniPctTotal >= 100) ? 'Murni 100%' : 'Ada Campuran');
-        if ($murniPctTotal > 0) $sheet->getStyle('H' . ($rRasa + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
+        $sheet->setCellValue('H' . ($rRasa + 1), $murniPct . '%');
+        $sheet->setCellValue('I' . ($rRasa + 1), $docData['ket_murni'] ?? 'Total poin organo dari no 1 & 3-6');
+        if ($murniPct > 0) $sheet->getStyle('H' . ($rRasa + 1))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($greenFill);
 
         $sheet->setCellValue('G' . ($rRasa + 2), 'Campuran');
-        $sheet->setCellValue('H' . ($rRasa + 2), $campuranPctTotal . '%');
-        $sheet->setCellValue('I' . ($rRasa + 2), 'Rasa campuran dan pahit');
+        $sheet->setCellValue('H' . ($rRasa + 2), $campuranPct . '%');
+        $sheet->setCellValue('I' . ($rRasa + 2), $docData['ket_campuran'] ?? 'Rasa campuran dan pahit');
+        if ($campuranPct > 0) $sheet->getStyle('H' . ($rRasa + 2))->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($yellowFill);
 
         $rightTableEndRow = $rRasa + 2;
 

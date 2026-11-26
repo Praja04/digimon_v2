@@ -235,6 +235,57 @@
             background: transparent !important;
         }
     }
+
+    /* Custom Select2 Styling for SPB Search */
+    .select2-container--default .select2-selection--single {
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        height: 38px;
+        padding: 4px 6px;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #405189;
+        outline: 0;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #212529;
+        line-height: 28px;
+        font-size: 0.85rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+        right: 8px;
+    }
+    .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        z-index: 9999;
+    }
+    .select2-container--default .select2-search--dropdown {
+        padding: 8px;
+        background: #f8fafc;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+        border-color: #405189;
+        outline: none;
+    }
+    .select2-container--default .select2-results__option {
+        padding: 7px 12px;
+        font-size: 0.85rem;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #405189;
+        color: #fff;
+    }
 </style>
 @endsection
 
@@ -264,9 +315,9 @@
                 <div class="row align-items-center g-3">
                     <div class="col-lg-5 col-md-6">
                         <label for="selectSpb" class="form-label fw-bold fs-13 mb-1">
-                            <i class="ri-folder-open-line me-1 text-primary"></i> Pilih Nomor SPB Kedatangan:
+                            <i class="ri-search-line me-1 text-primary"></i> Cari / Pilih Nomor SPB Kedatangan:
                         </label>
-                        <select id="selectSpb" class="form-select select2">
+                        <select id="selectSpb" class="form-select select2" style="width: 100%;">
                             @foreach($identitasList as $item)
                                 <option value="{{ $item->id }}" {{ $selectedId == $item->id ? 'selected' : '' }}>
                                     SPB: {{ $item->no_spb ?? '-' }} — {{ $item->jenis ?? 'RM' }} ({{ $item->supplier ?? '-' }})
@@ -658,14 +709,14 @@
                                             <td class="cell-center {{ ($docData['murni_pct'] ?? 0) > 0 ? 'bg-green-highlight' : '' }}">
                                                 {{ $docData['murni_pct'] ?? 0 }}%
                                             </td>
-                                            <td style="font-size: 0.80rem;">{{ $docData['ket_murni'] ?? '-' }}</td>
+                                            <td style="font-size: 0.80rem;">{{ $docData['ket_murni'] ?? 'Total poin organo dari no 1 & 3-6' }}</td>
                                         </tr>
                                         <tr>
                                             <td>Campuran</td>
-                                            <td class="cell-center">
+                                            <td class="cell-center {{ ($docData['campuran_pct'] ?? 0) > 0 ? 'bg-yellow-highlight' : '' }}">
                                                 {{ $docData['campuran_pct'] ?? 0 }}%
                                             </td>
-                                            <td style="font-size: 0.80rem;">Rasa campuran dan pahit</td>
+                                            <td style="font-size: 0.80rem;">{{ $docData['ket_campuran'] ?? 'Rasa campuran dan pahit' }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1134,7 +1185,7 @@
         });
 
         $('#selectSpb').select2({
-            placeholder: '-- Pilih Nomor SPB Kedatangan --',
+            placeholder: '-- Cari / Pilih Nomor SPB (Ketik No. SPB / Supplier) --',
             width: '100%'
         });
 

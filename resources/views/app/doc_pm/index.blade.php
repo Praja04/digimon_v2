@@ -217,6 +217,57 @@
             display: none !important;
         }
     }
+
+    /* Custom Select2 Styling for SPB Search */
+    .select2-container--default .select2-selection--single {
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        height: 38px;
+        padding: 4px 6px;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #405189;
+        outline: 0;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #212529;
+        line-height: 28px;
+        font-size: 0.85rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+        right: 8px;
+    }
+    .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        z-index: 9999;
+    }
+    .select2-container--default .select2-search--dropdown {
+        padding: 8px;
+        background: #f8fafc;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+        border-color: #405189;
+        outline: none;
+    }
+    .select2-container--default .select2-results__option {
+        padding: 7px 12px;
+        font-size: 0.85rem;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #405189;
+        color: #fff;
+    }
 </style>
 @endsection
 
@@ -248,7 +299,7 @@
                         <label for="filterJenisSelect" class="form-label fw-bold fs-13 mb-1">
                             <i class="ri-filter-line me-1 text-primary"></i> Filter Jenis Kemasan:
                         </label>
-                        <select id="filterJenisSelect" class="form-select form-select-sm" onchange="applyFilters()">
+                        <select id="filterJenisSelect" class="form-select form-select-sm" style="height: 38px;">
                             <option value="" {{ empty($filterJenis) ? 'selected' : '' }}>-- Semua Kemasan --</option>
                             <option value="karton" {{ $filterJenis === 'karton' ? 'selected' : '' }}>Kardus / Karton</option>
                             <option value="pouch" {{ $filterJenis === 'pouch' ? 'selected' : '' }}>Pouch</option>
@@ -258,9 +309,9 @@
 
                     <div class="col-lg-5 col-md-5">
                         <label for="selectSpb" class="form-label fw-bold fs-13 mb-1">
-                            <i class="ri-folder-open-line me-1 text-primary"></i> Pilih Nomor SPB Kedatangan:
+                            <i class="ri-search-line me-1 text-primary"></i> Cari / Pilih Nomor SPB Kedatangan:
                         </label>
-                        <select id="selectSpb" class="form-select form-select-sm" onchange="applyFilters()">
+                        <select id="selectSpb" class="form-select select2" style="width: 100%;">
                             @forelse($incomingList as $item)
                                 @php
                                     $isItemFinal = $item->packagingKartonSampling || $item->packagingPouchSampling || $item->packagingInnerOuterSampling;
@@ -898,14 +949,36 @@
 
 @section('scripts')
 <script>
-    function applyFilters() {
-        const jenis = document.getElementById('filterJenisSelect').value;
-        const id = document.getElementById('selectSpb').value;
-        let url = '{{ route("doc-pm.index") }}?';
-        const params = [];
-        if (jenis) params.push('jenis=' + encodeURIComponent(jenis));
-        if (id) params.push('id=' + encodeURIComponent(id));
-        window.location.href = url + params.join('&');
-    }
+    $(document).ready(function() {
+        // Inisialisasi Select2 untuk pencarian cepat SPB
+        $('#selectSpb').select2({
+            placeholder: '-- Cari / Pilih Nomor SPB (Ketik No. SPB / Supplier) --',
+            width: '100%',
+            allowClear: false
+        });
+
+        // Event saat SPB dipilih dari Select2
+        $('#selectSpb').on('change', function() {
+            const id = $(this).val();
+            if (id) {
+                const jenis = $('#filterJenisSelect').val();
+                let url = '{{ route("doc-pm.index") }}?id=' + encodeURIComponent(id);
+                if (jenis) {
+                    url += '&jenis=' + encodeURIComponent(jenis);
+                }
+                window.location.href = url;
+            }
+        });
+
+        // Event saat Jenis Kemasan diubah
+        $('#filterJenisSelect').on('change', function() {
+            const jenis = $(this).val();
+            let url = '{{ route("doc-pm.index") }}';
+            if (jenis) {
+                url += '?jenis=' + encodeURIComponent(jenis);
+            }
+            window.location.href = url;
+        });
+    });
 </script>
 @endsection
