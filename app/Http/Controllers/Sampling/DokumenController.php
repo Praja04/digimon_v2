@@ -24,10 +24,12 @@ class DokumenController extends Controller
         $existing = SamplingDokumen::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
+            $existing->update($validated);
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'Sampling Dokumen sudah pernah disimpan untuk ID ini.'
-            ], 409);
+                'status'  => 'success',
+                'message' => 'Sampling Dokumen berhasil disimpan.'
+            ], 200);
         }
 
         SamplingDokumen::create($validated);

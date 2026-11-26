@@ -461,57 +461,72 @@ class DocRmController extends Controller
 
         // Organo Stats
         $totalOrgano = $organoVals->count() ?: 1;
+        $teksDominan = 'Terasa/dominan rasa ' . ($isGulaTebu ? 'gula tebu' : 'gula kelapa');
+        $teksTidakDominan = 'Tidak terasa/tidak dominan rasa ' . ($isGulaTebu ? 'gula tebu' : 'gula kelapa');
+
         $organoDefinitions = [
-            ['label' => 'Rasa Khas Gula Kelapa/Tebu', 'key' => 'ok', 'ket' => 'Kategori OK', 'isMurni' => true],
-            ['label' => 'Asam dan pH < 5.00', 'key' => 'asam', 'ket' => 'Kategori Campuran (Asam)', 'isMurni' => false],
-            ['label' => 'Agak Asam / pH Normal', 'key' => 'agak_asam', 'ket' => 'Kategori Campuran (Asam)', 'isMurni' => false],
-            ['label' => 'Asin', 'key' => 'asin', 'ket' => 'Kategori Campuran (Garam)', 'isMurni' => false],
-            ['label' => 'Sagu', 'key' => 'sagu', 'ket' => 'Kategori Campuran (Sagu)', 'isMurni' => false],
-            ['label' => 'Kapur', 'key' => 'kapur', 'ket' => 'Kategori Campuran (Kapur)', 'isMurni' => false],
-            ['label' => 'Lain - Lain (Endapan, Tengik)', 'key' => 'lain', 'ket' => 'Kategori Lain - Lain', 'isMurni' => false],
+            ['key' => 'ok', 'label' => '1, OK', 'ket' => $teksDominan],
+            ['key' => 'pahit', 'label' => '2, Pahit', 'ket' => $teksDominan],
+            ['key' => 'agak_pahit', 'label' => '3, Agak pahit', 'ket' => $teksDominan],
+            ['key' => 'asam', 'label' => '4, Asam dan pH < 5,5', 'ket' => $teksDominan],
+            ['key' => 'agak_asam', 'label' => '5, Agak asam dan pH normal', 'ket' => $teksDominan],
+            ['key' => 'lain', 'label' => '6, Lain-lain (tengik, kapur, endapan putih dll)', 'ket' => $teksDominan],
+            ['key' => 'campuran', 'label' => '7, Campuran', 'ket' => $teksTidakDominan],
         ];
 
-        $organoItems = [];
-        $murniPctTotal = 0;
-        $campuranPctTotal = 0;
+        $counts = [
+            'ok'         => 0,
+            'pahit'      => 0,
+            'agak_pahit' => 0,
+            'asam'       => 0,
+            'agak_asam'  => 0,
+            'lain'       => 0,
+            'campuran'   => 0,
+        ];
 
-        foreach ($organoDefinitions as $def) {
-            $cnt = $organoVals->filter(function ($val) use ($def) {
-                $v = strtolower(trim((string)$val));
-                switch ($def['key']) {
-                    case 'ok':
-                        return in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas');
-                    case 'asam':
-                        return str_contains($v, 'asam dan ph < 5') || ($v === 'asam');
-                    case 'agak_asam':
-                        return str_contains($v, 'agak asam') || str_contains($v, 'ph normal');
-                    case 'asin':
-                        return str_contains($v, 'asin');
-                    case 'sagu':
-                        return str_contains($v, 'sagu');
-                    case 'kapur':
-                        return str_contains($v, 'kapur') && !str_contains($v, 'lain');
-                    case 'lain':
-                        return str_contains($v, 'lain') || str_contains($v, 'tengik') || str_contains($v, 'endapan');
-                    default:
-                        return false;
-                }
-            })->count();
-
-            $pct = round(($cnt / $totalOrgano) * 100);
-            if ($def['isMurni']) {
-                $murniPctTotal += $pct;
+        foreach ($organoVals as $val) {
+            $v = strtolower(trim((string)$val));
+            if (str_contains($v, 'agak pahit') || str_starts_with($v, '3')) {
+                $counts['agak_pahit']++;
+            } elseif (str_contains($v, 'agak asam') || str_contains($v, 'ph normal') || str_starts_with($v, '5')) {
+                $counts['agak_asam']++;
+            } elseif (str_contains($v, 'asam') || str_starts_with($v, '4')) {
+                $counts['asam']++;
+            } elseif (str_contains($v, 'pahit') || str_starts_with($v, '2')) {
+                $counts['pahit']++;
+            } elseif (str_contains($v, 'campuran') || str_contains($v, 'tidak terasa') || str_starts_with($v, '7')) {
+                $counts['campuran']++;
+            } elseif (in_array($v, ['ok', 'sesuai', 'khas', 'normal', 'standar']) || str_contains($v, 'khas') || str_starts_with($v, '1')) {
+                $counts['ok']++;
             } else {
-                $campuranPctTotal += $pct;
+                $counts['lain']++;
             }
+        }
 
+        $organoItems = [];
+        foreach ($organoDefinitions as $def) {
+            $cnt = $counts[$def['key']];
+            $pct = round(($cnt / $totalOrgano) * 100);
             $organoItems[] = [
                 'label'   => $def['label'],
                 'key'     => $def['key'],
+                'count'   => $cnt,
                 'pct'     => $pct,
                 'ket'     => $def['ket'],
-                'isMurni' => $def['isMurni'],
             ];
+        }
+
+        if ($organoVals->isEmpty()) {
+            $murniPctTotal = 0;
+            $campuranPctTotal = 0;
+        } else {
+            // Formula sesuai format standar:
+            // Campuran : %pahit + %campuran (poin no 2 Pahit + poin no 7 Campuran)
+            // Murni : 100% - Campuran (atau total poin organo dari no 1 & 3-6)
+            $pctPahit = collect($organoItems)->firstWhere('key', 'pahit')['pct'] ?? 0;
+            $pctCampuranItem = collect($organoItems)->firstWhere('key', 'campuran')['pct'] ?? 0;
+            $campuranPctTotal = $pctPahit + $pctCampuranItem;
+            $murniPctTotal = max(0, 100 - $campuranPctTotal);
         }
 
         // %KA Stats
@@ -607,7 +622,8 @@ class DocRmController extends Controller
             'organo_items'    => $organoItems,
             'murni_pct'       => $murniPctTotal,
             'campuran_pct'    => $campuranPctTotal,
-            'ket_murni'       => ($murniPctTotal >= 100) ? 'Murni 100%' : 'Ada Campuran',
+            'ket_murni'       => 'Total poin organo dari no 1 & 3-6',
+            'ket_campuran'    => 'Rasa campuran dan pahit',
 
             // %KA Detail
             'avg_ka'          => $avgKa,

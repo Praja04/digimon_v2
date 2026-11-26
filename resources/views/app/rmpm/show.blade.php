@@ -2556,8 +2556,22 @@
 
         $('.form-sampling').on('submit', function(e) {
             e.preventDefault();
+            const form = $(this);
+            const btn = form.find('button[type="submit"], input[type="submit"]');
+
+            if (form.data('submitting')) return false;
+            form.data('submitting', true);
+
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...');
+
             const url = samplingUrls[this.id];
-            if (!url) return;
+            if (!url) {
+                form.data('submitting', false);
+                btn.prop('disabled', false).html(origHtml);
+                return;
+            }
+
             $.ajax({
                 type: 'POST',
                 url,
@@ -2572,6 +2586,8 @@
                         .then(() => location.reload());
                 },
                 error: xhr => {
+                    form.data('submitting', false);
+                    btn.prop('disabled', false).html(origHtml);
                     if (xhr.status === 422) {
                         Swal.fire({
                             icon: 'warning',
@@ -2593,6 +2609,15 @@
         // ── Edit Mobil ──
         $('#editMobilForm').on('submit', function(e) {
             e.preventDefault();
+            const form = $(this);
+            const btn = form.find('button[type="submit"], input[type="submit"]');
+
+            if (form.data('submitting')) return false;
+            form.data('submitting', true);
+
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Memperbarui...');
+
             $.ajax({
                 url: "{{ route('sampling-kondisi-mobil.update') }}",
                 method: 'POST',
@@ -2605,17 +2630,30 @@
                         text: 'Data mobil berhasil diperbarui'
                     }).then(() => location.reload());
                 },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
-                }),
+                error: xhr => {
+                    form.data('submitting', false);
+                    btn.prop('disabled', false).html(origHtml);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
+                    });
+                },
             });
         });
 
         // ── Edit Dokumen ──
         $('#editDokumenForm').on('submit', function(e) {
             e.preventDefault();
+            const form = $(this);
+            const btn = form.find('button[type="submit"], input[type="submit"]');
+
+            if (form.data('submitting')) return false;
+            form.data('submitting', true);
+
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Memperbarui...');
+
             $.ajax({
                 type: 'POST',
                 url: "{{ route('sampling-dokumen.update') }}",
@@ -2637,17 +2675,30 @@
                         text: r.message || 'Data berhasil disimpan!'
                     }).then(() => location.reload());
                 },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
-                }),
+                error: xhr => {
+                    form.data('submitting', false);
+                    btn.prop('disabled', false).html(origHtml);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
+                    });
+                },
             });
         });
 
         // ── Edit Kemasan ──
         $('#editKemasanForm').on('submit', function(e) {
             e.preventDefault();
+            const form = $(this);
+            const btn = form.find('button[type="submit"], input[type="submit"]');
+
+            if (form.data('submitting')) return false;
+            form.data('submitting', true);
+
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Memperbarui...');
+
             $.ajax({
                 type: 'POST',
                 url: "{{ route('sampling-kemasan.update') }}",
@@ -2669,17 +2720,30 @@
                         text: r.message || 'Data berhasil disimpan!'
                     }).then(() => location.reload());
                 },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
-                }),
+                error: xhr => {
+                    form.data('submitting', false);
+                    btn.prop('disabled', false).html(origHtml);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
+                    });
+                },
             });
         });
 
         // ── Edit Raw ──
         $('#editRawForm').on('submit', function(e) {
             e.preventDefault();
+            const form = $(this);
+            const btn = form.find('button[type="submit"], input[type="submit"]');
+
+            if (form.data('submitting')) return false;
+            form.data('submitting', true);
+
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Memperbarui...');
+
             $.ajax({
                 type: 'POST',
                 url: "{{ route('sampling-raw.update') }}",
@@ -2701,11 +2765,15 @@
                         text: r.message || 'Data berhasil disimpan!'
                     }).then(() => location.reload());
                 },
-                error: xhr => Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
-                }),
+                error: xhr => {
+                    form.data('submitting', false);
+                    btn.prop('disabled', false).html(origHtml);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan!'
+                    });
+                },
             });
         });
 
@@ -2828,6 +2896,9 @@
 
         // Simpan Jam Sampling (QC Field & Supervisor)
         $(document).on('click', '#btnSimpanSampling', function() {
+            const btn = $(this);
+            if (btn.prop('disabled')) return false;
+
             const jamVal = $('#jamSamplingInput').val();
             if (!jamVal) {
                 return Swal.fire({
@@ -2836,6 +2907,7 @@
                 });
             }
 
+            btn.prop('disabled', true);
             Swal.fire({
                 title: 'Menyimpan Jam Sampling...',
                 allowOutsideClick: false,
@@ -2861,6 +2933,7 @@
                     }).then(() => location.reload());
                 },
                 error: function(xhr) {
+                    btn.prop('disabled', false);
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
@@ -2872,6 +2945,9 @@
 
         // Simpan Jam Selesai Analisa (Analis Lab & Supervisor)
         $(document).on('click', '#btnSimpanAnalisa', function() {
+            const btn = $(this);
+            if (btn.prop('disabled')) return false;
+
             const jamVal = $('#jamAnalisaInput').val();
             if (!jamVal) {
                 return Swal.fire({
@@ -2880,6 +2956,7 @@
                 });
             }
 
+            btn.prop('disabled', true);
             Swal.fire({
                 title: 'Menyimpan Jam Selesai Analisa...',
                 allowOutsideClick: false,
@@ -2905,6 +2982,7 @@
                     }).then(() => location.reload());
                 },
                 error: function(xhr) {
+                    btn.prop('disabled', false);
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',

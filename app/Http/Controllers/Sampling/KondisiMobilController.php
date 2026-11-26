@@ -28,19 +28,21 @@ class KondisiMobilController extends Controller
             'keterangan_berbau' => 'nullable|string',
         ]);
 
-        $existing = SamplingKondisiMobil::where('id_identitas', $validated['id_identitas'])->first();
-
-        if ($existing) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Sampling Kondisi Mobil sudah pernah disimpan untuk ID ini.'
-            ], 409);
-        }
-
         foreach (['bersih', 'kering', 'benda_asing', 'cacat', 'segel', 'berbau'] as $f) {
             if (($validated[$f] ?? '') === 'yes') {
                 $validated['keterangan_' . $f] = null;
             }
+        }
+
+        $existing = SamplingKondisiMobil::where('id_identitas', $validated['id_identitas'])->first();
+
+        if ($existing) {
+            $existing->update($validated);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Sampling Kondisi Mobil berhasil disimpan.'
+            ], 200);
         }
 
         $validated['created_by'] = auth()->user()->id;

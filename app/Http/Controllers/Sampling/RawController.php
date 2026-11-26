@@ -22,10 +22,23 @@ class RawController extends Controller
         $existing = SamplingFisikRaw::where('id_identitas', $validated['id_identitas'])->first();
 
         if ($existing) {
+            $existing->update([
+                'sesuai_std'            => $request->sesuai_std,
+                'keterangan_sesuai_std' => $request->keterangan_sesuai_std,
+                'warna'                 => $request->warna,
+                'keterangan_warna'      => $request->keterangan_warna,
+                'aroma'                 => $request->aroma,
+                'keterangan_aroma'      => $request->keterangan_aroma,
+                'leleh'                 => $request->leleh ?? null,
+                'keterangan_leleh'      => $request->keterangan_leleh ?? null,
+                'campuran'              => $request->campuran ?? null,
+                'keterangan_campuran'   => $request->keterangan_campuran ?? null,
+            ]);
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'Sampling Raw sudah pernah disimpan untuk ID ini.'
-            ], 409);
+                'status'  => 'success',
+                'message' => 'Sampling Raw berhasil disimpan.'
+            ], 200);
         }
 
         SamplingFisikRaw::create([
