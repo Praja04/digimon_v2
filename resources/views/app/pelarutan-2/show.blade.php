@@ -280,7 +280,7 @@
                                                             <i class="ri-eye-line"></i>
                                                         </button>
 
-                                                        @if (auth()->user()->role == 'Foreman')
+                                                        @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                                                             <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
                                                                 data-id="{{ $pelarutan_2->id }}">
 
@@ -297,7 +297,7 @@
                                                                 Input Data
                                                             </button>
                                                         @else
-                                                            @if (auth()->user()->role == 'Foreman')
+                                                            @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-warning open-pelarutan-2-modal-edit"
                                                                     data-id="{{ $pelarutan_2->id }}">
@@ -474,7 +474,7 @@
                         </div>
 
 
-                        @if (auth()->user()->role == 'Foreman')
+                        @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                             <!-- DISPOSISI -->
                             <div class="col-lg-12">
 
@@ -538,7 +538,7 @@
                         </button>
 
 
-                        @if (in_array(auth()->user()->role, ['Analis Kimia', 'Foreman'], true))
+                        @if (in_array(auth()->user()->role, ['Analis Kimia', 'Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                             <button type="button" class="btn btn-warning" id="saveDraft">
 
                                 <i class="ri-save-line me-1"></i>
@@ -1946,7 +1946,7 @@
                                             draft.disposition_remark || ''
                                         );
 
-                                    @if (auth()->user()->role == 'Foreman')
+                                    @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
 
                                         $('#disposition')
                                             .val(
@@ -2005,7 +2005,7 @@
                                     );
 
 
-                                @if (auth()->user()->role == 'Foreman')
+                                @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
 
                                     $('#disposition')
                                         .val('')
@@ -2167,7 +2167,7 @@
                                     );
 
 
-                                @if (auth()->user()->role == 'Foreman')
+                                @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
 
                                     $('#disposition')
                                         .val(
@@ -2659,7 +2659,7 @@
 
 
                         if (
-                            userRole === 'Foreman'
+                            ['Foreman', 'Supervisor', 'Head Of Dapartement'].includes(userRole)
                         ) {
 
                             const disposition =

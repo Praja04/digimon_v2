@@ -307,15 +307,10 @@
                                     'pouch'
                                 )
                             ) {
-                                $samplingUrl = $isFinished
-                                    ? route(
-                                        'doc-pm.index',
-                                        ['id' => $incoming->id, 'type' => 'pouch']
-                                    )
-                                    : route(
-                                        'rmpm.pm.pouch.sampling',
-                                        $incoming
-                                    );
+                                $samplingUrl = route(
+                                    'rmpm.pm.pouch.sampling',
+                                    $incoming
+                                );
 
                             /*
                             |--------------------------------------------------------------------------
@@ -332,15 +327,10 @@
                                     'kardus'
                                 )
                             ) {
-                                $samplingUrl = $isFinished
-                                    ? route(
-                                        'doc-pm.index',
-                                        ['id' => $incoming->id, 'type' => 'karton']
-                                    )
-                                    : route(
-                                        'rmpm.pm.karton.display',
-                                        $incoming
-                                    );
+                                $samplingUrl = route(
+                                    'rmpm.pm.karton.display',
+                                    $incoming
+                                );
 
                             /*
                             |--------------------------------------------------------------------------
@@ -357,15 +347,10 @@
                                     'outer'
                                 )
                             ) {
-                                $samplingUrl = $isFinished
-                                    ? route(
-                                        'doc-pm.index',
-                                        ['id' => $incoming->id, 'type' => 'inner']
-                                    )
-                                    : route(
-                                        'rmpm.pm.inner-outer.sampling',
-                                        $incoming
-                                    );
+                                $samplingUrl = route(
+                                    'rmpm.pm.inner-outer.sampling',
+                                    $incoming
+                                );
                             }
 
                             /*
@@ -385,13 +370,13 @@
 
                             } elseif ($isFinished) {
                                 $samplingLabel =
-                                    'Export';
+                                    'Lihat Sampling';
 
                                 $samplingIcon =
-                                    'mdi-file-document-outline';
+                                    'mdi-eye-outline';
 
                                 $samplingClass =
-                                    'btn-success';
+                                    'btn-outline-primary';
 
                             } else {
                                 $samplingLabel =
@@ -480,25 +465,36 @@
                             </td>
 
                             <td class="text-center text-nowrap">
-                                @if ($samplingUrl)
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    @if ($samplingUrl)
+                                        <a
+                                            href="{{ $samplingUrl }}"
+                                            class="btn {{ $samplingClass }} btn-sm px-2 text-nowrap"
+                                            title="{{ $samplingLabel }}"
+                                        >
+                                            <i class="mdi {{ $samplingIcon }} me-1"></i>
+                                            {{ $samplingLabel }}
+                                        </a>
+                                    @else
+                                        <button
+                                            type="button"
+                                            class="btn btn-secondary btn-sm px-2 text-nowrap"
+                                            disabled
+                                        >
+                                            <i class="mdi mdi-alert-circle-outline me-1"></i>
+                                            Belum Tersedia
+                                        </button>
+                                    @endif
+
                                     <a
-                                        href="{{ $samplingUrl }}"
-                                        class="btn {{ $samplingClass }} btn-sm px-3 text-nowrap"
-                                        title="{{ $samplingLabel }}"
+                                        href="{{ route('doc-pm.index', ['id' => $incoming->id]) }}"
+                                        class="btn btn-success btn-sm px-2 text-nowrap"
+                                        title="Export / Buka Form Laporan PM"
                                     >
-                                        <i class="mdi {{ $samplingIcon }} me-1"></i>
-                                        {{ $samplingLabel }}
+                                        <i class="mdi mdi-file-document-outline me-1"></i>
+                                        Export
                                     </a>
-                                @else
-                                    <button
-                                        type="button"
-                                        class="btn btn-secondary btn-sm text-nowrap"
-                                        disabled
-                                    >
-                                        <i class="mdi mdi-alert-circle-outline me-1"></i>
-                                        Belum Tersedia
-                                    </button>
-                                @endif
+                                </div>
                             </td>
 
                             @if ($canManageIncoming)

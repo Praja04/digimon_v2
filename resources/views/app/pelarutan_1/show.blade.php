@@ -298,7 +298,7 @@
                                                             data-id="{{ $pelarutan_1->id }}">
                                                             <i class="ri-eye-line"></i>
                                                         </button>
-                                                        @if (auth()->user()->role == 'Foreman')
+                                                        @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                                                             <button class="btn btn-sm btn-secondary ms-1" id="btnFormulasi"
                                                                 data-id="{{ $pelarutan_1->id }}">
                                                                 <i class="ri-file-list-line"></i>
@@ -312,7 +312,7 @@
                                                                 Analisa Data
                                                             </a>
                                                         @else
-                                                            @if (auth()->user()->role == 'Foreman')
+                                                            @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-warning open-pelarutan-1-modal-edit"
                                                                     data-id="{{ $pelarutan_1->id }}">
@@ -386,7 +386,7 @@
                             </select>
                             <small class="text-danger errorStatusDisposition"></small>
                         </div>
-                        @if (auth()->user()->role == 'Foreman')
+                        @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                             <div class="col-lg-12">
                                 <label class="form-label">Disposisi</label>
                                 <select name="disposition" id="disposition" class="form-control disposition-select">
@@ -430,7 +430,7 @@
                             Tutup
                         </button>
 
-                        @if (auth()->user()->role === 'Foreman')
+                        @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
                             <button type="button" class="btn btn-warning" id="saveDraftForeman">
                                 <i class="ri-save-3-line me-1"></i>
                                 Simpan Sementara
@@ -974,13 +974,13 @@
                             $('.adjustment-qty').prop('required', false).val('');
                         }
 
-                        if (draft && userRole === 'Foreman') {
+                        if (draft && (['Foreman', 'Supervisor', 'Head Of Dapartement'].includes(userRole))) {
                             $('.error-alert')
                                 .removeClass('d-none alert-danger')
                                 .addClass('alert-warning')
                                 .html(
                                     '<i class="ri-draft-line me-1"></i>' +
-                                    'Data sementara Foreman ditemukan. ' +
+                                    'Data sementara ditemukan. ' +
                                     'Silakan lanjutkan lalu Simpan Final.'
                                 );
                         } else {

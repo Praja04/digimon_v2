@@ -366,6 +366,21 @@ class PackagingInnerOuterController extends Controller
                 $packagingIncoming->jumlah_sampel,
         ]);
 
+        if ($request->has('samples') && is_array($request->samples)) {
+            $normalizedSamples = $request->samples;
+            foreach ($normalizedSamples as &$s) {
+                if (is_array($s)) {
+                    foreach (['berat_gross', 'inside_core', 'lebar', 'thickness', 'bonding_strength', 'sealing_strength'] as $f) {
+                        if (isset($s[$f]) && is_string($s[$f])) {
+                            $s[$f] = str_replace(',', '.', trim($s[$f]));
+                        }
+                    }
+                }
+            }
+            unset($s);
+            $request->merge(['samples' => $normalizedSamples]);
+        }
+
         $rules = [
             'save_mode' => [
                 'required',

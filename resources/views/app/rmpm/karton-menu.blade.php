@@ -289,10 +289,10 @@
                                                                     ['id' => $incoming->id, 'type' => 'karton']
                                                                 ) }}"
                                                                 class="btn btn-success btn-sm"
-                                                                title="Lihat Form Dokumen Hasil Pemeriksaan Karton"
+                                                                title="Export / Form Laporan PM"
                                                             >
                                                                 <i class="mdi mdi-file-document-outline me-1"></i>
-                                                                Lihat Form Dokumen
+                                                                Export
                                                             </a>
 
                                                             <a

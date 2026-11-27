@@ -341,7 +341,7 @@
 
                         {{-- DRAFT FOREMAN --}}
                         @if (
-                            auth()->user()->role === 'Foreman'
+                            in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)
                             && $foremanDraft
                         )
 
@@ -640,7 +640,7 @@
                                 </div>
 
 
-                                @if (auth()->user()->role === 'Foreman')
+                                @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
 
                                     @php
                                         $selectedDisposition =
@@ -736,8 +736,7 @@
 
                                     @php
                                         if (
-                                            auth()->user()->role
-                                            === 'Foreman'
+                                            in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)
                                         ) {
                                             $selectedRemark =
                                                 $foremanDraft?->disposition_remark
@@ -769,8 +768,7 @@
 
                                 @php
                                     if (
-                                        auth()->user()->role
-                                        === 'Foreman'
+                                        in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)
                                     ) {
                                         $adjustmentAir =
                                             $foremanDraft?->adjustment_qty_air
@@ -895,7 +893,7 @@
                                         </button>
 
 
-                                    @elseif (auth()->user()->role === 'Foreman')
+                                    @elseif (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
 
                                         <button
                                             type="button"
@@ -1081,9 +1079,9 @@
 
 
             /*
-             * Foreman wajib pilih disposition.
+             * Foreman & Supervisor wajib pilih disposition.
              */
-            @if (auth()->user()->role === 'Foreman')
+            @if (in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true))
 
                 const disposition =
                     $('#disposition').val();

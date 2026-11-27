@@ -415,10 +415,10 @@
                                                                 ['id' => $incoming->id, 'type' => 'inner']
                                                             ) }}"
                                                             class="btn btn-success btn-sm"
-                                                            title="Lihat Form Dokumen Hasil Pemeriksaan Inner / Outer"
+                                                            title="Export / Form Laporan PM"
                                                         >
                                                             <i class="mdi mdi-file-document-outline me-1"></i>
-                                                            Lihat Form Dokumen
+                                                            Export
                                                         </a>
 
                                                         <button
@@ -438,29 +438,51 @@
 
                                                 @elseif ($isDraft)
 
-                                                    <a
-                                                        href="{{ route(
-                                                            'rmpm.pm.inner-outer.sampling',
-                                                            $incoming
-                                                        ) }}"
-                                                        class="btn btn-primary btn-sm"
-                                                    >
-                                                        <i class="mdi mdi-progress-clock me-1"></i>
-                                                        Lanjutkan
-                                                    </a>
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                        <a
+                                                            href="{{ route(
+                                                                'rmpm.pm.inner-outer.sampling',
+                                                                $incoming
+                                                            ) }}"
+                                                            class="btn btn-primary btn-sm"
+                                                        >
+                                                            <i class="mdi mdi-progress-clock me-1"></i>
+                                                            Lanjutkan
+                                                        </a>
+
+                                                        <a
+                                                            href="{{ route('doc-pm.index', ['id' => $incoming->id, 'type' => 'inner']) }}"
+                                                            class="btn btn-success btn-sm"
+                                                            title="Export / Form Laporan PM"
+                                                        >
+                                                            <i class="mdi mdi-file-document-outline me-1"></i>
+                                                            Export
+                                                        </a>
+                                                    </div>
 
                                                 @else
 
-                                                    <a
-                                                        href="{{ route(
-                                                            'rmpm.pm.inner-outer.sampling',
-                                                            $incoming
-                                                        ) }}"
-                                                        class="btn btn-warning btn-sm"
-                                                    >
-                                                        <i class="mdi mdi-clock-outline me-1"></i>
-                                                        Mulai Sampling
-                                                    </a>
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                        <a
+                                                            href="{{ route(
+                                                                'rmpm.pm.inner-outer.sampling',
+                                                                $incoming
+                                                            ) }}"
+                                                            class="btn btn-warning btn-sm"
+                                                        >
+                                                            <i class="mdi mdi-clock-outline me-1"></i>
+                                                            Mulai Sampling
+                                                        </a>
+
+                                                        <a
+                                                            href="{{ route('doc-pm.index', ['id' => $incoming->id, 'type' => 'inner']) }}"
+                                                            class="btn btn-success btn-sm"
+                                                            title="Export / Form Laporan PM"
+                                                        >
+                                                            <i class="mdi mdi-file-document-outline me-1"></i>
+                                                            Export
+                                                        </a>
+                                                    </div>
 
                                                 @endif
                                             </td>

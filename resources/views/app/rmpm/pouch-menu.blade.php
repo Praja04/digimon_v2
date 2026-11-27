@@ -290,18 +290,6 @@
                                         @if ($sudahSampling)
 
                                             <div class="d-flex flex-wrap gap-2">
-                                                <a
-                                                    href="{{ route(
-                                                        'doc-pm.index',
-                                                        ['id' => $incoming->id, 'type' => 'pouch']
-                                                    ) }}"
-                                                    class="btn btn-success btn-sm"
-                                                    title="Lihat Form Dokumen Hasil Pemeriksaan Pouch"
-                                                >
-                                                    <i class="mdi mdi-file-document-outline me-1"></i>
-                                                    Lihat Form Dokumen
-                                                </a>
-
                                                 <button
                                                     type="button"
                                                     class="btn btn-primary btn-sm btnPouchQr"
@@ -314,37 +302,68 @@
                                                     <i class="mdi mdi-qrcode-scan me-1"></i>
                                                     QR Code
                                                 </button>
+
+                                                <a
+                                                    href="{{ route('doc-pm.index', ['id' => $incoming->id, 'type' => 'pouch']) }}"
+                                                    class="btn btn-success btn-sm"
+                                                    title="Export / Form Laporan PM"
+                                                >
+                                                    <i class="mdi mdi-file-document-outline me-1"></i>
+                                                    Export
+                                                </a>
                                             </div>
 
                                         @elseif ($isDraft)
 
-                                            <a
-                                                href="{{ route(
-                                                    'rmpm.pm.pouch.sampling',
-                                                    $incoming
-                                                ) }}"
-                                                class="btn btn-primary btn-sm"
-                                            >
-                                                <i class="mdi mdi-progress-clock me-1"></i>
-                                                Lanjutkan
-                                            </a>
+                                            <div class="d-inline-flex align-items-center gap-1">
+                                                <a
+                                                    href="{{ route(
+                                                        'rmpm.pm.pouch.sampling',
+                                                        $incoming
+                                                    ) }}"
+                                                    class="btn btn-primary btn-sm"
+                                                >
+                                                    <i class="mdi mdi-progress-clock me-1"></i>
+                                                    Lanjutkan
+                                                </a>
 
-                                            <span class="badge bg-warning text-dark ms-1">
-                                                Draft
-                                            </span>
+                                                <a
+                                                    href="{{ route('doc-pm.index', ['id' => $incoming->id, 'type' => 'pouch']) }}"
+                                                    class="btn btn-success btn-sm"
+                                                    title="Export / Form Laporan PM"
+                                                >
+                                                    <i class="mdi mdi-file-document-outline me-1"></i>
+                                                    Export
+                                                </a>
+
+                                                <span class="badge bg-warning text-dark">
+                                                    Draft
+                                                </span>
+                                            </div>
 
                                         @else
 
-                                            <a
-                                                href="{{ route(
-                                                    'rmpm.pm.pouch.sampling',
-                                                    $incoming
-                                                ) }}"
-                                                class="btn btn-warning btn-sm"
-                                            >
-                                                <i class="mdi mdi-clock-outline me-1"></i>
-                                                Mulai Sampling
-                                            </a>
+                                            <div class="d-inline-flex align-items-center gap-1">
+                                                <a
+                                                    href="{{ route(
+                                                        'rmpm.pm.pouch.sampling',
+                                                        $incoming
+                                                    ) }}"
+                                                    class="btn btn-warning btn-sm"
+                                                >
+                                                    <i class="mdi mdi-clock-outline me-1"></i>
+                                                    Mulai Sampling
+                                                </a>
+
+                                                <a
+                                                    href="{{ route('doc-pm.index', ['id' => $incoming->id, 'type' => 'pouch']) }}"
+                                                    class="btn btn-success btn-sm"
+                                                    title="Export / Form Laporan PM"
+                                                >
+                                                    <i class="mdi mdi-file-document-outline me-1"></i>
+                                                    Export
+                                                </a>
+                                            </div>
 
                                         @endif
                                     </td>

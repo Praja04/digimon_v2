@@ -206,28 +206,29 @@
                     </div>
 
                     <div class="section-title"><i class="mdi mdi-flask-outline"></i> Hasil Pemeriksaan Sampel</div>
+
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle inspection-table">
                             <thead>
                                 <tr>
-                                    <th rowspan="2">No. Sampel</th>
-                                    <th rowspan="2">Panjang (mm)</th>
-                                    <th rowspan="2">Lebar (mm)</th>
-                                    <th rowspan="2">Side Seal 1 (mm)</th>
-                                    <th rowspan="2">Side Seal 2 (mm)</th>
-                                    <th rowspan="2">Bottom Seal (mm)</th>
-                                    <th rowspan="2">Bottom High (mm)</th>
-                                    <th colspan="2">Thickness</th>
-                                    <th rowspan="2">Berat (g)</th>
-                                    <th rowspan="2">Design</th>
-                                    <th rowspan="2">Warna</th>
-                                    <th rowspan="2">Tulisan</th>
-                                    <th rowspan="2">Press Test</th>
-                                    <th rowspan="2">Drop Test</th>
+                                    <th rowspan="2" class="th-col" data-col="all" title="Klik untuk blok seluruh tabel">No. Sampel</th>
+                                    <th rowspan="2" class="th-col" data-col="0" title="Klik untuk blok kolom Panjang">Panjang (mm)</th>
+                                    <th rowspan="2" class="th-col" data-col="1" title="Klik untuk blok kolom Lebar">Lebar (mm)</th>
+                                    <th rowspan="2" class="th-col" data-col="2" title="Klik untuk blok kolom Side Seal 1">Side Seal 1 (mm)</th>
+                                    <th rowspan="2" class="th-col" data-col="3" title="Klik untuk blok kolom Side Seal 2">Side Seal 2 (mm)</th>
+                                    <th rowspan="2" class="th-col" data-col="4" title="Klik untuk blok kolom Bottom Seal">Bottom Seal (mm)</th>
+                                    <th rowspan="2" class="th-col" data-col="5" title="Klik untuk blok kolom Bottom High">Bottom High (mm)</th>
+                                    <th colspan="2" class="th-col" data-col="6-7" title="Klik untuk blok kolom Thickness 1 & 2">Thickness</th>
+                                    <th rowspan="2" class="th-col" data-col="8" title="Klik untuk blok kolom Berat">Berat (g)</th>
+                                    <th rowspan="2" class="th-col" data-col="9" title="Klik untuk blok kolom Design">Design</th>
+                                    <th rowspan="2" class="th-col" data-col="10" title="Klik untuk blok kolom Warna">Warna</th>
+                                    <th rowspan="2" class="th-col" data-col="11" title="Klik untuk blok kolom Tulisan">Tulisan</th>
+                                    <th rowspan="2" class="th-col" data-col="12" title="Klik untuk blok kolom Press Test">Press Test</th>
+                                    <th rowspan="2" class="th-col" data-col="13" title="Klik untuk blok kolom Drop Test">Drop Test</th>
                                 </tr>
                                 <tr>
-                                    <th>1</th>
-                                    <th>2</th>
+                                    <th class="th-col" data-col="6" title="Klik untuk blok kolom Thickness 1">1</th>
+                                    <th class="th-col" data-col="7" title="Klik untuk blok kolom Thickness 2">2</th>
                                 </tr>
                             </thead>
                             <tbody id="sampleRows"></tbody>
@@ -783,6 +784,45 @@
 
 @section('styles')
 <style>
+/* Excel-style Multi-cell Selection & Block Highlighting */
+.inspection-table td.cell-selected {
+    background-color: rgba(13, 110, 253, 0.16) !important;
+    user-select: none;
+}
+.inspection-table td.cell-selected input,
+.inspection-table td.cell-selected .option-radio-group {
+    background-color: rgba(13, 110, 253, 0.09) !important;
+    border-color: #86b7fe !important;
+}
+.inspection-table td.cell-selected-top {
+    border-top: 2px solid #0d6efd !important;
+}
+.inspection-table td.cell-selected-bottom {
+    border-bottom: 2px solid #0d6efd !important;
+}
+.inspection-table td.cell-selected-left {
+    border-left: 2px solid #0d6efd !important;
+}
+.inspection-table td.cell-selected-right {
+    border-right: 2px solid #0d6efd !important;
+}
+.inspection-table thead th {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+.inspection-table thead th:hover {
+    background-color: #e2e8f0 !important;
+    color: #1e293b;
+}
+.inspection-table tbody td.sample-number {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+.inspection-table tbody td.sample-number:hover {
+    background-color: #e2e8f0 !important;
+}
 .sampling-card{overflow:hidden;border-radius:18px}.sampling-header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:4px solid #ef4444;background:linear-gradient(135deg,#ecfeff,#f8fafc)}.sampling-label{display:block;margin-bottom:5px;color:#0f766e;font-size:12px;font-weight:700;letter-spacing:1px}.sampling-header-icon{width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:#fff;color:#14b8a6;font-size:42px;box-shadow:0 8px 20px rgba(15,23,42,.08)}.section-title{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:700}.inspection-table thead th{min-width:135px;background:#f1f5f9;text-align:center;vertical-align:middle;white-space:nowrap}.inspection-table thead th[rowspan]{vertical-align:middle}.inspection-table tbody td{vertical-align:middle}.inspection-table input,.inspection-table select{min-width:110px}.sample-number{min-width:80px!important;text-align:center;font-weight:700}
 
 .inspection-note{
@@ -956,6 +996,18 @@
     background: #111827;
     object-fit: cover;
 }
+
+@keyframes pasteCellPulse {
+    0% { background-color: #d1e7dd; border-color: #198754; box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25); }
+    50% { background-color: #badbcc; }
+    100% { background-color: inherit; border-color: #dee2e6; box-shadow: none; }
+}
+.paste-highlight {
+    animation: pasteCellPulse 1.2s ease-out !important;
+}
+.inspection-table td:focus-within {
+    background-color: #f0f7ff;
+}
 </style>
 @endsection
 
@@ -1079,14 +1131,8 @@ document.addEventListener('DOMContentLoaded', function () {
             rowsContainer.insertAdjacentHTML(
                 'beforeend',
                 `<tr>
-                    <td>
-                        <input
-                            type="text"
-                            class="form-control form-control-sm sample-number"
-                            value="${index + 1}"
-                            readonly
-                            tabindex="-1"
-                        >
+                    <td class="sample-number text-center fw-bold text-muted" title="Klik untuk blok baris ke-${index + 1}">
+                        ${index + 1}
                     </td>
                     <td>${inputHtml(index, 'panjang', sample.panjang)}</td>
                     <td>${inputHtml(index, 'lebar', sample.lebar)}</td>
@@ -1821,7 +1867,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             sampleObj[field] = input.value;
                         }
                     } else {
-                        sampleObj[field] = input.value;
+                        let val = input.value;
+                        if (val && typeof val === 'string' && val.includes(',')) {
+                            val = val.replace(',', '.');
+                        }
+                        sampleObj[field] = val;
                     }
                 }
             });
@@ -1829,6 +1879,589 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         return collectedSamples;
     }
+
+    // ─────────────────────────────────────────────
+    // SAP / EXCEL COPY-PASTE & CELL SELECTION (POUCH)
+    // ─────────────────────────────────────────────
+    const pouchFieldOrder = [
+        'panjang',
+        'lebar',
+        'side_seal_1',
+        'side_seal_2',
+        'bottom_seal',
+        'bottom_high',
+        'thickness_1',
+        'thickness_2',
+        'berat',
+        'design',
+        'warna',
+        'tulisan',
+        'pretest',
+        'drop_test'
+    ];
+
+    let tableSelection = null;
+    let lastMultiSelection = null;
+    let isMouseDragging = false;
+    let selectionAnchor = null;
+
+    function getPouchCellCoords(el) {
+        if (!el) return null;
+        const target = el.nodeType === 3 ? el.parentElement : el;
+        const tr = target.closest('tr');
+        if (!tr || tr.parentElement !== rowsContainer) return null;
+        const row = Array.from(rowsContainer.children).indexOf(tr);
+        if (row === -1) return null;
+
+        const td = target.closest('td');
+        if (!td) return null;
+        const col = td.cellIndex - 1; // 0 is td.sample-number, 1 is col 0 (panjang), etc.
+        return { row, col, td };
+    }
+
+    function getPouchCellTd(row, col) {
+        const trList = rowsContainer.children;
+        if (row < 0 || row >= trList.length) return null;
+        const tr = trList[row];
+        if (!tr) return null;
+        return tr.children[col + 1] || null;
+    }
+
+    function setPouchSelection(startRow, startCol, endRow, endCol) {
+        const totalRows = rowsContainer.children.length;
+        const totalCols = pouchFieldOrder.length;
+        if (totalRows === 0 || totalCols === 0) return;
+
+        const sRow = Math.max(0, Math.min(startRow, totalRows - 1));
+        const eRow = Math.max(0, Math.min(endRow, totalRows - 1));
+        const sCol = Math.max(0, Math.min(startCol, totalCols - 1));
+        const eCol = Math.max(0, Math.min(endCol, totalCols - 1));
+
+        tableSelection = {
+            startRow: sRow,
+            startCol: sCol,
+            endRow: eRow,
+            endCol: eCol,
+            minRow: Math.min(sRow, eRow),
+            maxRow: Math.max(sRow, eRow),
+            minCol: Math.min(sCol, eCol),
+            maxCol: Math.max(sCol, eCol)
+        };
+
+        if (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol) {
+            lastMultiSelection = { ...tableSelection };
+        }
+        renderPouchSelection();
+    }
+
+    function clearPouchSelection() {
+        tableSelection = null;
+        lastMultiSelection = null;
+        const selected = rowsContainer.querySelectorAll('.cell-selected, .cell-selected-top, .cell-selected-bottom, .cell-selected-left, .cell-selected-right');
+        selected.forEach(td => td.classList.remove('cell-selected', 'cell-selected-top', 'cell-selected-bottom', 'cell-selected-left', 'cell-selected-right'));
+    }
+
+    function renderPouchSelection() {
+        const selected = rowsContainer.querySelectorAll('.cell-selected, .cell-selected-top, .cell-selected-bottom, .cell-selected-left, .cell-selected-right');
+        selected.forEach(td => td.classList.remove('cell-selected', 'cell-selected-top', 'cell-selected-bottom', 'cell-selected-left', 'cell-selected-right'));
+
+        if (!tableSelection) return;
+        const { minRow, maxRow, minCol, maxCol } = tableSelection;
+        const isMulti = (minRow !== maxRow || minCol !== maxCol);
+        if (!isMulti) return;
+
+        for (let r = minRow; r <= maxRow; r++) {
+            for (let c = minCol; c <= maxCol; c++) {
+                const td = getPouchCellTd(r, c);
+                if (td) {
+                    td.classList.add('cell-selected');
+                    if (r === minRow) td.classList.add('cell-selected-top');
+                    if (r === maxRow) td.classList.add('cell-selected-bottom');
+                    if (c === minCol) td.classList.add('cell-selected-left');
+                    if (c === maxCol) td.classList.add('cell-selected-right');
+                }
+            }
+        }
+    }
+
+    function clearSelectedCellsContent() {
+        if (!tableSelection) return;
+        const { minRow, maxRow, minCol, maxCol } = tableSelection;
+        const trList = rowsContainer.children;
+
+        for (let r = minRow; r <= maxRow; r++) {
+            const tr = trList[r];
+            if (!tr) continue;
+            for (let c = minCol; c <= maxCol; c++) {
+                const fieldName = pouchFieldOrder[c];
+                if (!fieldName) continue;
+
+                if (['design', 'warna', 'tulisan', 'pretest', 'drop_test'].includes(fieldName)) {
+                    const radios = tr.querySelectorAll(`input[name="samples[${r}][${fieldName}]"]`);
+                    radios.forEach(radio => {
+                        radio.checked = false;
+                    });
+                    tr.querySelector(`input[name="samples[${r}][${fieldName}]"]`)?.closest('.option-radio-group')?.querySelectorAll('.option-radio').forEach(lbl => lbl.classList.remove('is-selected'));
+                    if (samples[r]) samples[r][fieldName] = '';
+                } else {
+                    const input = tr.querySelector(`input[name="samples[${r}][${fieldName}]"]`);
+                    if (input) {
+                        input.value = '';
+                        if (samples[r]) samples[r][fieldName] = '';
+                    }
+                }
+            }
+        }
+        if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
+    }
+
+    function highlightPouchInput(el) {
+        if (!el) return;
+        el.classList.add('paste-highlight');
+        setTimeout(() => {
+            el.classList.remove('paste-highlight');
+        }, 1200);
+    }
+
+    function copyPouchToSap() {
+        const trList = rowsContainer.querySelectorAll('tr');
+        if (!trList.length) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'warning',
+                    title: 'Tidak ada baris sampel untuk disalin.',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+            return;
+        }
+
+        const lines = [];
+        trList.forEach(tr => {
+            const rowVals = [];
+            pouchFieldOrder.forEach(field => {
+                if (['design', 'warna', 'tulisan', 'pretest', 'drop_test'].includes(field)) {
+                    const checkedRadio = tr.querySelector(`input[name$="[${field}]"]:checked`);
+                    rowVals.push(checkedRadio ? checkedRadio.value : '');
+                } else {
+                    const input = tr.querySelector(`input[name$="[${field}]"]`);
+                    rowVals.push(input ? input.value.trim() : '');
+                }
+            });
+            lines.push(rowVals.join('\t'));
+        });
+
+        const copyString = lines.join('\r\n');
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(copyString).then(() => {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Berhasil menyalin ${lines.length} baris data ke clipboard!`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            }).catch(() => {
+                fallbackCopyPouch(copyString, lines.length);
+            });
+        } else {
+            fallbackCopyPouch(copyString, lines.length);
+        }
+    }
+
+    function fallbackCopyPouch(text, count) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Berhasil menyalin ${count} baris data ke clipboard!`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        } catch (e) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Gagal menyalin data.',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        }
+        document.body.removeChild(ta);
+    }
+
+    function applyPastedPouchData(rawText, explicitStartRow = null, explicitStartCol = null) {
+        if (!rawText || !rawText.trim()) return;
+
+        let lines = rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (!lines.length) return;
+
+        let rawRows = lines.map(line => {
+            if (line.includes('\t')) {
+                return line.split('\t').map(c => c.replace(/^["']|["']$/g, '').trim());
+            }
+            if (line.includes(';')) {
+                return line.split(';').map(c => c.replace(/^["']|["']$/g, '').trim());
+            }
+            if (/\s{2,}/.test(line.trim())) {
+                return line.trim().split(/\s{2,}/).map(c => c.replace(/^["']|["']$/g, '').trim());
+            }
+            return [line.trim()];
+        });
+
+        // Strip edge empty cols (Excel / SAP copy artifact)
+        if (rawRows.every(r => r.length > 1 && r[0] === '')) rawRows = rawRows.map(r => r.slice(1));
+        if (rawRows.every(r => r.length > 1 && r[r.length - 1] === '')) rawRows = rawRows.map(r => r.slice(0, -1));
+
+        // Determine starting coords
+        let startRowIdx = 0;
+        let startColIdx = 0;
+
+        if (explicitStartRow !== null) {
+            startRowIdx = Math.max(0, explicitStartRow);
+            startColIdx = explicitStartCol !== null ? Math.max(0, explicitStartCol) : 0;
+        } else if (tableSelection) {
+            startRowIdx = tableSelection.minRow;
+            startColIdx = tableSelection.minCol;
+        } else {
+            const activeCoords = getPouchCellCoords(document.activeElement);
+            if (activeCoords && activeCoords.col >= 0) {
+                startRowIdx = activeCoords.row;
+                startColIdx = activeCoords.col;
+            }
+        }
+
+        // Detect header
+        const headerKeywords = ['panjang', 'lebar', 'side', 'seal', 'bottom', 'thick', 'berat', 'design', 'warna', 'tulisan', 'no', 'sampel'];
+        const firstRowText = rawRows[0].join(' ').toLowerCase();
+        if (rawRows.length > 1 && headerKeywords.some(kw => firstRowText.includes(kw))) {
+            rawRows = rawRows.slice(1);
+        }
+
+        // Skip sample number column if user is pasting full table starting from col 0
+        if (startColIdx === 0 && rawRows.length > 0) {
+            const firstCell = rawRows[0][0];
+            if (/^\d+$/.test(firstCell) && (rawRows.length === 1 || /^\d+$/.test(rawRows[1][0]))) {
+                if (rawRows[0].length > pouchFieldOrder.length || (parseInt(rawRows[0][0]) === 1 && parseInt(rawRows[1]?.[0] || 2) === 2)) {
+                    rawRows = rawRows.map(r => r.slice(1));
+                }
+            }
+        }
+
+        // Expand table rows if pasted rows exceed current jumlah_sampel
+        const neededTotal = startRowIdx + rawRows.length;
+        const currentTotal = parseInt(jumlahInput.value || 1);
+        if (neededTotal > currentTotal && neededTotal <= 275) {
+            jumlahInput.value = neededTotal;
+            renderRows(neededTotal);
+        }
+
+        const trList = rowsContainer.querySelectorAll('tr');
+        let appliedCount = 0;
+        let maxColsPasted = 1;
+
+        // Check if user has an active multi-cell block
+        const hasMultiCellSelection = tableSelection && (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol);
+
+        if (hasMultiCellSelection && rawRows.length === 1 && rawRows[0].length === 1) {
+            // SINGLE VALUE REPLICATED TO ALL SELECTED CELLS
+            const singleVal = rawRows[0][0];
+            const { minRow, maxRow, minCol, maxCol } = tableSelection;
+
+            for (let r = minRow; r <= maxRow; r++) {
+                if (r >= trList.length) break;
+                const tr = trList[r];
+                for (let c = minCol; c <= maxCol; c++) {
+                    if (c >= pouchFieldOrder.length) break;
+                    const fieldName = pouchFieldOrder[c];
+                    applyValueToPouchCell(tr, r, c, fieldName, singleVal);
+                    appliedCount++;
+                }
+            }
+        } else {
+            // NORMAL RECTANGULAR PASTE (either into selection or starting from target cell/column)
+            rawRows.forEach((rowVals, rOffset) => {
+                const targetRowIdx = startRowIdx + rOffset;
+                if (targetRowIdx >= trList.length) return;
+                const tr = trList[targetRowIdx];
+
+                maxColsPasted = Math.max(maxColsPasted, rowVals.length);
+
+                rowVals.forEach((cellVal, cOffset) => {
+                    const targetColIdx = startColIdx + cOffset;
+                    if (targetColIdx >= pouchFieldOrder.length) return;
+                    const fieldName = pouchFieldOrder[targetColIdx];
+
+                    applyValueToPouchCell(tr, targetRowIdx, targetColIdx, fieldName, cellVal);
+                    appliedCount++;
+                });
+            });
+
+            // Set selection on the newly pasted block
+            const endRow = Math.min(trList.length - 1, startRowIdx + rawRows.length - 1);
+            const endCol = Math.min(pouchFieldOrder.length - 1, startColIdx + maxColsPasted - 1);
+            setPouchSelection(startRowIdx, startColIdx, endRow, endCol);
+        }
+
+        if (appliedCount > 0) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Berhasil menempelkan ${appliedCount} nilai dari Excel / SAP`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+            if (typeof scheduleAutoSave === 'function') {
+                scheduleAutoSave();
+            }
+        }
+    }
+
+    function applyValueToPouchCell(tr, rowIdx, colIdx, fieldName, cellVal) {
+        if (!tr || !fieldName) return;
+        let val = (cellVal || '').toString().trim();
+
+        if (!samples[rowIdx]) samples[rowIdx] = {};
+
+        if (['design', 'warna', 'tulisan', 'pretest', 'drop_test'].includes(fieldName)) {
+            const upper = val.toUpperCase();
+            let targetVal = null;
+            if (['OK', '1', 'SESUAI', 'BAIK', 'S', 'PASS', 'TRUE', 'YA'].includes(upper)) targetVal = 'OK';
+            else if (['NOK', 'NOT OK', '0', 'TIDAK', 'REJECT', 'R', 'FAIL', 'FALSE', 'NG'].includes(upper)) targetVal = 'NOK';
+
+            if (targetVal) {
+                const radio = tr.querySelector(`input[name="samples[${rowIdx}][${fieldName}]"][value="${targetVal}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    radio.closest('.option-radio-group')?.querySelectorAll('.option-radio').forEach(lbl => lbl.classList.remove('is-selected'));
+                    radio.closest('.option-radio')?.classList.add('is-selected');
+                    highlightPouchInput(radio.parentElement);
+                    samples[rowIdx][fieldName] = targetVal;
+                }
+            }
+        } else {
+            const input = tr.querySelector(`input[name="samples[${rowIdx}][${fieldName}]"]`);
+            if (input) {
+                val = val.replace(',', '.').replace(/[^0-9.-]/g, '');
+                input.value = val;
+                highlightPouchInput(input);
+                samples[rowIdx][fieldName] = val;
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // MOUSE DRAG & HEADER COLUMN SELECTION EVENTS
+    // ─────────────────────────────────────────────
+    const inspectionTable = document.querySelector('.inspection-table');
+
+    if (inspectionTable) {
+        // 1. Column header click or drag to block columns
+        inspectionTable.querySelectorAll('thead th.th-col').forEach(th => {
+            th.addEventListener('mousedown', function (e) {
+                if (e.which !== 1) return;
+                const colAttr = this.dataset.col;
+                const totalRows = rowsContainer.children.length;
+                const totalCols = pouchFieldOrder.length;
+
+                if (colAttr === 'all') {
+                    // Blok seluruh tabel
+                    selectionAnchor = { type: 'all', col: 0 };
+                    setPouchSelection(0, 0, totalRows - 1, totalCols - 1);
+                } else if (colAttr === '6-7') {
+                    // Thickness 1 & 2
+                    selectionAnchor = { type: 'col', col: 6 };
+                    isMouseDragging = true;
+                    setPouchSelection(0, 6, totalRows - 1, 7);
+                } else {
+                    const col = parseInt(colAttr);
+                    if (!isNaN(col)) {
+                        selectionAnchor = { type: 'col', col };
+                        isMouseDragging = true;
+                        setPouchSelection(0, col, totalRows - 1, col);
+                    }
+                }
+            });
+
+            th.addEventListener('mouseenter', function () {
+                if (!isMouseDragging || !selectionAnchor || selectionAnchor.type !== 'col') return;
+                const colAttr = this.dataset.col;
+                const totalRows = rowsContainer.children.length;
+                const col = parseInt(colAttr);
+                if (!isNaN(col)) {
+                    setPouchSelection(0, selectionAnchor.col, totalRows - 1, col);
+                }
+            });
+        });
+
+        // 2. Sample row number click to block row
+        rowsContainer.addEventListener('mousedown', function (e) {
+            if (e.which !== 1) return;
+            const td = e.target.closest('td');
+            if (!td) return;
+
+            const totalCols = pouchFieldOrder.length;
+
+            if (td.classList.contains('sample-number')) {
+                const tr = td.closest('tr');
+                const row = Array.from(rowsContainer.children).indexOf(tr);
+                if (row !== -1) {
+                    selectionAnchor = { type: 'row', row };
+                    isMouseDragging = true;
+                    setPouchSelection(row, 0, row, totalCols - 1);
+                }
+                return;
+            }
+
+            // Data cell click / drag
+            const coords = getPouchCellCoords(td);
+            if (!coords || coords.col < 0) return;
+
+            // If clicking radio button label or input inside selection, don't clear selection prematurely
+            if (e.target.closest('.option-radio, input')) {
+                if (tableSelection && coords.row >= tableSelection.minRow && coords.row <= tableSelection.maxRow && coords.col >= tableSelection.minCol && coords.col <= tableSelection.maxCol) {
+                    return;
+                }
+            }
+
+            if (e.shiftKey && selectionAnchor && selectionAnchor.type === 'cell') {
+                e.preventDefault();
+                setPouchSelection(selectionAnchor.row, selectionAnchor.col, coords.row, coords.col);
+            } else {
+                selectionAnchor = { type: 'cell', ...coords };
+                isMouseDragging = true;
+                setPouchSelection(coords.row, coords.col, coords.row, coords.col);
+            }
+        });
+
+        rowsContainer.addEventListener('mouseenter', function (e) {
+            if (!isMouseDragging || !selectionAnchor) return;
+            const td = e.target.closest('td');
+            if (!td) return;
+
+            const coords = getPouchCellCoords(td);
+            if (!coords || coords.col < 0) return;
+
+            if (selectionAnchor.type === 'col') {
+                const totalRows = rowsContainer.children.length;
+                setPouchSelection(0, selectionAnchor.col, totalRows - 1, coords.col);
+            } else if (selectionAnchor.type === 'row') {
+                const totalCols = pouchFieldOrder.length;
+                setPouchSelection(selectionAnchor.row, 0, coords.row, totalCols - 1);
+            } else if (selectionAnchor.type === 'cell') {
+                setPouchSelection(selectionAnchor.row, selectionAnchor.col, coords.row, coords.col);
+            }
+        }, true);
+    }
+
+    document.addEventListener('mouseup', function () {
+        isMouseDragging = false;
+    });
+
+    // Deselect if clicking outside table
+    document.addEventListener('mousedown', function (e) {
+        if (e.target.closest('.inspection-table, .swal2-container')) return;
+        clearPouchSelection();
+    });
+
+    // Keyboard navigation (Ctrl+A, Delete, Backspace, Escape, Shift+Arrows)
+    document.addEventListener('keydown', function (e) {
+        const insideTable = e.target.closest && e.target.closest('.inspection-table');
+        const hasSelection = tableSelection !== null;
+        if (!insideTable && !hasSelection) return;
+
+        const totalRows = rowsContainer.children.length;
+        const totalCols = pouchFieldOrder.length;
+
+        // CTRL + A: Select All Table Cells
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && insideTable) {
+            e.preventDefault();
+            selectionAnchor = { type: 'cell', row: 0, col: 0 };
+            setPouchSelection(0, 0, totalRows - 1, totalCols - 1);
+            return;
+        }
+
+        // DELETE / BACKSPACE: Clear Selected Block
+        if ((e.key === 'Delete' || e.key === 'Backspace') && tableSelection && (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol)) {
+            // Only if not editing text in an input
+            if (e.target.tagName !== 'INPUT' || (e.target.selectionStart === 0 && e.target.selectionEnd === e.target.value.length)) {
+                e.preventDefault();
+                clearSelectedCellsContent();
+                return;
+            }
+        }
+
+        // ESCAPE: Clear selection
+        if (e.key === 'Escape' && tableSelection) {
+            clearPouchSelection();
+            return;
+        }
+
+        // SHIFT + ARROWS: Expand/Contract selection
+        if (e.shiftKey && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+            const coords = getPouchCellCoords(e.target) || (tableSelection ? { row: tableSelection.startRow, col: tableSelection.startCol } : { row: 0, col: 0 });
+            if (!selectionAnchor || selectionAnchor.type !== 'cell') {
+                selectionAnchor = { type: 'cell', row: coords.row, col: coords.col };
+            }
+            let endRow = tableSelection ? tableSelection.endRow : coords.row;
+            let endCol = tableSelection ? tableSelection.endCol : coords.col;
+
+            if (e.key === 'ArrowDown') endRow = Math.min(totalRows - 1, endRow + 1);
+            if (e.key === 'ArrowUp') endRow = Math.max(0, endRow - 1);
+            if (e.key === 'ArrowRight') endCol = Math.min(totalCols - 1, endCol + 1);
+            if (e.key === 'ArrowLeft') endCol = Math.max(0, endCol - 1);
+
+            setPouchSelection(selectionAnchor.row, selectionAnchor.col, endRow, endCol);
+            return;
+        }
+    });
+
+    // ─────────────────────────────────────────────
+    // GLOBAL CAPTURING PASTE LISTENER (Ctrl+V)
+    // ─────────────────────────────────────────────
+    window.addEventListener('paste', function (e) {
+        if (isSamplingLocked) return;
+
+        if (e.target && e.target.closest && e.target.closest('.modal')) return;
+
+        const insideTable = e.target && e.target.closest && e.target.closest('.inspection-table');
+        const hasSelection = (tableSelection !== null);
+
+        if (!insideTable && !hasSelection) return;
+
+        const clipboardData = (e.clipboardData || window.clipboardData);
+        if (!clipboardData) return;
+        const text = clipboardData.getData('text/plain') || clipboardData.getData('text') || '';
+        if (!text || !text.trim()) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        applyPastedPouchData(text);
+    }, true);
 
     // ─────────────────────────────────────────────
     // AUTO-SAVE DRAFT IN BACKGROUND
