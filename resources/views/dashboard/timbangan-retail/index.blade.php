@@ -1269,63 +1269,27 @@
             return;
         }
 
-        if (diffDays === 1) {
-            const params = new URLSearchParams({
-                date: startDate,
-                source: 'mesin'
-            });
-            if (varian) params.set('variant', varian);
-            if (mesin) params.set('mesin', mesin);
+        const params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate,
+            source: 'mesin'
+        });
+        if (varian) params.set('variant', varian);
+        if (mesin) params.set('mesin', mesin);
 
-            const a = document.createElement('a');
-            a.href = `/api/timbangan-retail/export?${params}`;
-            a.download = '';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+        const a = document.createElement('a');
+        a.href = `/api/timbangan-retail/export?${params}`;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
 
-            setTimeout(() => {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
-                }
-            }, 2000);
-        } else {
-            let idx = 0;
-
-            function downloadNext() {
-                if (idx >= diffDays) {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
-                    }
-                    return;
-                }
-                const d = new Date(start);
-                d.setDate(start.getDate() + idx);
-                const dateStr = d.toISOString().split('T')[0];
-                const params = new URLSearchParams({
-                    date: dateStr,
-                    source: 'mesin'
-                });
-                if (varian) params.set('variant', varian);
-                if (mesin) params.set('mesin', mesin);
-
-                const a = document.createElement('a');
-                a.href = `/api/timbangan-retail/export?${params}`;
-                a.download = '';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-
-                if (btn) {
-                    btn.innerHTML = `<i class="ri-loader-4-line me-1"></i>Hari ${idx+1}/${diffDays}`;
-                }
-                idx++;
-                setTimeout(downloadNext, 1200);
+        setTimeout(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ri-file-excel-2-line me-1"></i>Export';
             }
-            downloadNext();
-        }
+        }, 2000);
     }
 
     /* ══════════════════════════════════════════════════════════════════

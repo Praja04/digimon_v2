@@ -36,7 +36,245 @@ class TimbanganRetailMesinController extends Controller
         'Pouch BB 430gr'                => ['min' =>  434.50, 'std' =>  439.50, 'max' =>  444.50, 'tu1' =>  426.60, 'tu2' =>  413.70, 'code' => 'P430G'],
     ];
 
+    // ── ALIASES DARI SCALE LOGGER / EXCEL EKSTERNAL ─────────────────────────
+    private const VARIANT_ALIASES = [
+        // Pouch 77g
+        'yb p77g' => 'Pouch YB 77gr',
+        'p77g yb' => 'Pouch YB 77gr',
+        'p77g-yb' => 'Pouch YB 77gr',
+        'p77gyb'  => 'Pouch YB 77gr',
+        'pouch yb 77g' => 'Pouch YB 77gr',
+        'pouch yb 77gr' => 'Pouch YB 77gr',
+        'pouch yb 77' => 'Pouch YB 77gr',
+
+        'bb p77g' => 'Pouch BB 77gr',
+        'p77g bb' => 'Pouch BB 77gr',
+        'p77g-bb' => 'Pouch BB 77gr',
+        'p77gbb'  => 'Pouch BB 77gr',
+        'pouch bb 77g' => 'Pouch BB 77gr',
+        'pouch bb 77gr' => 'Pouch BB 77gr',
+        'pouch bb 77' => 'Pouch BB 77gr',
+
+        // Pouch 250g
+        'yb p250g' => 'Pouch YB 250gr',
+        'p250g yb' => 'Pouch YB 250gr',
+        'p250g'    => 'Pouch YB 250gr',
+        'pouch yb 250g' => 'Pouch YB 250gr',
+        'pouch yb 250gr' => 'Pouch YB 250gr',
+        'pouch 250g' => 'Pouch YB 250gr',
+        'pouch 250gr' => 'Pouch YB 250gr',
+
+        // Pouch 270g
+        'bb p270g' => 'Pouch BB 270gr',
+        'p270g bb' => 'Pouch BB 270gr',
+        'p270g'    => 'Pouch BB 270gr',
+        'pouch bb 270g' => 'Pouch BB 270gr',
+        'pouch bb 270gr' => 'Pouch BB 270gr',
+        'pouch 270g' => 'Pouch BB 270gr',
+        'pouch 270gr' => 'Pouch BB 270gr',
+
+        // Pouch 430g
+        'bb p430g' => 'Pouch BB 430gr',
+        'p430g bb' => 'Pouch BB 430gr',
+        'p430g'    => 'Pouch BB 430gr',
+        'pouch bb 430g' => 'Pouch BB 430gr',
+        'pouch bb 430gr' => 'Pouch BB 430gr',
+        'pouch 430g' => 'Pouch BB 430gr',
+        'pouch 430gr' => 'Pouch BB 430gr',
+
+        // Pouch 550g
+        'yb p550g' => 'Pouch YB 550gr',
+        'p550g yb' => 'Pouch YB 550gr',
+        'p550g'    => 'Pouch YB 550gr',
+        'pouch yb 550g' => 'Pouch YB 550gr',
+        'pouch yb 550gr' => 'Pouch YB 550gr',
+        'pouch 550g' => 'Pouch YB 550gr',
+        'pouch 550gr' => 'Pouch YB 550gr',
+
+        // Pouch 700g
+        'yb p700g' => 'Pouch YB 700gr',
+        'p700g yb' => 'Pouch YB 700gr',
+        'p700g'    => 'Pouch YB 700gr',
+        'pouch yb 700g' => 'Pouch YB 700gr',
+        'pouch yb 700gr' => 'Pouch YB 700gr',
+        'pouch 700g' => 'Pouch YB 700gr',
+        'pouch 700gr' => 'Pouch YB 700gr',
+
+        // Pouch 725g
+        'bb p725g' => 'Pouch BB 725gr',
+        'p725g bb' => 'Pouch BB 725gr',
+        'p725g'    => 'Pouch BB 725gr',
+        'pouch bb 725g' => 'Pouch BB 725gr',
+        'pouch bb 725gr' => 'Pouch BB 725gr',
+        'pouch 725g' => 'Pouch BB 725gr',
+        'pouch 725gr' => 'Pouch BB 725gr',
+
+        // Pouch 1000g / 1kg
+        'yb p1000g' => 'Pouch YB 1000gr',
+        'p1000g yb' => 'Pouch YB 1000gr',
+        'p1000g'    => 'Pouch YB 1000gr',
+        'pouch yb 1000g' => 'Pouch YB 1000gr',
+        'pouch yb 1000gr' => 'Pouch YB 1000gr',
+        'pouch 1000g' => 'Pouch YB 1000gr',
+        'pouch 1000gr' => 'Pouch YB 1000gr',
+        'yb p1kg'   => 'Pouch YB 1000gr',
+        'p1kg yb'   => 'Pouch YB 1000gr',
+        'p1kg'      => 'Pouch YB 1000gr',
+        'pouch 1kg' => 'Pouch YB 1000gr',
+
+        // Sachet 20g
+        'yb s20g pcs'     => 'Sachet YB 20gr PCS',
+        'yb s20g'         => 'Sachet YB 20gr PCS',
+        's20g yb pcs'     => 'Sachet YB 20gr PCS',
+        's20g yb'         => 'Sachet YB 20gr PCS',
+        's20g p'          => 'Sachet YB 20gr PCS',
+        'sachet yb 20g pcs' => 'Sachet YB 20gr PCS',
+        'sachet yb 20gr pcs' => 'Sachet YB 20gr PCS',
+        'sachet yb 20g'   => 'Sachet YB 20gr PCS',
+        'sachet yb 20gr'  => 'Sachet YB 20gr PCS',
+
+        'yb s20g renceng' => 'Sachet YB 20gr RENCENG',
+        's20g yb renceng' => 'Sachet YB 20gr RENCENG',
+        's20g r'          => 'Sachet YB 20gr RENCENG',
+        'sachet yb 20g renceng' => 'Sachet YB 20gr RENCENG',
+        'sachet yb 20gr renceng' => 'Sachet YB 20gr RENCENG',
+
+        'yb s20g renceng 6 1'  => 'Sachet YB 20gr RENCENG (6+1)',
+        'yb s20g 6 1'          => 'Sachet YB 20gr RENCENG (6+1)',
+        's20g r 6 1'           => 'Sachet YB 20gr RENCENG (6+1)',
+        's20g r 6+1'           => 'Sachet YB 20gr RENCENG (6+1)',
+        'sachet yb 20g 6 1'    => 'Sachet YB 20gr RENCENG (6+1)',
+        'sachet yb 20gr renceng 6+1' => 'Sachet YB 20gr RENCENG (6+1)',
+
+        'yb s20g renceng 12 1' => 'Sachet YB 20gr RENCENG (12+1)',
+        'yb s20g 12 1'         => 'Sachet YB 20gr RENCENG (12+1)',
+        's20g r 12 1'          => 'Sachet YB 20gr RENCENG (12+1)',
+        's20g r 12+1'          => 'Sachet YB 20gr RENCENG (12+1)',
+        'sachet yb 20g 12 1'   => 'Sachet YB 20gr RENCENG (12+1)',
+        'sachet yb 20gr renceng 12+1' => 'Sachet YB 20gr RENCENG (12+1)',
+
+        // Sachet 40g
+        'bb s40g pcs'     => 'Sachet BB 40gr PCS',
+        'bb s40g'         => 'Sachet BB 40gr PCS',
+        's40g bb pcs'     => 'Sachet BB 40gr PCS',
+        's40g bb'         => 'Sachet BB 40gr PCS',
+        's40g p'          => 'Sachet BB 40gr PCS',
+        'sachet bb 40g pcs' => 'Sachet BB 40gr PCS',
+        'sachet bb 40gr pcs' => 'Sachet BB 40gr PCS',
+        'sachet bb 40g'   => 'Sachet BB 40gr PCS',
+        'sachet bb 40gr'  => 'Sachet BB 40gr PCS',
+
+        'bb s40g renceng' => 'Sachet BB 40gr RENCENG',
+        's40g bb renceng' => 'Sachet BB 40gr RENCENG',
+        's40g r'          => 'Sachet BB 40gr RENCENG',
+        'sachet bb 40g renceng' => 'Sachet BB 40gr RENCENG',
+        'sachet bb 40gr renceng' => 'Sachet BB 40gr RENCENG',
+
+        'bb s40g renceng 6 1' => 'Sachet BB 40gr RENCENG (6+1)',
+        'bb s40g 6 1'         => 'Sachet BB 40gr RENCENG (6+1)',
+        's40g r 6 1'          => 'Sachet BB 40gr RENCENG (6+1)',
+        's40g r 6+1'          => 'Sachet BB 40gr RENCENG (6+1)',
+        'sachet bb 40g 6 1'   => 'Sachet BB 40gr RENCENG (6+1)',
+        'sachet bb 40gr renceng 6+1' => 'Sachet BB 40gr RENCENG (6+1)',
+    ];
+
     // ── HELPERS ───────────────────────────────────────────────────────────────
+
+    /**
+     * Normalisasi nama variant dari input logger/Excel/API ke nama resmi di VARIANT_STANDARDS.
+     */
+    public function normalizeVariantName(?string $variant): ?string
+    {
+        if (empty($variant)) {
+            return null;
+        }
+
+        $raw = trim($variant);
+        $clean = strtolower($raw);
+
+        // 1. Direct match dengan key resmi atau kode standar
+        foreach (self::VARIANT_STANDARDS as $key => $std) {
+            if (strtolower(trim($key)) === $clean || strtolower(trim($std['code'] ?? '')) === $clean) {
+                return $key;
+            }
+        }
+
+        // 2. Normalisasi string: bersihkan kata 'bdkt', tanda baca, dan spasi berlebih
+        $stripped = preg_replace('/\bbdkt\b/i', '', $clean);
+        $stripped = preg_replace('/[_\-\/\(\)]+/', ' ', $stripped);
+        $stripped = trim(preg_replace('/\s+/', ' ', $stripped));
+
+        // Re-check direct match setelah stripping
+        foreach (self::VARIANT_STANDARDS as $key => $std) {
+            $keyNorm = trim(preg_replace('/[_\-\/\(\)]+/', ' ', strtolower($key)));
+            $codeNorm = trim(preg_replace('/[_\-\/\(\)]+/', ' ', strtolower($std['code'] ?? '')));
+            if ($keyNorm === $stripped || $codeNorm === $stripped) {
+                return $key;
+            }
+        }
+
+        // 3. Cek kamus alias scale logger
+        if (isset(self::VARIANT_ALIASES[$stripped])) {
+            return self::VARIANT_ALIASES[$stripped];
+        }
+
+        // Cek variasi tanpa spasi di alias map
+        $strippedNoSpace = str_replace(' ', '', $stripped);
+        foreach (self::VARIANT_ALIASES as $alias => $mapped) {
+            if (str_replace(' ', '', $alias) === $strippedNoSpace) {
+                return $mapped;
+            }
+        }
+
+        // 4. Heuristik cerdas berdasarkan kata kunci (brand, jenis kemasan, gramatur)
+        $isBB = str_contains($stripped, 'bb');
+        $isYB = str_contains($stripped, 'yb');
+        $isSachet = str_contains($stripped, 'sachet') || str_contains($stripped, 's20') || str_contains($stripped, 's40');
+        $isRenceng = str_contains($stripped, 'renceng') || str_contains($stripped, 'rencan') || str_contains($stripped, ' r ') || str_ends_with($stripped, ' r');
+        $is6plus1 = str_contains($stripped, '6+1') || str_contains($stripped, '6 1');
+        $is12plus1 = str_contains($stripped, '12+1') || str_contains($stripped, '12 1');
+
+        if ($isSachet) {
+            if ($is6plus1) {
+                return ($isBB || str_contains($stripped, '40')) ? 'Sachet BB 40gr RENCENG (6+1)' : 'Sachet YB 20gr RENCENG (6+1)';
+            }
+            if ($is12plus1) {
+                return 'Sachet YB 20gr RENCENG (12+1)';
+            }
+            if ($isRenceng) {
+                return ($isBB || str_contains($stripped, '40')) ? 'Sachet BB 40gr RENCENG' : 'Sachet YB 20gr RENCENG';
+            }
+            return ($isBB || str_contains($stripped, '40')) ? 'Sachet BB 40gr PCS' : 'Sachet YB 20gr PCS';
+        }
+
+        // Pouch
+        if (str_contains($stripped, '77')) {
+            return $isBB ? 'Pouch BB 77gr' : 'Pouch YB 77gr';
+        }
+        if (str_contains($stripped, '250')) {
+            return 'Pouch YB 250gr';
+        }
+        if (str_contains($stripped, '270')) {
+            return 'Pouch BB 270gr';
+        }
+        if (str_contains($stripped, '430')) {
+            return 'Pouch BB 430gr';
+        }
+        if (str_contains($stripped, '550')) {
+            return 'Pouch YB 550gr';
+        }
+        if (str_contains($stripped, '700')) {
+            return 'Pouch YB 700gr';
+        }
+        if (str_contains($stripped, '725')) {
+            return 'Pouch BB 725gr';
+        }
+        if (str_contains($stripped, '1000') || str_contains($stripped, '1kg')) {
+            return 'Pouch YB 1000gr';
+        }
+
+        return null;
+    }
 
     private function isAbnormal(float $berat, string $variant): bool
     {
@@ -274,22 +512,47 @@ class TimbanganRetailMesinController extends Controller
     public function export(Request $request)
     {
         $request->validate([
-            'date'    => 'required|date_format:Y-m-d',
-            'variant' => 'nullable|string',
-            'mesin'   => 'nullable|string',
+            'date'       => 'nullable|date_format:Y-m-d',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date'   => 'nullable|date_format:Y-m-d',
+            'variant'    => 'nullable|string',
+            'mesin'      => 'nullable|string',
         ]);
 
-        $range = $this->getShiftRange($request->date);
         $source = $request->input('source', 'mesin');
         $table  = $source === 'bdkt' ? 'timbangan_retail_bdkt' : 'timbangan_retail_mesin';
 
+        // Mendukung ekspor satu hari (date) maupun rentang tanggal (start_date & end_date)
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $rangeStart = $this->getShiftRange($request->start_date)['start'];
+            $rangeEnd   = $this->getShiftRange($request->end_date)['end'];
+            $dateLabel  = ($request->start_date === $request->end_date)
+                ? $request->start_date
+                : $request->start_date . '_sd_' . $request->end_date;
+        } elseif ($request->filled('date')) {
+            $range      = $this->getShiftRange($request->date);
+            $rangeStart = $range['start'];
+            $rangeEnd   = $range['end'];
+            $dateLabel  = $request->date;
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter tanggal (date atau start_date & end_date) wajib diisi.'
+            ], 422);
+        }
+
         $query = DB::table($table)->whereBetween('waktu', [
-            $range['start']->toDateTimeString(),
-            $range['end']->toDateTimeString(),
+            $rangeStart->toDateTimeString(),
+            $rangeEnd->toDateTimeString(),
         ])->orderBy('waktu');
 
-        if ($request->filled('variant')) $query->where('variant', $request->variant);
-        if ($request->filled('mesin'))   $query->where('mesin',   $request->mesin);
+        if ($request->filled('variant')) {
+            $filterVariant = $this->normalizeVariantName($request->variant) ?? $request->variant;
+            $query->where('variant', $filterVariant);
+        }
+        if ($request->filled('mesin')) {
+            $query->where('mesin', $request->mesin);
+        }
 
         $records = $query->get()->map(function ($row) {
             return [
@@ -306,9 +569,14 @@ class TimbanganRetailMesinController extends Controller
         });
 
         $prefix = $source === 'bdkt' ? 'timbangan-retail-bdkt-' : 'timbangan-retail-';
-        $filename = $prefix . $request->date;
-        if ($request->filled('variant')) $filename .= '-' . $request->variant;
-        if ($request->filled('mesin'))   $filename .= '-' . $request->mesin;
+        $filename = $prefix . $dateLabel;
+        if ($request->filled('variant')) {
+            $vLabel = $this->normalizeVariantName($request->variant) ?? $request->variant;
+            $filename .= '-' . preg_replace('/[^a-zA-Z0-9_\-]+/', '_', $vLabel);
+        }
+        if ($request->filled('mesin')) {
+            $filename .= '-' . preg_replace('/[^a-zA-Z0-9_\-]+/', '_', $request->mesin);
+        }
         $filename .= '.xlsx';
 
         return Excel::download(new TimbanganRetailExport($records), $filename);
@@ -602,6 +870,13 @@ class TimbanganRetailMesinController extends Controller
     // ═══════════════════════════════════════════════════════════════════════
     public function store(Request $request)
     {
+        if ($request->has('variant')) {
+            $normalized = $this->normalizeVariantName($request->variant);
+            if ($normalized) {
+                $request->merge(['variant' => $normalized]);
+            }
+        }
+
         $validator = Validator::make($request->all(), [
             'nik'     => 'required|string|max:50',
             'mesin'   => 'required|string|max:255',
@@ -627,6 +902,13 @@ class TimbanganRetailMesinController extends Controller
     // ═══════════════════════════════════════════════════════════════════════
     public function store2(Request $request)
     {
+        if ($request->has('variant')) {
+            $normalized = $this->normalizeVariantName($request->variant);
+            if ($normalized) {
+                $request->merge(['variant' => $normalized]);
+            }
+        }
+
         $validVariants = array_keys(self::VARIANT_STANDARDS);
 
         $validator = Validator::make($request->all(), [
@@ -728,6 +1010,9 @@ class TimbanganRetailMesinController extends Controller
             $failedCount = 0;
             $errors = [];
 
+            $source = $request->input('source', 'mesin');
+            $modelClass = $source === 'bdkt' ? TimbanganRetailBdkt::class : TimbanganRetailMesin::class;
+
             foreach ($rows as $index => $row) {
                 if ($index <= $headerRowIndex) {
                     continue;
@@ -798,15 +1083,8 @@ class TimbanganRetailMesinController extends Controller
                     continue;
                 }
 
-                // Normalize Variant mapping
-                $matchedVariant = null;
-                $cleanVariant = strtolower(trim($variant));
-                foreach (self::VARIANT_STANDARDS as $key => $std) {
-                    if (strtolower(trim($key)) === $cleanVariant || strtolower(trim($std['code'] ?? '')) === $cleanVariant) {
-                        $matchedVariant = $key;
-                        break;
-                    }
-                }
+                // Normalize Variant mapping (support standard names, codes, and scale logger aliases)
+                $matchedVariant = $this->normalizeVariantName($variant);
 
                 if (!$matchedVariant) {
                     $failedCount++;
@@ -823,8 +1101,14 @@ class TimbanganRetailMesinController extends Controller
                 }
                 $berat = (float) $berat;
 
-                // Check duplicates
-                $query = TimbanganRetailMesin::where('mesin', $mesin)
+                // Sanitize unit
+                $unit = !empty($unit) ? strtolower($unit) : 'g';
+                if ($unit === 'gr' || $unit === 'gram') {
+                    $unit = 'g';
+                }
+
+                // Check duplicates against dynamic $modelClass (TimbanganRetailBdkt / TimbanganRetailMesin)
+                $query = $modelClass::where('mesin', $mesin)
                     ->where('variant', $matchedVariant)
                     ->where('waktu', $waktu)
                     ->where('berat', $berat)
@@ -850,9 +1134,6 @@ class TimbanganRetailMesinController extends Controller
                 }
 
                 // Create record
-                $source = $request->input('source', 'mesin');
-                $modelClass = $source === 'bdkt' ? TimbanganRetailBdkt::class : TimbanganRetailMesin::class;
-
                 $modelClass::create([
                     'nik' => $nik,
                     'mesin' => $mesin,
