@@ -232,6 +232,29 @@ class PackagingPouchController extends Controller
             );
 
             if (is_array($decodedSamples)) {
+                $numericFields = [
+                    'panjang',
+                    'lebar',
+                    'side_seal_1',
+                    'side_seal_2',
+                    'bottom_seal',
+                    'bottom_high',
+                    'thickness_1',
+                    'thickness_2',
+                    'berat',
+                ];
+
+                foreach ($decodedSamples as &$sample) {
+                    if (is_array($sample)) {
+                        foreach ($numericFields as $nf) {
+                            if (isset($sample[$nf]) && is_string($sample[$nf])) {
+                                $sample[$nf] = str_replace(',', '.', trim($sample[$nf]));
+                            }
+                        }
+                    }
+                }
+                unset($sample);
+
                 $request->merge([
                     'samples' => $decodedSamples,
                 ]);

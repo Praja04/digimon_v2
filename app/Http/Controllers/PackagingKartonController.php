@@ -296,6 +296,21 @@ class PackagingKartonController extends Controller
             ]);
         }
 
+        if ($request->has('samples') && is_array($request->samples)) {
+            $normalizedSamples = $request->samples;
+            foreach ($normalizedSamples as &$s) {
+                if (is_array($s)) {
+                    foreach (['panjang', 'lebar', 'tinggi', 'bct', 'berat'] as $f) {
+                        if (isset($s[$f]) && is_string($s[$f])) {
+                            $s[$f] = str_replace(',', '.', trim($s[$f]));
+                        }
+                    }
+                }
+            }
+            unset($s);
+            $request->merge(['samples' => $normalizedSamples]);
+        }
+
         $rules = [
             'save_mode' => [
                 'required',

@@ -401,7 +401,7 @@ $isFinal
 
                         </div>
 
-                        <div class="section-title">
+                        <div class="section-title mb-2">
                             <i class="mdi mdi-ruler-square"></i>
                             Hasil Pemeriksaan Sampel
                         </div>
@@ -410,19 +410,19 @@ $isFinal
                             <table class="table table-bordered align-middle inspection-table">
                                 <thead>
                                     <tr>
-                                        <th>No. Sampel</th>
-                                        <th>Berat Gross (Kg)</th>
-                                        <th>Inside Core (cm)</th>
-                                        <th>Lebar (mm)</th>
-                                        <th>Pitch (mm)</th>
-                                        <th>Thickness (Mikron)</th>
-                                        <th>Bonding Strength</th>
-                                        <th>Sealing Strength</th>
-                                        <th>Laminasi</th>
-                                        <th>Stability Test</th>
-                                        <th>Design</th>
-                                        <th>Warna</th>
-                                        <th>Tulisan</th>
+                                        <th class="th-col" data-col="all" title="Klik untuk blok seluruh tabel">No. Sampel</th>
+                                        <th class="th-col" data-col="0" title="Klik untuk blok kolom Berat Gross">Berat Gross (Kg)</th>
+                                        <th class="th-col" data-col="1" title="Klik untuk blok kolom Inside Core">Inside Core (cm)</th>
+                                        <th class="th-col" data-col="2" title="Klik untuk blok kolom Lebar">Lebar (mm)</th>
+                                        <th class="th-col" data-col="3" title="Klik untuk blok kolom Pitch">Pitch (mm)</th>
+                                        <th class="th-col" data-col="4" title="Klik untuk blok kolom Thickness">Thickness (Mikron)</th>
+                                        <th class="th-col" data-col="5" title="Klik untuk blok kolom Bonding Strength">Bonding Strength</th>
+                                        <th class="th-col" data-col="6" title="Klik untuk blok kolom Sealing Strength">Sealing Strength</th>
+                                        <th class="th-col" data-col="7" title="Klik untuk blok kolom Laminasi">Laminasi</th>
+                                        <th class="th-col" data-col="8" title="Klik untuk blok kolom Stability Test">Stability Test</th>
+                                        <th class="th-col" data-col="9" title="Klik untuk blok kolom Design">Design</th>
+                                        <th class="th-col" data-col="10" title="Klik untuk blok kolom Warna">Warna</th>
+                                        <th class="th-col" data-col="11" title="Klik untuk blok kolom Tulisan">Tulisan</th>
                                     </tr>
                                 </thead>
 
@@ -872,6 +872,17 @@ $isFinal
 @section('styles')
 
 <style>
+    @keyframes pasteHighlightAnim {
+        0% { background-color: #d1fae5; }
+        100% { background-color: #ffffff; }
+    }
+    .paste-highlight {
+        animation: pasteHighlightAnim 2.5s ease-out;
+    }
+    .inspection-table td input:focus {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25) !important;
+    }
     .back-action-card {
         width: 100%;
         max-width: 430px;
@@ -964,6 +975,46 @@ $isFinal
     .section-title i {
         color: #4f46e5;
         font-size: 21px;
+    }
+
+    /* Excel-style Multi-cell Selection & Block Highlighting */
+    .inspection-table td.cell-selected {
+        background-color: rgba(13, 110, 253, 0.16) !important;
+        user-select: none;
+    }
+    .inspection-table td.cell-selected input,
+    .inspection-table td.cell-selected .option-radio-group {
+        background-color: rgba(13, 110, 253, 0.09) !important;
+        border-color: #86b7fe !important;
+    }
+    .inspection-table td.cell-selected-top {
+        border-top: 2px solid #0d6efd !important;
+    }
+    .inspection-table td.cell-selected-bottom {
+        border-bottom: 2px solid #0d6efd !important;
+    }
+    .inspection-table td.cell-selected-left {
+        border-left: 2px solid #0d6efd !important;
+    }
+    .inspection-table td.cell-selected-right {
+        border-right: 2px solid #0d6efd !important;
+    }
+    .inspection-table thead th {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease;
+    }
+    .inspection-table thead th:hover {
+        background-color: #e2e8f0 !important;
+        color: #1e293b;
+    }
+    .inspection-table tbody td.sample-number {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease;
+    }
+    .inspection-table tbody td.sample-number:hover {
+        background-color: #e2e8f0 !important;
     }
 
     .inspection-table thead th {
@@ -1309,7 +1360,7 @@ $isFinal
                     'beforeend',
                     `
                         <tr>
-                            <td class="text-center sample-number">
+                            <td class="text-center sample-number" title="Klik untuk blok baris ke-${index + 1}">
                                 ${index + 1}
                             </td>
 
@@ -2283,6 +2334,598 @@ $isFinal
         buildSampleRows(
             jumlahSampelInput.value
         );
+
+        // --- EXCEL / SAP COPY & PASTE FOR INNER / OUTER ---
+        const innerOuterFieldOrder = [
+            'berat_gross',
+            'inside_core',
+            'lebar',
+            'pitch',
+            'thickness',
+            'bonding_strength',
+            'sealing_strength',
+            'laminasi',
+            'stability_test',
+            'design',
+            'warna',
+            'tulisan'
+        ];
+
+        function syncSamplesFromDOM() {
+            const rows = sampleRows.querySelectorAll('tr');
+            rows.forEach((row, idx) => {
+                if (!samples[idx]) samples[idx] = {};
+                innerOuterFieldOrder.forEach(f => {
+                    const inp = row.querySelector(`[name="samples[${idx}][${f}]"]`);
+                    if (inp) {
+                        if (inp.type === 'radio') {
+                            const checked = row.querySelector(`[name="samples[${idx}][${f}]"]:checked`);
+                            if (checked) samples[idx][f] = checked.value;
+                        } else {
+                            samples[idx][f] = inp.value;
+                        }
+                    }
+                });
+            });
+        }
+
+        function copyInnerOuterToSap() {
+            const rows = sampleRows.querySelectorAll('tr');
+            if (!rows.length) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'warning',
+                        title: 'Tidak ada data sampel untuk disalin.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+                return;
+            }
+
+            let lines = [];
+            rows.forEach((row, idx) => {
+                let rowValues = [];
+                innerOuterFieldOrder.forEach(f => {
+                    const inp = row.querySelector(`[name="samples[${idx}][${f}]"]`);
+                    if (inp) {
+                        if (inp.type === 'radio') {
+                            const checked = row.querySelector(`[name="samples[${idx}][${f}]"]:checked`);
+                            rowValues.push(checked ? checked.value : '');
+                        } else {
+                            rowValues.push(inp.value !== undefined ? inp.value : '');
+                        }
+                    } else {
+                        rowValues.push('');
+                    }
+                });
+                lines.push(rowValues.join('\t'));
+            });
+
+            const textToCopy = lines.join('\n');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: `Berhasil menyalin ${lines.length} baris data ke clipboard!`,
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    }
+                }).catch(() => fallbackCopyInnerOuter(textToCopy, lines.length));
+            } else {
+                fallbackCopyInnerOuter(textToCopy, lines.length);
+            }
+        }
+
+        function fallbackCopyInnerOuter(text, count) {
+            const tempTa = document.createElement('textarea');
+            tempTa.value = text;
+            tempTa.style.position = 'fixed';
+            tempTa.style.opacity = '0';
+            document.body.appendChild(tempTa);
+            tempTa.select();
+            try {
+                document.execCommand('copy');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Berhasil menyalin ${count} baris data ke clipboard!`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            } catch (e) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Gagal menyalin data.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            }
+            document.body.removeChild(tempTa);
+        }
+
+        // ─────────────────────────────────────────────
+        // SAP / EXCEL COPY-PASTE & CELL SELECTION (INNER/OUTER)
+        // ─────────────────────────────────────────────
+        let tableSelection = null;
+        let lastMultiSelection = null;
+        let isMouseDragging = false;
+        let selectionAnchor = null;
+
+        function getInnerOuterCellCoords(el) {
+            if (!el) return null;
+            const target = el.nodeType === 3 ? el.parentElement : el;
+            const tr = target.closest('tr');
+            if (!tr || tr.parentElement !== sampleRows) return null;
+            const row = Array.from(sampleRows.children).indexOf(tr);
+            if (row === -1) return null;
+
+            const td = target.closest('td');
+            if (!td) return null;
+            const col = td.cellIndex - 1; // 0 is sample-number, 1 is col 0 (berat_gross), etc.
+            return { row, col, td };
+        }
+
+        function getInnerOuterCellTd(row, col) {
+            const trList = sampleRows.children;
+            if (row < 0 || row >= trList.length) return null;
+            const tr = trList[row];
+            if (!tr) return null;
+            return tr.children[col + 1] || null;
+        }
+
+        function setInnerOuterSelection(startRow, startCol, endRow, endCol) {
+            const totalRows = sampleRows.children.length;
+            const totalCols = innerOuterFieldOrder.length;
+            if (totalRows === 0 || totalCols === 0) return;
+
+            const sRow = Math.max(0, Math.min(startRow, totalRows - 1));
+            const eRow = Math.max(0, Math.min(endRow, totalRows - 1));
+            const sCol = Math.max(0, Math.min(startCol, totalCols - 1));
+            const eCol = Math.max(0, Math.min(endCol, totalCols - 1));
+
+            tableSelection = {
+                startRow: sRow,
+                startCol: sCol,
+                endRow: eRow,
+                endCol: eCol,
+                minRow: Math.min(sRow, eRow),
+                maxRow: Math.max(sRow, eRow),
+                minCol: Math.min(sCol, eCol),
+                maxCol: Math.max(sCol, eCol)
+            };
+
+            if (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol) {
+                lastMultiSelection = { ...tableSelection };
+            }
+            renderInnerOuterSelection();
+        }
+
+        function clearInnerOuterSelection() {
+            tableSelection = null;
+            lastMultiSelection = null;
+            const selected = sampleRows.querySelectorAll('.cell-selected, .cell-selected-top, .cell-selected-bottom, .cell-selected-left, .cell-selected-right');
+            selected.forEach(td => td.classList.remove('cell-selected', 'cell-selected-top', 'cell-selected-bottom', 'cell-selected-left', 'cell-selected-right'));
+        }
+
+        function renderInnerOuterSelection() {
+            const selected = sampleRows.querySelectorAll('.cell-selected, .cell-selected-top, .cell-selected-bottom, .cell-selected-left, .cell-selected-right');
+            selected.forEach(td => td.classList.remove('cell-selected', 'cell-selected-top', 'cell-selected-bottom', 'cell-selected-left', 'cell-selected-right'));
+
+            if (!tableSelection) return;
+            const { minRow, maxRow, minCol, maxCol } = tableSelection;
+            const isMulti = (minRow !== maxRow || minCol !== maxCol);
+            if (!isMulti) return;
+
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const td = getInnerOuterCellTd(r, c);
+                    if (td) {
+                        td.classList.add('cell-selected');
+                        if (r === minRow) td.classList.add('cell-selected-top');
+                        if (r === maxRow) td.classList.add('cell-selected-bottom');
+                        if (c === minCol) td.classList.add('cell-selected-left');
+                        if (c === maxCol) td.classList.add('cell-selected-right');
+                    }
+                }
+            }
+        }
+
+        function clearSelectedCellsContent() {
+            if (!tableSelection) return;
+            const { minRow, maxRow, minCol, maxCol } = tableSelection;
+            const trList = sampleRows.children;
+
+            for (let r = minRow; r <= maxRow; r++) {
+                const tr = trList[r];
+                if (!tr) continue;
+                for (let c = minCol; c <= maxCol; c++) {
+                    const fieldName = innerOuterFieldOrder[c];
+                    if (!fieldName) continue;
+
+                    if (['laminasi', 'stability_test', 'design', 'warna', 'tulisan'].includes(fieldName)) {
+                        const radios = tr.querySelectorAll(`input[name="samples[${r}][${fieldName}]"]`);
+                        radios.forEach(radio => { radio.checked = false; });
+                        tr.querySelector(`input[name="samples[${r}][${fieldName}]"]`)?.closest('.option-radio-group')?.querySelectorAll('.option-radio').forEach(lbl => lbl.classList.remove('is-selected'));
+                        if (samples[r]) samples[r][fieldName] = '';
+                    } else {
+                        const input = tr.querySelector(`input[name="samples[${r}][${fieldName}]"]`);
+                        if (input) {
+                            input.value = '';
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            if (samples[r]) samples[r][fieldName] = '';
+                        }
+                    }
+                }
+            }
+            syncSamplesFromDOM();
+        }
+
+        function applyPastedInnerOuterData(rawText, explicitStartRow = null, explicitStartCol = null) {
+            if (!rawText || !rawText.trim()) return;
+
+            let lines = rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (!lines.length) return;
+
+            let rawRows = lines.map(line => {
+                if (line.includes('\t')) {
+                    return line.split('\t').map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                if (line.includes(';')) {
+                    return line.split(';').map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                if (/\s{2,}/.test(line.trim())) {
+                    return line.trim().split(/\s{2,}/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                return [line.trim()];
+            });
+
+            // Strip edge empty cols
+            if (rawRows.every(r => r.length > 1 && r[0] === '')) rawRows = rawRows.map(r => r.slice(1));
+            if (rawRows.every(r => r.length > 1 && r[r.length - 1] === '')) rawRows = rawRows.map(r => r.slice(0, -1));
+
+            // Determine starting coords
+            let startRowIdx = 0;
+            let startColIdx = 0;
+
+            if (explicitStartRow !== null) {
+                startRowIdx = Math.max(0, explicitStartRow);
+                startColIdx = explicitStartCol !== null ? Math.max(0, explicitStartCol) : 0;
+            } else if (tableSelection) {
+                startRowIdx = tableSelection.minRow;
+                startColIdx = tableSelection.minCol;
+            } else {
+                const activeCoords = getInnerOuterCellCoords(document.activeElement);
+                if (activeCoords && activeCoords.col >= 0) {
+                    startRowIdx = activeCoords.row;
+                    startColIdx = activeCoords.col;
+                }
+            }
+
+            // Detect header
+            const headerKeywords = ['berat', 'inside', 'core', 'lebar', 'pitch', 'thickness', 'bonding', 'sealing', 'laminasi', 'stability', 'design', 'warna', 'tulisan', 'no', 'sampel'];
+            const firstRowText = rawRows[0].join(' ').toLowerCase();
+            if (rawRows.length > 1 && headerKeywords.some(kw => firstRowText.includes(kw))) {
+                rawRows = rawRows.slice(1);
+            }
+
+            // Skip sample no if present in col 0
+            if (startColIdx === 0 && rawRows.length > 0) {
+                const firstCell = rawRows[0][0];
+                if (/^\d+$/.test(firstCell) && (rawRows.length === 1 || /^\d+$/.test(rawRows[1][0]))) {
+                    if (rawRows[0].length > innerOuterFieldOrder.length || (parseInt(rawRows[0][0]) === 1 && parseInt(rawRows[1]?.[0] || 2) === 2)) {
+                        rawRows = rawRows.map(r => r.slice(1));
+                    }
+                }
+            }
+
+            // Expand table rows if needed
+            const neededTotal = startRowIdx + rawRows.length;
+            const currentTotal = parseInt(jumlahSampelInput.value || 1);
+            if (neededTotal > currentTotal && neededTotal <= 50) {
+                jumlahSampelInput.value = neededTotal;
+                buildSampleRows(neededTotal);
+            }
+
+            const trList = sampleRows.querySelectorAll('tr');
+            let appliedCount = 0;
+            let maxColsPasted = 1;
+
+            const hasMultiCellSelection = tableSelection && (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol);
+
+            if (hasMultiCellSelection && rawRows.length === 1 && rawRows[0].length === 1) {
+                // Replicate single value
+                const singleVal = rawRows[0][0];
+                const { minRow, maxRow, minCol, maxCol } = tableSelection;
+
+                for (let r = minRow; r <= maxRow; r++) {
+                    if (r >= trList.length) break;
+                    const tr = trList[r];
+                    for (let c = minCol; c <= maxCol; c++) {
+                        if (c >= innerOuterFieldOrder.length) break;
+                        const fieldName = innerOuterFieldOrder[c];
+                        applyValueToInnerOuterCell(tr, r, c, fieldName, singleVal);
+                        appliedCount++;
+                    }
+                }
+            } else {
+                rawRows.forEach((rowVals, rOffset) => {
+                    const targetRowIdx = startRowIdx + rOffset;
+                    if (targetRowIdx >= trList.length) return;
+                    const tr = trList[targetRowIdx];
+
+                    maxColsPasted = Math.max(maxColsPasted, rowVals.length);
+
+                    rowVals.forEach((cellVal, cOffset) => {
+                        const targetColIdx = startColIdx + cOffset;
+                        if (targetColIdx >= innerOuterFieldOrder.length) return;
+                        const fieldName = innerOuterFieldOrder[targetColIdx];
+
+                        applyValueToInnerOuterCell(tr, targetRowIdx, targetColIdx, fieldName, cellVal);
+                        appliedCount++;
+                    });
+                });
+
+                // Set selection on the newly pasted block
+                const endRow = Math.min(trList.length - 1, startRowIdx + rawRows.length - 1);
+                const endCol = Math.min(innerOuterFieldOrder.length - 1, startColIdx + maxColsPasted - 1);
+                setInnerOuterSelection(startRowIdx, startColIdx, endRow, endCol);
+            }
+
+            syncSamplesFromDOM();
+
+            if (appliedCount > 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Berhasil menempelkan ${appliedCount} nilai dari Excel / SAP`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            }
+        }
+
+        function applyValueToInnerOuterCell(tr, rowIdx, colIdx, fieldName, cellVal) {
+            if (!tr || !fieldName) return;
+            let val = (cellVal || '').toString().trim();
+
+            if (!samples[rowIdx]) samples[rowIdx] = {};
+
+            const isRadio = ['laminasi', 'stability_test', 'design', 'warna', 'tulisan'].includes(fieldName);
+
+            if (isRadio) {
+                const cleanUpper = val.toUpperCase();
+                let targetVal = null;
+                if (['OK', 'SESUAI', 'PASS', '1', 'TRUE', 'BAGUS', 'STANDAR', 'YA'].includes(cleanUpper)) {
+                    targetVal = 'OK';
+                } else if (['NG', 'NOK', 'REJECT', '0', 'FALSE', 'TIDAK'].includes(cleanUpper)) {
+                    targetVal = 'NG';
+                }
+                if (targetVal) {
+                    const radio = tr.querySelector(`input[name="samples[${rowIdx}][${fieldName}]"][value="${targetVal}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change', { bubbles: true }));
+                        const grp = radio.closest('.option-radio-group');
+                        if (grp) {
+                            grp.querySelectorAll('.option-radio').forEach(lbl => lbl.classList.remove('is-selected'));
+                            radio.closest('.option-radio')?.classList.add('is-selected');
+                            grp.classList.remove('paste-highlight');
+                            void grp.offsetWidth;
+                            grp.classList.add('paste-highlight');
+                        }
+                        samples[rowIdx][fieldName] = targetVal;
+                    }
+                }
+            } else {
+                const input = tr.querySelector(`input[name="samples[${rowIdx}][${fieldName}]"]`);
+                if (input) {
+                    const isNumeric = ['berat_gross', 'inside_core', 'lebar', 'thickness', 'bonding_strength', 'sealing_strength'].includes(fieldName);
+                    const cleanVal = isNumeric ? val.replace(',', '.') : val;
+                    input.value = cleanVal;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.classList.remove('paste-highlight');
+                    void input.offsetWidth;
+                    input.classList.add('paste-highlight');
+                    samples[rowIdx][fieldName] = cleanVal;
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // MOUSE DRAG & HEADER COLUMN SELECTION EVENTS
+        // ─────────────────────────────────────────────
+        const inspectionTable = document.querySelector('.inspection-table');
+
+        if (inspectionTable) {
+            // 1. Column header click or drag to block columns
+            inspectionTable.querySelectorAll('thead th.th-col').forEach(th => {
+                th.addEventListener('mousedown', function (e) {
+                    if (e.which !== 1) return;
+                    const colAttr = this.dataset.col;
+                    const totalRows = sampleRows.children.length;
+                    const totalCols = innerOuterFieldOrder.length;
+
+                    if (colAttr === 'all') {
+                        selectionAnchor = { type: 'all', col: 0 };
+                        setInnerOuterSelection(0, 0, totalRows - 1, totalCols - 1);
+                    } else {
+                        const col = parseInt(colAttr);
+                        if (!isNaN(col)) {
+                            selectionAnchor = { type: 'col', col };
+                            isMouseDragging = true;
+                            setInnerOuterSelection(0, col, totalRows - 1, col);
+                        }
+                    }
+                });
+
+                th.addEventListener('mouseenter', function () {
+                    if (!isMouseDragging || !selectionAnchor || selectionAnchor.type !== 'col') return;
+                    const colAttr = this.dataset.col;
+                    const totalRows = sampleRows.children.length;
+                    const col = parseInt(colAttr);
+                    if (!isNaN(col)) {
+                        setInnerOuterSelection(0, selectionAnchor.col, totalRows - 1, col);
+                    }
+                });
+            });
+
+            // 2. Sample row number click to block row
+            sampleRows.addEventListener('mousedown', function (e) {
+                if (e.which !== 1) return;
+                const td = e.target.closest('td');
+                if (!td) return;
+
+                const totalCols = innerOuterFieldOrder.length;
+
+                if (td.classList.contains('sample-number')) {
+                    const tr = td.closest('tr');
+                    const row = Array.from(sampleRows.children).indexOf(tr);
+                    if (row !== -1) {
+                        selectionAnchor = { type: 'row', row };
+                        isMouseDragging = true;
+                        setInnerOuterSelection(row, 0, row, totalCols - 1);
+                    }
+                    return;
+                }
+
+                // Data cell click / drag
+                const coords = getInnerOuterCellCoords(td);
+                if (!coords || coords.col < 0) return;
+
+                if (e.target.closest('.option-radio, input')) {
+                    if (tableSelection && coords.row >= tableSelection.minRow && coords.row <= tableSelection.maxRow && coords.col >= tableSelection.minCol && coords.col <= tableSelection.maxCol) {
+                        return;
+                    }
+                }
+
+                if (e.shiftKey && selectionAnchor && selectionAnchor.type === 'cell') {
+                    e.preventDefault();
+                    setInnerOuterSelection(selectionAnchor.row, selectionAnchor.col, coords.row, coords.col);
+                } else {
+                    selectionAnchor = { type: 'cell', ...coords };
+                    isMouseDragging = true;
+                    setInnerOuterSelection(coords.row, coords.col, coords.row, coords.col);
+                }
+            });
+
+            sampleRows.addEventListener('mouseenter', function (e) {
+                if (!isMouseDragging || !selectionAnchor) return;
+                const td = e.target.closest('td');
+                if (!td) return;
+
+                const coords = getInnerOuterCellCoords(td);
+                if (!coords || coords.col < 0) return;
+
+                if (selectionAnchor.type === 'col') {
+                    const totalRows = sampleRows.children.length;
+                    setInnerOuterSelection(0, selectionAnchor.col, totalRows - 1, coords.col);
+                } else if (selectionAnchor.type === 'row') {
+                    const totalCols = innerOuterFieldOrder.length;
+                    setInnerOuterSelection(selectionAnchor.row, 0, coords.row, totalCols - 1);
+                } else if (selectionAnchor.type === 'cell') {
+                    setInnerOuterSelection(selectionAnchor.row, selectionAnchor.col, coords.row, coords.col);
+                }
+            }, true);
+        }
+
+        document.addEventListener('mouseup', function () {
+            isMouseDragging = false;
+        });
+
+        // Deselect if clicking outside table
+        document.addEventListener('mousedown', function (e) {
+            if (e.target.closest('.inspection-table, .swal2-container')) return;
+            clearInnerOuterSelection();
+        });
+
+        // Keyboard navigation (Ctrl+A, Delete, Backspace, Escape, Shift+Arrows)
+        document.addEventListener('keydown', function (e) {
+            const insideTable = e.target.closest && e.target.closest('.inspection-table');
+            const hasSelection = tableSelection !== null;
+            if (!insideTable && !hasSelection) return;
+
+            const totalRows = sampleRows.children.length;
+            const totalCols = innerOuterFieldOrder.length;
+
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && insideTable) {
+                e.preventDefault();
+                selectionAnchor = { type: 'cell', row: 0, col: 0 };
+                setInnerOuterSelection(0, 0, totalRows - 1, totalCols - 1);
+                return;
+            }
+
+            if ((e.key === 'Delete' || e.key === 'Backspace') && tableSelection && (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol)) {
+                if (e.target.tagName !== 'INPUT' || (e.target.selectionStart === 0 && e.target.selectionEnd === e.target.value.length)) {
+                    e.preventDefault();
+                    clearSelectedCellsContent();
+                    return;
+                }
+            }
+
+            if (e.key === 'Escape' && tableSelection) {
+                clearInnerOuterSelection();
+                return;
+            }
+
+            if (e.shiftKey && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                const coords = getInnerOuterCellCoords(e.target) || (tableSelection ? { row: tableSelection.startRow, col: tableSelection.startCol } : { row: 0, col: 0 });
+                if (!selectionAnchor || selectionAnchor.type !== 'cell') {
+                    selectionAnchor = { type: 'cell', row: coords.row, col: coords.col };
+                }
+                let endRow = tableSelection ? tableSelection.endRow : coords.row;
+                let endCol = tableSelection ? tableSelection.endCol : coords.col;
+
+                if (e.key === 'ArrowDown') endRow = Math.min(totalRows - 1, endRow + 1);
+                if (e.key === 'ArrowUp') endRow = Math.max(0, endRow - 1);
+                if (e.key === 'ArrowRight') endCol = Math.min(totalCols - 1, endCol + 1);
+                if (e.key === 'ArrowLeft') endCol = Math.max(0, endCol - 1);
+
+                setInnerOuterSelection(selectionAnchor.row, selectionAnchor.col, endRow, endCol);
+                return;
+            }
+        });
+
+        // ─────────────────────────────────────────────
+        // GLOBAL CAPTURING PASTE LISTENER (Ctrl+V)
+        // ─────────────────────────────────────────────
+        window.addEventListener('paste', function (e) {
+            if (isSamplingLocked) return;
+
+            if (e.target && e.target.closest && e.target.closest('.modal')) return;
+
+            const insideTable = e.target && e.target.closest && e.target.closest('.inspection-table');
+            const hasSelection = (tableSelection !== null);
+
+            if (!insideTable && !hasSelection) return;
+
+            const clipboardData = (e.clipboardData || window.clipboardData);
+            if (!clipboardData) return;
+            const text = clipboardData.getData('text/plain') || clipboardData.getData('text') || '';
+            if (!text || !text.trim()) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            applyPastedInnerOuterData(text);
+        }, true);
 
         updateKetidaksesuaianFields();
 

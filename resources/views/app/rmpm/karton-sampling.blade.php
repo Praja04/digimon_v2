@@ -5,135 +5,135 @@
 @section('content')
 
 @php
-    $fotoPengecekanTersimpan =
-        is_array($sampling?->foto)
-            ? array_values(
-                array_filter($sampling->foto)
-            )
-            : [];
+$fotoPengecekanTersimpan =
+is_array($sampling?->foto)
+? array_values(
+array_filter($sampling->foto)
+)
+: [];
 
-    $fotoKetidaksesuaianTersimpan =
-        is_array($sampling?->foto_ketidaksesuaian)
-            ? array_values(
-                array_filter(
-                    $sampling->foto_ketidaksesuaian
-                )
-            )
-            : [];
+$fotoKetidaksesuaianTersimpan =
+is_array($sampling?->foto_ketidaksesuaian)
+? array_values(
+array_filter(
+$sampling->foto_ketidaksesuaian
+)
+)
+: [];
 
-    $opsiJenisKetidaksesuaian = [
-        'Dimensi Tidak Standar',
-        'BCT Tidak Standar',
-        'Berat Under',
-        'Berat Over',
-        'Gramasi Tidak Standar',
-        'Barcode Tidak Terbaca',
-        'Design Tidak Sesuai',
-        'Warna Tidak Sesuai',
-        'Tulisan Tidak Sesuai',
-    ];
+$opsiJenisKetidaksesuaian = [
+'Dimensi Tidak Standar',
+'BCT Tidak Standar',
+'Berat Under',
+'Berat Over',
+'Gramasi Tidak Standar',
+'Barcode Tidak Terbaca',
+'Design Tidak Sesuai',
+'Warna Tidak Sesuai',
+'Tulisan Tidak Sesuai',
+];
 
-    $jenisKetidaksesuaianTerpilih =
-        is_array($sampling?->jenis_ketidaksesuaian)
-            ? $sampling->jenis_ketidaksesuaian
-            : [];
+$jenisKetidaksesuaianTerpilih =
+is_array($sampling?->jenis_ketidaksesuaian)
+? $sampling->jenis_ketidaksesuaian
+: [];
 
-    $jenisKetidaksesuaianLainnyaTersimpan =
-        collect($jenisKetidaksesuaianTerpilih)
-            ->first(
-                fn ($value) =>
-                    ! in_array(
-                        $value,
-                        $opsiJenisKetidaksesuaian,
-                        true
-                    )
-            );
+$jenisKetidaksesuaianLainnyaTersimpan =
+collect($jenisKetidaksesuaianTerpilih)
+->first(
+fn ($value) =>
+! in_array(
+$value,
+$opsiJenisKetidaksesuaian,
+true
+)
+);
 
-    $jenisKetidaksesuaianLainnyaValue = old(
-        'jenis_ketidaksesuaian_lainnya',
-        $jenisKetidaksesuaianLainnyaTersimpan
-    );
+$jenisKetidaksesuaianLainnyaValue = old(
+'jenis_ketidaksesuaian_lainnya',
+$jenisKetidaksesuaianLainnyaTersimpan
+);
 
-    $lainnyaTerpilih =
-        filled($jenisKetidaksesuaianLainnyaValue);
+$lainnyaTerpilih =
+filled($jenisKetidaksesuaianLainnyaValue);
 
-    $firstSample =
-        is_array($sampling?->hasil_sampel)
-        && isset($sampling->hasil_sampel[0])
-            ? $sampling->hasil_sampel[0]
-            : [];
+$firstSample =
+is_array($sampling?->hasil_sampel)
+&& isset($sampling->hasil_sampel[0])
+? $sampling->hasil_sampel[0]
+: [];
 
-    $gramasiTersimpan =
-        $firstSample['gramasi']
-        ?? collect($sampling?->hasil_sampel ?? [])
-            ->pluck('gramasi')
-            ->first(
-                fn ($value) => filled($value)
-            );
+$gramasiTersimpan =
+$firstSample['gramasi']
+?? collect($sampling?->hasil_sampel ?? [])
+->pluck('gramasi')
+->first(
+fn ($value) => filled($value)
+);
 
-    $gramasiSpb = old(
-        'gramasi',
-        $gramasiTersimpan
-    );
+$gramasiSpb = old(
+'gramasi',
+$gramasiTersimpan
+);
 
-    $gramasiTipeTersimpan =
-        $firstSample['gramasi_tipe']
-        ?? null;
+$gramasiTipeTersimpan =
+$firstSample['gramasi_tipe']
+?? null;
 
-    $gramasiTipe = old(
-        'gramasi_tipe',
-        $gramasiTipeTersimpan
-    );
+$gramasiTipe = old(
+'gramasi_tipe',
+$gramasiTipeTersimpan
+);
 
-    $gramasiLayersTersimpan =
-        $firstSample['gramasi_layers']
-        ?? [];
+$gramasiLayersTersimpan =
+$firstSample['gramasi_layers']
+?? [];
 
-    $gramasiLayers = old(
-        'gramasi_layers',
-        $gramasiLayersTersimpan
-    );
+$gramasiLayers = old(
+'gramasi_layers',
+$gramasiLayersTersimpan
+);
 
-    $scanBarcodeTersimpan =
-        $firstSample['scan_barcode']
-        ?? collect($sampling?->hasil_sampel ?? [])
-            ->pluck('scan_barcode')
-            ->first(
-                fn ($value) => filled($value)
-            );
+$scanBarcodeTersimpan =
+$firstSample['scan_barcode']
+?? collect($sampling?->hasil_sampel ?? [])
+->pluck('scan_barcode')
+->first(
+fn ($value) => filled($value)
+);
 
-    $scanBarcodeSpb = old(
-        'scan_barcode',
-        $scanBarcodeTersimpan
-    );
+$scanBarcodeSpb = old(
+'scan_barcode',
+$scanBarcodeTersimpan
+);
 
-    $noBarcodeTersimpan =
-        $firstSample['no_barcode']
-        ?? collect($sampling?->hasil_sampel ?? [])
-            ->pluck('no_barcode')
-            ->first(
-                fn ($value) => filled($value)
-            );
+$noBarcodeTersimpan =
+$firstSample['no_barcode']
+?? collect($sampling?->hasil_sampel ?? [])
+->pluck('no_barcode')
+->first(
+fn ($value) => filled($value)
+);
 
-    $noBarcodeSpb = old(
-        'no_barcode',
-        $noBarcodeTersimpan
-    );
+$noBarcodeSpb = old(
+'no_barcode',
+$noBarcodeTersimpan
+);
 
-    $isForeman =
-        auth()->check()
-        && in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
+$isForeman =
+auth()->check()
+&& in_array(auth()->user()?->role, ['Head Of Dapartement', 'Supervisor', 'Foreman'], true);
 
-    /*
-     * Pada Karton, data Draft dan Final disimpan di tabel terpisah.
-     * Kalau $finalSampling sudah ada, berarti proses pernah disimpan Final.
-     */
-    $isFinal =
-        $finalSampling !== null;
+/*
+* Pada Karton, data Draft dan Final disimpan di tabel terpisah.
+* Kalau $finalSampling sudah ada, berarti proses pernah disimpan Final.
+*/
+$isFinal =
+$finalSampling !== null;
 
-    $isLocked =
-        $isFinal
-        && ! $isForeman;
+$isLocked =
+$isFinal
+&& ! $isForeman;
 @endphp
 
 <div class="page-content">
@@ -181,29 +181,29 @@
         <div id="alertContainer" class="mb-3"></div>
 
         @if (
-            ! $isFinal
-            && $sampling?->status_proses === 'draft'
+        ! $isFinal
+        && $sampling?->status_proses === 'draft'
         )
-            <div class="alert alert-warning">
-                <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                Data sementara ditemukan. Silakan lanjutkan pengisian lalu pilih
-                <strong>Simpan Final</strong>.
-            </div>
+        <div class="alert alert-warning">
+            <i class="mdi mdi-content-save-edit-outline me-1"></i>
+            Data sementara ditemukan. Silakan lanjutkan pengisian lalu pilih
+            <strong>Simpan Final</strong>.
+        </div>
         @endif
 
         @if ($isLocked)
-            <div class="alert alert-info">
-                <i class="mdi mdi-lock-outline me-1"></i>
-                Data pemeriksaan Karton ini sudah <strong>Final</strong>.
-                Data hanya dapat dilihat. Koreksi data Final hanya dapat dilakukan oleh
-                <strong>Foreman</strong>.
-            </div>
+        <div class="alert alert-info">
+            <i class="mdi mdi-lock-outline me-1"></i>
+            Data pemeriksaan Karton ini sudah <strong>Final</strong>.
+            Data hanya dapat dilihat. Koreksi data Final hanya dapat dilakukan oleh
+            <strong>Foreman</strong>.
+        </div>
         @elseif ($isFinal && $isForeman)
-            <div class="alert alert-warning">
-                <i class="mdi mdi-account-edit-outline me-1"></i>
-                Data pemeriksaan Karton ini sudah <strong>Final</strong>.
-                Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
-            </div>
+        <div class="alert alert-warning">
+            <i class="mdi mdi-account-edit-outline me-1"></i>
+            Data pemeriksaan Karton ini sudah <strong>Final</strong>.
+            Anda login sebagai <strong>Foreman</strong>, sehingga data masih dapat dikoreksi.
+        </div>
         @endif
 
         <form
@@ -213,509 +213,476 @@
                 'rmpm.pm.karton.sampling.store',
                 $packagingIncoming
             ) }}"
-            enctype="multipart/form-data"
-        >
+            enctype="multipart/form-data">
             @csrf
 
             <fieldset
                 id="kartonSamplingFieldset"
-                @disabled($isLocked)
-            >
-            <div class="card border-0 shadow-sm sampling-card">
+                @disabled($isLocked)>
+                <div class="card border-0 shadow-sm sampling-card">
 
-                <div class="sampling-header">
-                    <div>
-                        <span class="sampling-label">
-                            PACKAGING ONLINE
-                        </span>
+                    <div class="sampling-header">
+                        <div>
+                            <span class="sampling-label">
+                                PACKAGING ONLINE
+                            </span>
 
-                        <h2 class="mb-1">
-                            BERAT KARTON
-                        </h2>
+                            <h2 class="mb-1">
+                                BERAT KARTON
+                            </h2>
 
-                        <p class="mb-0">
-                            Pemeriksaan lengkap Karton sesuai standar Packaging Online.
-                        </p>
-                    </div>
-
-                    <div class="sampling-header-icon">
-                        <i class="mdi mdi-scale-balance"></i>
-                    </div>
-                </div>
-
-                <div class="card-body p-4">
-
-                    <div class="section-title">
-                        <i class="mdi mdi-information-outline"></i>
-                        Identitas Incoming
-                    </div>
-
-                    <div class="row g-3 mb-4">
-
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">
-                                Nomor SPB
-                            </label>
-
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->no_spb }}"
-                                readonly
-                            >
+                            <p class="mb-0">
+                                Pemeriksaan lengkap Karton sesuai standar Packaging Online.
+                            </p>
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">
-                                Jenis Incoming
-                            </label>
+                        <div class="sampling-header-icon">
+                            <i class="mdi mdi-scale-balance"></i>
+                        </div>
+                    </div>
 
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->jenisIncoming?->nama ?? '-' }}"
-                                readonly
-                            >
+                    <div class="card-body p-4">
+
+                        <div class="section-title">
+                            <i class="mdi mdi-information-outline"></i>
+                            Identitas Incoming
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">
-                                Supplier
-                            </label>
+                        <div class="row g-3 mb-4">
 
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">
+                                    Nomor SPB
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->no_spb }}"
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">
+                                    Jenis Incoming
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->jenisIncoming?->nama ?? '-' }}"
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">
+                                    Supplier
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{
                                     $packagingIncoming->supplier?->nama
                                     ?? $packagingIncoming->supplier?->nama_supplier
                                     ?? '-'
                                 }}"
-                                readonly
-                            >
+                                    readonly>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">
+                                    Nomor Mobil
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ $packagingIncoming->no_mobil ?? '-' }}"
+                                    readonly>
+                            </div>
+
                         </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">
-                                Nomor Mobil
-                            </label>
-
-                            <input
-                                type="text"
-                                class="form-control bg-light"
-                                value="{{ $packagingIncoming->no_mobil ?? '-' }}"
-                                readonly
-                            >
+                        <div class="section-title">
+                            <i class="mdi mdi-flask-outline"></i>
+                            Informasi Sampel
                         </div>
 
-                    </div>
-
-                    <div class="section-title">
-                        <i class="mdi mdi-flask-outline"></i>
-                        Informasi Sampel
-                    </div>
-
-                    @php
+                        @php
                         $isForeman = in_array(auth()->user()?->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true);
-                        $defaultKartonExpDate = $sampling?->exp_date 
-                            ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d') 
-                            : ($packagingIncoming->exp_date 
-                                ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d') 
-                                : ($packagingIncoming->tanggal_kedatangan 
-                                    ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addYear()->format('Y-m-d') 
-                                    : ''));
-                    @endphp
+                        $defaultKartonExpDate = $sampling?->exp_date
+                        ? \Carbon\Carbon::parse($sampling->exp_date)->format('Y-m-d')
+                        : ($packagingIncoming->exp_date
+                        ? \Carbon\Carbon::parse($packagingIncoming->exp_date)->format('Y-m-d')
+                        : ($packagingIncoming->tanggal_kedatangan
+                        ? \Carbon\Carbon::parse($packagingIncoming->tanggal_kedatangan)->addYear()->format('Y-m-d')
+                        : ''));
+                        @endphp
 
-                    <div class="row g-3 mb-4">
+                        <div class="row g-3 mb-4">
 
-                        <div class="col-xl-4 col-md-6">
-                            <label
-                                for="jumlah_sampel"
-                                class="form-label"
-                            >
-                                Jumlah Sampel
-                            </label>
+                            <div class="col-xl-4 col-md-6">
+                                <label
+                                    for="jumlah_sampel"
+                                    class="form-label">
+                                    Jumlah Sampel
+                                </label>
 
-                            <input
-                                type="number"
-                                name="jumlah_sampel"
-                                id="jumlah_sampel"
-                                class="form-control bg-light"
-                                min="1"
-                                max="275"
-                                value="{{ $packagingIncoming->jumlah_sampel }}"
-                                readonly
-                                required
-                            >
+                                <input
+                                    type="number"
+                                    name="jumlah_sampel"
+                                    id="jumlah_sampel"
+                                    class="form-control bg-light"
+                                    min="1"
+                                    max="275"
+                                    value="{{ $packagingIncoming->jumlah_sampel }}"
+                                    readonly
+                                    required>
 
-                            <small class="text-muted d-block mt-1">
-                                Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
-                            </small>
-                        </div>
+                                <small class="text-muted d-block mt-1">
+                                    Jumlah sampel mengikuti data Incoming PM dan tidak perlu diisi ulang.
+                                </small>
+                            </div>
 
-                        <div class="col-xl-4 col-md-6">
-                            <label
-                                for="no_batch"
-                                class="form-label"
-                            >
-                                Nomor Batch
-                            </label>
+                            <div class="col-xl-4 col-md-6">
+                                <label
+                                    for="no_batch"
+                                    class="form-label">
+                                    Nomor Batch
+                                </label>
 
-                            <input
-                                type="text"
-                                name="no_batch"
-                                id="no_batch"
-                                class="form-control"
-                                inputmode="numeric"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                value="{{ old(
+                                <input
+                                    type="text"
+                                    name="no_batch"
+                                    id="no_batch"
+                                    class="form-control"
+                                    inputmode="numeric"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                    value="{{ old(
                                     'no_batch',
                                     $sampling?->no_batch
                                 ) }}"
-                                placeholder="Masukkan nomor batch"
-                            >
+                                    placeholder="Masukkan nomor batch">
+                            </div>
+
+                            <div class="col-xl-4 col-md-6">
+                                <label
+                                    for="exp_date"
+                                    class="form-label">
+                                    Expired Date
+                                </label>
+
+                                <input
+                                    type="date"
+                                    name="exp_date"
+                                    id="exp_date"
+                                    class="form-control @if(!$isForeman) bg-light @endif"
+                                    value="{{ old('exp_date', $defaultKartonExpDate) }}"
+                                    @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif>
+                            </div>
+
                         </div>
 
-                        <div class="col-xl-4 col-md-6">
-                            <label
-                                for="exp_date"
-                                class="form-label"
-                            >
-                                Expired Date
-                            </label>
-
-                            <input
-                                type="date"
-                                name="exp_date"
-                                id="exp_date"
-                                class="form-control @if(!$isForeman) bg-light @endif"
-                                value="{{ old('exp_date', $defaultKartonExpDate) }}"
-                                @if(!$isForeman) readonly tabindex="-1" style="cursor: not-allowed;" @endif
-                            >
+                        <div class="section-title mt-4 mb-2">
+                            <i class="mdi mdi-clipboard-text-outline"></i>
+                            Hasil Pemeriksaan Sampel Karton
                         </div>
-
-                    </div>
-
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-clipboard-text-outline"></i>
-                        Hasil Pemeriksaan Sampel Karton
-                    </div>
 
                     <div class="table-responsive inspection-table-wrapper">
                         <table class="table table-bordered align-middle inspection-table">
                             <thead>
                                 <tr>
-                                    <th class="text-center" style="width: 80px;">No. Sampel</th>
-                                    <th>Berat (gr)</th>
+                                    <th class="th-col text-center" data-col="all" style="width: 80px;" title="Klik untuk blok seluruh tabel">No. Sampel</th>
+                                    <th class="th-col" data-col="0" title="Klik untuk blok kolom Berat">Berat (gr)</th>
                                 </tr>
                             </thead>
 
-                            <tbody id="sampleRows"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-layers-outline"></i>
-                        Gramasi SPB
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-xl-4 col-md-6">
-                            <label
-                                for="gramasi_tipe"
-                                class="form-label fw-semibold"
-                            >
-                                Tipe Wall Karton
-                            </label>
-
-                            <select
-                                name="gramasi_tipe"
-                                id="gramasi_tipe"
-                                class="form-select"
-                            >
-                                <option value="">-- Pilih Tipe Wall --</option>
-                                <option
-                                    value="Single Wall"
-                                    @selected($gramasiTipe === 'Single Wall')
-                                >
-                                    Single Wall (3 Layer: K - M - K)
-                                </option>
-                                <option
-                                    value="Double Wall"
-                                    @selected($gramasiTipe === 'Double Wall')
-                                >
-                                    Double Wall (5 Layer: K - M - M - M - K)
-                                </option>
-                            </select>
-
-                            <small class="text-muted d-block mt-1">
-                                Pilih jenis wall untuk menampilkan input layer gramasi.
-                            </small>
-                        </div>
-                    </div>
-
-                    <div
-                        id="gramasiLayersWrapper"
-                        class="card border rounded-3 p-3 mb-4 bg-light-subtle d-none"
-                        style="max-width: 540px;"
-                    >
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <h6 class="fw-bold mb-0 text-dark" id="gramasiLayersTitle">
-                                Detail Layer Gramasi
-                            </h6>
-                            <span class="badge bg-primary" id="gramasiLayersBadge"></span>
+                                <tbody id="sampleRows"></tbody>
+                            </table>
                         </div>
 
-                        <div id="gramasiLayersContainer" class="d-flex flex-column gap-2">
-                            <!-- Dynamic Layer Inputs (K, M, K or K, M, M, M, K) -->
-                        </div>
-                    </div>
-
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-camera-outline"></i>
-                        Foto Pengecekan
-                    </div>
-
-                    <div class="photo-field mb-4">
-
-                        <div class="d-flex flex-wrap gap-2">
-                            <button
-                                type="button"
-                                class="btn btn-outline-primary"
-                                data-camera-target="foto"
-                            >
-                                <i class="mdi mdi-camera me-1"></i>
-                                Gunakan Kamera
-                            </button>
-
-                            <label class="btn btn-outline-secondary mb-0">
-                                <i class="mdi mdi-folder-image me-1"></i>
-                                Pilih File
-
-                                <input
-                                    type="file"
-                                    name="foto[]"
-                                    id="foto"
-                                    accept="image/*"
-                                    multiple
-                                    hidden
-                                >
-                            </label>
+                        <div class="section-title mt-4">
+                            <i class="mdi mdi-layers-outline"></i>
+                            Gramasi SPB
                         </div>
 
-                        <small class="text-muted d-block mt-2">
-                            Maksimal total 10 foto. Maksimal 2 MB per foto.
-                        </small>
+                        <div class="row g-3 mb-3">
+                            <div class="col-xl-4 col-md-6">
+                                <label
+                                    for="gramasi_tipe"
+                                    class="form-label fw-semibold">
+                                    Tipe Wall Karton
+                                </label>
+
+                                <select
+                                    name="gramasi_tipe"
+                                    id="gramasi_tipe"
+                                    class="form-select">
+                                    <option value="">-- Pilih Tipe Wall --</option>
+                                    <option
+                                        value="Single Wall"
+                                        @selected($gramasiTipe==='Single Wall' )>
+                                        Single Wall (3 Layer: K - M - K)
+                                    </option>
+                                    <option
+                                        value="Double Wall"
+                                        @selected($gramasiTipe==='Double Wall' )>
+                                        Double Wall (5 Layer: K - M - M - M - K)
+                                    </option>
+                                </select>
+
+                                <small class="text-muted d-block mt-1">
+                                    Pilih jenis wall untuk menampilkan input layer gramasi.
+                                </small>
+                            </div>
+                        </div>
 
                         <div
-                            id="fotoPreview"
-                            class="photo-grid mt-3"
-                        >
-                            @foreach (
+                            id="gramasiLayersWrapper"
+                            class="card border rounded-3 p-3 mb-4 bg-light-subtle d-none"
+                            style="max-width: 540px;">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="fw-bold mb-0 text-dark" id="gramasiLayersTitle">
+                                    Detail Layer Gramasi
+                                </h6>
+                                <span class="badge bg-primary" id="gramasiLayersBadge"></span>
+                            </div>
+
+                            <div id="gramasiLayersContainer" class="d-flex flex-column gap-2">
+                                <!-- Dynamic Layer Inputs (K, M, K or K, M, M, M, K) -->
+                            </div>
+                        </div>
+
+                        <div class="section-title mt-4">
+                            <i class="mdi mdi-camera-outline"></i>
+                            Foto Pengecekan
+                        </div>
+
+                        <div class="photo-field mb-4">
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-primary"
+                                    data-camera-target="foto">
+                                    <i class="mdi mdi-camera me-1"></i>
+                                    Gunakan Kamera
+                                </button>
+
+                                <label class="btn btn-outline-secondary mb-0">
+                                    <i class="mdi mdi-folder-image me-1"></i>
+                                    Pilih File
+
+                                    <input
+                                        type="file"
+                                        name="foto[]"
+                                        id="foto"
+                                        accept="image/*"
+                                        multiple
+                                        hidden>
+                                </label>
+                            </div>
+
+                            <small class="text-muted d-block mt-2">
+                                Maksimal total 10 foto. Maksimal 2 MB per foto.
+                            </small>
+
+                            <div
+                                id="fotoPreview"
+                                class="photo-grid mt-3">
+                                @foreach (
                                 $fotoPengecekanTersimpan
                                 as $fotoPath
-                            )
+                                )
                                 <a
                                     href="{{ asset(
                                         'storage/' . $fotoPath
                                     ) }}"
-                                    target="_blank"
-                                >
+                                    target="_blank">
                                     <img
                                         src="{{ asset(
                                             'storage/' . $fotoPath
                                         ) }}"
-                                        alt="Foto pengecekan"
-                                    >
+                                        alt="Foto pengecekan">
                                 </a>
-                            @endforeach
-                        </div>
-                        <div id="fotoNewPreview" class="d-flex flex-column gap-2 mt-2"></div>
-                    </div>
-
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-barcode-scan"></i>
-                        Pemeriksaan Barcode
-                    </div>
-
-                    <div class="alert alert-info py-2 px-3 mb-3">
-                        <i class="mdi mdi-barcode-scan me-1"></i>
-                        Kolom <strong>No Barcode</strong> dapat diisi manual
-                        atau langsung menggunakan barcode scanner fisik (HID/keyboard).
-                    </div>
-
-                    <div class="row g-3 mb-4">
-                        <div class="col-xl-4 col-md-6">
-                            <label
-                                for="scan_barcode"
-                                class="form-label fw-semibold"
-                            >
-                                Scan Barcode
-                            </label>
-
-                            <select
-                                name="scan_barcode"
-                                id="scan_barcode"
-                                class="form-select"
-                            >
-                                <option value="">Pilih Status Barcode</option>
-                                <option
-                                    value="Terbaca"
-                                    @selected($scanBarcodeSpb === 'Terbaca')
-                                >
-                                    Terbaca
-                                </option>
-                                <option
-                                    value="Tidak Terbaca"
-                                    @selected($scanBarcodeSpb === 'Tidak Terbaca')
-                                >
-                                    Tidak Terbaca
-                                </option>
-                            </select>
+                                @endforeach
+                            </div>
+                            <div id="fotoNewPreview" class="d-flex flex-column gap-2 mt-2"></div>
                         </div>
 
-                        <div class="col-xl-4 col-md-6">
-                            <label
-                                for="no_barcode"
-                                class="form-label fw-semibold"
-                            >
-                                No Barcode
-                            </label>
-
-                            <input
-                                type="text"
-                                name="no_barcode"
-                                id="no_barcode"
-                                class="form-control barcode-input"
-                                value="{{ $noBarcodeSpb }}"
-                                autocomplete="off"
-                                placeholder="Scan / ketik barcode"
-                            >
+                        <div class="section-title mt-4">
+                            <i class="mdi mdi-barcode-scan"></i>
+                            Pemeriksaan Barcode
                         </div>
-                    </div>
 
-                    <div class="section-title mt-4">
-                        <i class="mdi mdi-clipboard-check-outline"></i>
-                        Kesimpulan Pemeriksaan
-                    </div>
+                        <div class="alert alert-info py-2 px-3 mb-3">
+                            <i class="mdi mdi-barcode-scan me-1"></i>
+                            Kolom <strong>No Barcode</strong> dapat diisi manual
+                            atau langsung menggunakan barcode scanner fisik (HID/keyboard).
+                        </div>
 
-                    <div class="row g-3">
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-4 col-md-6">
+                                <label
+                                    for="scan_barcode"
+                                    class="form-label fw-semibold">
+                                    Scan Barcode
+                                </label>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">
-                                CoA
-                            </label>
+                                <select
+                                    name="scan_barcode"
+                                    id="scan_barcode"
+                                    class="form-select">
+                                    <option value="">Pilih Status Barcode</option>
+                                    <option
+                                        value="Terbaca"
+                                        @selected($scanBarcodeSpb==='Terbaca' )>
+                                        Terbaca
+                                    </option>
+                                    <option
+                                        value="Tidak Terbaca"
+                                        @selected($scanBarcodeSpb==='Tidak Terbaca' )>
+                                        Tidak Terbaca
+                                    </option>
+                                </select>
+                            </div>
 
-                            <select
-                                name="coa"
-                                class="form-select"
-                            >
-                                <option value="">
-                                    Pilih CoA
-                                </option>
+                            <div class="col-xl-4 col-md-6">
+                                <label
+                                    for="no_barcode"
+                                    class="form-label fw-semibold">
+                                    No Barcode
+                                </label>
 
-                                <option
-                                    value="Ada"
-                                    @selected(
+                                <input
+                                    type="text"
+                                    name="no_barcode"
+                                    id="no_barcode"
+                                    class="form-control barcode-input"
+                                    value="{{ $noBarcodeSpb }}"
+                                    autocomplete="off"
+                                    placeholder="Scan / ketik barcode">
+                            </div>
+                        </div>
+
+                        <div class="section-title mt-4">
+                            <i class="mdi mdi-clipboard-check-outline"></i>
+                            Kesimpulan Pemeriksaan
+                        </div>
+
+                        <div class="row g-3">
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">
+                                    CoA
+                                </label>
+
+                                <select
+                                    name="coa"
+                                    class="form-select">
+                                    <option value="">
+                                        Pilih CoA
+                                    </option>
+
+                                    <option
+                                        value="Ada"
+                                        @selected(
                                         $sampling?->coa === 'Ada'
-                                    )
-                                >
-                                    Ada
-                                </option>
+                                        )
+                                        >
+                                        Ada
+                                    </option>
 
-                                <option
-                                    value="Tidak Ada"
-                                    @selected(
+                                    <option
+                                        value="Tidak Ada"
+                                        @selected(
                                         $sampling?->coa === 'Tidak Ada'
-                                    )
-                                >
-                                    Tidak Ada
-                                </option>
-                            </select>
-                        </div>
+                                        )
+                                        >
+                                        Tidak Ada
+                                    </option>
+                                </select>
+                            </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label">
-                                Rekomendasi
-                            </label>
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">
+                                    Rekomendasi
+                                </label>
 
-                            <select
-                                name="rekomendasi"
-                                class="form-select"
-                                required
-                            >
-                                <option value="">
-                                    Pilih rekomendasi
-                                </option>
+                                <select
+                                    name="rekomendasi"
+                                    class="form-select"
+                                    required>
+                                    <option value="">
+                                        Pilih rekomendasi
+                                    </option>
 
-                                @foreach ([
+                                    @foreach ([
                                     'Diterima',
                                     'Diterima Bersyarat',
                                     'Ditolak',
-                                ] as $item)
+                                    ] as $item)
                                     <option
                                         value="{{ $item }}"
                                         @selected(
-                                            $sampling?->rekomendasi
-                                            === $item
+                                        $sampling?->rekomendasi
+                                        === $item
                                         )
-                                    >
+                                        >
                                         {{ $item }}
                                     </option>
-                                @endforeach
-                            </select>
-                        </div>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <div class="col-xl-3 col-md-6">
-                            <label
-                                for="konfirmasi_ketidaksesuaian"
-                                class="form-label"
-                            >
-                                Konfirmasi Ketidaksesuaian
-                            </label>
+                            <div class="col-xl-3 col-md-6">
+                                <label
+                                    for="konfirmasi_ketidaksesuaian"
+                                    class="form-label">
+                                    Konfirmasi Ketidaksesuaian
+                                </label>
 
-                            <select
-                                name="konfirmasi_ketidaksesuaian"
-                                id="konfirmasi_ketidaksesuaian"
-                                class="form-select"
-                                required
-                            >
-                                <option value="">
-                                    Pilih konfirmasi
-                                </option>
+                                <select
+                                    name="konfirmasi_ketidaksesuaian"
+                                    id="konfirmasi_ketidaksesuaian"
+                                    class="form-select"
+                                    required>
+                                    <option value="">
+                                        Pilih konfirmasi
+                                    </option>
 
-                                <option
-                                    value="Ada"
-                                    @selected(
+                                    <option
+                                        value="Ada"
+                                        @selected(
                                         $sampling?->konfirmasi_ketidaksesuaian
                                         === 'Ada'
-                                    )
-                                >
-                                    Ada
-                                </option>
+                                        )
+                                        >
+                                        Ada
+                                    </option>
 
-                                <option
-                                    value="Tidak Ada"
-                                    @selected(
+                                    <option
+                                        value="Tidak Ada"
+                                        @selected(
                                         $sampling?->konfirmasi_ketidaksesuaian
                                         === 'Tidak Ada'
-                                    )
-                                >
-                                    Tidak Ada
-                                </option>
-                            </select>
-                        </div>
+                                        )
+                                        >
+                                        Tidak Ada
+                                    </option>
+                                </select>
+                            </div>
 
-                        <div
-                            class="col-xl-3 col-md-6"
-                            id="jenisKetidaksesuaianWrapper"
-                        >
-                            <label class="form-label">
-                                Jenis Ketidaksesuaian
-                            </label>
+                            <div
+                                class="col-xl-3 col-md-6"
+                                id="jenisKetidaksesuaianWrapper">
+                                <label class="form-label">
+                                    Jenis Ketidaksesuaian
+                                </label>
 
-                            <div class="checkbox-card">
-                                @foreach ($opsiJenisKetidaksesuaian as $item)
+                                <div class="checkbox-card">
+                                    @foreach ($opsiJenisKetidaksesuaian as $item)
                                     <div class="form-check mb-2">
                                         <input
                                             type="checkbox"
@@ -724,147 +691,133 @@
                                             id="jenis_{{ $loop->index }}"
                                             class="form-check-input jenis-ketidaksesuaian"
                                             @checked(
-                                                in_array(
-                                                    $item,
-                                                    $jenisKetidaksesuaianTerpilih,
-                                                    true
-                                                )
+                                            in_array(
+                                            $item,
+                                            $jenisKetidaksesuaianTerpilih,
+                                            true
                                             )
-                                        >
+                                            )>
 
                                         <label
                                             for="jenis_{{ $loop->index }}"
-                                            class="form-check-label"
-                                        >
+                                            class="form-check-label">
                                             {{ $item }}
                                         </label>
                                     </div>
-                                @endforeach
+                                    @endforeach
 
-                                <div class="form-check mb-0">
-                                    <input
-                                        type="checkbox"
-                                        name="jenis_ketidaksesuaian[]"
-                                        value="Lainnya"
-                                        id="jenis_lainnya"
-                                        class="form-check-input jenis-ketidaksesuaian"
-                                        @checked($lainnyaTerpilih)
-                                    >
+                                    <div class="form-check mb-0">
+                                        <input
+                                            type="checkbox"
+                                            name="jenis_ketidaksesuaian[]"
+                                            value="Lainnya"
+                                            id="jenis_lainnya"
+                                            class="form-check-input jenis-ketidaksesuaian"
+                                            @checked($lainnyaTerpilih)>
 
+                                        <label
+                                            for="jenis_lainnya"
+                                            class="form-check-label">
+                                            Lainnya
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div
+                                    id="jenisLainnyaWrapper"
+                                    class="mt-3 {{ $lainnyaTerpilih ? '' : 'd-none' }}">
                                     <label
-                                        for="jenis_lainnya"
-                                        class="form-check-label"
-                                    >
-                                        Lainnya
+                                        for="jenis_ketidaksesuaian_lainnya"
+                                        class="form-label">
+                                        Jenis Ketidaksesuaian Lainnya
+                                        <span class="text-danger">*</span>
                                     </label>
+
+                                    <input
+                                        type="text"
+                                        name="jenis_ketidaksesuaian_lainnya"
+                                        id="jenis_ketidaksesuaian_lainnya"
+                                        class="form-control"
+                                        maxlength="255"
+                                        value="{{ $jenisKetidaksesuaianLainnyaValue }}"
+                                        placeholder="Tulis jenis ketidaksesuaian lainnya">
                                 </div>
                             </div>
 
-                            <div
-                                id="jenisLainnyaWrapper"
-                                class="mt-3 {{ $lainnyaTerpilih ? '' : 'd-none' }}"
-                            >
-                                <label
-                                    for="jenis_ketidaksesuaian_lainnya"
-                                    class="form-label"
-                                >
-                                    Jenis Ketidaksesuaian Lainnya
-                                    <span class="text-danger">*</span>
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="jenis_ketidaksesuaian_lainnya"
-                                    id="jenis_ketidaksesuaian_lainnya"
-                                    class="form-control"
-                                    maxlength="255"
-                                    value="{{ $jenisKetidaksesuaianLainnyaValue }}"
-                                    placeholder="Tulis jenis ketidaksesuaian lainnya"
-                                >
-                            </div>
                         </div>
-
-                    </div>
-
-                    <div
-                        id="fotoKetidaksesuaianWrapper"
-                        class="mt-4"
-                    >
-                        <label class="form-label fw-semibold">
-                            Foto Ketidaksesuaian
-                        </label>
-
-                        <div class="d-flex flex-wrap gap-2">
-                            <button
-                                type="button"
-                                class="btn btn-outline-danger"
-                                data-camera-target="foto_ketidaksesuaian"
-                            >
-                                <i class="mdi mdi-camera me-1"></i>
-                                Gunakan Kamera
-                            </button>
-
-                            <label class="btn btn-outline-secondary mb-0">
-                                <i class="mdi mdi-folder-image me-1"></i>
-                                Pilih File
-
-                                <input
-                                    type="file"
-                                    name="foto_ketidaksesuaian[]"
-                                    id="foto_ketidaksesuaian"
-                                    accept="image/*"
-                                    multiple
-                                    hidden
-                                >
-                            </label>
-                        </div>
-
-                        <small class="text-muted d-block mt-2">
-                            Maksimal total 10 foto. Maksimal 2 MB per foto.
-                        </small>
 
                         <div
-                            id="fotoKetidaksesuaianPreview"
-                            class="photo-grid mt-3"
-                        >
-                            @foreach (
+                            id="fotoKetidaksesuaianWrapper"
+                            class="mt-4">
+                            <label class="form-label fw-semibold">
+                                Foto Ketidaksesuaian
+                            </label>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-danger"
+                                    data-camera-target="foto_ketidaksesuaian">
+                                    <i class="mdi mdi-camera me-1"></i>
+                                    Gunakan Kamera
+                                </button>
+
+                                <label class="btn btn-outline-secondary mb-0">
+                                    <i class="mdi mdi-folder-image me-1"></i>
+                                    Pilih File
+
+                                    <input
+                                        type="file"
+                                        name="foto_ketidaksesuaian[]"
+                                        id="foto_ketidaksesuaian"
+                                        accept="image/*"
+                                        multiple
+                                        hidden>
+                                </label>
+                            </div>
+
+                            <small class="text-muted d-block mt-2">
+                                Maksimal total 10 foto. Maksimal 2 MB per foto.
+                            </small>
+
+                            <div
+                                id="fotoKetidaksesuaianPreview"
+                                class="photo-grid mt-3">
+                                @foreach (
                                 $fotoKetidaksesuaianTersimpan
                                 as $fotoPath
-                            )
+                                )
                                 <a
                                     href="{{ asset(
                                         'storage/' . $fotoPath
                                     ) }}"
-                                    target="_blank"
-                                >
+                                    target="_blank">
                                     <img
                                         src="{{ asset(
                                             'storage/' . $fotoPath
                                         ) }}"
-                                        alt="Foto ketidaksesuaian"
-                                    >
+                                        alt="Foto ketidaksesuaian">
                                 </a>
-                            @endforeach
+                                @endforeach
+                            </div>
+                            <div id="fotoKetidaksesuaianNewPreview" class="d-flex flex-column gap-2 mt-2"></div>
                         </div>
-                        <div id="fotoKetidaksesuaianNewPreview" class="d-flex flex-column gap-2 mt-2"></div>
-                    </div>
 
-                    <div class="mt-4">
-                        <label class="form-label">
-                            Keterangan
-                        </label>
+                        <div class="mt-4">
+                            <label class="form-label">
+                                Keterangan
+                            </label>
 
-                        <textarea
-                            name="keterangan"
-                            class="form-control"
-                            rows="4"
-                        >{{ old(
+                            <textarea
+                                name="keterangan"
+                                class="form-control"
+                                rows="4">{{ old(
                             'keterangan',
                             $sampling?->keterangan
                         ) }}</textarea>
+                        </div>
                     </div>
                 </div>
-            </div>
             </fieldset>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
@@ -873,36 +826,33 @@
                         'rmpm.pm.karton.display',
                         $packagingIncoming
                     ) }}"
-                    class="btn btn-light"
-                >
+                    class="btn btn-light">
                     <i class="mdi mdi-arrow-left me-1"></i>
                     Kembali
                 </a>
 
                 @if (! $isLocked)
-                    @if (! $isFinal)
-                        <button
-                            type="submit"
-                            value="draft"
-                            class="btn btn-warning px-4 save-button"
-                            formnovalidate
-                        >
-                            <i class="mdi mdi-content-save-edit-outline me-1"></i>
-                            Simpan Sementara
-                        </button>
-                    @endif
+                @if (! $isFinal)
+                <button
+                    type="submit"
+                    value="draft"
+                    class="btn btn-warning px-4 save-button"
+                    formnovalidate>
+                    <i class="mdi mdi-content-save-edit-outline me-1"></i>
+                    Simpan Sementara
+                </button>
+                @endif
 
-                    <button
-                        type="submit"
-                        value="final"
-                        id="submitButton"
-                        class="btn btn-primary px-4 save-button"
-                    >
-                        <i class="mdi mdi-check-circle-outline me-1"></i>
-                        {{ $isFinal && $isForeman
+                <button
+                    type="submit"
+                    value="final"
+                    id="submitButton"
+                    class="btn btn-primary px-4 save-button">
+                    <i class="mdi mdi-check-circle-outline me-1"></i>
+                    {{ $isFinal && $isForeman
                             ? 'Simpan Koreksi'
                             : 'Simpan Final' }}
-                    </button>
+                </button>
                 @endif
             </div>
         </form>
@@ -914,8 +864,7 @@
     class="modal fade"
     id="cameraModal"
     tabindex="-1"
-    aria-hidden="true"
->
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
@@ -927,8 +876,7 @@
                 <button
                     type="button"
                     class="btn-close"
-                    data-bs-dismiss="modal"
-                ></button>
+                    data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
@@ -936,21 +884,18 @@
                     id="cameraVideo"
                     autoplay
                     playsinline
-                    class="camera-video"
-                ></video>
+                    class="camera-video"></video>
 
                 <canvas
                     id="cameraCanvas"
-                    class="d-none"
-                ></canvas>
+                    class="d-none"></canvas>
             </div>
 
             <div class="modal-footer">
                 <button
                     type="button"
                     class="btn btn-primary"
-                    id="captureButton"
-                >
+                    id="captureButton">
                     <i class="mdi mdi-camera me-1"></i>
                     Ambil Foto
                 </button>
@@ -978,11 +923,9 @@
         justify-content: space-between;
         padding: 24px 28px;
         border-bottom: 4px solid #eab308;
-        background: linear-gradient(
-            135deg,
-            #fefce8,
-            #f8fafc
-        );
+        background: linear-gradient(135deg,
+                #fefce8,
+                #f8fafc);
     }
 
     .sampling-label {
@@ -1078,6 +1021,45 @@
         color: #4338ca;
     }
 
+    /* Excel-style Multi-cell Selection & Block Highlighting */
+    .inspection-table td.cell-selected {
+        background-color: rgba(13, 110, 253, 0.16) !important;
+        user-select: none;
+    }
+    .inspection-table td.cell-selected input {
+        background-color: rgba(13, 110, 253, 0.09) !important;
+        border-color: #86b7fe !important;
+    }
+    .inspection-table td.cell-selected-top {
+        border-top: 2px solid #0d6efd !important;
+    }
+    .inspection-table td.cell-selected-bottom {
+        border-bottom: 2px solid #0d6efd !important;
+    }
+    .inspection-table td.cell-selected-left {
+        border-left: 2px solid #0d6efd !important;
+    }
+    .inspection-table td.cell-selected-right {
+        border-right: 2px solid #0d6efd !important;
+    }
+    .inspection-table thead th {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease;
+    }
+    .inspection-table thead th:hover {
+        background-color: #e2e8f0 !important;
+        color: #1e293b;
+    }
+    .inspection-table tbody td.sample-number {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease;
+    }
+    .inspection-table tbody td.sample-number:hover {
+        background-color: #e2e8f0 !important;
+    }
+
     .inspection-table thead th {
         padding: 10px 8px;
         background: #f1f5f9;
@@ -1137,10 +1119,8 @@
 
     .photo-grid {
         display: grid;
-        grid-template-columns: repeat(
-            auto-fill,
-            minmax(120px, 1fr)
-        );
+        grid-template-columns: repeat(auto-fill,
+                minmax(120px, 1fr));
         gap: 12px;
     }
 
@@ -1161,6 +1141,32 @@
         background: #111827;
         object-fit: cover;
     }
+
+    @keyframes pasteCellPulse {
+        0% {
+            background-color: #d1e7dd;
+            border-color: #198754;
+            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+        }
+
+        50% {
+            background-color: #badbcc;
+        }
+
+        100% {
+            background-color: inherit;
+            border-color: #dee2e6;
+            box-shadow: none;
+        }
+    }
+
+    .paste-highlight {
+        animation: pasteCellPulse 1.2s ease-out !important;
+    }
+
+    .inspection-table td:focus-within {
+        background-color: #f0f7ff;
+    }
 </style>
 
 @endsection
@@ -1168,173 +1174,194 @@
 @section('scripts')
 
 <script>
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
-        const isSamplingLocked =
-            @json($isLocked);
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+            const isSamplingLocked =
+                @json($isLocked);
 
-        const isFinalRecord =
-            @json($isFinal);
+            const isFinalRecord =
+                @json($isFinal);
 
-        const isForeman =
-            @json($isForeman);
+            const isForeman =
+                @json($isForeman);
 
-        const form =
-            document.getElementById(
-                'kartonSamplingForm'
-            );
-
-        const jumlahInput =
-            document.getElementById(
-                'jumlah_sampel'
-            );
-
-        const rowsContainer =
-            document.getElementById(
-                'sampleRows'
-            );
-
-        const konfirmasiSelect =
-            document.getElementById(
-                'konfirmasi_ketidaksesuaian'
-            );
-
-        const jenisWrapper =
-            document.getElementById(
-                'jenisKetidaksesuaianWrapper'
-            );
-
-        const fotoKetidaksesuaianWrapper =
-            document.getElementById(
-                'fotoKetidaksesuaianWrapper'
-            );
-
-        const jenisLainnyaCheckbox =
-            document.getElementById(
-                'jenis_lainnya'
-            );
-
-        const jenisLainnyaWrapper =
-            document.getElementById(
-                'jenisLainnyaWrapper'
-            );
-
-        const jenisLainnyaInput =
-            document.getElementById(
-                'jenis_ketidaksesuaian_lainnya'
-            );
-
-        const submitButton =
-            document.getElementById(
-                'submitButton'
-            );
-
-        const gramasiTipeSelect =
-            document.getElementById(
-                'gramasi_tipe'
-            );
-
-        const gramasiLayersWrapper =
-            document.getElementById(
-                'gramasiLayersWrapper'
-            );
-
-        const gramasiLayersContainer =
-            document.getElementById(
-                'gramasiLayersContainer'
-            );
-
-        const gramasiLayersTitle =
-            document.getElementById(
-                'gramasiLayersTitle'
-            );
-
-        const gramasiLayersBadge =
-            document.getElementById(
-                'gramasiLayersBadge'
-            );
-
-        const gramasiTotalInput =
-            document.getElementById(
-                'gramasi'
-            );
-
-        const initialGramasiTipe =
-            @json($gramasiTipe);
-
-        const initialGramasiLayers =
-            @json(
-                is_array($gramasiLayers)
-                    ? array_values($gramasiLayers)
-                    : []
-            );
-
-        const layerConfig = {
-            'Single Wall': [
-                { label: 'K', desc: 'Kraft / Outer Liner' },
-                { label: 'M', desc: 'Medium / Flute' },
-                { label: 'K', desc: 'Kraft / Inner Liner' },
-            ],
-            'Double Wall': [
-                { label: 'K', desc: 'Kraft / Outer Liner' },
-                { label: 'M', desc: 'Medium / Flute 1' },
-                { label: 'M', desc: 'Medium / Middle Liner' },
-                { label: 'M', desc: 'Medium / Flute 2' },
-                { label: 'K', desc: 'Kraft / Inner Liner' },
-            ],
-        };
-
-        function calculateGramasiTotal() {
-            if (!gramasiLayersContainer) return;
-            const inputs =
-                gramasiLayersContainer.querySelectorAll(
-                    '.gramasi-layer-input'
+            const form =
+                document.getElementById(
+                    'kartonSamplingForm'
                 );
 
-            let total = 0;
-            let hasValue = false;
+            const jumlahInput =
+                document.getElementById(
+                    'jumlah_sampel'
+                );
 
-            inputs.forEach(function (input) {
-                const val = parseFloat(input.value);
-                if (!isNaN(val)) {
-                    total += val;
-                    hasValue = true;
+            const rowsContainer =
+                document.getElementById(
+                    'sampleRows'
+                );
+
+            const konfirmasiSelect =
+                document.getElementById(
+                    'konfirmasi_ketidaksesuaian'
+                );
+
+            const jenisWrapper =
+                document.getElementById(
+                    'jenisKetidaksesuaianWrapper'
+                );
+
+            const fotoKetidaksesuaianWrapper =
+                document.getElementById(
+                    'fotoKetidaksesuaianWrapper'
+                );
+
+            const jenisLainnyaCheckbox =
+                document.getElementById(
+                    'jenis_lainnya'
+                );
+
+            const jenisLainnyaWrapper =
+                document.getElementById(
+                    'jenisLainnyaWrapper'
+                );
+
+            const jenisLainnyaInput =
+                document.getElementById(
+                    'jenis_ketidaksesuaian_lainnya'
+                );
+
+            const submitButton =
+                document.getElementById(
+                    'submitButton'
+                );
+
+            const gramasiTipeSelect =
+                document.getElementById(
+                    'gramasi_tipe'
+                );
+
+            const gramasiLayersWrapper =
+                document.getElementById(
+                    'gramasiLayersWrapper'
+                );
+
+            const gramasiLayersContainer =
+                document.getElementById(
+                    'gramasiLayersContainer'
+                );
+
+            const gramasiLayersTitle =
+                document.getElementById(
+                    'gramasiLayersTitle'
+                );
+
+            const gramasiLayersBadge =
+                document.getElementById(
+                    'gramasiLayersBadge'
+                );
+
+            const gramasiTotalInput =
+                document.getElementById(
+                    'gramasi'
+                );
+
+            const initialGramasiTipe =
+                @json($gramasiTipe);
+
+            const initialGramasiLayers =
+                @json(
+                    is_array($gramasiLayers) ?
+                    array_values($gramasiLayers) : []
+                );
+
+            const layerConfig = {
+                'Single Wall': [{
+                        label: 'K',
+                        desc: 'Kraft / Outer Liner'
+                    },
+                    {
+                        label: 'M',
+                        desc: 'Medium / Flute'
+                    },
+                    {
+                        label: 'K',
+                        desc: 'Kraft / Inner Liner'
+                    },
+                ],
+                'Double Wall': [{
+                        label: 'K',
+                        desc: 'Kraft / Outer Liner'
+                    },
+                    {
+                        label: 'M',
+                        desc: 'Medium / Flute 1'
+                    },
+                    {
+                        label: 'M',
+                        desc: 'Medium / Middle Liner'
+                    },
+                    {
+                        label: 'M',
+                        desc: 'Medium / Flute 2'
+                    },
+                    {
+                        label: 'K',
+                        desc: 'Kraft / Inner Liner'
+                    },
+                ],
+            };
+
+            function calculateGramasiTotal() {
+                if (!gramasiLayersContainer) return;
+                const inputs =
+                    gramasiLayersContainer.querySelectorAll(
+                        '.gramasi-layer-input'
+                    );
+
+                let total = 0;
+                let hasValue = false;
+
+                inputs.forEach(function(input) {
+                    const val = parseFloat(input.value);
+                    if (!isNaN(val)) {
+                        total += val;
+                        hasValue = true;
+                    }
+                });
+
+                if (gramasiTotalInput) {
+                    gramasiTotalInput.value = hasValue ? parseFloat(total.toFixed(2)) : '';
                 }
-            });
-
-            if (gramasiTotalInput) {
-                gramasiTotalInput.value = hasValue ? parseFloat(total.toFixed(2)) : '';
-            }
-        }
-
-        function renderGramasiLayers(type, savedValues = []) {
-            if (!gramasiLayersWrapper || !gramasiLayersContainer) return;
-
-            if (!type || !layerConfig[type]) {
-                gramasiLayersWrapper.classList.add('d-none');
-                gramasiLayersContainer.innerHTML = '';
-                return;
             }
 
-            const layers = layerConfig[type];
-            if (gramasiLayersTitle) {
-                gramasiLayersTitle.textContent = `Detail Layer Gramasi (${type})`;
-            }
-            if (gramasiLayersBadge) {
-                gramasiLayersBadge.textContent = `${layers.length} Layer`;
-            }
+            function renderGramasiLayers(type, savedValues = []) {
+                if (!gramasiLayersWrapper || !gramasiLayersContainer) return;
 
-            gramasiLayersWrapper.classList.remove('d-none');
+                if (!type || !layerConfig[type]) {
+                    gramasiLayersWrapper.classList.add('d-none');
+                    gramasiLayersContainer.innerHTML = '';
+                    return;
+                }
 
-            let html = '';
-            layers.forEach(function (layer, idx) {
-                const val =
-                    savedValues[idx] !== undefined && savedValues[idx] !== null
-                        ? savedValues[idx]
-                        : '';
+                const layers = layerConfig[type];
+                if (gramasiLayersTitle) {
+                    gramasiLayersTitle.textContent = `Detail Layer Gramasi (${type})`;
+                }
+                if (gramasiLayersBadge) {
+                    gramasiLayersBadge.textContent = `${layers.length} Layer`;
+                }
 
-                html += `
+                gramasiLayersWrapper.classList.remove('d-none');
+
+                let html = '';
+                layers.forEach(function(layer, idx) {
+                    const val =
+                        savedValues[idx] !== undefined && savedValues[idx] !== null ?
+                        savedValues[idx] :
+                        '';
+
+                    html += `
                     <div class="row align-items-center g-2">
                         <div class="col-3 col-sm-2">
                             <span class="badge bg-secondary-subtle text-dark border w-100 py-2 fs-6 fw-bold text-center">
@@ -1359,61 +1386,61 @@ document.addEventListener(
                         </div>
                     </div>
                 `;
-            });
-
-            gramasiLayersContainer.innerHTML = html;
-
-            gramasiLayersContainer
-                .querySelectorAll('.gramasi-layer-input')
-                .forEach(function (input) {
-                    input.addEventListener('input', calculateGramasiTotal);
                 });
-        }
 
-        if (gramasiTipeSelect) {
-            gramasiTipeSelect.addEventListener('change', function () {
-                renderGramasiLayers(this.value);
-                calculateGramasiTotal();
-            });
+                gramasiLayersContainer.innerHTML = html;
 
-            if (initialGramasiTipe) {
-                renderGramasiLayers(initialGramasiTipe, initialGramasiLayers);
+                gramasiLayersContainer
+                    .querySelectorAll('.gramasi-layer-input')
+                    .forEach(function(input) {
+                        input.addEventListener('input', calculateGramasiTotal);
+                    });
             }
-        }
 
-        const alertContainer =
-            document.getElementById(
-                'alertContainer'
-            );
+            if (gramasiTipeSelect) {
+                gramasiTipeSelect.addEventListener('change', function() {
+                    renderGramasiLayers(this.value);
+                    calculateGramasiTotal();
+                });
 
-        const existingFotoCount =
-            @json(
-                count($fotoPengecekanTersimpan)
-            );
+                if (initialGramasiTipe) {
+                    renderGramasiLayers(initialGramasiTipe, initialGramasiLayers);
+                }
+            }
 
-        const existingFotoKetidaksesuaianCount =
-            @json(
-                count(
-                    $fotoKetidaksesuaianTersimpan
-                )
-            );
+            const alertContainer =
+                document.getElementById(
+                    'alertContainer'
+                );
 
-        const savedSamples =
-            @json(
-                $sampling?->hasil_sampel ?? []
-            );
+            const existingFotoCount =
+                @json(
+                    count($fotoPengecekanTersimpan)
+                );
 
-        function escapeHtml(value) {
-            return String(value ?? '')
-                .replaceAll('&', '&amp;')
-                .replaceAll('<', '&lt;')
-                .replaceAll('>', '&gt;')
-                .replaceAll('"', '&quot;')
-                .replaceAll("'", '&#039;');
-        }
+            const existingFotoKetidaksesuaianCount =
+                @json(
+                    count(
+                        $fotoKetidaksesuaianTersimpan
+                    )
+                );
 
-        function option(value, current, label = value) {
-            return `
+            const savedSamples =
+                @json(
+                    $sampling ? - > hasil_sampel ?? []
+                );
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            function option(value, current, label = value) {
+                return `
                 <option
                     value="${escapeHtml(value)}"
                     ${current === value ? 'selected' : ''}
@@ -1421,14 +1448,14 @@ document.addEventListener(
                     ${escapeHtml(label)}
                 </option>
             `;
-        }
+            }
 
-        function radioHtml(name, value = '') {
-            const idBase = name
-                .replaceAll('[', '_')
-                .replaceAll(']', '');
+            function radioHtml(name, value = '') {
+                const idBase = name
+                    .replaceAll('[', '_')
+                    .replaceAll(']', '');
 
-            return `
+                return `
                 <div class="option-radio-group">
                     <label
                         class="option-radio ${value === 'OK' ? 'is-selected' : ''}"
@@ -1461,32 +1488,30 @@ document.addEventListener(
                     </label>
                 </div>
             `;
-        }
+            }
 
-        function buildRows(total) {
-            const safeTotal = Math.max(
-                1,
-                Math.min(
-                    parseInt(total || 1),
-                    50
-                )
-            );
+            function buildRows(total) {
+                const safeTotal = Math.max(
+                    1,
+                    Math.min(
+                        parseInt(total || 1),
+                        50
+                    )
+                );
 
-            rowsContainer.innerHTML = '';
+                rowsContainer.innerHTML = '';
 
-            for (
-                let index = 0;
-                index < safeTotal;
-                index++
-            ) {
-                const sample =
-                    savedSamples[index] ?? {};
+                for (
+                    let index = 0; index < safeTotal; index++
+                ) {
+                    const sample =
+                        savedSamples[index] ?? {};
 
-                rowsContainer.insertAdjacentHTML(
-                    'beforeend',
-                    `
+                    rowsContainer.insertAdjacentHTML(
+                        'beforeend',
+                        `
                         <tr>
-                            <td class="text-center fw-semibold">
+                            <td class="text-center fw-semibold sample-number" title="Klik untuk blok baris ke-${index + 1}">
                                 ${index + 1}
                             </td>
 
@@ -1503,204 +1528,204 @@ document.addEventListener(
                             </td>
                         </tr>
                     `
-                );
-            }
+                    );
+                }
 
-            rowsContainer
-                .querySelectorAll('.option-radio input[type="radio"]')
-                .forEach(function (radio) {
-                    radio.addEventListener('change', function () {
-                        const group = radio.closest('.option-radio-group');
-                        group?.querySelectorAll('.option-radio').forEach(function (label) {
-                            label.classList.remove('is-selected');
+                rowsContainer
+                    .querySelectorAll('.option-radio input[type="radio"]')
+                    .forEach(function(radio) {
+                        radio.addEventListener('change', function() {
+                            const group = radio.closest('.option-radio-group');
+                            group?.querySelectorAll('.option-radio').forEach(function(label) {
+                                label.classList.remove('is-selected');
+                            });
+                            radio.closest('.option-radio')?.classList.add('is-selected');
                         });
-                        radio.closest('.option-radio')?.classList.add('is-selected');
                     });
-                });
-        }
-
-        function setupKeyboardNavigation(formElement) {
-            if (!formElement) return;
-
-            function isVisibleAndEditable(el) {
-                if (!el) return false;
-                if (el.disabled || el.readOnly || el.type === 'hidden') return false;
-                if (el.offsetParent === null && getComputedStyle(el).display === 'none' && !el.closest('.option-radio')) return false;
-                return true;
             }
 
-            function findFocusableInCell(cell) {
-                if (!cell) return null;
-                const checkedRadio = cell.querySelector('input[type="radio"]:checked');
-                if (checkedRadio && isVisibleAndEditable(checkedRadio)) return checkedRadio;
+            function setupKeyboardNavigation(formElement) {
+                if (!formElement) return;
 
-                const firstRadio = cell.querySelector('.option-radio input[type="radio"]');
-                if (firstRadio && isVisibleAndEditable(firstRadio)) return firstRadio;
-
-                const input = cell.querySelector('input:not([type="hidden"]), select, textarea');
-                if (input && isVisibleAndEditable(input)) return input;
-
-                return null;
-            }
-
-            function focusControl(el) {
-                if (!el) return;
-                el.focus();
-                if (typeof el.select === 'function' && el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'file') {
-                    el.select();
+                function isVisibleAndEditable(el) {
+                    if (!el) return false;
+                    if (el.disabled || el.readOnly || el.type === 'hidden') return false;
+                    if (el.offsetParent === null && getComputedStyle(el).display === 'none' && !el.closest('.option-radio')) return false;
+                    return true;
                 }
-            }
 
-            function findNextColumnFirstInput(rows, currentColIndex) {
-                if (!rows.length) return null;
-                const maxCols = rows[0].cells.length;
-                for (let c = currentColIndex + 1; c < maxCols; c++) {
-                    for (let r = 0; r < rows.length; r++) {
-                        const cell = rows[r].cells[c];
-                        if (cell) {
-                            const ctrl = findFocusableInCell(cell);
-                            if (ctrl) return ctrl;
-                        }
+                function findFocusableInCell(cell) {
+                    if (!cell) return null;
+                    const checkedRadio = cell.querySelector('input[type="radio"]:checked');
+                    if (checkedRadio && isVisibleAndEditable(checkedRadio)) return checkedRadio;
+
+                    const firstRadio = cell.querySelector('.option-radio input[type="radio"]');
+                    if (firstRadio && isVisibleAndEditable(firstRadio)) return firstRadio;
+
+                    const input = cell.querySelector('input:not([type="hidden"]), select, textarea');
+                    if (input && isVisibleAndEditable(input)) return input;
+
+                    return null;
+                }
+
+                function focusControl(el) {
+                    if (!el) return;
+                    el.focus();
+                    if (typeof el.select === 'function' && el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'file') {
+                        el.select();
                     }
                 }
-                return null;
-            }
 
-            function findPrevColumnLastInput(rows, currentColIndex) {
-                if (!rows.length) return null;
-                for (let c = currentColIndex - 1; c >= 0; c--) {
-                    for (let r = rows.length - 1; r >= 0; r--) {
-                        const cell = rows[r].cells[c];
-                        if (cell) {
-                            const ctrl = findFocusableInCell(cell);
-                            if (ctrl) return ctrl;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            function getFocusableElements(container) {
-                const selector = 'input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])';
-                const elements = Array.from(container.querySelectorAll(selector));
-                return elements.filter(el => isVisibleAndEditable(el));
-            }
-
-            formElement.addEventListener('keydown', function (event) {
-                const target = event.target;
-                if (!target) return;
-
-                if (target.tagName === 'TEXTAREA' && !event.ctrlKey) {
-                    if (event.key === 'Tab') {
-                        event.preventDefault();
-                        const focusables = getFocusableElements(formElement);
-                        const currentIndex = focusables.indexOf(target);
-                        if (currentIndex !== -1) {
-                            const nextIndex = event.shiftKey ? currentIndex - 1 : currentIndex + 1;
-                            if (nextIndex >= 0 && nextIndex < focusables.length) {
-                                focusControl(focusables[nextIndex]);
+                function findNextColumnFirstInput(rows, currentColIndex) {
+                    if (!rows.length) return null;
+                    const maxCols = rows[0].cells.length;
+                    for (let c = currentColIndex + 1; c < maxCols; c++) {
+                        for (let r = 0; r < rows.length; r++) {
+                            const cell = rows[r].cells[c];
+                            if (cell) {
+                                const ctrl = findFocusableInCell(cell);
+                                if (ctrl) return ctrl;
                             }
                         }
                     }
-                    return;
+                    return null;
                 }
 
-                if (target.tagName === 'BUTTON' || (target.tagName === 'INPUT' && target.type === 'submit')) {
-                    return;
+                function findPrevColumnLastInput(rows, currentColIndex) {
+                    if (!rows.length) return null;
+                    for (let c = currentColIndex - 1; c >= 0; c--) {
+                        for (let r = rows.length - 1; r >= 0; r--) {
+                            const cell = rows[r].cells[c];
+                            if (cell) {
+                                const ctrl = findFocusableInCell(cell);
+                                if (ctrl) return ctrl;
+                            }
+                        }
+                    }
+                    return null;
                 }
 
-                const isEnter = event.key === 'Enter';
-                const isTab = event.key === 'Tab';
-                const isArrowDown = event.key === 'ArrowDown';
-                const isArrowUp = event.key === 'ArrowUp';
-
-                if (!isEnter && !isTab && !isArrowDown && !isArrowUp) {
-                    return;
+                function getFocusableElements(container) {
+                    const selector = 'input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])';
+                    const elements = Array.from(container.querySelectorAll(selector));
+                    return elements.filter(el => isVisibleAndEditable(el));
                 }
 
-                const isInTable = target.closest('table') !== null;
-                if ((isArrowDown || isArrowUp) && !isInTable) {
-                    return;
-                }
+                formElement.addEventListener('keydown', function(event) {
+                    const target = event.target;
+                    if (!target) return;
 
-                if (target.tagName === 'SELECT' && (isArrowDown || isArrowUp)) {
-                    return;
-                }
+                    if (target.tagName === 'TEXTAREA' && !event.ctrlKey) {
+                        if (event.key === 'Tab') {
+                            event.preventDefault();
+                            const focusables = getFocusableElements(formElement);
+                            const currentIndex = focusables.indexOf(target);
+                            if (currentIndex !== -1) {
+                                const nextIndex = event.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                                if (nextIndex >= 0 && nextIndex < focusables.length) {
+                                    focusControl(focusables[nextIndex]);
+                                }
+                            }
+                        }
+                        return;
+                    }
 
-                const isBackwards = event.shiftKey || isArrowUp;
+                    if (target.tagName === 'BUTTON' || (target.tagName === 'INPUT' && target.type === 'submit')) {
+                        return;
+                    }
 
-                if (isEnter || isTab || isArrowDown || isArrowUp) {
-                    event.preventDefault();
-                }
+                    const isEnter = event.key === 'Enter';
+                    const isTab = event.key === 'Tab';
+                    const isArrowDown = event.key === 'ArrowDown';
+                    const isArrowUp = event.key === 'ArrowUp';
 
-                const currentCell = target.closest('td, th');
-                const currentRow = target.closest('tr');
-                const currentTable = target.closest('table');
+                    if (!isEnter && !isTab && !isArrowDown && !isArrowUp) {
+                        return;
+                    }
 
-                if (currentCell && currentRow && currentTable) {
-                    const tbody = currentRow.closest('tbody') || currentTable;
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-                    const rowIndex = rows.indexOf(currentRow);
-                    const colIndex = currentCell.cellIndex;
+                    const isInTable = target.closest('table') !== null;
+                    if ((isArrowDown || isArrowUp) && !isInTable) {
+                        return;
+                    }
 
-                    if (rowIndex !== -1) {
-                        const step = isBackwards ? -1 : 1;
-                        const targetRowIndex = rowIndex + step;
+                    if (target.tagName === 'SELECT' && (isArrowDown || isArrowUp)) {
+                        return;
+                    }
 
-                        if (targetRowIndex >= 0 && targetRowIndex < rows.length) {
-                            const targetRow = rows[targetRowIndex];
-                            const targetCell = targetRow.cells[colIndex];
-                            if (targetCell) {
-                                const targetInput = findFocusableInCell(targetCell);
-                                if (targetInput) {
-                                    focusControl(targetInput);
+                    const isBackwards = event.shiftKey || isArrowUp;
+
+                    if (isEnter || isTab || isArrowDown || isArrowUp) {
+                        event.preventDefault();
+                    }
+
+                    const currentCell = target.closest('td, th');
+                    const currentRow = target.closest('tr');
+                    const currentTable = target.closest('table');
+
+                    if (currentCell && currentRow && currentTable) {
+                        const tbody = currentRow.closest('tbody') || currentTable;
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        const rowIndex = rows.indexOf(currentRow);
+                        const colIndex = currentCell.cellIndex;
+
+                        if (rowIndex !== -1) {
+                            const step = isBackwards ? -1 : 1;
+                            const targetRowIndex = rowIndex + step;
+
+                            if (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+                                const targetRow = rows[targetRowIndex];
+                                const targetCell = targetRow.cells[colIndex];
+                                if (targetCell) {
+                                    const targetInput = findFocusableInCell(targetCell);
+                                    if (targetInput) {
+                                        focusControl(targetInput);
+                                        return;
+                                    }
+                                }
+                            } else if (!isBackwards && targetRowIndex >= rows.length) {
+                                const nextInput = findNextColumnFirstInput(rows, colIndex);
+                                if (nextInput) {
+                                    focusControl(nextInput);
+                                    return;
+                                }
+                            } else if (isBackwards && targetRowIndex < 0) {
+                                const prevInput = findPrevColumnLastInput(rows, colIndex);
+                                if (prevInput) {
+                                    focusControl(prevInput);
                                     return;
                                 }
                             }
-                        } else if (!isBackwards && targetRowIndex >= rows.length) {
-                            const nextInput = findNextColumnFirstInput(rows, colIndex);
-                            if (nextInput) {
-                                focusControl(nextInput);
-                                return;
-                            }
-                        } else if (isBackwards && targetRowIndex < 0) {
-                            const prevInput = findPrevColumnLastInput(rows, colIndex);
-                            if (prevInput) {
-                                focusControl(prevInput);
-                                return;
-                            }
                         }
                     }
-                }
 
-                const focusables = getFocusableElements(formElement);
-                let currentIndex = -1;
+                    const focusables = getFocusableElements(formElement);
+                    let currentIndex = -1;
 
-                for (let i = 0; i < focusables.length; i++) {
-                    if (focusables[i] === target || (target.type === 'radio' && focusables[i].name === target.name)) {
-                        currentIndex = i;
-                        break;
+                    for (let i = 0; i < focusables.length; i++) {
+                        if (focusables[i] === target || (target.type === 'radio' && focusables[i].name === target.name)) {
+                            currentIndex = i;
+                            break;
+                        }
                     }
-                }
-                if (currentIndex === -1) {
-                    currentIndex = focusables.indexOf(target);
-                }
-
-                if (currentIndex !== -1) {
-                    const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
-                    if (nextIndex >= 0 && nextIndex < focusables.length) {
-                        focusControl(focusables[nextIndex]);
-                        return;
+                    if (currentIndex === -1) {
+                        currentIndex = focusables.indexOf(target);
                     }
-                }
-            });
-        }
 
-        function showAlert(
-            type,
-            message
-        ) {
-            alertContainer.innerHTML = `
+                    if (currentIndex !== -1) {
+                        const nextIndex = isBackwards ? currentIndex - 1 : currentIndex + 1;
+                        if (nextIndex >= 0 && nextIndex < focusables.length) {
+                            focusControl(focusables[nextIndex]);
+                            return;
+                        }
+                    }
+                });
+            }
+
+            function showAlert(
+                type,
+                message
+            ) {
+                alertContainer.innerHTML = `
                 <div
                     class="alert alert-${type}
                            alert-dismissible fade show"
@@ -1715,266 +1740,21 @@ document.addEventListener(
                 </div>
             `;
 
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
 
-        function validatePhotoInput(
-            input,
-            existingCount
-        ) {
-            if (
+            function validatePhotoInput(
+                input,
                 existingCount
-                + input.files.length
-                > 10
             ) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Peringatan',
-                        text: 'Maksimal total 10 foto.'
-                    });
-                } else {
-                    alert(
-                        'Maksimal total 10 foto.'
-                    );
-                }
-
-                input.value = '';
-
-                return false;
-            }
-
-            return true;
-        }
-
-        function formatFileSize(bytes) {
-            if (!bytes || bytes === 0) return '0 KB';
-            const sizeInKb = (bytes / 1024).toFixed(1);
-            return (bytes >= 1024 * 1024)
-                ? (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-                : sizeInKb + ' KB';
-        }
-
-        function previewFiles(
-            input,
-            previewId,
-            existingCount
-        ) {
-            if (
-                !validatePhotoInput(
-                    input,
-                    existingCount
-                )
-            ) {
-                return;
-            }
-
-            const targetContainerId = previewId === 'fotoPreview'
-                ? 'fotoNewPreview'
-                : (previewId === 'fotoKetidaksesuaianPreview' ? 'fotoKetidaksesuaianNewPreview' : previewId);
-
-            const container = document.getElementById(targetContainerId);
-            if (!container) return;
-
-            container.innerHTML = '';
-
-            const files = Array.from(input.files ?? []);
-            if (files.length === 0) return;
-
-            files.forEach(function (file, index) {
-                const card = document.createElement('div');
-                card.className = 'd-flex align-items-center gap-3 p-2 border rounded bg-light';
-                card.style.maxWidth = '480px';
-
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.alt = file.name;
-                img.style.width = '70px';
-                img.style.height = '70px';
-                img.style.objectFit = 'cover';
-                img.style.borderRadius = '6px';
-                img.style.flexShrink = '0';
-
-                const info = document.createElement('div');
-                info.className = 'flex-grow-1 min-w-0';
-
-                const name = document.createElement('div');
-                name.className = 'fw-semibold text-truncate small text-dark';
-                name.textContent = file.name;
-                name.title = file.name;
-
-                const size = document.createElement('small');
-                size.className = 'text-muted d-block';
-                size.textContent = formatFileSize(file.size);
-
-                const btnHapus = document.createElement('button');
-                btnHapus.type = 'button';
-                btnHapus.className = 'btn btn-xs btn-outline-danger mt-1 py-0 px-2';
-                btnHapus.innerHTML = '<i class="mdi mdi-delete-outline me-1"></i> Hapus Foto';
-                btnHapus.addEventListener('click', function () {
-                    const dt = new DataTransfer();
-                    Array.from(input.files ?? []).forEach((f, i) => {
-                        if (i !== index) dt.items.add(f);
-                    });
-                    input.files = dt.files;
-                    previewFiles(input, previewId, existingCount);
-                });
-
-                info.appendChild(name);
-                info.appendChild(size);
-                info.appendChild(btnHapus);
-
-                card.appendChild(img);
-                card.appendChild(info);
-                container.appendChild(card);
-            });
-        }
-
-        const fotoInput =
-            document.getElementById('foto');
-
-        const fotoKetidaksesuaianInput =
-            document.getElementById(
-                'foto_ketidaksesuaian'
-            );
-
-        fotoInput.addEventListener(
-            'change',
-            function () {
-                previewFiles(
-                    this,
-                    'fotoPreview',
-                    existingFotoCount
-                );
-            }
-        );
-
-        fotoKetidaksesuaianInput
-            .addEventListener(
-                'change',
-                function () {
-                    previewFiles(
-                        this,
-                        'fotoKetidaksesuaianPreview',
-                        existingFotoKetidaksesuaianCount
-                    );
-                }
-            );
-
-        function updateKetidaksesuaian() {
-            const ada =
-                konfirmasiSelect.value === 'Ada';
-
-            jenisWrapper.classList.toggle(
-                'd-none',
-                !ada
-            );
-
-            fotoKetidaksesuaianWrapper
-                .classList.toggle(
-                    'd-none',
-                    !ada
-                );
-
-            document
-                .querySelectorAll(
-                    '.jenis-ketidaksesuaian'
-                )
-                .forEach(function (checkbox) {
-                    checkbox.disabled = !ada;
-
-                    if (!ada) {
-                        checkbox.checked = false;
-                    }
-                });
-
-            fotoKetidaksesuaianInput
-                .disabled = !ada;
-
-            const tampilkanLainnya =
-                ada
-                && jenisLainnyaCheckbox.checked;
-
-            jenisLainnyaWrapper.classList.toggle(
-                'd-none',
-                !tampilkanLainnya
-            );
-
-            jenisLainnyaInput.disabled =
-                !tampilkanLainnya;
-
-            jenisLainnyaInput.required =
-                tampilkanLainnya;
-
-            if (!tampilkanLainnya) {
-                jenisLainnyaInput.value = '';
-            }
-        }
-
-        konfirmasiSelect.addEventListener(
-            'change',
-            updateKetidaksesuaian
-        );
-
-        document
-            .querySelectorAll(
-                '.jenis-ketidaksesuaian'
-            )
-            .forEach(function (checkbox) {
-                checkbox.addEventListener(
-                    'change',
-                    function () {
-                        if (
-                            checkbox.checked
-                            && konfirmasiSelect.value
-                                !== 'Ada'
-                        ) {
-                            konfirmasiSelect.value =
-                                'Ada';
-                        }
-
-                        updateKetidaksesuaian();
-                    }
-                );
-            });
-
-        let stream = null;
-        let activeInputId = null;
-
-        const cameraModalElement =
-            document.getElementById(
-                'cameraModal'
-            );
-
-        const cameraModal =
-            new bootstrap.Modal(
-                cameraModalElement
-            );
-
-        const video =
-            document.getElementById(
-                'cameraVideo'
-            );
-
-        const canvas =
-            document.getElementById(
-                'cameraCanvas'
-            );
-
-        const nativeCameraKartonFallback = document.getElementById('nativeCameraKartonFallback');
-
-        function triggerNativeCameraKarton(targetInputId) {
-            if (!nativeCameraKartonFallback) return;
-            nativeCameraKartonFallback.onchange = function () {
-                if (!this.files || !this.files.length) return;
-                const targetInput = document.getElementById(targetInputId);
-                if (!targetInput) return;
-
-                const existingCount = targetInputId === 'foto' ? existingFotoCount : existingFotoKetidaksesuaianCount;
-                if (existingCount + targetInput.files.length >= 10) {
+                if (
+                    existingCount +
+                    input.files.length >
+                    10
+                ) {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'warning',
@@ -1982,395 +1762,631 @@ document.addEventListener(
                             text: 'Maksimal total 10 foto.'
                         });
                     } else {
-                        alert('Maksimal total 10 foto.');
+                        alert(
+                            'Maksimal total 10 foto.'
+                        );
                     }
-                    this.value = '';
+
+                    input.value = '';
+
+                    return false;
+                }
+
+                return true;
+            }
+
+            function formatFileSize(bytes) {
+                if (!bytes || bytes === 0) return '0 KB';
+                const sizeInKb = (bytes / 1024).toFixed(1);
+                return (bytes >= 1024 * 1024) ?
+                    (bytes / (1024 * 1024)).toFixed(2) + ' MB' :
+                    sizeInKb + ' KB';
+            }
+
+            function previewFiles(
+                input,
+                previewId,
+                existingCount
+            ) {
+                if (
+                    !validatePhotoInput(
+                        input,
+                        existingCount
+                    )
+                ) {
                     return;
                 }
 
-                const dataTransfer = new DataTransfer();
-                Array.from(targetInput.files).forEach(f => dataTransfer.items.add(f));
-                dataTransfer.items.add(this.files[0]);
-                targetInput.files = dataTransfer.files;
-                targetInput.dispatchEvent(new Event('change'));
-                this.value = '';
-            };
-            nativeCameraKartonFallback.click();
-        }
+                const targetContainerId = previewId === 'fotoPreview' ?
+                    'fotoNewPreview' :
+                    (previewId === 'fotoKetidaksesuaianPreview' ? 'fotoKetidaksesuaianNewPreview' : previewId);
 
-        document
-            .querySelectorAll(
-                '[data-camera-target]'
-            )
-            .forEach(function (button) {
-                button.addEventListener(
-                    'click',
-                    async function () {
-                        activeInputId =
-                            this.dataset.cameraTarget;
+                const container = document.getElementById(targetContainerId);
+                if (!container) return;
 
-                        const activeInput =
-                            document.getElementById(
-                                activeInputId
-                            );
+                container.innerHTML = '';
 
-                        if (activeInput.disabled) {
-                            return;
-                        }
+                const files = Array.from(input.files ?? []);
+                if (files.length === 0) return;
 
-                        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                            triggerNativeCameraKarton(activeInputId);
-                            return;
-                        }
+                files.forEach(function(file, index) {
+                    const card = document.createElement('div');
+                    card.className = 'd-flex align-items-center gap-3 p-2 border rounded bg-light';
+                    card.style.maxWidth = '480px';
 
-                        try {
-                            stream =
-                                await navigator
-                                    .mediaDevices
-                                    .getUserMedia({
-                                        video: {
-                                            facingMode:
-                                                'environment'
-                                        },
-                                        audio: false
-                                    });
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.alt = file.name;
+                    img.style.width = '70px';
+                    img.style.height = '70px';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '6px';
+                    img.style.flexShrink = '0';
 
-                            video.srcObject = stream;
-                            cameraModal.show();
-                        } catch (error) {
-                            cameraModal.hide();
-                            triggerNativeCameraKarton(activeInputId);
-                        }
-                    }
+                    const info = document.createElement('div');
+                    info.className = 'flex-grow-1 min-w-0';
+
+                    const name = document.createElement('div');
+                    name.className = 'fw-semibold text-truncate small text-dark';
+                    name.textContent = file.name;
+                    name.title = file.name;
+
+                    const size = document.createElement('small');
+                    size.className = 'text-muted d-block';
+                    size.textContent = formatFileSize(file.size);
+
+                    const btnHapus = document.createElement('button');
+                    btnHapus.type = 'button';
+                    btnHapus.className = 'btn btn-xs btn-outline-danger mt-1 py-0 px-2';
+                    btnHapus.innerHTML = '<i class="mdi mdi-delete-outline me-1"></i> Hapus Foto';
+                    btnHapus.addEventListener('click', function() {
+                        const dt = new DataTransfer();
+                        Array.from(input.files ?? []).forEach((f, i) => {
+                            if (i !== index) dt.items.add(f);
+                        });
+                        input.files = dt.files;
+                        previewFiles(input, previewId, existingCount);
+                    });
+
+                    info.appendChild(name);
+                    info.appendChild(size);
+                    info.appendChild(btnHapus);
+
+                    card.appendChild(img);
+                    card.appendChild(info);
+                    container.appendChild(card);
+                });
+            }
+
+            const fotoInput =
+                document.getElementById('foto');
+
+            const fotoKetidaksesuaianInput =
+                document.getElementById(
+                    'foto_ketidaksesuaian'
                 );
-            });
 
-        document
-            .getElementById(
-                'captureButton'
-            )
-            .addEventListener(
-                'click',
-                function () {
-                    if (
-                        !activeInputId
-                        || !stream
-                    ) {
-                        return;
-                    }
-
-                    canvas.width =
-                        video.videoWidth;
-
-                    canvas.height =
-                        video.videoHeight;
-
-                    canvas
-                        .getContext('2d')
-                        .drawImage(
-                            video,
-                            0,
-                            0
-                        );
-
-                    canvas.toBlob(
-                        function (blob) {
-                            const input =
-                                document.getElementById(
-                                    activeInputId
-                                );
-
-                            const existingCount =
-                                activeInputId === 'foto'
-                                    ? existingFotoCount
-                                    : existingFotoKetidaksesuaianCount;
-
-                            if (
-                                existingCount
-                                + input.files.length
-                                >= 10
-                            ) {
-                                alert(
-                                    'Maksimal total 10 foto.'
-                                );
-
-                                return;
-                            }
-
-                            const dataTransfer =
-                                new DataTransfer();
-
-                            Array.from(
-                                input.files
-                            ).forEach(
-                                file =>
-                                    dataTransfer
-                                        .items
-                                        .add(file)
-                            );
-
-                            const cameraFile =
-                                new File(
-                                    [blob],
-                                    `camera-${Date.now()}.jpg`,
-                                    {
-                                        type:
-                                            'image/jpeg'
-                                    }
-                                );
-
-                            dataTransfer
-                                .items
-                                .add(cameraFile);
-
-                            input.files =
-                                dataTransfer.files;
-
-                            input.dispatchEvent(
-                                new Event('change')
-                            );
-
-                            cameraModal.hide();
-                        },
-                        'image/jpeg',
-                        0.9
+            fotoInput.addEventListener(
+                'change',
+                function() {
+                    previewFiles(
+                        this,
+                        'fotoPreview',
+                        existingFotoCount
                     );
                 }
             );
 
-        cameraModalElement.addEventListener(
-            'hidden.bs.modal',
-            function () {
-                if (stream) {
-                    stream
-                        .getTracks()
-                        .forEach(
-                            track =>
-                                track.stop()
+            fotoKetidaksesuaianInput
+                .addEventListener(
+                    'change',
+                    function() {
+                        previewFiles(
+                            this,
+                            'fotoKetidaksesuaianPreview',
+                            existingFotoKetidaksesuaianCount
                         );
+                    }
+                );
 
-                    stream = null;
-                }
+            function updateKetidaksesuaian() {
+                const ada =
+                    konfirmasiSelect.value === 'Ada';
 
-                video.srcObject = null;
-            }
-        );
+                jenisWrapper.classList.toggle(
+                    'd-none',
+                    !ada
+                );
 
-        form.addEventListener(
-            'submit',
-            async function (event) {
-                event.preventDefault();
-
-                if (isSamplingLocked) {
-                    showAlert(
-                        'warning',
-                        'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                fotoKetidaksesuaianWrapper
+                    .classList.toggle(
+                        'd-none',
+                        !ada
                     );
-                    return;
-                }
-
-                const saveMode =
-                    event.submitter?.value ?? 'final';
-
-                const isFinal =
-                    saveMode === 'final';
-
-                if (
-                    isFinal
-                    && ! form.reportValidity()
-                ) {
-                    return;
-                }
-
-                if (
-                    isFinal
-                    && konfirmasiSelect.value === 'Ada'
-                    && document.querySelectorAll(
-                        '.jenis-ketidaksesuaian:checked'
-                    ).length === 0
-                ) {
-                    showAlert(
-                        'danger',
-                        'Pilih minimal satu jenis ketidaksesuaian.'
-                    );
-
-                    return;
-                }
-
-                if (
-                    isFinal
-                    && konfirmasiSelect.value === 'Ada'
-                    && jenisLainnyaCheckbox.checked
-                    && jenisLainnyaInput.value.trim() === ''
-                ) {
-                    showAlert(
-                        'danger',
-                        'Jenis ketidaksesuaian lainnya wajib diisi.'
-                    );
-
-                    jenisLainnyaInput.focus();
-
-                    return;
-                }
-
-                if (
-                    isFinal
-                    && existingFotoCount === 0
-                    && fotoInput.files.length === 0
-                ) {
-                    showAlert(
-                        'danger',
-                        'Foto pengecekan wajib diunggah.'
-                    );
-
-                    return;
-                }
-
-                if (
-                    isFinal
-                    && konfirmasiSelect.value === 'Ada'
-                    && existingFotoKetidaksesuaianCount === 0
-                    && fotoKetidaksesuaianInput.files.length === 0
-                ) {
-                    showAlert(
-                        'danger',
-                        'Foto ketidaksesuaian wajib diunggah.'
-                    );
-
-                    return;
-                }
 
                 document
-                    .querySelectorAll('.save-button')
-                    .forEach(function (button) {
-                        button.disabled = true;
+                    .querySelectorAll(
+                        '.jenis-ketidaksesuaian'
+                    )
+                    .forEach(function(checkbox) {
+                        checkbox.disabled = !ada;
+
+                        if (!ada) {
+                            checkbox.checked = false;
+                        }
                     });
 
-                const clickedButton =
-                    event.submitter;
+                fotoKetidaksesuaianInput
+                    .disabled = !ada;
 
-                if (clickedButton) {
-                    clickedButton.innerHTML = `
+                const tampilkanLainnya =
+                    ada &&
+                    jenisLainnyaCheckbox.checked;
+
+                jenisLainnyaWrapper.classList.toggle(
+                    'd-none',
+                    !tampilkanLainnya
+                );
+
+                jenisLainnyaInput.disabled = !tampilkanLainnya;
+
+                jenisLainnyaInput.required =
+                    tampilkanLainnya;
+
+                if (!tampilkanLainnya) {
+                    jenisLainnyaInput.value = '';
+                }
+            }
+
+            konfirmasiSelect.addEventListener(
+                'change',
+                updateKetidaksesuaian
+            );
+
+            document
+                .querySelectorAll(
+                    '.jenis-ketidaksesuaian'
+                )
+                .forEach(function(checkbox) {
+                    checkbox.addEventListener(
+                        'change',
+                        function() {
+                            if (
+                                checkbox.checked &&
+                                konfirmasiSelect.value !==
+                                'Ada'
+                            ) {
+                                konfirmasiSelect.value =
+                                    'Ada';
+                            }
+
+                            updateKetidaksesuaian();
+                        }
+                    );
+                });
+
+            let stream = null;
+            let activeInputId = null;
+
+            const cameraModalElement =
+                document.getElementById(
+                    'cameraModal'
+                );
+
+            const cameraModal =
+                new bootstrap.Modal(
+                    cameraModalElement
+                );
+
+            const video =
+                document.getElementById(
+                    'cameraVideo'
+                );
+
+            const canvas =
+                document.getElementById(
+                    'cameraCanvas'
+                );
+
+            const nativeCameraKartonFallback = document.getElementById('nativeCameraKartonFallback');
+
+            function triggerNativeCameraKarton(targetInputId) {
+                if (!nativeCameraKartonFallback) return;
+                nativeCameraKartonFallback.onchange = function() {
+                    if (!this.files || !this.files.length) return;
+                    const targetInput = document.getElementById(targetInputId);
+                    if (!targetInput) return;
+
+                    const existingCount = targetInputId === 'foto' ? existingFotoCount : existingFotoKetidaksesuaianCount;
+                    if (existingCount + targetInput.files.length >= 10) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Peringatan',
+                                text: 'Maksimal total 10 foto.'
+                            });
+                        } else {
+                            alert('Maksimal total 10 foto.');
+                        }
+                        this.value = '';
+                        return;
+                    }
+
+                    const dataTransfer = new DataTransfer();
+                    Array.from(targetInput.files).forEach(f => dataTransfer.items.add(f));
+                    dataTransfer.items.add(this.files[0]);
+                    targetInput.files = dataTransfer.files;
+                    targetInput.dispatchEvent(new Event('change'));
+                    this.value = '';
+                };
+                nativeCameraKartonFallback.click();
+            }
+
+            document
+                .querySelectorAll(
+                    '[data-camera-target]'
+                )
+                .forEach(function(button) {
+                    button.addEventListener(
+                        'click',
+                        async function() {
+                            activeInputId =
+                                this.dataset.cameraTarget;
+
+                            const activeInput =
+                                document.getElementById(
+                                    activeInputId
+                                );
+
+                            if (activeInput.disabled) {
+                                return;
+                            }
+
+                            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                                triggerNativeCameraKarton(activeInputId);
+                                return;
+                            }
+
+                            try {
+                                stream =
+                                    await navigator
+                                    .mediaDevices
+                                    .getUserMedia({
+                                        video: {
+                                            facingMode: 'environment'
+                                        },
+                                        audio: false
+                                    });
+
+                                video.srcObject = stream;
+                                cameraModal.show();
+                            } catch (error) {
+                                cameraModal.hide();
+                                triggerNativeCameraKarton(activeInputId);
+                            }
+                        }
+                    );
+                });
+
+            document
+                .getElementById(
+                    'captureButton'
+                )
+                .addEventListener(
+                    'click',
+                    function() {
+                        if (
+                            !activeInputId ||
+                            !stream
+                        ) {
+                            return;
+                        }
+
+                        canvas.width =
+                            video.videoWidth;
+
+                        canvas.height =
+                            video.videoHeight;
+
+                        canvas
+                            .getContext('2d')
+                            .drawImage(
+                                video,
+                                0,
+                                0
+                            );
+
+                        canvas.toBlob(
+                            function(blob) {
+                                const input =
+                                    document.getElementById(
+                                        activeInputId
+                                    );
+
+                                const existingCount =
+                                    activeInputId === 'foto' ?
+                                    existingFotoCount :
+                                    existingFotoKetidaksesuaianCount;
+
+                                if (
+                                    existingCount +
+                                    input.files.length >=
+                                    10
+                                ) {
+                                    alert(
+                                        'Maksimal total 10 foto.'
+                                    );
+
+                                    return;
+                                }
+
+                                const dataTransfer =
+                                    new DataTransfer();
+
+                                Array.from(
+                                    input.files
+                                ).forEach(
+                                    file =>
+                                    dataTransfer
+                                    .items
+                                    .add(file)
+                                );
+
+                                const cameraFile =
+                                    new File(
+                                        [blob],
+                                        `camera-${Date.now()}.jpg`, {
+                                            type: 'image/jpeg'
+                                        }
+                                    );
+
+                                dataTransfer
+                                    .items
+                                    .add(cameraFile);
+
+                                input.files =
+                                    dataTransfer.files;
+
+                                input.dispatchEvent(
+                                    new Event('change')
+                                );
+
+                                cameraModal.hide();
+                            },
+                            'image/jpeg',
+                            0.9
+                        );
+                    }
+                );
+
+            cameraModalElement.addEventListener(
+                'hidden.bs.modal',
+                function() {
+                    if (stream) {
+                        stream
+                            .getTracks()
+                            .forEach(
+                                track =>
+                                track.stop()
+                            );
+
+                        stream = null;
+                    }
+
+                    video.srcObject = null;
+                }
+            );
+
+            form.addEventListener(
+                'submit',
+                async function(event) {
+                    event.preventDefault();
+
+                    if (isSamplingLocked) {
+                        showAlert(
+                            'warning',
+                            'Data sudah final. Koreksi hanya dapat dilakukan oleh Foreman.'
+                        );
+                        return;
+                    }
+
+                    const saveMode =
+                        event.submitter?.value ?? 'final';
+
+                    const isFinal =
+                        saveMode === 'final';
+
+                    if (
+                        isFinal &&
+                        !form.reportValidity()
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        isFinal &&
+                        konfirmasiSelect.value === 'Ada' &&
+                        document.querySelectorAll(
+                            '.jenis-ketidaksesuaian:checked'
+                        ).length === 0
+                    ) {
+                        showAlert(
+                            'danger',
+                            'Pilih minimal satu jenis ketidaksesuaian.'
+                        );
+
+                        return;
+                    }
+
+                    if (
+                        isFinal &&
+                        konfirmasiSelect.value === 'Ada' &&
+                        jenisLainnyaCheckbox.checked &&
+                        jenisLainnyaInput.value.trim() === ''
+                    ) {
+                        showAlert(
+                            'danger',
+                            'Jenis ketidaksesuaian lainnya wajib diisi.'
+                        );
+
+                        jenisLainnyaInput.focus();
+
+                        return;
+                    }
+
+                    if (
+                        isFinal &&
+                        existingFotoCount === 0 &&
+                        fotoInput.files.length === 0
+                    ) {
+                        showAlert(
+                            'danger',
+                            'Foto pengecekan wajib diunggah.'
+                        );
+
+                        return;
+                    }
+
+                    if (
+                        isFinal &&
+                        konfirmasiSelect.value === 'Ada' &&
+                        existingFotoKetidaksesuaianCount === 0 &&
+                        fotoKetidaksesuaianInput.files.length === 0
+                    ) {
+                        showAlert(
+                            'danger',
+                            'Foto ketidaksesuaian wajib diunggah.'
+                        );
+
+                        return;
+                    }
+
+                    document
+                        .querySelectorAll('.save-button')
+                        .forEach(function(button) {
+                            button.disabled = true;
+                        });
+
+                    const clickedButton =
+                        event.submitter;
+
+                    if (clickedButton) {
+                        clickedButton.innerHTML = `
                         <span
                             class="spinner-border
                                    spinner-border-sm me-1"
                         ></span>
                         Menyimpan...
                     `;
-                }
-
-                const formData =
-                    new FormData(form);
-
-                formData.set(
-                    'save_mode',
-                    saveMode
-                );
-
-                const csrfToken =
-                    form.querySelector(
-                        'input[name="_token"]'
-                    )?.value ?? '';
-
-                try {
-                    const response =
-                        await fetch(
-                            form.action,
-                            {
-                                method: 'POST',
-                                credentials: 'same-origin',
-                                headers: {
-                                    Accept:
-                                        'application/json',
-                                    'X-Requested-With':
-                                        'XMLHttpRequest',
-                                    'X-CSRF-TOKEN':
-                                        csrfToken
-                                },
-                                body:
-                                    formData
-                            }
-                        );
-
-                    const contentType =
-                        response.headers.get('content-type') ?? '';
-
-                    if (!contentType.includes('application/json')) {
-                        const body = await response.text();
-
-                        throw new Error(
-                            'Server tidak mengembalikan JSON. ' +
-                            body.slice(0, 150)
-                        );
                     }
 
-                    const result =
-                        await response.json();
+                    const formData =
+                        new FormData(form);
 
-                    if (!response.ok) {
-                        const errors =
-                            Object.values(
-                                result.errors ?? {}
-                            ).flat();
-
-                        throw new Error(
-                            errors[0]
-                            ?? result.message
-                            ?? 'Data gagal disimpan.'
-                        );
-                    }
-
-                    showAlert(
-                        'success',
-                        result.message
+                    formData.set(
+                        'save_mode',
+                        saveMode
                     );
 
-                    setTimeout(
-                        function () {
-                            window.location.href =
-                                result.redirect_url;
-                        },
-                        800
-                    );
-                } catch (error) {
-                    showAlert(
-                        'danger',
-                        error.message
-                        ?? 'Terjadi kesalahan.'
-                    );
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Tidak dapat disimpan',
-                            text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
-                        });
-                    }
-                } finally {
-                    document
-                        .querySelectorAll('.save-button')
-                        .forEach(function (button) {
-                            button.disabled = false;
-                        });
+                    const csrfToken =
+                        form.querySelector(
+                            'input[name="_token"]'
+                        )?.value ?? '';
 
-                    const draftButton =
-                        document.querySelector(
-                            '.save-button[value="draft"]'
+                    try {
+                        const response =
+                            await fetch(
+                                form.action, {
+                                    method: 'POST',
+                                    credentials: 'same-origin',
+                                    headers: {
+                                        Accept: 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'X-CSRF-TOKEN': csrfToken
+                                    },
+                                    body: formData
+                                }
+                            );
+
+                        const contentType =
+                            response.headers.get('content-type') ?? '';
+
+                        if (!contentType.includes('application/json')) {
+                            const body = await response.text();
+
+                            throw new Error(
+                                'Server tidak mengembalikan JSON. ' +
+                                body.slice(0, 150)
+                            );
+                        }
+
+                        const result =
+                            await response.json();
+
+                        if (!response.ok) {
+                            const errors =
+                                Object.values(
+                                    result.errors ?? {}
+                                ).flat();
+
+                            throw new Error(
+                                errors[0] ??
+                                result.message ??
+                                'Data gagal disimpan.'
+                            );
+                        }
+
+                        showAlert(
+                            'success',
+                            result.message
                         );
 
-                    const finalButton =
-                        document.querySelector(
-                            '.save-button[value="final"]'
+                        setTimeout(
+                            function() {
+                                window.location.href =
+                                    result.redirect_url;
+                            },
+                            800
                         );
+                    } catch (error) {
+                        showAlert(
+                            'danger',
+                            error.message ??
+                            'Terjadi kesalahan.'
+                        );
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Tidak dapat disimpan',
+                                text: error.message ?? 'Terjadi kesalahan saat menyimpan data.'
+                            });
+                        }
+                    } finally {
+                        document
+                            .querySelectorAll('.save-button')
+                            .forEach(function(button) {
+                                button.disabled = false;
+                            });
 
-                    if (draftButton) {
-                        draftButton.innerHTML = `
+                        const draftButton =
+                            document.querySelector(
+                                '.save-button[value="draft"]'
+                            );
+
+                        const finalButton =
+                            document.querySelector(
+                                '.save-button[value="final"]'
+                            );
+
+                        if (draftButton) {
+                            draftButton.innerHTML = `
                             <i class="mdi mdi-content-save-edit-outline me-1"></i>
                             Simpan Sementara
                         `;
-                    }
+                        }
 
-                    if (finalButton) {
-                        finalButton.innerHTML = `
+                        if (finalButton) {
+                            finalButton.innerHTML = `
                             <i class="mdi mdi-check-circle-outline me-1"></i>
                             ${
                                 isFinalRecord && isForeman
@@ -2378,20 +2394,482 @@ document.addEventListener(
                                     : 'Simpan Final'
                             }
                         `;
+                        }
+                    }
+                }
+            );
+
+        // ─────────────────────────────────────────────
+        // SAP / EXCEL COPY-PASTE & CELL SELECTION (KARTON)
+        // ─────────────────────────────────────────────
+        const kartonFieldOrder = ['berat'];
+
+        let tableSelection = null;
+        let lastMultiSelection = null;
+        let isMouseDragging = false;
+        let selectionAnchor = null;
+
+        function getKartonCellCoords(el) {
+            if (!el) return null;
+            const target = el.nodeType === 3 ? el.parentElement : el;
+            const tr = target.closest('tr');
+            if (!tr || tr.parentElement !== rowsContainer) return null;
+            const row = Array.from(rowsContainer.children).indexOf(tr);
+            if (row === -1) return null;
+
+            const td = target.closest('td');
+            if (!td) return null;
+            const col = td.cellIndex - 1; // 0 is sample-number, 1 is col 0 (berat)
+            return { row, col, td };
+        }
+
+        function getKartonCellTd(row, col) {
+            const trList = rowsContainer.children;
+            if (row < 0 || row >= trList.length) return null;
+            const tr = trList[row];
+            if (!tr) return null;
+            return tr.children[col + 1] || null;
+        }
+
+        function setKartonSelection(startRow, startCol, endRow, endCol) {
+            const totalRows = rowsContainer.children.length;
+            const totalCols = kartonFieldOrder.length;
+            if (totalRows === 0 || totalCols === 0) return;
+
+            const sRow = Math.max(0, Math.min(startRow, totalRows - 1));
+            const eRow = Math.max(0, Math.min(endRow, totalRows - 1));
+            const sCol = Math.max(0, Math.min(startCol, totalCols - 1));
+            const eCol = Math.max(0, Math.min(endCol, totalCols - 1));
+
+            tableSelection = {
+                startRow: sRow,
+                startCol: sCol,
+                endRow: eRow,
+                endCol: eCol,
+                minRow: Math.min(sRow, eRow),
+                maxRow: Math.max(sRow, eRow),
+                minCol: Math.min(sCol, eCol),
+                maxCol: Math.max(sCol, eCol)
+            };
+
+            if (tableSelection.minRow !== tableSelection.maxRow || tableSelection.minCol !== tableSelection.maxCol) {
+                lastMultiSelection = { ...tableSelection };
+            }
+            renderKartonSelection();
+        }
+
+        function clearKartonSelection() {
+            tableSelection = null;
+            lastMultiSelection = null;
+            const selected = rowsContainer.querySelectorAll('.cell-selected, .cell-selected-top, .cell-selected-bottom, .cell-selected-left, .cell-selected-right');
+            selected.forEach(td => td.classList.remove('cell-selected', 'cell-selected-top', 'cell-selected-bottom', 'cell-selected-left', 'cell-selected-right'));
+        }
+
+        function renderKartonSelection() {
+            const selected = rowsContainer.querySelectorAll('.cell-selected, .cell-selected-top, .cell-selected-bottom, .cell-selected-left, .cell-selected-right');
+            selected.forEach(td => td.classList.remove('cell-selected', 'cell-selected-top', 'cell-selected-bottom', 'cell-selected-left', 'cell-selected-right'));
+
+            if (!tableSelection) return;
+            const { minRow, maxRow, minCol, maxCol } = tableSelection;
+            const isMulti = (minRow !== maxRow || minCol !== maxCol);
+            if (!isMulti) return;
+
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const td = getKartonCellTd(r, c);
+                    if (td) {
+                        td.classList.add('cell-selected');
+                        if (r === minRow) td.classList.add('cell-selected-top');
+                        if (r === maxRow) td.classList.add('cell-selected-bottom');
+                        if (c === minCol) td.classList.add('cell-selected-left');
+                        if (c === maxCol) td.classList.add('cell-selected-right');
                     }
                 }
             }
-        );
+        }
 
-        buildRows(
-            jumlahInput.value
-        );
+        function clearSelectedCellsContent() {
+            if (!tableSelection) return;
+            const { minRow, maxRow, minCol, maxCol } = tableSelection;
+            const trList = rowsContainer.children;
 
-        updateKetidaksesuaian();
+            for (let r = minRow; r <= maxRow; r++) {
+                const tr = trList[r];
+                if (!tr) continue;
+                for (let c = minCol; c <= maxCol; c++) {
+                    const input = tr.querySelector(`input[name="samples[${r}][berat]"]`);
+                    if (input) {
+                        input.value = '';
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            }
+        }
 
-        setupKeyboardNavigation(form);
-    }
-);
+        function highlightKartonInput(el) {
+            if (!el) return;
+            el.classList.add('paste-highlight');
+            setTimeout(() => {
+                el.classList.remove('paste-highlight');
+            }, 1200);
+        }
+
+        function copyKartonToSap() {
+            const trList = rowsContainer.querySelectorAll('tr');
+            if (!trList.length) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'warning',
+                        title: 'Tidak ada baris sampel untuk disalin.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+                return;
+            }
+
+            const lines = [];
+            trList.forEach(tr => {
+                const input = tr.querySelector(`input[name$="[berat]"]`);
+                lines.push(input ? input.value.trim() : '');
+            });
+
+            const copyString = lines.join('\r\n');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(copyString).then(() => {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: `Berhasil menyalin ${lines.length} baris nilai berat ke clipboard!`,
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    }
+                }).catch(() => {
+                    fallbackCopyKarton(copyString, lines.length);
+                });
+            } else {
+                fallbackCopyKarton(copyString, lines.length);
+            }
+        }
+
+        function fallbackCopyKarton(text, count) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Berhasil menyalin ${count} baris nilai berat ke clipboard!`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            } catch (e) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Gagal menyalin data.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            }
+            document.body.removeChild(ta);
+        }
+
+        function applyPastedKartonData(rawText, explicitStartRow = null, explicitStartCol = null) {
+            if (!rawText || !rawText.trim()) return;
+
+            let lines = rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (!lines.length) return;
+
+            let rawRows = lines.map(line => {
+                if (line.includes('\t')) {
+                    return line.split('\t').map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                if (line.includes(';')) {
+                    return line.split(';').map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                if (/\s{2,}/.test(line.trim())) {
+                    return line.trim().split(/\s{2,}/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                }
+                return [line.trim()];
+            });
+
+            // Strip edge empty cols
+            if (rawRows.every(r => r.length > 1 && r[0] === '')) rawRows = rawRows.map(r => r.slice(1));
+            if (rawRows.every(r => r.length > 1 && r[r.length - 1] === '')) rawRows = rawRows.map(r => r.slice(0, -1));
+
+            // Determine starting coords
+            let startRowIdx = 0;
+            let startColIdx = 0;
+
+            if (explicitStartRow !== null) {
+                startRowIdx = Math.max(0, explicitStartRow);
+                startColIdx = 0;
+            } else if (tableSelection) {
+                startRowIdx = tableSelection.minRow;
+                startColIdx = tableSelection.minCol;
+            } else {
+                const activeCoords = getKartonCellCoords(document.activeElement);
+                if (activeCoords && activeCoords.col >= 0) {
+                    startRowIdx = activeCoords.row;
+                    startColIdx = activeCoords.col;
+                }
+            }
+
+            // Detect header
+            const headerKeywords = ['berat', 'weight', 'sampel', 'sample', 'no'];
+            const firstRowText = rawRows[0].join(' ').toLowerCase();
+            if (rawRows.length > 1 && headerKeywords.some(kw => firstRowText.includes(kw))) {
+                rawRows = rawRows.slice(1);
+            }
+
+            // Skip sample no if present in col 0 (when multiple cols pasted e.g. "1 \t 150.5")
+            if (rawRows.length > 0 && rawRows[0].length > 1) {
+                const firstCell = rawRows[0][0];
+                if (/^\d+$/.test(firstCell)) {
+                    rawRows = rawRows.map(r => [r[1] ?? '']);
+                }
+            }
+
+            // Expand table rows if pasted rows exceed current jumlah_sampel
+            const neededTotal = startRowIdx + rawRows.length;
+            const currentTotal = parseInt(jumlahInput.value || 1);
+            if (neededTotal > currentTotal && neededTotal <= 50) {
+                jumlahInput.value = neededTotal;
+                buildRows(neededTotal);
+            }
+
+            const trList = rowsContainer.querySelectorAll('tr');
+            let appliedCount = 0;
+
+            // Check if single value replicated to multiple selection
+            const hasMultiCellSelection = tableSelection && (tableSelection.minRow !== tableSelection.maxRow);
+
+            if (hasMultiCellSelection && rawRows.length === 1) {
+                let singleVal = (rawRows[0][0] || '').toString().trim();
+                singleVal = singleVal.replace(',', '.').replace(/[^0-9.-]/g, '');
+                const { minRow, maxRow } = tableSelection;
+
+                for (let r = minRow; r <= maxRow; r++) {
+                    if (r >= trList.length) break;
+                    const tr = trList[r];
+                    const input = tr.querySelector(`input[name="samples[${r}][berat]"]`);
+                    if (input) {
+                        input.value = singleVal;
+                        highlightKartonInput(input);
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        appliedCount++;
+                    }
+                }
+            } else {
+                rawRows.forEach((rowVals, rOffset) => {
+                    const targetRowIdx = startRowIdx + rOffset;
+                    if (targetRowIdx >= trList.length) return;
+                    const tr = trList[targetRowIdx];
+
+                    let cellVal = (rowVals[0] || '').toString().trim();
+                    cellVal = cellVal.replace(',', '.').replace(/[^0-9.-]/g, '');
+
+                    const input = tr.querySelector(`input[name="samples[${targetRowIdx}][berat]"]`);
+                    if (input) {
+                        input.value = cellVal;
+                        highlightKartonInput(input);
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        appliedCount++;
+                    }
+                });
+
+                // Set selection on the newly pasted block
+                const endRow = Math.min(trList.length - 1, startRowIdx + rawRows.length - 1);
+                setKartonSelection(startRowIdx, 0, endRow, 0);
+            }
+
+            if (appliedCount > 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Berhasil menempelkan ${appliedCount} nilai berat dari Excel / SAP`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // MOUSE DRAG & HEADER COLUMN SELECTION EVENTS
+        // ─────────────────────────────────────────────
+        const inspectionTable = document.querySelector('.inspection-table');
+
+        if (inspectionTable) {
+            // 1. Column header click or drag to block columns
+            inspectionTable.querySelectorAll('thead th.th-col').forEach(th => {
+                th.addEventListener('mousedown', function (e) {
+                    if (e.which !== 1) return;
+                    const colAttr = this.dataset.col;
+                    const totalRows = rowsContainer.children.length;
+
+                    if (colAttr === 'all' || colAttr === '0') {
+                        selectionAnchor = { type: 'col', col: 0 };
+                        isMouseDragging = true;
+                        setKartonSelection(0, 0, totalRows - 1, 0);
+                    }
+                });
+            });
+
+            // 2. Sample row number click to block row
+            rowsContainer.addEventListener('mousedown', function (e) {
+                if (e.which !== 1) return;
+                const td = e.target.closest('td');
+                if (!td) return;
+
+                if (td.classList.contains('sample-number')) {
+                    const tr = td.closest('tr');
+                    const row = Array.from(rowsContainer.children).indexOf(tr);
+                    if (row !== -1) {
+                        selectionAnchor = { type: 'row', row };
+                        isMouseDragging = true;
+                        setKartonSelection(row, 0, row, 0);
+                    }
+                    return;
+                }
+
+                // Data cell click / drag
+                const coords = getKartonCellCoords(td);
+                if (!coords || coords.col < 0) return;
+
+                if (e.shiftKey && selectionAnchor && selectionAnchor.type === 'cell') {
+                    e.preventDefault();
+                    setKartonSelection(selectionAnchor.row, selectionAnchor.col, coords.row, coords.col);
+                } else {
+                    selectionAnchor = { type: 'cell', ...coords };
+                    isMouseDragging = true;
+                    setKartonSelection(coords.row, coords.col, coords.row, coords.col);
+                }
+            });
+
+            rowsContainer.addEventListener('mouseenter', function (e) {
+                if (!isMouseDragging || !selectionAnchor) return;
+                const td = e.target.closest('td');
+                if (!td) return;
+
+                const coords = getKartonCellCoords(td);
+                if (!coords || coords.col < 0) return;
+
+                if (selectionAnchor.type === 'col') {
+                    const totalRows = rowsContainer.children.length;
+                    setKartonSelection(0, 0, totalRows - 1, 0);
+                } else if (selectionAnchor.type === 'row' || selectionAnchor.type === 'cell') {
+                    setKartonSelection(selectionAnchor.row, 0, coords.row, 0);
+                }
+            }, true);
+        }
+
+        document.addEventListener('mouseup', function () {
+            isMouseDragging = false;
+        });
+
+        // Deselect if clicking outside table
+        document.addEventListener('mousedown', function (e) {
+            if (e.target.closest('.inspection-table, .swal2-container')) return;
+            clearKartonSelection();
+        });
+
+        // Keyboard navigation (Ctrl+A, Delete, Backspace, Escape, Shift+Arrows)
+        document.addEventListener('keydown', function (e) {
+            const insideTable = e.target.closest && e.target.closest('.inspection-table');
+            const hasSelection = tableSelection !== null;
+            if (!insideTable && !hasSelection) return;
+
+            const totalRows = rowsContainer.children.length;
+
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && insideTable) {
+                e.preventDefault();
+                selectionAnchor = { type: 'cell', row: 0, col: 0 };
+                setKartonSelection(0, 0, totalRows - 1, 0);
+                return;
+            }
+
+            if ((e.key === 'Delete' || e.key === 'Backspace') && tableSelection && tableSelection.minRow !== tableSelection.maxRow) {
+                if (e.target.tagName !== 'INPUT' || (e.target.selectionStart === 0 && e.target.selectionEnd === e.target.value.length)) {
+                    e.preventDefault();
+                    clearSelectedCellsContent();
+                    return;
+                }
+            }
+
+            if (e.key === 'Escape' && tableSelection) {
+                clearKartonSelection();
+                return;
+            }
+
+            if (e.shiftKey && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
+                e.preventDefault();
+                const coords = getKartonCellCoords(e.target) || (tableSelection ? { row: tableSelection.startRow, col: 0 } : { row: 0, col: 0 });
+                if (!selectionAnchor || selectionAnchor.type !== 'cell') {
+                    selectionAnchor = { type: 'cell', row: coords.row, col: 0 };
+                }
+                let endRow = tableSelection ? tableSelection.endRow : coords.row;
+
+                if (e.key === 'ArrowDown') endRow = Math.min(totalRows - 1, endRow + 1);
+                if (e.key === 'ArrowUp') endRow = Math.max(0, endRow - 1);
+
+                setKartonSelection(selectionAnchor.row, 0, endRow, 0);
+                return;
+            }
+        });
+
+        // ─────────────────────────────────────────────
+        // GLOBAL CAPTURING PASTE LISTENER (Ctrl+V)
+        // ─────────────────────────────────────────────
+        window.addEventListener('paste', function (e) {
+            if (isSamplingLocked) return;
+
+            if (e.target && e.target.closest && e.target.closest('.modal')) return;
+
+            const insideTable = e.target && e.target.closest && e.target.closest('.inspection-table');
+            const hasSelection = (tableSelection !== null);
+
+            if (!insideTable && !hasSelection) return;
+
+            const clipboardData = (e.clipboardData || window.clipboardData);
+            if (!clipboardData) return;
+            const text = clipboardData.getData('text/plain') || clipboardData.getData('text') || '';
+            if (!text || !text.trim()) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            applyPastedKartonData(text);
+        }, true);
+
+            buildRows(
+                jumlahInput.value
+            );
+
+            updateKetidaksesuaian();
+
+            setupKeyboardNavigation(form);
+        }
+    );
 </script>
 
 @endsection
