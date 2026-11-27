@@ -2036,8 +2036,8 @@
                 data.recent_transactions.forEach(t => {
                     let dispBadge = '<span class="badge bg-light text-muted">Pending</span>';
                     const dLower = t.disposisi.toLowerCase();
-                    if (dLower.includes('release') && !dLower.includes('bersyarat')) dispBadge = '<span class="badge bg-success-subtle text-success">Release</span>';
-                    else if (dLower.includes('bersyarat')) dispBadge = '<span class="badge bg-warning-subtle text-warning">Release Bersyarat</span>';
+                    if ((dLower.includes('release') || dLower.includes('diterima')) && !dLower.includes('bersyarat')) dispBadge = '<span class="badge bg-success-subtle text-success">Release</span>';
+                    else if (dLower.includes('bersyarat')) dispBadge = '<span class="badge bg-warning-subtle text-warning">Diterima Bersyarat</span>';
                     else if (dLower.includes('reject') || dLower.includes('tolak')) dispBadge = '<span class="badge bg-danger-subtle text-danger">Reject</span>';
 
                     logRows += `

@@ -734,6 +734,8 @@
                                                     <td>
                                                         @if ($short->disposisi === 'Release')
                                                         <span class="badge bg-success">{{ $short->disposisi }}</span>
+                                                        @elseif ($short->disposisi === 'Release Bersyarat' || $short->disposisi === 'Diterima Bersyarat')
+                                                        <span class="badge bg-warning text-dark">{{ $short->disposisi }}</span>
                                                         @elseif ($short->disposisi === 'Reject')
                                                         <span class="badge bg-danger">{{ $short->disposisi }}</span>
                                                         @else
@@ -922,7 +924,7 @@
                                                     <td>
                                                         @if ($long->disposisi === 'Release')
                                                         <span class="badge bg-success">{{ $long->disposisi }}</span>
-                                                        @elseif ($long->disposisi === 'Release Bersyarat')
+                                                        @elseif ($long->disposisi === 'Release Bersyarat' || $long->disposisi === 'Diterima Bersyarat')
                                                         <span class="badge bg-warning text-dark">{{ $long->disposisi }}</span>
                                                         @elseif ($long->disposisi === 'Reject')
                                                         <span class="badge bg-danger">{{ $long->disposisi }}</span>
@@ -1050,7 +1052,7 @@
                                                     <td>
                                                         @if ($hist->disposisi === 'Release')
                                                         <span class="badge bg-success">{{ $hist->disposisi }}</span>
-                                                        @elseif ($hist->disposisi === 'Release Bersyarat')
+                                                        @elseif ($hist->disposisi === 'Release Bersyarat' || $hist->disposisi === 'Diterima Bersyarat')
                                                         <span class="badge bg-warning text-dark">{{ $hist->disposisi }}</span>
                                                         @elseif ($hist->disposisi === 'Reject')
                                                         <span class="badge bg-danger">{{ $hist->disposisi }}</span>
@@ -1182,8 +1184,12 @@
                                                     <td>
                                                         @if (($gg->status ?? '') === 'draft' || empty($gg->disposisi) || $gg->disposisi === '-')
                                                             <span class="badge bg-warning text-dark"><i class="mdi mdi-content-save-edit-outline me-1"></i>Draft</span>
+                                                        @elseif ($gg->disposisi === 'Release')
+                                                            <span class="badge bg-success">{{ $gg->disposisi }}</span>
+                                                        @elseif ($gg->disposisi === 'Release Bersyarat' || $gg->disposisi === 'Diterima Bersyarat')
+                                                            <span class="badge bg-warning text-dark">{{ $gg->disposisi }}</span>
                                                         @else
-                                                            <span class="badge {{ $gg->disposisi === 'Release' ? 'bg-success' : 'bg-danger' }}">{{ $gg->disposisi }}</span>
+                                                            <span class="badge bg-danger">{{ $gg->disposisi }}</span>
                                                         @endif
                                                     </td>
                                                     <td>{{ $gg->keterangan ?? '-' }}</td>
@@ -1335,8 +1341,12 @@
                                                     <td>
                                                         @if (($bk->status ?? '') === 'draft' || empty($bk->disposisi) || $bk->disposisi === '-')
                                                             <span class="badge bg-warning text-dark"><i class="mdi mdi-content-save-edit-outline me-1"></i>Draft</span>
+                                                        @elseif ($bk->disposisi === 'Release')
+                                                            <span class="badge bg-success">{{ $bk->disposisi }}</span>
+                                                        @elseif ($bk->disposisi === 'Release Bersyarat' || $bk->disposisi === 'Diterima Bersyarat')
+                                                            <span class="badge bg-warning text-dark">{{ $bk->disposisi }}</span>
                                                         @else
-                                                            <span class="badge {{ $bk->disposisi === 'Release' ? 'bg-success' : 'bg-danger' }}">{{ $bk->disposisi }}</span>
+                                                            <span class="badge bg-danger">{{ $bk->disposisi }}</span>
                                                         @endif
                                                     </td>
                                                     <td>{{ $bk->keterangan ?? '-' }}</td>
@@ -1455,8 +1465,12 @@
                                                     <td>
                                                         @if (($bc->status ?? '') === 'draft' || empty($bc->disposisi) || $bc->disposisi === '-')
                                                             <span class="badge bg-warning text-dark"><i class="mdi mdi-content-save-edit-outline me-1"></i>Draft</span>
+                                                        @elseif ($bc->disposisi === 'Release')
+                                                            <span class="badge bg-success">{{ $bc->disposisi }}</span>
+                                                        @elseif ($bc->disposisi === 'Release Bersyarat' || $bc->disposisi === 'Diterima Bersyarat')
+                                                            <span class="badge bg-warning text-dark">{{ $bc->disposisi }}</span>
                                                         @else
-                                                            <span class="badge {{ $bc->disposisi === 'Release' ? 'bg-success' : 'bg-danger' }}">{{ $bc->disposisi }}</span>
+                                                            <span class="badge bg-danger">{{ $bc->disposisi }}</span>
                                                         @endif
                                                     </td>
                                                     <td>{{ $bc->keterangan ?? '-' }}</td>
@@ -1572,6 +1586,8 @@
                                                     <td>
                                                         @if ($short->disposisi === 'Release')
                                                         <span class="badge bg-success">{{ $short->disposisi }}</span>
+                                                        @elseif ($short->disposisi === 'Release Bersyarat' || $short->disposisi === 'Diterima Bersyarat')
+                                                        <span class="badge bg-warning text-dark">{{ $short->disposisi }}</span>
                                                         @elseif ($short->disposisi === 'Reject')
                                                         <span class="badge bg-danger">{{ $short->disposisi }}</span>
                                                         @else

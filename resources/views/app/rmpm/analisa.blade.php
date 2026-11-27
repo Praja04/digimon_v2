@@ -352,7 +352,7 @@
                                         <td>
                                             @if ($h->disposisi === 'Release')
                                                 <span class="badge bg-success">{{ $h->disposisi }}</span>
-                                            @elseif ($h->disposisi === 'Release Bersyarat')
+                                            @elseif ($h->disposisi === 'Release Bersyarat' || $h->disposisi === 'Diterima Bersyarat')
                                                 <span class="badge bg-warning text-dark">{{ $h->disposisi }}</span>
                                             @elseif ($h->disposisi === 'Reject')
                                                 <span class="badge bg-danger">{{ $h->disposisi }}</span>
@@ -2430,7 +2430,7 @@
             const $section = $(this).closest('.disposisi-section');
             const $grpWrapper = $section.find('.group-short-wrapper');
             const $ketCol = $section.find('.keterangan-short-col');
-            if (val === 'Release' || val === 'Release Bersyarat') {
+            if (val === 'Release' || val === 'Release Bersyarat' || val === 'Diterima Bersyarat') {
                 $grpWrapper.slideDown(150);
                 $ketCol.removeClass('col-md-8').addClass('col-md-5');
             } else {
@@ -4039,6 +4039,7 @@
                         <select class="form-select form-select-sm" name="disposisi" required ${IS_ANALIS_FIELD ? 'disabled' : ''}>
                             <option value="">-- Pilih Disposisi --</option>
                             <option value="Release">Release</option>
+                            <option value="Diterima Bersyarat">Diterima Bersyarat</option>
                             <option value="Reject">Reject</option>
                         </select>
                         ${IS_ANALIS_FIELD ? '<div class="form-text text-muted" style="font-size:11px;">Disposisi hanya dapat diisi oleh Analis RM / Foreman.</div>' : ''}
@@ -4051,7 +4052,7 @@
                             <option value="">-- Pilih Group --</option>
                             ${getGroupOptionsHtml()}
                         </select>
-                        <div class="form-text text-muted" style="font-size:11px;">Group mutu untuk disposisi Release.</div>
+                        <div class="form-text text-muted" style="font-size:11px;">Group mutu untuk disposisi Release / Diterima Bersyarat.</div>
                     </div>
                     <div class="col-md-6 keterangan-short-col">
                         <label class="form-label fw-semibold mb-1">
@@ -4516,6 +4517,7 @@
                         <select class="form-select form-select-sm" name="disposisi" required ${IS_ANALIS_FIELD ? 'disabled' : ''}>
                             <option value="">-- Pilih Disposisi --</option>
                             <option value="Release">Release</option>
+                            <option value="Diterima Bersyarat">Diterima Bersyarat</option>
                             <option value="Reject">Reject</option>
                         </select>
                         ${IS_ANALIS_FIELD ? '<div class="form-text text-muted" style="font-size:11px;">Disposisi hanya dapat diisi oleh Analis RM / Foreman.</div>' : ''}
@@ -4528,7 +4530,7 @@
                             <option value="">-- Pilih Group --</option>
                             ${getGroupOptionsHtml()}
                         </select>
-                        <div class="form-text text-muted" style="font-size:11px;">Group mutu untuk disposisi Release.</div>
+                        <div class="form-text text-muted" style="font-size:11px;">Group mutu untuk disposisi Release / Diterima Bersyarat.</div>
                     </div>
                     <div class="col-md-6 keterangan-short-col">
                         <label class="form-label fw-semibold mb-1">
@@ -4789,13 +4791,14 @@
                                     <select class="form-select form-select-sm" name="disposisi" id="selectDisposisiLong">
                                         <option value="">-- Pilih Disposisi --</option>
                                         <option value="Release">Release</option>
+                                        <option value="Diterima Bersyarat">Diterima Bersyarat</option>
                                         <option value="Release Bersyarat">Release Bersyarat</option>
                                         <option value="Reject">Reject</option>
                                     </select>
                                     <div class="form-text text-muted">Wajib diisi karena uji kristal positif.</div>
                                 </div>
 
-                                {{-- Field Group (Muncul jika Disposisi Release atau Release Bersyarat) --}}
+                                {{-- Field Group (Muncul jika Disposisi Release atau Diterima Bersyarat / Release Bersyarat) --}}
                                 <div id="groupLongWrapper" class="mt-3 p-3 border border-primary-subtle rounded bg-light" style="display:none;">
                                     <label class="form-label small fw-semibold text-primary d-flex align-items-center mb-1">
                                         <i class="ri-node-tree me-1 fs-6"></i> Group <span class="text-danger ms-1">*</span>
@@ -4820,7 +4823,7 @@
                                         @endforeach
                                     </select>
                                     <div class="form-text small text-muted mt-1">
-                                        <i class="ri-information-line"></i> Group muncul karena disposisi adalah Release / Release Bersyarat.
+                                        <i class="ri-information-line"></i> Group muncul karena disposisi adalah Release / Diterima Bersyarat.
                                     </div>
                                 </div>
                             </div>
@@ -6380,7 +6383,7 @@
             $('#disposisiManualWrapper').show();
 
             const dispVal = $('#selectDisposisiLong').val();
-            if (dispVal === 'Release' || dispVal === 'Release Bersyarat') {
+            if (dispVal === 'Release' || dispVal === 'Release Bersyarat' || dispVal === 'Diterima Bersyarat') {
                 $('#groupLongWrapper').slideDown(150);
             } else {
                 $('#groupLongWrapper').hide();
@@ -6400,7 +6403,7 @@
 
     function handleDisposisiLongChange() {
         const dispVal = $(this).val();
-        if (dispVal === 'Release' || dispVal === 'Release Bersyarat') {
+        if (dispVal === 'Release' || dispVal === 'Release Bersyarat' || dispVal === 'Diterima Bersyarat') {
             $('#groupLongWrapper').slideDown(150);
         } else {
             $('#groupLongWrapper').slideUp(150);
@@ -6587,7 +6590,7 @@
                 }
 
                 const $grp = $('select[name="group"]:visible');
-                if ($disp.val() === 'Release' && $grp.length && !$grp.val()) {
+                if (['Release', 'Release Bersyarat', 'Diterima Bersyarat'].includes($disp.val()) && $grp.length && !$grp.val()) {
                     hasEmpty = true;
                     emptyFields.add('Group');
                     $grp.addClass('is-invalid');
@@ -6613,7 +6616,7 @@
                     return Swal.fire({
                         icon: 'warning',
                         title: 'Data belum lengkap',
-                        html: 'Pilih Disposisi (Release / Reject) terlebih dahulu.',
+                        html: 'Pilih Disposisi (Release / Diterima Bersyarat / Reject) terlebih dahulu.',
                         confirmButtonText: 'Oke',
                     });
                 } else {
@@ -6621,12 +6624,12 @@
                 }
 
                 const $grp = $('select[name="group"]:visible');
-                if ($disp.val() === 'Release' && $grp.length && !$grp.val()) {
+                if (['Release', 'Release Bersyarat', 'Diterima Bersyarat'].includes($disp.val()) && $grp.length && !$grp.val()) {
                     $grp.addClass('is-invalid');
                     return Swal.fire({
                         icon: 'warning',
                         title: 'Data belum lengkap',
-                        html: 'Pilih Group terlebih dahulu untuk disposisi Release.',
+                        html: 'Pilih Group terlebih dahulu untuk disposisi Release / Diterima Bersyarat.',
                         confirmButtonText: 'Oke',
                     });
                 } else {
@@ -6659,12 +6662,12 @@
                         });
                     }
 
-                    if (['Release', 'Release Bersyarat'].includes(disposisi)) {
+                    if (['Release', 'Release Bersyarat', 'Diterima Bersyarat'].includes(disposisi)) {
                         const group = $('#selectGroupLong').val();
                         if (!group) {
                             return Swal.fire({
                                 icon: 'warning',
-                                text: 'Pilih Group untuk disposisi Release / Release Bersyarat.'
+                                text: 'Pilih Group untuk disposisi Release / Diterima Bersyarat.'
                             });
                         }
                     }

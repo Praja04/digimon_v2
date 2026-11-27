@@ -996,12 +996,12 @@ class RMPMController extends Controller
 
         if ($isDraft) {
             $rules['uji_kristal'] = ['nullable', 'in:positif,negatif,'];
-            $rules['disposisi'] = ['nullable', 'in:Release,Release Bersyarat,Reject,'];
+            $rules['disposisi'] = ['nullable', 'in:Release,Release Bersyarat,Diterima Bersyarat,Reject,'];
             $rules['group'] = ['nullable', 'string', 'max:50'];
         } else {
             $rules['uji_kristal'] = ['required', 'in:positif,negatif'];
-            $rules['disposisi'] = ['required', 'in:Release,Release Bersyarat,Reject'];
-            if (in_array($request->disposisi, ['Release', 'Release Bersyarat'])) {
+            $rules['disposisi'] = ['required', 'in:Release,Release Bersyarat,Diterima Bersyarat,Reject'];
+            if (in_array($request->disposisi, ['Release', 'Release Bersyarat', 'Diterima Bersyarat'])) {
                 $rules['group'] = ['required', 'string', 'max:50'];
             }
         }
@@ -1022,7 +1022,7 @@ class RMPMController extends Controller
             $disposisi = 'Release';
         }
 
-        $group = in_array($disposisi, ['Release', 'Release Bersyarat']) ? ($request->filled('group') ? $request->group : null) : null;
+        $group = in_array($disposisi, ['Release', 'Release Bersyarat', 'Diterima Bersyarat']) ? ($request->filled('group') ? $request->group : null) : null;
 
         // Collect existing saved photos
         $photoList = [];
@@ -1197,7 +1197,7 @@ class RMPMController extends Controller
 
         $request->validate([
             'id_identitas' => 'required|exists:identitas_rm,id',
-            'disposisi'    => $isDraft ? 'nullable|in:Release,Reject,' : 'required|in:Release,Reject',
+            'disposisi'    => $isDraft ? 'nullable|in:Release,Release Bersyarat,Diterima Bersyarat,Reject,' : 'required|in:Release,Release Bersyarat,Diterima Bersyarat,Reject',
             'group'        => 'nullable|string|max:50',
             'keterangan'   => 'nullable|string',
             'kategori'     => 'nullable|string|in:incoming,sta,monitoring',
@@ -1237,7 +1237,7 @@ class RMPMController extends Controller
                 $statusToSave = $existing->status;
             }
 
-            $groupVal = in_array($request->disposisi, ['Release', 'Release Bersyarat']) ? ($request->filled('group') ? $request->group : null) : null;
+            $groupVal = in_array($request->disposisi, ['Release', 'Release Bersyarat', 'Diterima Bersyarat']) ? ($request->filled('group') ? $request->group : null) : null;
 
             // Simpan ke skema normalisasi dinamis (Table 2 Transaksi & Table 4 Sample Detail)
             $transaksi = TransaksiAnalisaRM::updateOrCreate(
@@ -1521,7 +1521,7 @@ class RMPMController extends Controller
             ],
             'disposisi' => [
                 'required',
-                'in:Release,Release Bersyarat,Reject',
+                'in:Release,Release Bersyarat,Diterima Bersyarat,Reject',
             ],
             'group' => [
                 'nullable',
@@ -1542,12 +1542,12 @@ class RMPMController extends Controller
         $oldGroup = $data->group;
 
         $newDisposisi = $request->disposisi;
-        $newGroup = in_array($newDisposisi, ['Release', 'Release Bersyarat']) ? $request->group : null;
+        $newGroup = in_array($newDisposisi, ['Release', 'Release Bersyarat', 'Diterima Bersyarat']) ? $request->group : null;
 
-        if (in_array($newDisposisi, ['Release', 'Release Bersyarat']) && empty($newGroup)) {
+        if (in_array($newDisposisi, ['Release', 'Release Bersyarat', 'Diterima Bersyarat']) && empty($newGroup)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Group wajib dipilih untuk disposisi Release atau Release Bersyarat.',
+                'message' => 'Group wajib dipilih untuk disposisi Release atau Diterima Bersyarat.',
             ], 422);
         }
 
