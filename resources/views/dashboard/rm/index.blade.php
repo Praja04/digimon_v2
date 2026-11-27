@@ -360,6 +360,125 @@
         .rotate-180 {
             transform: rotate(180deg);
         }
+
+        /* Responsive Grid & Chart Container Sizing */
+        .chart-card, .stats-card, .filter-card, .param-detail-card {
+            min-width: 0;
+        }
+
+        #qualityChartsGrid > div {
+            min-width: 0;
+        }
+
+        .apexcharts-canvas {
+            max-width: 100% !important;
+        }
+
+        /* Responsive Breakpoints for Tablet & Mobile */
+        @media (max-width: 991.98px) {
+            .page-content {
+                padding: calc(70px + 0.75rem) 0.5rem 40px 0.5rem !important;
+            }
+            .stats-card .card-body {
+                padding: 10px 12px !important;
+            }
+            .stats-icon {
+                width: 36px !important;
+                height: 36px !important;
+                font-size: 18px !important;
+                border-radius: 8px !important;
+            }
+            .stats-value {
+                font-size: 19px !important;
+                margin: 4px 0 2px 0 !important;
+            }
+            .stats-label {
+                font-size: 10px !important;
+                letter-spacing: 0.2px;
+            }
+            .stats-subtitle {
+                font-size: 10px !important;
+            }
+            .filter-card {
+                padding: 12px 14px !important;
+                margin-bottom: 14px !important;
+            }
+            .filter-card .form-label {
+                font-size: 11px !important;
+                margin-bottom: 4px;
+            }
+            .filter-tab-pill {
+                padding: 4px 9px !important;
+                font-size: 11px !important;
+                gap: 4px;
+            }
+            .chart-header {
+                padding: 10px 14px !important;
+            }
+            .chart-title {
+                font-size: 13.5px !important;
+            }
+            .chart-card .card-body {
+                padding: 10px 12px !important;
+            }
+            .section-banner {
+                padding: 8px 12px !important;
+                margin-bottom: 14px !important;
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 6px;
+            }
+            .section-banner h5 {
+                font-size: 13.5px !important;
+            }
+            .section-pill {
+                font-size: 10px !important;
+                padding: 2px 8px !important;
+            }
+            #qualityChartsGrid .card-header h6 {
+                font-size: 13px !important;
+            }
+            #activeMaterialTitle {
+                font-size: 15px !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .page-content {
+                padding: calc(60px + 0.5rem) 0.35rem 30px 0.35rem !important;
+            }
+            .stats-card .card-body {
+                padding: 8px 10px !important;
+            }
+            .stats-icon {
+                width: 30px !important;
+                height: 30px !important;
+                font-size: 15px !important;
+            }
+            .stats-value {
+                font-size: 16px !important;
+            }
+            .stats-label {
+                font-size: 9px !important;
+            }
+            .stats-subtitle {
+                font-size: 9px !important;
+            }
+            .filter-card {
+                padding: 10px 12px !important;
+            }
+            .filter-tab-pill {
+                padding: 3px 7px !important;
+                font-size: 10px !important;
+            }
+            .btn-group-sm > .btn {
+                padding: 2px 5px !important;
+                font-size: 10px !important;
+            }
+            .badge {
+                font-size: 10px !important;
+            }
+        }
     </style>
 @endsection
 
@@ -432,22 +551,22 @@
             </div>
 
             <!-- KPI Metric Cards Row (5 Key Metrics) -->
-            <div class="row g-3 mb-4">
+            <div class="row g-2 g-md-3 mb-3 mb-md-4">
                 <!-- Card 1: Total Kedatangan -->
-                <div class="col-xxl col-lg-4 col-md-6">
+                <div class="col-6 col-md-4 col-xl col-xxl">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon bg-primary-light">
                                     <i class="ri-truck-line"></i>
                                 </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Total Kedatangan</p>
+                                <div class="ms-2 ms-md-3 flex-grow-1 min-w-0">
+                                    <p class="stats-label mb-0 text-truncate">Total Kedatangan</p>
                                     <h3 class="stats-value" id="totalArrivals">-</h3>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                                <span class="stats-subtitle">Total Tonase Masuk</span>
+                                <span class="stats-subtitle text-truncate">Tonase Masuk</span>
                                 <span class="badge bg-primary-light" id="totalVolumeFormatted">- Ton</span>
                             </div>
                         </div>
@@ -455,20 +574,20 @@
                 </div>
 
                 <!-- Card 2: Tingkat Penerimaan -->
-                <div class="col-xxl col-lg-4 col-md-6">
+                <div class="col-6 col-md-4 col-xl col-xxl">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon bg-success-light">
                                     <i class="ri-checkbox-circle-line"></i>
                                 </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Tingkat Penerimaan</p>
+                                <div class="ms-2 ms-md-3 flex-grow-1 min-w-0">
+                                    <p class="stats-label mb-0 text-truncate">Tingkat Penerimaan</p>
                                     <h3 class="stats-value text-success" id="acceptanceRate">-%</h3>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                                <span class="stats-subtitle">Status Disetujui Lab</span>
+                                <span class="stats-subtitle text-truncate">Disetujui Lab</span>
                                 <span class="badge bg-success-light" id="acceptCountBadge">- Batch</span>
                             </div>
                         </div>
@@ -476,20 +595,20 @@
                 </div>
 
                 <!-- Card 3: Tingkat Penolakan -->
-                <div class="col-xxl col-lg-4 col-md-6">
+                <div class="col-6 col-md-4 col-xl col-xxl">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon bg-danger-light">
                                     <i class="ri-close-circle-line"></i>
                                 </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Tingkat Penolakan</p>
+                                <div class="ms-2 ms-md-3 flex-grow-1 min-w-0">
+                                    <p class="stats-label mb-0 text-truncate">Tingkat Penolakan</p>
                                     <h3 class="stats-value text-danger" id="rejectionRate">-%</h3>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                                <span class="stats-subtitle">Status Ditolak (Reject)</span>
+                                <span class="stats-subtitle text-truncate">Ditolak (Reject)</span>
                                 <span class="badge bg-danger-light" id="rejectCountBadge">- Batch</span>
                             </div>
                         </div>
@@ -497,42 +616,42 @@
                 </div>
 
                 <!-- Card 4: Kepatuhan Dokumen -->
-                <div class="col-xxl col-lg-6 col-md-6">
+                <div class="col-6 col-md-4 col-xl col-xxl">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon bg-info-light">
                                     <i class="ri-file-shield-line"></i>
                                 </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Kepatuhan Dokumen</p>
+                                <div class="ms-2 ms-md-3 flex-grow-1 min-w-0">
+                                    <p class="stats-label mb-0 text-truncate">Kepatuhan Dokumen</p>
                                     <h3 class="stats-value text-info" id="documentCompleteness">-%</h3>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                                <span class="stats-subtitle">Kelengkapan Berkas</span>
-                                <span class="badge bg-info-light">COA, SJ &amp; PL</span>
+                                <span class="stats-subtitle text-truncate">Berkas Mutu</span>
+                                <span class="badge bg-info-light">COA &amp; SJ</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Card 5: Kepatuhan Armada Truk -->
-                <div class="col-xxl col-lg-6 col-md-6">
+                <div class="col-12 col-sm-6 col-md-4 col-xl col-xxl">
                     <div class="card stats-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon bg-teal-light">
                                     <i class="ri-shield-check-line"></i>
                                 </div>
-                                <div class="ms-3 flex-grow-1">
-                                    <p class="stats-label mb-0">Kepatuhan Armada Truk</p>
+                                <div class="ms-2 ms-md-3 flex-grow-1 min-w-0">
+                                    <p class="stats-label mb-0 text-truncate">Kepatuhan Truk</p>
                                     <h3 class="stats-value" style="color: #0f766e;" id="vehicleCleanlinessRate">-%</h3>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                                <span class="stats-subtitle">Pemeriksaan Gerbang</span>
-                                <span class="badge bg-teal-light">Bersih &amp; Tersegel</span>
+                                <span class="stats-subtitle text-truncate">Pemeriksaan Truk</span>
+                                <span class="badge bg-teal-light">Bersih &amp; Segel</span>
                             </div>
                         </div>
                     </div>
@@ -552,7 +671,7 @@
                 </div>
 
                 <!-- Card Kiri: Diagram Donut Ketahanan Gula -->
-                <div class="col-xl-6">
+                <div class="col-12 col-xl-6">
                     <div class="card chart-card">
                         <div class="chart-header d-flex justify-content-between align-items-center">
                             <div>
@@ -594,7 +713,7 @@
                 </div>
 
                 <!-- Card Kanan: Rekomendasi Prioritas Pelarutan Batch Gula -->
-                <div class="col-xl-6">
+                <div class="col-12 col-xl-6">
                     <div class="card chart-card">
                         <div class="chart-header d-flex justify-content-between align-items-center">
                             <div>
@@ -630,8 +749,8 @@
                 <div class="col-12">
                     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
                         <!-- Header & Material Switcher Bar -->
-                        <div class="card-header bg-white border-bottom py-3 px-4">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 gap-md-3">
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <span class="badge bg-primary px-2 py-1 text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">QC Control Charts</span>
@@ -645,9 +764,9 @@
                                 </div>
 
                                 <!-- Quick Material Dropdown -->
-                                <div class="d-flex align-items-center gap-2">
-                                    <label class="form-label mb-0 small text-muted fw-semibold">Pilih Bahan:</label>
-                                    <select class="form-select form-select-sm" id="materialSelectDropdown" style="min-width: 220px;">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <label class="form-label mb-0 small text-muted fw-semibold text-nowrap">Pilih Bahan:</label>
+                                    <select class="form-select form-select-sm" id="materialSelectDropdown" style="max-width: 260px;">
                                         <option value="Gula Tebu" selected>Gula Tebu</option>
                                         <option value="GULA KELAPA">Gula Kelapa</option>
                                         <option value="GARAM">Garam Halus</option>
@@ -659,7 +778,7 @@
                             </div>
 
                             <!-- Material Selector Quick Pills -->
-                            <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top" id="materialQuickPills">
+                            <div class="d-flex flex-wrap align-items-center gap-1 gap-md-2 mt-2 mt-md-3 pt-2 pt-md-3 border-top" id="materialQuickPills">
                                 <span class="text-muted small fw-bold me-1"><i class="ri-filter-line me-1"></i>Bahan Cepat:</span>
                                 <button type="button" class="filter-tab-pill active" data-mat="Gula Tebu">
                                     <i class="ri-contrast-drop-line text-warning"></i> Gula Tebu
@@ -683,25 +802,25 @@
                         </div>
 
                         <!-- Active Material Info & Overall Stats Banner -->
-                        <div class="card-body p-3 px-4 bg-light-subtle border-bottom">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="stats-icon bg-primary-light" style="width: 44px; height: 44px;">
-                                        <i class="ri-flask-fill fs-4 text-primary"></i>
+                        <div class="card-body p-2.5 p-md-3 px-3 px-md-4 bg-light-subtle border-bottom">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 gap-md-3">
+                                <div class="d-flex align-items-center gap-2 gap-md-3 min-w-0">
+                                    <div class="stats-icon bg-primary-light flex-shrink-0" style="width: 40px; height: 40px; font-size: 20px;">
+                                        <i class="ri-flask-fill text-primary"></i>
                                     </div>
-                                    <div>
-                                        <h6 class="mb-0 fw-bold text-dark fs-5" id="activeMaterialTitle">GULA TEBU</h6>
-                                        <div class="text-muted small">
+                                    <div class="min-w-0">
+                                        <h6 class="mb-0 fw-bold text-dark fs-5 text-truncate" id="activeMaterialTitle">GULA TEBU</h6>
+                                        <div class="text-muted small text-truncate">
                                             Monitoring kepatuhan parameter uji lab: <strong class="text-dark" id="activeMaterialParamsList">Brix, pH, % Kadar Air, % Kotoran</strong>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge bg-white text-dark border px-3 py-2 shadow-xs" id="activeMatBatchCountBadge">
+                                <div class="d-flex flex-wrap gap-1.5 gap-md-2">
+                                    <span class="badge bg-white text-dark border px-2 py-1.5 px-md-3 py-md-2 shadow-xs" id="activeMatBatchCountBadge">
                                         <i class="ri-truck-line text-primary me-1"></i> <strong id="activeMatBatchCount">0</strong> Batch / SPB Terpantau
                                     </span>
-                                    <span class="badge bg-white text-success border px-3 py-2 shadow-xs" id="activeMatInSpecBadge">
+                                    <span class="badge bg-white text-success border px-2 py-1.5 px-md-3 py-md-2 shadow-xs" id="activeMatInSpecBadge">
                                         <i class="ri-checkbox-circle-line me-1"></i> <strong id="activeMatInSpecRate">0%</strong> Lolos Standar
                                     </span>
                                 </div>
@@ -709,8 +828,8 @@
                         </div>
 
                         <!-- Grid Container for Dynamic Quality Charts -->
-                        <div class="card-body p-4">
-                            <div class="row g-4" id="qualityChartsGrid">
+                        <div class="card-body p-2 p-md-3 p-xl-4">
+                            <div class="row g-3 g-md-4" id="qualityChartsGrid">
                                 <!-- Dynamic Parameter Charts injected via JS -->
                                 <div class="col-12 text-center py-5">
                                     <div class="spinner-border text-primary" role="status">
@@ -766,7 +885,7 @@
             <!-- Section: Analitik Distribusi Disposisi & Frekuensi Kedatangan RM -->
             <div class="row g-3 mb-4">
                 <!-- Frekuensi Kedatangan RM -->
-                <div class="col-xl-6">
+                <div class="col-12 col-xl-6">
                     <div class="card chart-card">
                         <div class="chart-header d-flex justify-content-between align-items-center">
                             <div>
@@ -792,7 +911,7 @@
                 </div>
 
                 <!-- Distribusi Disposisi Laboratorium -->
-                <div class="col-xl-6">
+                <div class="col-12 col-xl-6">
                     <div class="card chart-card">
                         <div class="chart-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <div>
@@ -833,7 +952,7 @@
             <!-- Section: Kepatuhan Armada Truk, Top Bahan & Kinerja Pemasok -->
             <div class="row g-3 mb-4">
                 <!-- Radar: Kepatuhan Armada Mobil -->
-                <div class="col-xl-4 col-lg-6">
+                <div class="col-12 col-md-6 col-xl-4">
                     <div class="card chart-card">
                         <div class="chart-header d-flex justify-content-between align-items-center">
                             <div>
@@ -859,7 +978,7 @@
                 </div>
 
                 <!-- Bahan Baku Paling Banyak -->
-                <div class="col-xl-4 col-lg-6">
+                <div class="col-12 col-md-6 col-xl-4">
                     <div class="card chart-card">
                         <div class="chart-header d-flex justify-content-between align-items-center">
                             <div>
@@ -885,7 +1004,7 @@
                 </div>
 
                 <!-- Frekuensi Supplier Raw Material -->
-                <div class="col-xl-4 col-lg-12">
+                <div class="col-12 col-xl-4">
                     <div class="card chart-card">
                         <div class="chart-header d-flex justify-content-between align-items-center">
                             <div>
@@ -1055,7 +1174,7 @@
                             series: data.values,
                             chart: {
                                 type: 'donut',
-                                height: 260
+                                height: window.innerWidth < 768 ? 220 : 260
                             },
                             labels: [
                                 'Grup A (~30 Hari)',
@@ -1204,12 +1323,19 @@
                         }],
                         chart: {
                             type: 'area',
-                            height: 290,
+                            height: window.innerWidth < 768 ? 220 : 270,
                             toolbar: { show: false }
                         },
                         dataLabels: { enabled: false },
                         stroke: { curve: 'smooth', width: 2.5 },
-                        xaxis: { categories: response.data.labels },
+                        xaxis: {
+                            categories: response.data.labels,
+                            tickAmount: window.innerWidth < 768 ? 6 : undefined,
+                            labels: {
+                                rotate: -30,
+                                style: { fontSize: window.innerWidth < 768 ? '10px' : '11px' }
+                            }
+                        },
                         yaxis: {
                             labels: {
                                 formatter: function(val) { return Math.round(val); }
@@ -1287,7 +1413,7 @@
                 series: values,
                 chart: {
                     type: 'donut',
-                    height: 260
+                    height: window.innerWidth < 768 ? 220 : 260
                 },
                 labels: labels,
                 colors: colors,
@@ -1400,7 +1526,7 @@
                             data: response.data.values
                         }],
                         chart: {
-                            height: 290,
+                            height: window.innerWidth < 768 ? 230 : 270,
                             type: 'radar',
                             toolbar: { show: false }
                         },
@@ -1450,7 +1576,7 @@
                         }],
                         chart: {
                             type: 'bar',
-                            height: 290,
+                            height: window.innerWidth < 768 ? 230 : 270,
                             toolbar: { show: false }
                         },
                         plotOptions: {
@@ -1522,7 +1648,7 @@
                         }],
                         chart: {
                             type: 'bar',
-                            height: 290,
+                            height: window.innerWidth < 768 ? 230 : 270,
                             toolbar: { show: false }
                         },
                         plotOptions: {
@@ -1540,11 +1666,12 @@
                         },
                         xaxis: {
                             categories: response.data.labels,
+                            tickAmount: window.innerWidth < 768 ? 5 : undefined,
                             labels: {
                                 rotate: -30,
                                 trim: true,
                                 maxHeight: 60,
-                                style: { fontSize: '11px' }
+                                style: { fontSize: window.innerWidth < 768 ? '10px' : '11px' }
                             }
                         },
                         yaxis: {
@@ -1686,30 +1813,30 @@
                 else if (inSpecPct < 90) badgeClass = 'bg-warning-subtle text-warning border-warning';
 
                 cardsHtml += `
-                    <div class="col-xl-6 col-lg-6">
-                        <div class="card h-100 border shadow-xs" style="border-radius: 10px; background: #ffffff;">
-                            <div class="card-header bg-white border-bottom py-3 px-3.5 d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <h6 class="mb-0 fw-bold text-dark fs-6">
+                    <div class="col-12 col-xl-6">
+                        <div class="card h-100 border shadow-xs" style="border-radius: 10px; background: #ffffff; min-width: 0; overflow: hidden;">
+                            <div class="card-header bg-white border-bottom py-2.5 px-3 py-md-3 px-md-3.5 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div style="min-width: 0; flex: 1 1 auto;">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <h6 class="mb-0 fw-bold text-dark fs-6 text-truncate">
                                             <i class="ri-pulse-line text-primary me-1"></i> ${param.parameter}
                                         </h6>
                                         ${param.uom ? `<span class="badge bg-light text-dark border font-monospace">${param.uom}</span>` : ''}
                                     </div>
-                                    <p class="text-muted mb-0 small" style="font-size: 11.5px;">
+                                    <p class="text-muted mb-0 small text-truncate" style="font-size: 11.5px;" title="Batas Standar QC: ${param.standard_label} &bull; Rata-rata: ${param.stats.avg} ${param.uom}">
                                         Batas Standar QC: <strong class="text-dark">${param.standard_label}</strong> &bull; Rata-rata: <strong>${param.stats.avg} ${param.uom}</strong>
                                     </p>
                                 </div>
-                                <div>
-                                    <span class="badge ${badgeClass} px-2.5 py-1.5" style="font-size: 11.5px;">
+                                <div class="flex-shrink-0">
+                                    <span class="badge ${badgeClass} px-2 py-1 px-md-2.5 py-md-1.5" style="font-size: 11px;">
                                         <i class="ri-shield-check-line me-1"></i> ${inSpecPct}% Lolos
                                     </span>
                                 </div>
                             </div>
-                            <div class="card-body p-3">
-                                <div id="${chartId}" style="min-height: 270px;"></div>
+                            <div class="card-body p-2 p-md-3" style="min-width: 0; overflow: hidden;">
+                                <div id="${chartId}" style="min-height: 230px; width: 100%;"></div>
                             </div>
-                            <div class="card-footer bg-light-subtle border-top py-2 px-3.5 d-flex justify-content-between align-items-center text-muted" style="font-size: 11px;">
+                            <div class="card-footer bg-light-subtle border-top py-2 px-3 px-md-3.5 d-flex flex-wrap justify-content-between align-items-center text-muted gap-1" style="font-size: 11px;">
                                 <span><i class="ri-truck-line me-1"></i> ${param.stats.total} SPB Teruji</span>
                                 <span><span class="text-success fw-bold">${param.stats.in_spec} Sesuai</span> &bull; <span class="text-danger fw-bold">${param.stats.out_spec} Menyimpang</span></span>
                             </div>
@@ -1749,7 +1876,7 @@
                         borderWidth: 2,
                         label: {
                             borderColor: '#f59e0b',
-                            style: { color: '#ffffff', background: '#f59e0b', fontSize: '11px', fontWeight: 600 },
+                            style: { color: '#ffffff', background: '#f59e0b', fontSize: '10.5px', fontWeight: 600 },
                             text: `Min Std: ${param.min} ${param.uom}`,
                             position: 'left'
                         }
@@ -1763,12 +1890,16 @@
                         borderWidth: 2,
                         label: {
                             borderColor: '#ef4444',
-                            style: { color: '#ffffff', background: '#ef4444', fontSize: '11px', fontWeight: 600 },
+                            style: { color: '#ffffff', background: '#ef4444', fontSize: '10.5px', fontWeight: 600 },
                             text: `Maks Std: ${param.max} ${param.uom}`,
                             position: 'right'
                         }
                     });
                 }
+
+                const isMobile = window.innerWidth < 768;
+                const isTablet = window.innerWidth >= 768 && window.innerWidth < 992;
+                const chartHeight = isMobile ? 220 : (isTablet ? 240 : 260);
 
                 const options = {
                     series: [{
@@ -1777,37 +1908,66 @@
                     }],
                     chart: {
                         type: 'line',
-                        height: 270,
+                        height: chartHeight,
                         toolbar: { show: false },
                         animations: { enabled: true, easing: 'easeinout', speed: 600 }
                     },
+                    responsive: [
+                        {
+                            breakpoint: 992,
+                            options: {
+                                chart: { height: 230 },
+                                xaxis: {
+                                    tickAmount: 8,
+                                    labels: {
+                                        rotate: -40,
+                                        style: { fontSize: '10px' }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            breakpoint: 576,
+                            options: {
+                                chart: { height: 200 },
+                                xaxis: {
+                                    tickAmount: 5,
+                                    labels: {
+                                        rotate: -45,
+                                        style: { fontSize: '9px' }
+                                    }
+                                }
+                            }
+                        }
+                    ],
                     stroke: {
                         curve: 'straight',
-                        width: 3
+                        width: 2.5
                     },
                     colors: ['#4338ca'],
                     markers: {
-                        size: 6,
+                        size: isMobile ? 4 : 5,
                         strokeWidth: 2,
                         strokeColors: '#ffffff',
-                        hover: { size: 8 },
+                        hover: { size: 7 },
                         discrete: points.map((pt, pIdx) => ({
                             seriesIndex: 0,
                             dataPointIndex: pIdx,
                             fillColor: pt.is_compliant ? '#10b981' : '#ef4444',
                             strokeColor: '#ffffff',
-                            size: 6
+                            size: isMobile ? 4 : 5
                         }))
                     },
                     xaxis: {
                         categories: param.categories,
+                        tickAmount: isMobile ? 5 : (isTablet ? 8 : undefined),
                         labels: {
-                            rotate: -30,
+                            rotate: -35,
                             trim: true,
                             maxHeight: 50,
-                            style: { fontSize: '11px', fontWeight: 600 }
+                            style: { fontSize: isMobile ? '9.5px' : '10.5px', fontWeight: 600 }
                         },
-                        title: { text: 'No. SPB / Batch Kedatangan', style: { fontSize: '11px', color: '#64748b' } }
+                        title: { text: 'No. SPB / Batch Kedatangan', style: { fontSize: isMobile ? '10px' : '11px', color: '#64748b' } }
                     },
                     yaxis: {
                         min: yMinChart,

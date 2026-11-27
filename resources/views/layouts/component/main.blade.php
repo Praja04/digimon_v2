@@ -18,6 +18,15 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
+    <!-- Auto-adapt sidebar size for tablet screens (< 1025px) on first load -->
+    <script>
+        (function() {
+            var width = window.innerWidth || document.documentElement.clientWidth;
+            if (width < 1025 && width >= 768 && !sessionStorage.getItem("data-sidebar-size")) {
+                document.documentElement.setAttribute("data-sidebar-size", "sm");
+            }
+        })();
+    </script>
     <!-- Layout config Js -->
     <script src="{{ asset('assets') }}/js/layout.js"></script>
     <!-- Bootstrap Css -->
