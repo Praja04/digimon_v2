@@ -900,9 +900,9 @@ Route::middleware(['auth'])->group(function () {
 
     /*------------------------------------------
         Master Data - Warna
-        Roles: Foreman Only
+        Roles: Foreman, Supervisor, Head Of Dapartement
         --------------------------------------------*/
-    Route::middleware(['user-access:Foreman'])->group(function () {
+    Route::middleware(['user-access:Foreman,Supervisor,Head Of Dapartement'])->group(function () {
         Route::get('/warna', [App\Http\Controllers\ColorController::class, 'index'])->name('colors.index');
         Route::post('/warna', [App\Http\Controllers\ColorController::class, 'store'])->name('colors.store');
         Route::get('/warna/{id}', [App\Http\Controllers\ColorController::class, 'edit'])->name('colors.edit');

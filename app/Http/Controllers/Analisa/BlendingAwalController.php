@@ -195,7 +195,7 @@ class BlendingAwalController extends Controller
 
         if (
             auth()->check() &&
-            auth()->user()->role === 'Foreman'
+            in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)
         ) {
             $foremanDraft = BlendingAwalForemanDraft::where(
                 'blending_awal_id',
@@ -410,11 +410,11 @@ class BlendingAwalController extends Controller
     */
     public function saveForemanDraft(Request $request)
     {
-        if (auth()->user()->role !== 'Foreman') {
+        if (!in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)) {
             return response()->json([
                 'status' => 'error',
                 'message' =>
-                    'Simpan sementara hanya dapat dilakukan oleh Foreman.',
+                    'Simpan sementara hanya dapat dilakukan oleh Foreman atau Supervisor.',
             ], 403);
         }
 
@@ -570,7 +570,7 @@ class BlendingAwalController extends Controller
 
             if (
                 auth()->check() &&
-                auth()->user()->role === 'Foreman'
+                in_array(auth()->user()->role, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)
             ) {
                 $foremanDraft =
                     BlendingAwalForemanDraft::where(
@@ -627,11 +627,11 @@ class BlendingAwalController extends Controller
                     return response()->json([
                         'status' => 'error',
                         'message' =>
-                            'Data sudah di-dispose oleh Foreman. Tidak dapat diubah.',
+                            'Data sudah di-dispose oleh Foreman/Supervisor. Tidak dapat diubah.',
                     ], 403);
                 }
 
-            } elseif ($userRole === 'Foreman') {
+            } elseif (in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)) {
 
                 if (is_null($blending->status)) {
                     DB::rollBack();
@@ -642,6 +642,14 @@ class BlendingAwalController extends Controller
                             'Belum ada status dari Analis. Tidak dapat memberi disposisi.',
                     ], 403);
                 }
+            } else {
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Anda tidak memiliki hak akses untuk mengedit analisa.',
+                ], 403);
             }
 
             $status_disposition =
@@ -652,11 +660,11 @@ class BlendingAwalController extends Controller
                 ?? null;
 
             /*
-             * Release oleh Foreman
+             * Release oleh Foreman / Supervisor
              * memaksa status menjadi OK.
              */
             if (
-                $userRole === 'Foreman' &&
+                in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true) &&
                 $request->disposition === 'Release'
             ) {
                 $status_disposition = 'OK';
@@ -734,7 +742,7 @@ class BlendingAwalController extends Controller
                         auth()->id();
                 }
 
-            } elseif ($userRole === 'Foreman') {
+            } elseif (in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)) {
 
                 if (!$request->filled('disposition')) {
                     DB::rollBack();
@@ -742,7 +750,7 @@ class BlendingAwalController extends Controller
                     return response()->json([
                         'status' => 'error',
                         'message' =>
-                            'Foreman wajib memilih disposisi.',
+                            'Foreman/Supervisor wajib memilih disposisi.',
                     ], 409);
                 }
 
@@ -762,7 +770,7 @@ class BlendingAwalController extends Controller
             if (
                 $status_disposition === 'Adjustment' ||
                 (
-                    $userRole === 'Foreman' &&
+                    in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true) &&
                     $request->disposition === 'Adjustment'
                 )
             ) {
@@ -823,10 +831,10 @@ class BlendingAwalController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | DISPOSISI FOREMAN
+            | DISPOSISI FOREMAN / SUPERVISOR
             |--------------------------------------------------------------------------
             */
-            if ($userRole === 'Foreman') {
+            if (in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)) {
 
                 if (
                     $updateData['disposition']

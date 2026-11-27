@@ -167,13 +167,13 @@ class Pelarutan2Controller extends Controller
 
         if (!in_array(
             $userRole,
-            ['Analis Kimia', 'Foreman'],
+            ['Analis Kimia', 'Foreman', 'Supervisor', 'Head Of Dapartement'],
             true
         )) {
             return response()->json([
                 'status' => 'error',
                 'message' =>
-                    'Simpan sementara hanya dapat dilakukan oleh Analis Kimia atau Foreman.'
+                    'Simpan sementara hanya dapat dilakukan oleh Analis Kimia, Foreman, atau Supervisor.'
             ], 403);
         }
 
@@ -432,11 +432,11 @@ class Pelarutan2Controller extends Controller
                     return response()->json([
                         'status' => 'error',
                         'message' =>
-                            'Data sudah di disposisi oleh Foreman. Tidak dapat diubah.'
+                            'Data sudah di disposisi oleh Foreman/Supervisor. Tidak dapat diubah.'
                     ], 403);
                 }
 
-            } elseif ($userRole === 'Foreman') {
+            } elseif (in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)) {
 
                 if (is_null($pelarutan_2->status)) {
                     DB::rollBack();
@@ -447,6 +447,14 @@ class Pelarutan2Controller extends Controller
                             'Belum ada status dari Analis. Tidak dapat memberi disposisi.'
                     ], 403);
                 }
+            } else {
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' =>
+                        'Anda tidak memiliki hak akses untuk mengedit analisa.'
+                ], 403);
             }
 
             $remark =
@@ -461,7 +469,7 @@ class Pelarutan2Controller extends Controller
             |--------------------------------------------------------------------------
             */
             if (
-                $userRole === 'Foreman' &&
+                in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true) &&
                 $request->disposition === 'Release'
             ) {
                 $status_disposition = 'OK';
@@ -522,7 +530,7 @@ class Pelarutan2Controller extends Controller
                         auth()->user()->id;
                 }
 
-            } elseif ($userRole === 'Foreman') {
+            } elseif (in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true)) {
 
                 if (!$request->filled('disposition')) {
                     DB::rollBack();
@@ -530,7 +538,7 @@ class Pelarutan2Controller extends Controller
                     return response()->json([
                         'status' => 'error',
                         'message' =>
-                            'Foreman wajib memilih disposisi.'
+                            'Foreman/Supervisor wajib memilih disposisi.'
                     ], 409);
                 }
 
@@ -547,7 +555,7 @@ class Pelarutan2Controller extends Controller
             |--------------------------------------------------------------------------
             */
             if (
-                $userRole === 'Foreman' &&
+                in_array($userRole, ['Foreman', 'Supervisor', 'Head Of Dapartement'], true) &&
                 ($updateData['disposition'] ?? null) === 'Resampling'
             ) {
                 $updateData['disposition_remark'] =

@@ -88,7 +88,17 @@
                         }
                     },
                     error: function(xhr) {
-                        if (xhr.status === 422) {
+                        if (xhr.status === 419) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Sesi Kedaluwarsa',
+                                text: 'Sesi halaman telah kedaluwarsa. Halaman akan dimuat ulang otomatis.',
+                                confirmButtonColor: '#3085d6',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
                             if (errors.email) {
                                 $('#email').addClass('is-invalid');
@@ -102,7 +112,7 @@
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Kesalahan',
-                                text: 'Terjadi kesalahan, silakan coba lagi.',
+                                text: xhr.responseJSON?.message || 'Terjadi kesalahan, silakan coba lagi.',
                                 confirmButtonColor: '#3085d6',
                                 confirmButtonText: 'OK'
                             });
