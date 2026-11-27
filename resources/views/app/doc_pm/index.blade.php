@@ -441,8 +441,8 @@
                 $avgInnerBonding = $innerBondingCount > 0 ? number_format($innerBondingSum / $innerBondingCount, 2) : '-';
                 $avgInnerSeal = $innerSealCount > 0 ? number_format($innerSealSum / $innerSealCount, 2) : '-';
 
-                // Maximum rows in official Excel sheet: 30 rows
-                $maxSampleRows = 30;
+                // Dinamis: tampilkan minimal 30 baris (layout standar) atau sebanyak sampel jika lebih dari 30 pcs
+                $maxSampleRows = max(30, count($samples), (int)($inc->jumlah_sampel ?? 0));
             @endphp
 
             <div id="printableDocArea">
